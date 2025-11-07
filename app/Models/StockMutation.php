@@ -12,6 +12,8 @@ class StockMutation extends Model
         'outlet_id',
         'mutation_type',
         'quantity',
+        'unit_cost',
+        'total_cost',
         'stock_before',
         'stock_after',
         'reference_type',
@@ -23,6 +25,8 @@ class StockMutation extends Model
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'unit_cost' => 'decimal:2',
+        'total_cost' => 'decimal:2',
         'stock_before' => 'decimal:2',
         'stock_after' => 'decimal:2',
         'mutation_date' => 'date',

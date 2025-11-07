@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\Stock;
 use App\Models\CashSession;
 use App\Models\CashAccount;
+use App\Models\CoaAccount;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -319,7 +320,119 @@ class DatabaseSeeder extends Seeder
             'created_by' => $admin->id,
         ]);
 
-        // 9. Cash Session (untuk testing)
+        // 9. COA (Chart of Accounts)
+        // Income Accounts
+        CoaAccount::create([
+            'code' => '4-100',
+            'name' => 'Pendapatan Penjualan',
+            'type' => 'income',
+            'group' => 'PENDAPATAN',
+            'is_active' => true,
+            'notes' => 'Pendapatan dari penjualan produk',
+        ]);
+
+        CoaAccount::create([
+            'code' => '4-200',
+            'name' => 'Pendapatan Lain-lain',
+            'type' => 'income',
+            'group' => 'PENDAPATAN',
+            'is_active' => true,
+            'notes' => 'Pendapatan di luar operasional utama',
+        ]);
+
+        // COGS / HPP
+        CoaAccount::create([
+            'code' => '5-100',
+            'name' => 'Harga Pokok Penjualan (HPP)',
+            'type' => 'expense',
+            'group' => 'HPP',
+            'is_active' => true,
+            'notes' => 'Biaya pokok produk yang dijual',
+        ]);
+
+        // Expense Accounts - Operasional
+        CoaAccount::create([
+            'code' => '6-100',
+            'name' => 'Biaya Gaji Karyawan',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Gaji dan tunjangan karyawan',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-110',
+            'name' => 'Biaya Sewa Tempat',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Sewa gedung/tempat usaha',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-120',
+            'name' => 'Biaya Listrik & Air',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Tagihan listrik dan air',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-130',
+            'name' => 'Biaya Telepon & Internet',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Biaya komunikasi',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-140',
+            'name' => 'Biaya Transportasi',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Biaya transportasi operasional',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-150',
+            'name' => 'Biaya Perlengkapan & ATK',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Alat tulis kantor dan perlengkapan',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-160',
+            'name' => 'Biaya Pemeliharaan & Perbaikan',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Maintenance dan repair',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-170',
+            'name' => 'Biaya Marketing & Promosi',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Biaya iklan dan promosi',
+        ]);
+
+        CoaAccount::create([
+            'code' => '6-180',
+            'name' => 'Biaya Administrasi & Umum',
+            'type' => 'expense',
+            'group' => 'BIAYA OPERASIONAL',
+            'is_active' => true,
+            'notes' => 'Biaya administrasi umum',
+        ]);
+
+        // 10. Cash Session (untuk testing)
         CashSession::create([
             'session_number' => 'CS-' . now()->format('Ymd') . '-001',
             'outlet_id' => $outlet1->id,

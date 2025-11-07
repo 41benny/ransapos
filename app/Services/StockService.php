@@ -57,12 +57,19 @@ class StockService
             $stock->last_mutation_at = now();
             $stock->save();
 
-            // Catat mutasi
+            // Ambil cost dari product (purchase_price sebagai cost)
+            $product = Product::find($productId);
+            $unitCost = $product->purchase_price ?? 0;
+            $totalCost = $unitCost * $quantity;
+
+            // Catat mutasi dengan HPP
             StockMutation::create([
                 'product_id' => $productId,
                 'outlet_id' => $outletId,
                 'mutation_type' => 'out',
                 'quantity' => -$quantity, // Negatif karena keluar
+                'unit_cost' => $unitCost, // HPP per unit
+                'total_cost' => $totalCost, // Total HPP
                 'stock_before' => $stockBefore,
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'sale',
