@@ -57,7 +57,8 @@
                     <select id="type" 
                             name="type" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
-                            required>
+                            required
+                            onchange="toggleCoaField()">
                         <option value="">-- Pilih Jenis --</option>
                         <option value="in" {{ old('type') == 'in' ? 'selected' : '' }}>Kas Masuk</option>
                         <option value="out" {{ old('type') == 'out' ? 'selected' : '' }}>Kas Keluar</option>
@@ -65,6 +66,27 @@
                     @error('type')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- Akun COA (untuk kas keluar) -->
+                <div id="coa-field" style="display: {{ old('type') == 'out' ? 'block' : 'none' }};">
+                    <label for="coa_account_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Akun Biaya (COA) <span class="text-red-500" id="coa-required">*</span>
+                    </label>
+                    <select id="coa_account_id" 
+                            name="coa_account_id" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('coa_account_id') border-red-500 @enderror">
+                        <option value="">-- Pilih Akun Biaya --</option>
+                        @foreach(\App\Models\CoaAccount::expense()->active()->orderBy('code')->get() as $coa)
+                            <option value="{{ $coa->id }}" {{ old('coa_account_id') == $coa->id ? 'selected' : '' }}>
+                                {{ $coa->code }} - {{ $coa->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('coa_account_id')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-sm text-gray-500">Wajib dipilih untuk transaksi keluar (biaya operasional)</p>
                 </div>
 
                 <!-- Tanggal Transaksi -->
@@ -152,5 +174,27 @@
         </form>
     </div>
 </div>
+
+<script>
+function toggleCoaField() {
+    const type = document.getElementById('type').value;
+    const coaField = document.getElementById('coa-field');
+    const coaSelect = document.getElementById('coa_account_id');
+    
+    if (type === 'out') {
+        coaField.style.display = 'block';
+        coaSelect.required = true;
+    } else {
+        coaField.style.display = 'none';
+        coaSelect.required = false;
+        coaSelect.value = '';
+    }
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCoaField();
+});
+</script>
 @endsection
 

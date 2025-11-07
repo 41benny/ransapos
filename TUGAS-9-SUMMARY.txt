@@ -1,0 +1,567 @@
+================================================================================
+TUGAS KESEMBILAN - COA (Chart of Accounts) + HPP + LAPORAN LABA RUGI
+================================================================================
+Tanggal: 2025-11-07
+Status: ✅ 50% SELESAI (Database & Core Logic Done, Views & Controllers Pending)
+
+================================================================================
+RINGKASAN
+================================================================================
+
+Tugas Kesembilan fokus pada implementasi sistem akuntansi sederhana dengan:
+1. Chart of Accounts (COA) untuk klasifikasi pendapatan dan biaya
+2. Perhitungan HPP (Harga Pokok Penjualan) otomatis saat stok keluar
+3. Integrasi cash transactions dengan COA
+4. Persiapan untuk Laporan Laba Rugi
+
+PROGRESS SAAT INI:
+✅ Database structure lengkap (100%)
+✅ Models & relations lengkap (100%)
+✅ HPP tracking otomatis (100%)
+✅ Data dummy COA (100%)
+🔄 Service Layer (belum)
+🔄 Controllers (belum)
+🔄 Views (belum)
+
+================================================================================
+1. DATABASE - STRUKTUR & MIGRATION
+================================================================================
+
+✅ Migration Baru Dibuat (3 files):
+   1. 2025_11_07_151849_create_coa_accounts_table.php
+   2. 2025_11_07_151904_add_coa_account_id_to_cash_transactions_table.php
+   3. 2025_11_07_151911_add_cost_fields_to_stock_mutations_table.php
+
+✅ Tabel coa_accounts (Chart of Accounts):
+   - id (PK)
+   - code (string unique) → "4-100", "6-120", dst
+   - name (string) → "Pendapatan Penjualan", "Biaya Listrik", dst
+   - type (enum) → 'income', 'expense', 'asset', 'liability', 'equity'
+   - group (string) → "PENDAPATAN", "HPP", "BIAYA OPERASIONAL", dst
+   - is_active (boolean, default true) → Status aktif
+   - notes (text nullable) → Catatan
+   - timestamps
+   - Indexes: type, is_active
+
+✅ Update Tabel cash_transactions:
+   - Tambah kolom: coa_account_id (FK → coa_accounts, nullable)
+   - Purpose: Link transaksi kas dengan akun COA
+   - Transaksi keluar wajib pilih akun biaya (expense)
+   - Transaksi masuk opsional pilih akun pendapatan (income)
+
+✅ Update Tabel stock_mutations:
+   - Tambah kolom: unit_cost (decimal 15,2) → HPP per unit
+   - Tambah kolom: total_cost (decimal 15,2) → Total HPP (quantity × unit_cost)
+   - Purpose: Tracking HPP setiap kali stok keluar (penjualan)
+
+================================================================================
+2. MODELS
+================================================================================
+
+✅ File: app/Models/CoaAccount.php (NEW)
+
+Fillable:
+   - code, name, type, group, is_active, notes
+
+Casts:
+   - is_active: boolean
+
+Relasi:
+   - cashTransactions(): HasMany (CashTransaction)
+
+Helper Methods:
+   - isActive(): bool
+   - isIncome(): bool
+   - isExpense(): bool
+
+Scopes:
+   - active()
+   - income()
+   - expense()
+   - group(string $group)
+
+✅ File: app/Models/CashTransaction.php (UPDATED)
+
+Tambahan Fillable:
+   - coa_account_id
+
+Relasi Baru:
+   - coaAccount(): BelongsTo (CoaAccount)
+
+Purpose:
+   - Link setiap transaksi kas dengan akun COA
+   - Memungkinkan klasifikasi biaya dan pendapatan
+
+✅ File: app/Models/StockMutation.php (UPDATED)
+
+Tambahan Fillable:
+   - unit_cost, total_cost
+
+Tambahan Casts:
+   - unit_cost: decimal:2
+   - total_cost: decimal:2
+
+Purpose:
+   - Tracking HPP otomatis saat stok keluar
+   - Dasar perhitungan Laba Kotor
+
+================================================================================
+3. SERVICE LAYER UPDATE
+================================================================================
+
+✅ File: app/Services/StockService.php (UPDATED)
+
+Method Updated: reduceSaleStock()
+
+Perubahan:
+   - Ambil unit_cost dari product.purchase_price
+   - Hitung total_cost = unit_cost × quantity
+   - Simpan unit_cost dan total_cost di stock_mutations
+   - Setiap penjualan otomatis catat HPP-nya
+
+Flow HPP:
+   1. Customer beli produk (misal 2 Espresso)
+   2. StockService::reduceSaleStock() dipanggil
+   3. Ambil purchase_price dari product (Rp 8.000)
+   4. unit_cost = 8.000, total_cost = 8.000 × 2 = 16.000
+   5. Simpan di stock_mutations dengan mutation_type = 'out'
+   6. HPP tercatat untuk laporan laba rugi
+
+Contoh Data:
+   Product: Espresso
+   - purchase_price: Rp 8.000 (cost)
+   - selling_price: Rp 15.000 (harga jual)
+   
+   Sale: 2 cup Espresso
+   - Revenue: 2 × 15.000 = Rp 30.000
+   - COGS/HPP: 2 × 8.000 = Rp 16.000
+   - Gross Profit: 30.000 - 16.000 = Rp 14.000
+
+================================================================================
+4. DATABASE SEEDER UPDATE
+================================================================================
+
+✅ File: database/seeders/DatabaseSeeder.php (UPDATED)
+
+Data Dummy COA (12 akun):
+
+PENDAPATAN (2 akun):
+   1. 4-100: Pendapatan Penjualan
+   2. 4-200: Pendapatan Lain-lain
+
+HPP (1 akun):
+   3. 5-100: Harga Pokok Penjualan (HPP)
+
+BIAYA OPERASIONAL (9 akun):
+   4. 6-100: Biaya Gaji Karyawan
+   5. 6-110: Biaya Sewa Tempat
+   6. 6-120: Biaya Listrik & Air
+   7. 6-130: Biaya Telepon & Internet
+   8. 6-140: Biaya Transportasi
+   9. 6-150: Biaya Perlengkapan & ATK
+   10. 6-160: Biaya Pemeliharaan & Perbaikan
+   11. 6-170: Biaya Marketing & Promosi
+   12. 6-180: Biaya Administrasi & Umum
+
+Structure:
+   - code: Format "X-YYY" (X = tipe, YYY = nomor urut)
+   - type: income atau expense
+   - group: Pengelompokan untuk laporan
+   - All active by default
+
+================================================================================
+5. KONSEP LAPORAN LABA RUGI
+================================================================================
+
+Struktur Laporan yang Akan Dibuat:
+
+PENDAPATAN
+   Pendapatan Penjualan                     xxx.xxx
+   Pendapatan Lain-lain                     xxx.xxx
+   ----------------------------------------
+   Total Pendapatan                         A
+
+HARGA POKOK PENJUALAN (HPP)
+   HPP (dari stock_mutations OUT)           xxx.xxx
+   ----------------------------------------
+   Total HPP                                B
+
+LABA KOTOR (A - B)                          C
+
+BIAYA OPERASIONAL
+   Biaya Gaji Karyawan                      xxx.xxx
+   Biaya Sewa Tempat                        xxx.xxx
+   Biaya Listrik & Air                      xxx.xxx
+   (... dst ...)
+   ----------------------------------------
+   Total Biaya Operasional                  D
+
+LABA BERSIH (C - D)                         E
+
+Sumber Data:
+   - Pendapatan: dari tabel `sales` (sum of grand_total)
+   - HPP: dari tabel `stock_mutations` type='out' (sum of total_cost)
+   - Biaya Operasional: dari tabel `cash_transactions` yang linked ke COA expense
+   
+Filter:
+   - By date range (dari-sampai)
+   - By outlet (opsional)
+   - By group COA
+
+================================================================================
+6. FLOW BISNIS LENGKAP
+================================================================================
+
+✅ Flow 1: HPP Otomatis Saat Penjualan
+
+1. Customer beli produk di POS
+2. SaleService::createSale() dipanggil
+3. StockService::reduceSaleStock() untuk setiap item
+4. System:
+   - Ambil product.purchase_price sebagai cost
+   - Hitung unit_cost dan total_cost
+   - Simpan di stock_mutations dengan:
+     * mutation_type: 'out'
+     * unit_cost: dari purchase_price
+     * total_cost: unit_cost × quantity
+     * reference_type: 'sale'
+     * reference_id: sale_id
+5. HPP tercatat otomatis untuk laporan
+
+✅ Flow 2: Transaksi Kas dengan COA (Future Implementation)
+
+Transaksi Kas Keluar (Biaya):
+1. Admin catat transaksi keluar
+2. Pilih akun kas/bank (misal: Bank BCA)
+3. Pilih akun COA biaya (misal: 6-120 Biaya Listrik & Air)
+4. Input jumlah, tanggal, deskripsi
+5. Submit → cash_transactions tercatat dengan coa_account_id
+6. Biaya masuk ke laporan laba rugi
+
+Transaksi Kas Masuk (Pendapatan):
+1. Admin catat transaksi masuk
+2. Pilih akun kas/bank
+3. Opsional: Pilih akun COA pendapatan (misal: 4-200 Pendapatan Lain-lain)
+4. Input jumlah, tanggal, deskripsi
+5. Submit → pendapatan tambahan tercatat
+
+✅ Flow 3: Generate Laporan Laba Rugi (Future Implementation)
+
+1. Admin buka menu "Laporan Laba Rugi"
+2. Pilih date range (misal: bulan ini)
+3. Opsional: filter by outlet
+4. System calculate:
+   
+   Pendapatan:
+   - Query: SELECT SUM(grand_total) FROM sales WHERE date BETWEEN ...
+   
+   HPP:
+   - Query: SELECT SUM(total_cost) FROM stock_mutations 
+            WHERE mutation_type = 'out' AND date BETWEEN ...
+   
+   Laba Kotor:
+   - = Pendapatan - HPP
+   
+   Biaya Operasional (per akun COA):
+   - Query: SELECT coa_account_id, SUM(amount) FROM cash_transactions
+            WHERE type = 'out' AND coa_account_id IN (COA expense accounts)
+            AND date BETWEEN ... GROUP BY coa_account_id
+   
+   Laba Bersih:
+   - = Laba Kotor - Total Biaya Operasional
+
+5. Tampilkan laporan dalam format terstruktur
+6. Opsi: Print atau Export PDF
+
+================================================================================
+7. INTEGRASI DENGAN SISTEM EXISTING
+================================================================================
+
+✅ Integrasi dengan POS (Penjualan):
+   - Setiap penjualan → HPP otomatis tercatat
+   - Tidak perlu input manual HPP
+   - Stock mutations out = HPP untuk periode
+
+✅ Integrasi dengan Cash Transactions:
+   - cash_transactions.coa_account_id → link ke COA
+   - Transaksi keluar = biaya operasional
+   - Transaksi masuk = pendapatan tambahan (optional)
+
+✅ Integrasi dengan Purchase:
+   - purchase_price di products = dasar HPP
+   - Saat receive purchase → cost update (future: bisa FIFO/LIFO)
+
+✅ Tracking Lengkap:
+   - Sales → Revenue
+   - Stock Mutations OUT → COGS/HPP
+   - Cash Transactions → Operating Expenses
+   - Semua sudah ter-link untuk laporan
+
+================================================================================
+8. FILES YANG DIBUAT/DIMODIFIKASI
+================================================================================
+
+✅ Migrations (3 files):
+   - database/migrations/2025_11_07_151849_create_coa_accounts_table.php
+   - database/migrations/2025_11_07_151904_add_coa_account_id_to_cash_transactions_table.php
+   - database/migrations/2025_11_07_151911_add_cost_fields_to_stock_mutations_table.php
+
+✅ Models (4 files):
+   - app/Models/CoaAccount.php (new)
+   - app/Models/CashTransaction.php (updated - add coa_account_id)
+   - app/Models/StockMutation.php (updated - add cost fields)
+
+✅ Services (1 file):
+   - app/Services/StockService.php (updated - HPP tracking)
+
+✅ Seeders (1 file):
+   - database/seeders/DatabaseSeeder.php (updated - add COA dummy data)
+
+Total Files Created/Modified: 9 files
+
+================================================================================
+9. YANG SUDAH SELESAI (Done ✅)
+================================================================================
+
+✅ Database Structure:
+   - Tabel coa_accounts lengkap
+   - Update cash_transactions dengan coa_account_id
+   - Update stock_mutations dengan unit_cost & total_cost
+   - Migrations tested & working
+
+✅ Models:
+   - CoaAccount model dengan relasi & helpers
+   - CashTransaction updated dengan relasi COA
+   - StockMutation updated dengan cost fields
+
+✅ HPP Tracking:
+   - StockService auto-calculate HPP
+   - Setiap penjualan = HPP tercatat
+   - Data siap untuk laporan laba rugi
+
+✅ Data Dummy:
+   - 12 akun COA (pendapatan, HPP, biaya)
+   - Structure lengkap dengan group
+   - Seeder tested & working
+
+================================================================================
+10. YANG MASIH PERLU DIKERJAKAN (Pending 🔄)
+================================================================================
+
+🔄 Service Layer:
+   - CoaAccountService (CRUD COA, helpers)
+   - ProfitLossReportService (calculate laporan)
+
+🔄 Form Requests:
+   - StoreCoaAccountRequest
+   - UpdateCoaAccountRequest
+   - (Cash transaction request perlu update untuk COA)
+
+🔄 Controllers:
+   - CoaAccountController (CRUD COA)
+   - ProfitLossReportController (generate laporan)
+   - Update CashAccountController (tambah pilihan COA)
+
+🔄 Views:
+   - views/admin/coa/index.blade.php (list COA)
+   - views/admin/coa/create.blade.php (tambah COA)
+   - views/admin/coa/edit.blade.php (edit COA)
+   - views/admin/reports/profit-loss.blade.php (laporan laba rugi)
+   - Update cash-accounts views (dropdown COA)
+
+🔄 Routes:
+   - Routes untuk CRUD COA
+   - Route untuk laporan laba rugi
+
+🔄 Sidebar Menu:
+   - Menu "Chart of Accounts" (COA)
+   - Menu "Laporan Laba Rugi"
+
+================================================================================
+11. CARA TESTING YANG SUDAH ADA
+================================================================================
+
+Test HPP Tracking:
+1. Login sebagai kasir
+2. Buka POS
+3. Lakukan transaksi penjualan (misal: 2 Espresso @ Rp 15.000)
+4. Check database:
+   ```sql
+   SELECT * FROM stock_mutations WHERE reference_type = 'sale' ORDER BY id DESC LIMIT 1;
+   ```
+5. Verify:
+   - mutation_type = 'out'
+   - quantity = -2
+   - unit_cost = 8000 (dari purchase_price)
+   - total_cost = 16000 (2 × 8000)
+6. HPP tercatat! ✅
+
+Test COA Data:
+1. Check database:
+   ```sql
+   SELECT * FROM coa_accounts ORDER BY code;
+   ```
+2. Verify:
+   - 12 akun COA
+   - Type: income & expense
+   - Group: PENDAPATAN, HPP, BIAYA OPERASIONAL
+   - All active ✅
+
+Test Integration:
+1. cash_transactions punya kolom coa_account_id ✅
+2. stock_mutations punya kolom unit_cost & total_cost ✅
+3. Models relasi working ✅
+
+================================================================================
+12. NEXT STEPS (Priority High)
+================================================================================
+
+1. Buat CoaAccountController & Views (CRUD COA)
+   - Admin bisa kelola master akun
+   - List, create, edit, delete COA
+   - Filter by type & group
+
+2. Update CashAccountController
+   - Tambah dropdown pilihan COA di form transaksi
+   - Required untuk transaksi keluar (biaya)
+   - Optional untuk transaksi masuk (pendapatan)
+
+3. Buat ProfitLossReportController
+   - Method untuk calculate laporan
+   - Query: sales, stock_mutations, cash_transactions
+   - Group by COA accounts
+   - Calculate laba kotor & laba bersih
+
+4. Buat View Laporan Laba Rugi
+   - Filter by date range & outlet
+   - Display struktur: Pendapatan - HPP = Laba Kotor
+   - Display: Laba Kotor - Biaya = Laba Bersih
+   - Print-ready format
+
+5. Update Sidebar Menu
+   - Tambah section "Akuntansi"
+   - Menu: Chart of Accounts
+   - Menu: Laporan Laba Rugi
+
+6. Testing End-to-End
+   - Catat transaksi dengan COA
+   - Generate laporan laba rugi
+   - Verify angka sesuai
+
+================================================================================
+13. CARA MELANJUTKAN DEVELOPMENT
+================================================================================
+
+Step 1: Buat Controller & Views COA
+```bash
+php artisan make:controller Admin/CoaAccountController --resource
+php artisan make:request StoreCoaAccountRequest
+php artisan make:request UpdateCoaAccountRequest
+```
+
+Step 2: Buat Service untuk Laporan
+```bash
+# Manual create:
+# app/Services/ProfitLossReportService.php
+```
+
+Step 3: Buat Controller Laporan
+```bash
+php artisan make:controller Admin/Reports/ProfitLossReportController
+```
+
+Step 4: Update Routes
+```php
+// routes/web.php
+Route::resource('coa-accounts', CoaAccountController::class);
+Route::get('reports/profit-loss', [ProfitLossReportController::class, 'index']);
+```
+
+Step 5: Buat Views
+```bash
+# resources/views/admin/coa/
+# resources/views/admin/reports/profit-loss.blade.php
+```
+
+Step 6: Update Sidebar
+```blade
+<!-- resources/views/layouts/admin.blade.php -->
+<!-- Tambah section Akuntansi -->
+```
+
+================================================================================
+14. KESIMPULAN
+================================================================================
+
+✅ Fondasi COA & HPP 50% Selesai:
+   - Database structure ✅
+   - Models & relations ✅
+   - HPP auto-tracking ✅
+   - Data dummy COA ✅
+
+🔄 Yang Masih Perlu:
+   - Service layer untuk COA & laporan
+   - Controllers (COA CRUD, Profit/Loss)
+   - Views (COA management, laporan)
+   - Routes & sidebar menu
+   - Testing end-to-end
+
+Status:
+   - CORE FUNCTIONALITY READY
+   - UI COMPONENTS PENDING
+   - Sistem sudah bisa track HPP otomatis
+   - Data COA sudah tersedia
+   - Tinggal buat interface untuk akses data
+
+Impact:
+   - Setiap penjualan = HPP tercatat ✅
+   - Foundation untuk laporan keuangan lengkap ✅
+   - Persiapan untuk fitur akuntansi advanced ✅
+
+================================================================================
+URL DATABASE YANG BISA DIQUERY
+================================================================================
+
+Check HPP:
+```sql
+SELECT 
+    sm.*,
+    p.name as product_name,
+    p.purchase_price,
+    s.invoice_number
+FROM stock_mutations sm
+JOIN products p ON sm.product_id = p.id
+LEFT JOIN sales s ON sm.reference_id = s.id AND sm.reference_type = 'sale'
+WHERE sm.mutation_type = 'out'
+ORDER BY sm.id DESC;
+```
+
+Check COA:
+```sql
+SELECT * FROM coa_accounts ORDER BY code;
+```
+
+Simulate Profit/Loss:
+```sql
+-- Pendapatan
+SELECT SUM(grand_total) as total_revenue FROM sales 
+WHERE DATE(created_at) = CURDATE();
+
+-- HPP
+SELECT SUM(total_cost) as total_cogs FROM stock_mutations
+WHERE mutation_type = 'out' AND DATE(mutation_date) = CURDATE();
+
+-- Laba Kotor = Revenue - COGS
+```
+
+================================================================================
+
+Developed by: AI Assistant  
+Date: 2025-11-07
+Version: 0.5.0 (Foundation Ready)
+Project: Morest POS + Back Office
+
+Foundation COA & HPP siap! Tinggal bangun UI-nya. 🎯📊
+
+================================================================================
+

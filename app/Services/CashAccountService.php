@@ -91,6 +91,11 @@ class CashAccountService
 
             $account = CashAccount::findOrFail($data['cash_account_id']);
 
+            // Validasi: Transaksi keluar harus ada COA (akun biaya)
+            if ($data['type'] === 'out' && empty($data['coa_account_id'])) {
+                throw new Exception("Transaksi kas keluar harus memilih akun biaya (COA)");
+            }
+
             // Generate transaction number
             $data['transaction_number'] = $this->generateTransactionNumber($account->code);
 
@@ -118,7 +123,7 @@ class CashAccountService
             ]);
 
             DB::commit();
-            return $transaction->fresh(['cashAccount', 'creator']);
+            return $transaction->fresh(['cashAccount', 'creator', 'coaAccount']);
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception("Gagal catat transaksi: " . $e->getMessage());
