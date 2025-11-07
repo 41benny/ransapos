@@ -1,0 +1,268 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\CashSession;
+use Illuminate\Support\Facades\DB;
+use Exception;
+
+class SaleService
+{
+    protected StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->stockService = $stockService;
+    }
+
+    /**
+     * Buat transaksi penjualan baru
+     * 
+     * @param array $data
+     * @return Sale
+     * @throws Exception
+     */
+    public function createSale(array $data): Sale
+    {
+        DB::beginTransaction();
+        
+        try {
+            // 1. Generate invoice number
+            $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
+
+            // 2. Hitung subtotal dari items
+            $subtotal = 0;
+            foreach ($data['items'] as $item) {
+                $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                $itemSubtotal -= $item['discount_amount'] ?? 0;
+                $subtotal += $itemSubtotal;
+            }
+
+            // 3. Hitung diskon global
+            $discountAmount = 0;
+            if ($data['discount_type'] === 'percentage') {
+                $discountAmount = $subtotal * ($data['discount_value'] / 100);
+            } elseif ($data['discount_type'] === 'fixed') {
+                $discountAmount = $data['discount_value'];
+            }
+
+            // 4. Hitung total
+            $taxAmount = 0; // Nanti bisa ditambahkan logic pajak
+            $totalAmount = $subtotal - $discountAmount + $taxAmount;
+
+            // 5. Buat record sale
+            $sale = Sale::create([
+                'invoice_number' => $invoiceNumber,
+                'outlet_id' => $data['outlet_id'],
+                'cash_session_id' => $data['cash_session_id'],
+                'user_id' => auth()->id() ?? $data['user_id'] ?? null,
+                'sale_date' => now()->toDateString(),
+                'subtotal' => $subtotal,
+                'discount_type' => $data['discount_type'],
+                'discount_value' => $data['discount_value'] ?? 0,
+                'discount_amount' => $discountAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'customer_name' => $data['customer_name'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'status' => 'completed',
+            ]);
+
+            // 6. Buat sale items & kurangi stok
+            foreach ($data['items'] as $item) {
+                // Ambil data produk untuk snapshot
+                $product = Product::findOrFail($item['product_id']);
+
+                // Hitung subtotal item
+                $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                $itemSubtotal -= $item['discount_amount'] ?? 0;
+
+                // Simpan sale item
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'discount_amount' => $item['discount_amount'] ?? 0,
+                    'subtotal' => $itemSubtotal,
+                ]);
+
+                // Kurangi stok
+                $this->stockService->reduceSaleStock(
+                    productId: $product->id,
+                    outletId: $data['outlet_id'],
+                    quantity: $item['quantity'],
+                    saleId: $sale->id,
+                    userId: $sale->user_id
+                );
+            }
+
+            // 7. Catat pembayaran
+            Payment::create([
+                'sale_id' => $sale->id,
+                'payment_method_id' => $data['payment_method_id'],
+                'amount' => $data['payment_amount'],
+                'reference_number' => $data['payment_reference'] ?? null,
+                'notes' => $data['payment_notes'] ?? null,
+            ]);
+
+            // 8. Update cash session
+            $this->updateCashSession($data['cash_session_id'], $totalAmount, $data['payment_method_id']);
+
+            DB::commit();
+
+            return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user']);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Generate invoice number unik
+     * 
+     * @param int $outletId
+     * @return string
+     */
+    protected function generateInvoiceNumber(int $outletId): string
+    {
+        $date = now()->format('Ymd');
+        $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
+        
+        // Cari invoice terakhir hari ini untuk outlet ini
+        $lastSale = Sale::where('outlet_id', $outletId)
+            ->whereDate('sale_date', now())
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($lastSale) {
+            // Extract nomor urut terakhir
+            $lastNumber = (int) substr($lastSale->invoice_number, -4);
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        $sequence = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return "INV-{$outlet}-{$date}-{$sequence}";
+    }
+
+    /**
+     * Update informasi cash session setelah transaksi
+     * 
+     * @param int $sessionId
+     * @param float $saleAmount
+     * @param int $paymentMethodId
+     * @return void
+     */
+    protected function updateCashSession(int $sessionId, float $saleAmount, int $paymentMethodId): void
+    {
+        $session = CashSession::findOrFail($sessionId);
+
+        // Update total sales
+        $session->total_sales += $saleAmount;
+
+        // Update total cash atau non-cash
+        // Asumsi: payment_method_id 1 adalah CASH
+        if ($paymentMethodId == 1) {
+            $session->total_cash += $saleAmount;
+        } else {
+            $session->total_non_cash += $saleAmount;
+        }
+
+        // Update expected balance
+        $session->expected_balance = $session->opening_balance + $session->total_cash;
+
+        $session->save();
+    }
+
+    /**
+     * Batalkan transaksi (untuk refund)
+     * 
+     * @param int $saleId
+     * @param string $reason
+     * @return Sale
+     * @throws Exception
+     */
+    public function cancelSale(int $saleId, string $reason = ''): Sale
+    {
+        DB::beginTransaction();
+        
+        try {
+            $sale = Sale::with('items')->findOrFail($saleId);
+
+            // Cek apakah sudah dibatalkan
+            if ($sale->status === 'cancelled') {
+                throw new Exception('Transaksi sudah dibatalkan sebelumnya');
+            }
+
+            // Kembalikan stok
+            foreach ($sale->items as $item) {
+                // Catat mutasi untuk pengembalian stok
+                $stock = \App\Models\Stock::where('product_id', $item->product_id)
+                    ->where('outlet_id', $sale->outlet_id)
+                    ->first();
+
+                if ($stock) {
+                    $stockBefore = $stock->quantity;
+                    $stock->quantity += $item->quantity;
+                    $stock->last_mutation_at = now();
+                    $stock->save();
+
+                    // Catat mutasi
+                    \App\Models\StockMutation::create([
+                        'product_id' => $item->product_id,
+                        'outlet_id' => $sale->outlet_id,
+                        'mutation_type' => 'in',
+                        'quantity' => $item->quantity,
+                        'stock_before' => $stockBefore,
+                        'stock_after' => $stock->quantity,
+                        'reference_type' => 'sale_cancellation',
+                        'reference_id' => $sale->id,
+                        'mutation_date' => now()->toDateString(),
+                        'notes' => "Pembatalan transaksi: {$reason}",
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+            }
+
+            // Update status sale
+            $sale->status = 'cancelled';
+            $sale->notes = ($sale->notes ? $sale->notes . "\n\n" : '') . "Dibatalkan: {$reason}";
+            $sale->save();
+
+            // Update cash session (kurangi total)
+            $session = CashSession::find($sale->cash_session_id);
+            if ($session) {
+                $session->total_sales -= $sale->total_amount;
+                
+                $payment = $sale->payments->first();
+                if ($payment && $payment->payment_method_id == 1) {
+                    $session->total_cash -= $sale->total_amount;
+                } else {
+                    $session->total_non_cash -= $sale->total_amount;
+                }
+                
+                $session->expected_balance = $session->opening_balance + $session->total_cash;
+                $session->save();
+            }
+
+            DB::commit();
+
+            return $sale->fresh();
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+}
+

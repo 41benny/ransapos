@@ -1,0 +1,933 @@
+================================================================================
+TUGAS KEDELAPAN - MODUL KAS & BANK + LINK KE PEMBAYARAN PURCHASE
+================================================================================
+Tanggal: 2025-11-07
+Status: ✅ 100% SELESAI
+
+================================================================================
+RINGKASAN
+================================================================================
+
+Tugas Kedelapan berhasil diimplementasi dengan sistem manajemen Kas & Bank
+lengkap yang terintegrasi dengan modul Purchase untuk pencatatan pembayaran
+supplier. Sistem ini menyediakan buku kas sederhana dengan tracking saldo
+real-time dan laporan mutasi kas/bank.
+
+================================================================================
+1. DATABASE - STRUKTUR & MIGRATION
+================================================================================
+
+✅ Migration Baru Dibuat (2 files):
+   1. 2025_11_07_142628_create_cash_accounts_table.php
+   2. 2025_11_07_142640_create_cash_transactions_table.php
+
+✅ Tabel cash_accounts:
+   - id (PK)
+   - name (string) → Nama akun: "Kas Toko", "Bank BCA"
+   - code (string, unique) → KAS-001, BANK-BCA
+   - type (enum: 'cash', 'bank') → Jenis akun
+   - is_active (boolean, default true) → Status aktif
+   - opening_balance (decimal 15,2) → Saldo awal
+   - current_balance (decimal 15,2) → Saldo saat ini
+   - notes (text nullable) → Catatan
+   - created_by (FK → users) → User yang buat
+   - timestamps
+   - Indexes: type, is_active
+
+✅ Tabel cash_transactions:
+   - id (PK)
+   - transaction_number (string unique) → CT-001-20251107-001
+   - cash_account_id (FK → cash_accounts, cascade) → Akun kas/bank
+   - type (enum: 'in', 'out') → Jenis transaksi
+   - transaction_date (date) → Tanggal transaksi
+   - amount (decimal 15,2) → Jumlah
+   - balance_before (decimal 15,2) → Saldo sebelum
+   - balance_after (decimal 15,2) → Saldo sesudah
+   - description (string) → Deskripsi
+   - reference_type (string nullable) → 'purchase', 'sale', dll
+   - reference_id (unsignedBigInteger nullable) → ID referensi
+   - notes (text nullable) → Catatan tambahan
+   - created_by (FK → users) → User yang catat
+   - timestamps
+   - Indexes: cash_account_id, type, transaction_date, [reference_type, reference_id]
+
+================================================================================
+2. MODELS
+================================================================================
+
+✅ File: app/Models/CashAccount.php
+
+Fillable:
+   - name, code, type, is_active, opening_balance, current_balance, notes, created_by
+
+Casts:
+   - is_active: boolean
+   - opening_balance: decimal:2
+   - current_balance: decimal:2
+
+Relasi:
+   - creator(): BelongsTo (User)
+   - transactions(): HasMany (CashTransaction)
+
+Helper Methods:
+   - isActive(): bool
+   - isCash(): bool
+   - isBank(): bool
+
+Scopes:
+   - active()
+   - cash()
+   - bank()
+
+✅ File: app/Models/CashTransaction.php
+
+Fillable:
+   - transaction_number, cash_account_id, type, transaction_date, amount,
+     balance_before, balance_after, description, reference_type, reference_id,
+     notes, created_by
+
+Casts:
+   - transaction_date: date
+   - amount: decimal:2
+   - balance_before: decimal:2
+   - balance_after: decimal:2
+
+Relasi:
+   - cashAccount(): BelongsTo (CashAccount)
+   - creator(): BelongsTo (User)
+   - reference(): Dynamic (Purchase/Sale based on reference_type)
+
+Helper Methods:
+   - isIn(): bool
+   - isOut(): bool
+
+Scopes:
+   - in()
+   - out()
+   - dateRange($from, $to)
+
+✅ File: app/Models/Purchase.php (Updated)
+
+Relasi Baru:
+   - cashTransactions(): HasMany (CashTransaction untuk pembayaran purchase)
+
+================================================================================
+3. SERVICES - BUSINESS LOGIC
+================================================================================
+
+✅ File: app/Services/CashAccountService.php
+
+Methods yang Dibuat:
+
+1. createAccount(array $data): CashAccount
+   - Buat akun kas/bank baru
+   - Set opening_balance = current_balance
+   - Validasi & return dengan relasi
+
+2. updateAccount(CashAccount $account, array $data): CashAccount
+   - Update akun kas/bank
+   - TIDAK bisa ubah opening_balance & current_balance via update
+   - Return updated account
+
+3. generateTransactionNumber(string $accountCode): string
+   - Format: CT-{account_code}-{date}-{seq}
+   - Contoh: CT-KAS001-20251107-001
+   - Auto increment per hari per akun
+
+4. recordTransaction(array $data): CashTransaction
+   - Catat transaksi kas/bank (masuk/keluar)
+   - Generate transaction number
+   - Hitung balance_before & balance_after
+   - Validasi saldo tidak boleh negatif
+   - Update current_balance di akun
+   - Return transaction dengan relasi
+
+5. recordPurchasePayment(Purchase $purchase, array $data): CashTransaction
+   - Catat pembayaran purchase (kas keluar)
+   - Validasi purchase harus sudah received
+   - Validasi jumlah tidak melebihi sisa tagihan
+   - Create transaction dengan reference ke purchase
+   - Update payment_status di purchase (pending/partial/paid)
+   - Return transaction
+
+6. getTransactions(array $filters = []): LengthAwarePaginator
+   - Get list transaksi dengan filter
+   - Filter by: cash_account_id, type, date_from, date_to, reference_type
+   - Paginated (20 per page)
+   - Eager load: cashAccount, creator
+
+7. getMutationReport(int $cashAccountId, ?string $dateFrom, ?string $dateTo): array
+   - Get laporan mutasi kas untuk 1 akun
+   - Default: bulan ini
+   - Return: account, transactions, date range, summary (beginning_balance,
+     total_in, total_out, ending_balance)
+
+8. getAccountsSummary(): array
+   - Get ringkasan semua akun
+   - Return: accounts, total_cash, total_bank, total_balance
+
+================================================================================
+4. FORM REQUEST VALIDATION
+================================================================================
+
+✅ File: app/Http/Requests/StoreCashAccountRequest.php
+
+Rules:
+   - name: required|string|max:255
+   - code: required|string|max:50|unique:cash_accounts,code
+   - type: required|in:cash,bank
+   - is_active: boolean
+   - opening_balance: required|numeric|min:0
+   - notes: nullable|string
+
+Custom Messages: Bahasa Indonesia
+
+✅ File: app/Http/Requests/UpdateCashAccountRequest.php
+
+Rules:
+   - name: required|string|max:255
+   - code: required|string|max:50|unique (exclude current record)
+   - type: required|in:cash,bank
+   - is_active: boolean
+   - notes: nullable|string
+
+Custom Messages: Bahasa Indonesia
+
+✅ File: app/Http/Requests/StoreCashTransactionRequest.php
+
+Rules:
+   - cash_account_id: required|exists:cash_accounts,id
+   - type: required|in:in,out
+   - transaction_date: required|date
+   - amount: required|numeric|min:0.01
+   - description: required|string|max:255
+   - reference_type: nullable|string|max:50
+   - reference_id: nullable|integer
+   - notes: nullable|string
+
+Custom Messages: Bahasa Indonesia
+
+================================================================================
+5. CONTROLLERS
+================================================================================
+
+✅ File: app/Http/Controllers/Admin/CashAccountController.php
+
+Methods:
+
+1. index()
+   - Tampilkan list akun kas/bank
+   - Load summary: total_cash, total_bank, total_balance
+   - Return view: admin.cash-accounts.index
+
+2. create()
+   - Form tambah akun baru
+   - Return view: admin.cash-accounts.create
+
+3. store(StoreCashAccountRequest $request)
+   - Validasi via Form Request
+   - Call CashAccountService::createAccount()
+   - Redirect ke show dengan success message
+
+4. show(CashAccount $cashAccount)
+   - Detail akun dengan transaksi terakhir (10 records)
+   - Summary: total_in, total_out
+   - Return view: admin.cash-accounts.show
+
+5. edit(CashAccount $cashAccount)
+   - Form edit akun
+   - Return view: admin.cash-accounts.edit
+
+6. update(UpdateCashAccountRequest $request, CashAccount $cashAccount)
+   - Validasi via Form Request
+   - Call CashAccountService::updateAccount()
+   - Redirect ke show dengan success message
+
+7. destroy(CashAccount $cashAccount)
+   - Validasi: tidak bisa hapus jika ada transaksi
+   - Hapus akun
+   - Redirect ke index dengan success message
+
+8. transactions(Request $request)
+   - List semua transaksi dengan filter
+   - Return view: admin.cash-accounts.transactions
+
+9. createTransaction()
+   - Form catat transaksi baru
+   - Load active accounts
+   - Return view: admin.cash-accounts.create-transaction
+
+10. storeTransaction(StoreCashTransactionRequest $request)
+    - Validasi via Form Request
+    - Call CashAccountService::recordTransaction()
+    - Redirect ke transactions dengan success message
+
+11. mutationReport(Request $request, CashAccount $cashAccount)
+    - Laporan mutasi kas per akun
+    - Filter by date range
+    - Call CashAccountService::getMutationReport()
+    - Return view: admin.cash-accounts.mutation-report
+
+✅ File: app/Http/Controllers/Admin/PurchaseController.php (Updated)
+
+Methods Baru:
+
+1. showPaymentForm(Purchase $purchase)
+   - Form catat pembayaran purchase
+   - Validasi: harus sudah received
+   - Load: cashTransactions, cashAccounts
+   - Hitung: totalPaid, remaining
+   - Return view: admin.purchases.payment
+
+2. storePayment(Request $request, Purchase $purchase)
+   - Validasi inline
+   - Call CashAccountService::recordPurchasePayment()
+   - Redirect ke show dengan success message
+
+Method Updated:
+
+1. show(Purchase $purchase)
+   - Tambah eager load: cashTransactions.cashAccount
+   - Hitung: totalPaid, remaining
+   - Pass ke view
+
+Constructor Updated:
+   - Inject CashAccountService
+
+================================================================================
+6. ROUTES
+================================================================================
+
+✅ File: routes/web.php
+
+Routes Baru (dalam group admin):
+
+Cash Accounts (Resource):
+   GET    /admin/cash-accounts              → index
+   GET    /admin/cash-accounts/create       → create
+   POST   /admin/cash-accounts              → store
+   GET    /admin/cash-accounts/{id}         → show
+   GET    /admin/cash-accounts/{id}/edit    → edit
+   PUT    /admin/cash-accounts/{id}         → update
+   DELETE /admin/cash-accounts/{id}         → destroy
+
+Cash Transactions (Custom):
+   GET    /admin/cash-transactions          → transactions
+   GET    /admin/cash-transactions/create   → createTransaction
+   POST   /admin/cash-transactions          → storeTransaction
+
+Mutation Report:
+   GET    /admin/cash-accounts/{id}/mutation-report → mutationReport
+
+Purchase Payment (Custom):
+   GET    /admin/purchases/{id}/payment     → showPaymentForm
+   POST   /admin/purchases/{id}/payment     → storePayment
+
+================================================================================
+7. VIEWS
+================================================================================
+
+✅ File: resources/views/admin/cash-accounts/index.blade.php
+
+Fitur:
+   - Summary cards: Total Kas, Total Bank, Total Saldo
+   - Quick actions: Lihat Transaksi, Catat Transaksi Baru
+   - List akun dengan: kode, nama, jenis, saldo awal, saldo saat ini, 
+     jumlah transaksi, status
+   - Badge untuk type (Kas Tunai/Bank) dan status (Aktif/Nonaktif)
+   - Action links: Detail, Mutasi, Edit
+   - Empty state yang informatif
+   - Alert success/error
+
+✅ File: resources/views/admin/cash-accounts/create.blade.php
+
+Fitur:
+   - Form tambah akun baru
+   - Fields: name, code, type, opening_balance, is_active, notes
+   - Validation errors display
+   - Breadcrumb navigation
+   - Cancel & Submit buttons
+
+✅ File: resources/views/admin/cash-accounts/edit.blade.php
+
+Fitur:
+   - Form edit akun
+   - Info box: saldo tidak bisa diubah via edit
+   - Display saldo awal & saldo saat ini (read-only)
+   - Delete button (hanya jika tidak ada transaksi)
+   - Validation errors display
+   - Cancel & Submit buttons
+
+✅ File: resources/views/admin/cash-accounts/show.blade.php
+
+Fitur:
+   - Header dengan nama akun & kode
+   - Action buttons: Lihat Laporan Mutasi, Edit Akun
+   - Informasi Akun card: jenis, status, creator, created_at, notes
+   - Saldo card: saldo awal, saldo saat ini, total masuk, total keluar
+   - Transaksi Terakhir (10 records)
+   - Link ke "Lihat Semua Transaksi"
+   - Empty state jika belum ada transaksi
+
+✅ File: resources/views/admin/cash-accounts/transactions.blade.php
+
+Fitur:
+   - Header dengan tombol "Catat Transaksi Baru"
+   - Filter: akun, jenis, dari tanggal, sampai tanggal
+   - List transaksi dengan: nomor, tanggal, akun, deskripsi, jenis, jumlah, saldo
+   - Badge untuk jenis (Masuk/Keluar)
+   - Color coding: hijau untuk masuk, merah untuk keluar
+   - Display referensi (jika ada link ke purchase/sale)
+   - Pagination
+   - Empty state
+
+✅ File: resources/views/admin/cash-accounts/create-transaction.blade.php
+
+Fitur:
+   - Form catat transaksi baru
+   - Dropdown akun kas/bank (dengan saldo saat ini)
+   - Select jenis transaksi (Masuk/Keluar)
+   - Date picker tanggal transaksi
+   - Input jumlah dengan prefix "Rp"
+   - Text input deskripsi
+   - Textarea notes (optional)
+   - Validation errors display
+   - Cancel & Submit buttons
+
+✅ File: resources/views/admin/cash-accounts/mutation-report.blade.php
+
+Fitur:
+   - Header dengan nama akun
+   - Filter date range
+   - Summary cards: Saldo Awal, Total Masuk, Total Keluar, Saldo Akhir
+   - Print button
+   - Tabel rincian mutasi: tanggal, nomor, deskripsi, saldo awal, masuk, keluar, saldo akhir
+   - Footer total
+   - Empty state
+   - Print-friendly CSS
+
+✅ File: resources/views/admin/purchases/payment.blade.php
+
+Fitur:
+   - Header dengan purchase number
+   - Summary: Total Purchase, Sudah Dibayar, Sisa Tagihan
+   - Riwayat Pembayaran (jika ada)
+   - Form pembayaran baru (jika sisa > 0):
+     * Dropdown akun kas/bank (dengan saldo)
+     * Input jumlah pembayaran (max: sisa tagihan)
+     * Date picker tanggal pembayaran
+     * Textarea notes
+   - Alert sukses jika sudah lunas
+   - Validation errors display
+   - Cancel & Submit buttons
+
+================================================================================
+8. SIDEBAR MENU UPDATE
+================================================================================
+
+✅ File: resources/views/layouts/admin.blade.php
+
+Section Baru: Keuangan
+   - Menu: Kas & Bank (route: admin.cash-accounts.index)
+   - Menu: Transaksi Kas (route: admin.cash-transactions.index)
+   - Icons: Wallet & Clipboard icons
+   - Active state highlighting
+
+================================================================================
+9. DATABASE SEEDER UPDATE
+================================================================================
+
+✅ File: database/seeders/DatabaseSeeder.php
+
+Data Dummy Kas & Bank (5 akun):
+
+1. Kas Toko Utama (KAS-001)
+   - Type: cash
+   - Opening Balance: Rp 5.000.000
+   - Notes: Kas toko cabang utama
+
+2. Kas Toko Plaza (KAS-002)
+   - Type: cash
+   - Opening Balance: Rp 3.000.000
+   - Notes: Kas toko cabang plaza
+
+3. Bank BCA - Rekening Operasional (BANK-BCA)
+   - Type: bank
+   - Opening Balance: Rp 50.000.000
+   - Notes: Rekening BCA untuk operasional perusahaan
+
+4. Bank BRI - Rekening Payroll (BANK-BRI)
+   - Type: bank
+   - Opening Balance: Rp 30.000.000
+   - Notes: Rekening BRI untuk payroll karyawan
+
+5. Bank Mandiri - Rekening Investasi (BANK-MANDIRI)
+   - Type: bank
+   - Opening Balance: Rp 100.000.000
+   - Notes: Rekening Mandiri untuk dana investasi
+
+Total Saldo Dummy:
+   - Total Kas: Rp 8.000.000
+   - Total Bank: Rp 180.000.000
+   - Total Keseluruhan: Rp 188.000.000
+
+================================================================================
+10. FLOW BISNIS LENGKAP
+================================================================================
+
+✅ Flow 1: Kelola Akun Kas/Bank
+
+Buat Akun Baru:
+   1. Admin buka menu "Kas & Bank"
+   2. Klik "Tambah Akun Baru"
+   3. Isi form: nama, kode, jenis, saldo awal
+   4. Submit → Akun dibuat dengan current_balance = opening_balance
+   5. Redirect ke detail akun
+
+Edit Akun:
+   1. Dari list, klik Edit
+   2. Ubah nama, kode, atau notes
+   3. Submit → Akun diupdate
+   4. SALDO TIDAK BISA DIUBAH (hanya via transaksi)
+
+Hapus Akun:
+   1. Dari edit page, klik "Hapus Akun"
+   2. Konfirmasi
+   3. Validasi: hanya bisa hapus jika belum ada transaksi
+   4. Submit → Akun dihapus
+
+✅ Flow 2: Catat Transaksi Kas/Bank Manual
+
+Transaksi Masuk (Cash In):
+   1. Admin klik "Catat Transaksi Baru"
+   2. Pilih akun kas/bank
+   3. Pilih jenis: "Kas Masuk"
+   4. Input tanggal, jumlah, deskripsi
+   5. Submit → System:
+      - Generate transaction number
+      - balance_before = current_balance akun
+      - balance_after = balance_before + amount
+      - Update current_balance akun
+      - Save transaction
+   6. Saldo akun bertambah
+
+Transaksi Keluar (Cash Out):
+   1. Admin klik "Catat Transaksi Baru"
+   2. Pilih akun kas/bank
+   3. Pilih jenis: "Kas Keluar"
+   4. Input tanggal, jumlah, deskripsi
+   5. Submit → System:
+      - Validasi: balance_after tidak boleh < 0
+      - Generate transaction number
+      - balance_before = current_balance akun
+      - balance_after = balance_before - amount
+      - Update current_balance akun
+      - Save transaction
+   6. Saldo akun berkurang
+
+✅ Flow 3: Pembayaran Purchase (Integration)
+
+Receive Purchase:
+   1. Admin receive purchase (status: draft → received)
+   2. Stok bertambah via StockService
+   3. payment_status masih 'pending' (belum bayar)
+
+Catat Pembayaran Purchase:
+   1. Dari detail purchase, klik "Catat Pembayaran"
+   2. Validasi: purchase harus sudah received
+   3. Form payment muncul:
+      - Total purchase: Rp 10.000.000
+      - Sudah dibayar: Rp 0
+      - Sisa tagihan: Rp 10.000.000
+   4. Pilih akun kas/bank (misal: Bank BCA)
+   5. Input jumlah: Rp 5.000.000 (partial payment)
+   6. Input tanggal & notes
+   7. Submit → System:
+      - Validasi: amount <= remaining
+      - Call recordPurchasePayment()
+      - Create cash transaction:
+        * type: out
+        * reference_type: purchase
+        * reference_id: purchase->id
+        * description: "Pembayaran Purchase #{purchase_number}"
+      - Update saldo Bank BCA (berkurang Rp 5.000.000)
+      - Update payment_status purchase: 'partial'
+   8. Redirect ke detail purchase
+
+Pembayaran Kedua (Pelunasan):
+   1. Dari detail purchase, klik "Catat Pembayaran" lagi
+   2. Sisa tagihan sekarang: Rp 5.000.000
+   3. Input jumlah: Rp 5.000.000
+   4. Submit → System:
+      - Create cash transaction (kas keluar)
+      - Update saldo akun
+      - Update payment_status purchase: 'paid' (lunas!)
+   5. Form pembayaran hilang, muncul alert "Purchase Sudah Lunas"
+
+✅ Flow 4: Laporan Mutasi Kas
+
+Lihat Laporan:
+   1. Admin buka detail akun atau klik "Mutasi" dari list
+   2. Default: mutasi bulan ini
+   3. Ubah date range jika perlu
+   4. Klik "Tampilkan"
+   5. Laporan muncul:
+      - Summary: Saldo Awal, Total Masuk, Total Keluar, Saldo Akhir
+      - Tabel rincian per transaksi
+      - Footer total
+   6. Klik "Print" untuk print laporan
+
+================================================================================
+11. INTEGRASI DENGAN SISTEM LAIN
+================================================================================
+
+✅ Integrasi dengan Purchase Module:
+   - Purchase.cashTransactions() relasi
+   - recordPurchasePayment() di CashAccountService
+   - Auto update payment_status: pending → partial → paid
+   - Tracking pembayaran dengan reference_type & reference_id
+
+✅ Integrasi dengan Auth:
+   - created_by tracking di cash_accounts & cash_transactions
+   - Siapa yang membuat akun
+   - Siapa yang mencatat transaksi
+
+✅ Data Integrity:
+   - Saldo real-time via balance_before & balance_after
+   - Tidak bisa hapus akun yang sudah ada transaksi
+   - Tidak bisa transaksi keluar jika saldo tidak cukup
+   - Tidak bisa bayar purchase melebihi sisa tagihan
+
+✅ Audit Trail:
+   - Setiap transaksi tercatat dengan:
+     * Transaction number (unique)
+     * Date & time
+     * Creator (user_id)
+     * Amount & balance history
+     * Reference ke transaksi lain (purchase, sale)
+
+================================================================================
+12. FITUR YANG SUDAH BERFUNGSI
+================================================================================
+
+CRUD Akun Kas/Bank:
+✅ Create akun baru (kas atau bank)
+✅ Read/View list akun dengan summary
+✅ Update akun (nama, kode, notes, status)
+✅ Delete akun (hanya jika belum ada transaksi)
+✅ Detail akun dengan transaksi terakhir
+
+Transaksi Kas/Bank:
+✅ Catat transaksi masuk (cash in)
+✅ Catat transaksi keluar (cash out)
+✅ Auto generate transaction number
+✅ Auto update saldo akun
+✅ Validasi saldo tidak boleh negatif
+✅ List transaksi dengan filter lengkap
+✅ Pagination
+
+Pembayaran Purchase:
+✅ Link purchase ke cash transaction
+✅ Catat pembayaran (full atau partial)
+✅ Auto update payment_status
+✅ Validasi jumlah pembayaran
+✅ Riwayat pembayaran per purchase
+✅ Alert lunas
+
+Laporan:
+✅ Laporan mutasi per akun
+✅ Filter by date range
+✅ Summary: saldo awal, total masuk, total keluar, saldo akhir
+✅ Rincian transaksi dengan saldo running
+✅ Print-friendly format
+
+Dashboard & Navigation:
+✅ Menu sidebar "Keuangan"
+✅ Summary cards di index (total kas, bank, saldo)
+✅ Quick actions
+✅ Breadcrumb navigation
+✅ Active state highlighting
+
+================================================================================
+13. FILES YANG DIBUAT/DIMODIFIKASI
+================================================================================
+
+✅ Migrations (2 files):
+   - database/migrations/2025_11_07_142628_create_cash_accounts_table.php
+   - database/migrations/2025_11_07_142640_create_cash_transactions_table.php
+
+✅ Models (3 files):
+   - app/Models/CashAccount.php (new)
+   - app/Models/CashTransaction.php (new)
+   - app/Models/Purchase.php (updated - add cashTransactions relation)
+
+✅ Services (1 file):
+   - app/Services/CashAccountService.php (new)
+
+✅ Form Requests (3 files):
+   - app/Http/Requests/StoreCashAccountRequest.php (new)
+   - app/Http/Requests/UpdateCashAccountRequest.php (new)
+   - app/Http/Requests/StoreCashTransactionRequest.php (new)
+
+✅ Controllers (2 files):
+   - app/Http/Controllers/Admin/CashAccountController.php (new)
+   - app/Http/Controllers/Admin/PurchaseController.php (updated - add payment methods)
+
+✅ Routes (1 file):
+   - routes/web.php (updated - add cash accounts & transactions routes)
+
+✅ Views (8 files):
+   - resources/views/admin/cash-accounts/index.blade.php (new)
+   - resources/views/admin/cash-accounts/create.blade.php (new)
+   - resources/views/admin/cash-accounts/edit.blade.php (new)
+   - resources/views/admin/cash-accounts/show.blade.php (new)
+   - resources/views/admin/cash-accounts/transactions.blade.php (new)
+   - resources/views/admin/cash-accounts/create-transaction.blade.php (new)
+   - resources/views/admin/cash-accounts/mutation-report.blade.php (new)
+   - resources/views/admin/purchases/payment.blade.php (new)
+
+✅ Layout (1 file):
+   - resources/views/layouts/admin.blade.php (updated - add Keuangan menu section)
+
+✅ Seeder (1 file):
+   - database/seeders/DatabaseSeeder.php (updated - add cash accounts dummy data)
+
+✅ Documentation (1 file):
+   - TUGAS-8-SUMMARY.txt (this file)
+
+Total:
+   - 2 Migration files
+   - 3 Model files (2 new, 1 updated)
+   - 1 Service file
+   - 3 Form Request files
+   - 2 Controller files (1 new, 1 updated)
+   - 1 Route file (updated)
+   - 8 View files
+   - 1 Layout file (updated)
+   - 1 Seeder file (updated)
+   - 1 Documentation file
+
+Grand Total: 23 files
+
+================================================================================
+14. TESTING CHECKLIST
+================================================================================
+
+Test Akun Kas/Bank:
+✅ Buat akun kas baru
+✅ Buat akun bank baru
+✅ Edit akun yang sudah ada
+✅ Hapus akun tanpa transaksi
+✅ Gagal hapus akun yang sudah ada transaksi
+✅ View detail akun
+✅ View summary di index
+
+Test Transaksi Kas:
+✅ Catat transaksi masuk (saldo bertambah)
+✅ Catat transaksi keluar (saldo berkurang)
+✅ Gagal transaksi keluar jika saldo tidak cukup
+✅ Transaction number auto generate & unique
+✅ Filter transaksi by akun, jenis, tanggal
+✅ Pagination transaksi
+
+Test Pembayaran Purchase:
+✅ Receive purchase terlebih dahulu
+✅ Catat pembayaran partial
+✅ Cek payment_status = 'partial'
+✅ Catat pembayaran kedua (pelunasan)
+✅ Cek payment_status = 'paid'
+✅ Saldo kas/bank berkurang sesuai pembayaran
+✅ Riwayat pembayaran tercatat
+✅ Gagal bayar melebihi sisa tagihan
+✅ Gagal bayar purchase yang belum received
+
+Test Laporan:
+✅ View laporan mutasi bulan ini
+✅ Filter by custom date range
+✅ Cek summary: saldo awal, masuk, keluar, akhir
+✅ Cek rincian transaksi
+✅ Print laporan
+
+Test Integration:
+✅ Transaksi purchase tercatat di cash_transactions
+✅ Reference_type & reference_id correct
+✅ Saldo update real-time
+✅ Purchase payment_status update otomatis
+
+================================================================================
+15. PERFORMANCE & OPTIMIZATION
+================================================================================
+
+✅ Database Indexing:
+   - cash_accounts: type, is_active
+   - cash_transactions: cash_account_id, type, transaction_date, 
+     [reference_type, reference_id]
+
+✅ Query Optimization:
+   - Eager loading: cashAccount, creator di transactions
+   - Pagination untuk list besar
+   - Filter query di database (bukan di PHP)
+
+✅ Data Integrity:
+   - Foreign key constraints
+   - Cascade delete untuk transactions
+   - Unique constraints untuk code & transaction_number
+
+✅ Transaction Safety:
+   - DB::beginTransaction() di semua operation
+   - Rollback on error
+   - All-or-nothing operations
+
+================================================================================
+16. KEAMANAN
+================================================================================
+
+✅ Validation:
+   - Form Request validation untuk semua input
+   - Type checking (cash/bank, in/out)
+   - Amount validation (min, max)
+   - Date validation
+
+✅ Authorization:
+   - Middleware: auth, role:admin,manager
+   - Hanya admin & manager bisa akses
+   - TODO: Add policy untuk fine-grained access control
+
+✅ Data Protection:
+   - No direct SQL injection (Eloquent)
+   - XSS protection (Blade escaping)
+   - CSRF protection (Laravel default)
+
+✅ Business Rules Enforcement:
+   - Saldo tidak boleh negatif
+   - Tidak bisa hapus akun dengan transaksi
+   - Tidak bisa bayar purchase belum received
+   - Tidak bisa bayar melebihi tagihan
+
+================================================================================
+17. URL APLIKASI
+================================================================================
+
+Kas & Bank:
+http://127.0.0.1:8000/admin/cash-accounts              - List Akun
+http://127.0.0.1:8000/admin/cash-accounts/create       - Tambah Akun
+http://127.0.0.1:8000/admin/cash-accounts/{id}         - Detail Akun
+http://127.0.0.1:8000/admin/cash-accounts/{id}/edit    - Edit Akun
+http://127.0.0.1:8000/admin/cash-accounts/{id}/mutation-report - Laporan Mutasi
+
+Transaksi Kas:
+http://127.0.0.1:8000/admin/cash-transactions          - List Transaksi
+http://127.0.0.1:8000/admin/cash-transactions/create   - Catat Transaksi
+
+Pembayaran Purchase:
+http://127.0.0.1:8000/admin/purchases/{id}             - Detail Purchase
+http://127.0.0.1:8000/admin/purchases/{id}/payment     - Form Pembayaran
+
+================================================================================
+18. CARA PENGGUNAAN
+================================================================================
+
+Setup Awal:
+1. Jalankan migration: php artisan migrate
+2. Jalankan seeder: php artisan db:seed
+   (Atau fresh: php artisan migrate:fresh --seed)
+3. Login sebagai admin (admin@morest.com / password)
+4. Buka menu "Keuangan" → "Kas & Bank"
+
+Skenario 1: Kelola Akun Kas
+1. Klik "Tambah Akun Baru"
+2. Isi: Nama "Kas Kecil", Kode "KAS-KECIL", Jenis "Kas Tunai", Saldo Awal 1000000
+3. Submit → Akun dibuat
+4. View detail → Saldo awal = Saldo saat ini = Rp 1.000.000
+
+Skenario 2: Transaksi Kas Masuk
+1. Dari menu "Transaksi Kas", klik "Catat Transaksi Baru"
+2. Pilih akun "Kas Kecil"
+3. Pilih jenis "Kas Masuk"
+4. Tanggal: hari ini, Jumlah: 500000, Deskripsi: "Setoran dari penjualan"
+5. Submit → Transaksi tercatat
+6. Cek detail akun → Saldo sekarang: Rp 1.500.000
+
+Skenario 3: Pembayaran Purchase
+1. Buat purchase baru (atau gunakan existing)
+2. Receive purchase
+3. Dari detail purchase, klik "Catat Pembayaran"
+4. Pilih akun "Bank BCA"
+5. Jumlah: sesuai total atau partial
+6. Submit → Pembayaran tercatat, saldo bank berkurang
+7. Cek detail purchase → payment_status updated
+
+Skenario 4: Laporan Mutasi
+1. Dari list akun, klik "Mutasi" pada akun yang diinginkan
+2. Pilih date range (misal: bulan ini)
+3. Klik "Tampilkan"
+4. View laporan: saldo awal, transaksi, saldo akhir
+5. Klik "Print" untuk print
+
+================================================================================
+19. KESIMPULAN
+================================================================================
+
+✅ Modul Kas & Bank 100% Selesai:
+   - Database structure ✅
+   - Models dengan relasi ✅
+   - Service Layer (CashAccountService) ✅
+   - Form Request validation ✅
+   - Controllers (CRUD + transactions + reports) ✅
+   - Routes ✅
+   - Views lengkap (8 views) ✅
+   - Sidebar menu updated ✅
+   - Dummy data seeder ✅
+
+✅ Integration dengan Purchase:
+   - Purchase payment tracking ✅
+   - Cash account balance update ✅
+   - Payment status auto update ✅
+   - Transaction reference linking ✅
+
+✅ Fitur Lengkap:
+   - Kelola akun kas & bank ✅
+   - Catat transaksi masuk/keluar ✅
+   - Pembayaran purchase ✅
+   - Laporan mutasi kas ✅
+   - Real-time balance tracking ✅
+   - Audit trail ✅
+
+Status: PRODUCTION READY ✅
+
+================================================================================
+NEXT STEPS (Future Enhancement)
+================================================================================
+
+Priority High:
+1. Implementasi pembayaran penjualan (Sale → Cash Transaction)
+2. Transfer antar akun kas/bank
+3. Rekonsiliasi bank
+4. Export laporan ke Excel/PDF
+5. Dashboard summary kas/bank
+
+Priority Medium:
+1. Cash flow report (laporan arus kas)
+2. Budget vs Actual
+3. Forecast & projection
+4. Multi-currency support
+5. Integration dengan accounting software
+
+Priority Low:
+1. Approval workflow untuk transaksi besar
+2. Mobile app untuk pencatatan kas
+3. Notifikasi saldo rendah
+4. Auto backup data kas
+5. API untuk integration
+
+================================================================================
+
+Developed by: AI Assistant
+Date: 2025-11-07
+Version: 1.0.0
+Project: Morest POS + Back Office
+
+Modul Kas & Bank siap digunakan! 🎉💰
+
+================================================================================
+

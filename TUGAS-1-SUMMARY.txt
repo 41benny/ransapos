@@ -1,0 +1,164 @@
+================================================================================
+TUGAS 1 - FONDASI DATABASE & MODELS
+================================================================================
+Project: Morest POS + Back Office
+Tanggal: 7 November 2025
+Status: ✅ SELESAI
+================================================================================
+
+RINGKASAN
+---------
+Membangun fondasi database lengkap untuk sistem POS dan Back Office dengan
+15 tabel inti, migrations, dan models dengan relasi Eloquent.
+
+================================================================================
+YANG DIKERJAKAN
+================================================================================
+
+1. ERD TEKS - STRUKTUR DATABASE (15 TABEL)
+-------------------------------------------
+
+MASTER DATA:
+✅ roles                    - Role pengguna (admin, manager, kasir)
+✅ outlets                  - Cabang/toko
+✅ users                    - Pengguna sistem (+ role_id, outlet_id)
+✅ product_categories       - Kategori produk
+✅ suppliers                - Supplier
+✅ products                 - Produk (dengan harga & stok minimal)
+
+POS (POINT OF SALE):
+✅ payment_methods          - Metode pembayaran
+✅ cash_sessions            - Shift kasir
+✅ sales                    - Transaksi penjualan
+✅ sale_items               - Detail item penjualan (with snapshot)
+✅ payments                 - Detail pembayaran
+
+INVENTORY:
+✅ stocks                   - Stok per produk per outlet
+✅ stock_mutations          - Audit trail mutasi stok
+✅ purchases                - Pembelian
+✅ purchase_items           - Detail item pembelian
+
+================================================================================
+MIGRATIONS YANG DIBUAT
+================================================================================
+
+database/migrations/
+├── 2025_11_07_012854_create_roles_table.php
+├── 2025_11_07_012858_create_outlets_table.php
+├── 2025_11_07_012903_create_product_categories_table.php
+├── 2025_11_07_012907_create_suppliers_table.php
+├── 2025_11_07_012917_add_role_and_outlet_to_users_table.php
+├── 2025_11_07_012921_create_products_table.php
+├── 2025_11_07_012926_create_payment_methods_table.php
+├── 2025_11_07_012931_create_cash_sessions_table.php
+├── 2025_11_07_012938_create_sales_table.php
+├── 2025_11_07_012944_create_sale_items_table.php
+├── 2025_11_07_012949_create_payments_table.php
+├── 2025_11_07_012954_create_stocks_table.php
+├── 2025_11_07_013000_create_stock_mutations_table.php
+├── 2025_11_07_013005_create_purchases_table.php
+└── 2025_11_07_013010_create_purchase_items_table.php
+
+FITUR MIGRATIONS:
+✅ Foreign key constraints lengkap
+✅ Indexes untuk performa query (sale_date, invoice_number, mutation_date, etc)
+✅ Unique constraints (product_id + outlet_id di stocks)
+✅ Cascade delete untuk detail items
+✅ Enum untuk status & tipe
+✅ Decimal(15,2) untuk uang
+✅ Timestamps lengkap
+
+================================================================================
+MODELS YANG DIBUAT
+================================================================================
+
+app/Models/
+├── Role.php                - hasMany(users)
+├── Outlet.php              - hasMany(users, cashSessions, sales, stocks, etc)
+├── User.php                - belongsTo(role, outlet), hasMany(sales, purchases, etc)
+├── ProductCategory.php     - hasMany(products)
+├── Supplier.php            - hasMany(purchases)
+├── Product.php             - belongsTo(category, creator), hasMany(stocks, mutations, etc)
+├── PaymentMethod.php       - hasMany(payments)
+├── CashSession.php         - belongsTo(outlet, user), hasMany(sales)
+├── Sale.php                - belongsTo(outlet, cashSession, user), hasMany(items, payments)
+├── SaleItem.php            - belongsTo(sale, product)
+├── Payment.php             - belongsTo(sale, paymentMethod)
+├── Stock.php               - belongsTo(product, outlet)
+├── StockMutation.php       - belongsTo(product, outlet, creator)
+├── Purchase.php            - belongsTo(outlet, supplier, creator), hasMany(items)
+└── PurchaseItem.php        - belongsTo(purchase, product)
+
+FITUR MODELS:
+✅ Fillable attributes lengkap
+✅ Type casting (decimal, boolean, datetime)
+✅ Relasi belongsTo dan hasMany dengan type hints
+✅ Consistent naming convention
+
+================================================================================
+KEUNGGULAN ARSITEKTUR
+================================================================================
+
+✅ Multi-Outlet Ready         - Semua data terisolasi per outlet
+✅ Audit Trail Lengkap        - Stock mutations tracking semua perubahan
+✅ Data Integrity             - Foreign keys dengan restrict/cascade
+✅ Snapshot Pattern           - Sale items menyimpan nama & sku produk
+✅ Scalable                   - Mudah tambah kolom/tabel
+✅ Performance Ready          - Index pada kolom yang sering di-query
+✅ Normalized Database        - Struktur normalized seperlunya
+
+================================================================================
+HASIL EKSEKUSI
+================================================================================
+
+✅ 15 migrations berhasil dijalankan
+✅ Database SQLite terbentuk di: database/database.sqlite
+✅ Semua tabel siap digunakan dengan relasi lengkap
+
+Command yang dijalankan:
+> php artisan migrate
+
+Output:
+  2025_11_07_012854_create_roles_table ........................... DONE
+  2025_11_07_012858_create_outlets_table ......................... DONE
+  2025_11_07_012903_create_product_categories_table .............. DONE
+  2025_11_07_012907_create_suppliers_table ....................... DONE
+  2025_11_07_012917_add_role_and_outlet_to_users_table ........... DONE
+  2025_11_07_012921_create_products_table ........................ DONE
+  2025_11_07_012926_create_payment_methods_table ................. DONE
+  2025_11_07_012931_create_cash_sessions_table ................... DONE
+  2025_11_07_012938_create_sales_table ........................... DONE
+  2025_11_07_012944_create_sale_items_table ...................... DONE
+  2025_11_07_012949_create_payments_table ........................ DONE
+  2025_11_07_012954_create_stocks_table .......................... DONE
+  2025_11_07_013000_create_stock_mutations_table ................. DONE
+  2025_11_07_013005_create_purchases_table ....................... DONE
+  2025_11_07_013010_create_purchase_items_table .................. DONE
+
+================================================================================
+VERIFIKASI
+================================================================================
+
+Untuk melihat struktur database:
+> php artisan db:show
+> php artisan db:table [nama_tabel]
+
+Untuk rollback (jika perlu):
+> php artisan migrate:rollback
+
+Untuk fresh migration:
+> php artisan migrate:fresh
+
+================================================================================
+NEXT STEPS (TUGAS 2)
+================================================================================
+
+Setelah fondasi database selesai, lanjut ke:
+- Routing & Controller
+- Layout Blade (Admin & POS)
+- Dashboard & List Views
+- UI/UX dengan Tailwind CSS
+
+================================================================================
+
