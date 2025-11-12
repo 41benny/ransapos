@@ -44,6 +44,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     
     // COA (Chart of Accounts)
     Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class);
+
+    // Bill of Materials (BOM) - sederhana
+    Route::resource('boms', \App\Http\Controllers\Admin\BomController::class);
     
     // Cash Sessions (History)
     Route::get('/cash-sessions', [\App\Http\Controllers\Admin\CashSessionController::class, 'index'])->name('cash-sessions.index');

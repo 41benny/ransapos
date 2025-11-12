@@ -146,6 +146,98 @@
         </div>
     </div>
 
+    <!-- Payment Status & History -->
+    @if($purchase->isReceived())
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Status Pembayaran</h3>
+                <p class="text-sm text-gray-500 mt-1">Informasi pembayaran purchase</p>
+            </div>
+            <div>
+                @if($purchase->payment_status === 'paid')
+                    <span class="px-4 py-2 text-sm font-medium bg-green-100 text-green-800 rounded-full">Lunas</span>
+                @elseif($purchase->payment_status === 'partial')
+                    <span class="px-4 py-2 text-sm font-medium bg-yellow-100 text-yellow-800 rounded-full">Dibayar Sebagian</span>
+                @else
+                    <span class="px-4 py-2 text-sm font-medium bg-red-100 text-red-800 rounded-full">Belum Dibayar</span>
+                @endif
+            </div>
+        </div>
+
+        <div class="p-6">
+            <!-- Payment Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Total Purchase</p>
+                    <p class="text-xl font-bold text-gray-900">Rp {{ number_format($purchase->total_amount, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Sudah Dibayar</p>
+                    <p class="text-xl font-bold text-green-600">Rp {{ number_format($totalPaid, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Sisa Tagihan</p>
+                    <p class="text-xl font-bold text-red-600">Rp {{ number_format($remaining, 0, ',', '.') }}</p>
+                </div>
+            </div>
+
+            <!-- Payment History -->
+            @if($purchase->cashTransactions && $purchase->cashTransactions->count() > 0)
+            <div>
+                <h4 class="text-sm font-semibold text-gray-900 mb-3">Riwayat Pembayaran</h4>
+                <div class="space-y-2">
+                    @foreach($purchase->cashTransactions as $payment)
+                    <div class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $payment->transaction_number }}</p>
+                                <p class="text-xs text-gray-500">
+                                    {{ $payment->transaction_date->format('d M Y') }} • 
+                                    {{ $payment->cashAccount->name }}
+                                </p>
+                                @if($payment->notes)
+                                    <p class="text-xs text-gray-400 mt-1">{{ $payment->notes }}</p>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold text-gray-900">Rp {{ number_format($payment->amount, 0, ',', '.') }}</p>
+                            <p class="text-xs text-gray-500">{{ $payment->creator->name ?? '-' }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @else
+            <div class="text-center py-8">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <p class="mt-2 text-sm text-gray-500">Belum ada pembayaran</p>
+            </div>
+            @endif
+
+            <!-- Payment Action Button -->
+            @if($remaining > 0)
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <a href="{{ route('admin.purchases.payment', $purchase) }}" class="w-full inline-flex justify-center items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Catat Pembayaran
+                </a>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Notes -->
     @if($purchase->notes)
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

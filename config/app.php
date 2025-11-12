@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Stock Management Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This value determines whether the system allows negative stock levels
+    | when processing sales and stock mutations. Set to true to allow
+    | negative inventory, false to prevent it (default behavior).
+    |
+    */
+
+    'allow_negative_stock' => env('ALLOW_NEGATIVE_STOCK', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

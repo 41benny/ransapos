@@ -59,7 +59,8 @@ class SaleService
                 'invoice_number' => $invoiceNumber,
                 'outlet_id' => $data['outlet_id'],
                 'cash_session_id' => $data['cash_session_id'],
-                'user_id' => auth()->id() ?? $data['user_id'] ?? null,
+                // Gunakan auth()->id() (helper standar Laravel) jika tersedia
+                'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $data['user_id'] ?? null,
                 'sale_date' => now()->toDateString(),
                 'subtotal' => $subtotal,
                 'discount_type' => $data['discount_type'],
@@ -72,16 +73,15 @@ class SaleService
                 'status' => 'completed',
             ]);
 
-            // 6. Buat sale items & kurangi stok
+            // 6. Buat sale items & logika BOM / pengurangan stok
             foreach ($data['items'] as $item) {
-                // Ambil data produk untuk snapshot
-                $product = Product::findOrFail($item['product_id']);
+                $product = Product::with(['bomHeader' => function($q){ $q->where('is_active', true)->with('details.component'); }])->findOrFail($item['product_id']);
 
-                // Hitung subtotal item
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-                $itemSubtotal -= $item['discount_amount'] ?? 0;
+                $itemSubtotal = ($item['quantity'] * $item['unit_price']) - ($item['discount_amount'] ?? 0);
+                
+                // Hitung COGS per item
+                $itemCogs = $this->calculateItemCogs($product, $item['quantity']);
 
-                // Simpan sale item
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
@@ -91,16 +91,60 @@ class SaleService
                     'unit_price' => $item['unit_price'],
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'subtotal' => $itemSubtotal,
+                    'cogs' => $itemCogs,
                 ]);
 
-                // Kurangi stok
-                $this->stockService->reduceSaleStock(
-                    productId: $product->id,
-                    outletId: $data['outlet_id'],
-                    quantity: $item['quantity'],
-                    saleId: $sale->id,
-                    userId: $sale->user_id
-                );
+                // Penentuan tipe produk
+                $type = $product->product_type ?? 'finished_good';
+
+                if ($type === 'raw_material') {
+                    // Perilaku lama: kurangi stok produk langsung
+                    $this->stockService->reduceSaleStock(
+                        productId: $product->id,
+                        outletId: $data['outlet_id'],
+                        quantity: $item['quantity'],
+                        saleId: $sale->id,
+                        userId: $sale->user_id
+                    );
+                } elseif ($type === 'finished_good') {
+                    // Cek BOM aktif
+                    $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
+                    if ($bom) {
+                        // Validasi stok komponen BOM (kecuali jika allow negative stock)
+                        $allowNegativeStock = config('app.allow_negative_stock', false);
+                        if (!$allowNegativeStock) {
+                            foreach ($bom->details as $detail) {
+                                $consumeQty = $detail->quantity * $item['quantity'];
+                                $available = $this->stockService->getAvailableStock($detail->component_product_id, $data['outlet_id']);
+                                if ($available < $consumeQty) {
+                                    throw new Exception("Stok bahan {$detail->component->name} tidak mencukupi. Dibutuhkan: {$consumeQty}, tersedia: {$available}");
+                                }
+                            }
+                        }
+                        // Jika semua cukup, lakukan pengurangan stok per komponen
+                        foreach ($bom->details as $detail) {
+                            $consumeQty = $detail->quantity * $item['quantity'];
+                            $this->stockService->reduceSaleStock(
+                                productId: $detail->component_product_id,
+                                outletId: $data['outlet_id'],
+                                quantity: $consumeQty,
+                                saleId: $sale->id,
+                                userId: $sale->user_id
+                            );
+                        }
+                    } else {
+                        // Fallback: produk tidak punya BOM aktif => kurangi stok produk jadi
+                        $this->stockService->reduceSaleStock(
+                            productId: $product->id,
+                            outletId: $data['outlet_id'],
+                            quantity: $item['quantity'],
+                            saleId: $sale->id,
+                            userId: $sale->user_id
+                        );
+                    }
+                } elseif ($type === 'service') {
+                    // Tidak mengurangi stok
+                }
             }
 
             // 7. Catat pembayaran
@@ -229,7 +273,7 @@ class SaleService
                         'reference_id' => $sale->id,
                         'mutation_date' => now()->toDateString(),
                         'notes' => "Pembatalan transaksi: {$reason}",
-                        'created_by' => auth()->id(),
+                        'created_by' => \Illuminate\Support\Facades\Auth::id(),
                     ]);
                 }
             }
@@ -262,6 +306,43 @@ class SaleService
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Hitung COGS (Cost of Goods Sold) per item berdasarkan BOM atau purchase_price
+     *
+     * @param Product $product
+     * @param float $quantity
+     * @return float
+     */
+    protected function calculateItemCogs(Product $product, float $quantity): float
+    {
+        $type = $product->product_type ?? 'finished_good';
+
+        if ($type === 'service') {
+            return 0; // Service tidak ada COGS
+        }
+
+        if ($type === 'raw_material') {
+            // Raw material: COGS = purchase_price × quantity
+            return ($product->purchase_price ?? 0) * $quantity;
+        }
+
+        // finished_good: Cek ada BOM aktif atau tidak
+        $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
+        
+        if ($bom) {
+            // Ada BOM: COGS = sum(component.purchase_price × bom_detail.quantity × sale_quantity)
+            $totalCogs = 0;
+            foreach ($bom->details as $detail) {
+                $componentCost = ($detail->component->purchase_price ?? 0) * $detail->quantity * $quantity;
+                $totalCogs += $componentCost;
+            }
+            return $totalCogs;
+        } else {
+            // Tidak ada BOM: COGS = purchase_price × quantity (fallback)
+            return ($product->purchase_price ?? 0) * $quantity;
         }
     }
 }

@@ -27,7 +27,7 @@ class ProfitLossReportService
             $revenueQuery->where('outlet_id', $outletId);
         }
         
-        $totalRevenue = $revenueQuery->sum('grand_total');
+        $totalRevenue = $revenueQuery->sum('total_amount');
 
         // 2. HPP / COGS (Cost of Goods Sold from Stock Mutations)
         $cogsQuery = StockMutation::where('mutation_type', 'out')

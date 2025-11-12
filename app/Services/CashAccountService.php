@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use App\Models\Purchase;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class CashAccountService
 {
@@ -26,10 +26,11 @@ class CashAccountService
             $account = CashAccount::create($data);
 
             DB::commit();
+
             return $account->fresh(['creator']);
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("Gagal membuat akun kas/bank: " . $e->getMessage());
+            throw new Exception('Gagal membuat akun kas/bank: '.$e->getMessage());
         }
     }
 
@@ -48,25 +49,26 @@ class CashAccountService
             $account->update($data);
 
             DB::commit();
+
             return $account->fresh(['creator']);
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("Gagal update akun kas/bank: " . $e->getMessage());
+            throw new Exception('Gagal update akun kas/bank: '.$e->getMessage());
         }
     }
 
     /**
      * Generate transaction number
-     * Format: CT-{account_code}-{date}-{seq}
-     * Contoh: CT-KAS001-20251107-001
+     * Format: KAS-{account_code}-{date}-{seq}
+     * Contoh: KAS-BCA-20251108-001
      */
     public function generateTransactionNumber(string $accountCode): string
     {
         $date = now()->format('Ymd');
-        $prefix = "CT-{$accountCode}-{$date}-";
+        $prefix = "KAS-{$accountCode}-{$date}-";
 
-        // Cari nomor terakhir hari ini
-        $lastTransaction = CashTransaction::where('transaction_number', 'like', $prefix . '%')
+        // Cari nomor terakhir hari ini untuk akun ini
+        $lastTransaction = CashTransaction::where('transaction_number', 'like', $prefix.'%')
             ->orderBy('transaction_number', 'desc')
             ->first();
 
@@ -78,7 +80,7 @@ class CashAccountService
             $newNumber = 1;
         }
 
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -93,7 +95,7 @@ class CashAccountService
 
             // Validasi: Transaksi keluar harus ada COA (akun biaya)
             if ($data['type'] === 'out' && empty($data['coa_account_id'])) {
-                throw new Exception("Transaksi kas keluar harus memilih akun biaya (COA)");
+                throw new Exception('Transaksi kas keluar harus memilih akun biaya (COA)');
             }
 
             // Generate transaction number
@@ -111,7 +113,7 @@ class CashAccountService
 
             // Validasi saldo tidak boleh negatif
             if ($data['balance_after'] < 0) {
-                throw new Exception("Saldo tidak mencukupi. Saldo saat ini: " . number_format($account->current_balance, 0, ',', '.'));
+                throw new Exception('Saldo tidak mencukupi. Saldo saat ini: '.number_format($account->current_balance, 0, ',', '.'));
             }
 
             // Create transaction
@@ -119,14 +121,15 @@ class CashAccountService
 
             // Update current balance di account
             $account->update([
-                'current_balance' => $data['balance_after']
+                'current_balance' => $data['balance_after'],
             ]);
 
             DB::commit();
+
             return $transaction->fresh(['cashAccount', 'creator', 'coaAccount']);
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("Gagal catat transaksi: " . $e->getMessage());
+            throw new Exception('Gagal catat transaksi: '.$e->getMessage());
         }
     }
 
@@ -139,8 +142,8 @@ class CashAccountService
             DB::beginTransaction();
 
             // Validasi purchase harus sudah received
-            if (!$purchase->isReceived()) {
-                throw new Exception("Purchase harus sudah diterima sebelum bisa dibayar");
+            if (! $purchase->isReceived()) {
+                throw new Exception('Purchase harus sudah diterima sebelum bisa dibayar');
             }
 
             // Hitung sisa yang harus dibayar
@@ -148,12 +151,21 @@ class CashAccountService
             $remaining = $purchase->total_amount - $totalPaid;
 
             if ($data['amount'] > $remaining) {
-                throw new Exception("Jumlah pembayaran melebihi sisa tagihan. Sisa: " . number_format($remaining, 0, ',', '.'));
+                throw new Exception('Jumlah pembayaran melebihi sisa tagihan. Sisa: '.number_format($remaining, 0, ',', '.'));
+            }
+
+            // Get COA Account untuk HPP (Harga Pokok Penjualan)
+            // Jika tidak ada COA yang dipilih, gunakan COA HPP sebagai default
+            $coaAccountId = $data['coa_account_id'] ?? \App\Models\CoaAccount::where('group', 'HPP')->where('is_active', true)->first()?->id;
+
+            if (! $coaAccountId) {
+                throw new Exception('COA Account untuk HPP tidak ditemukan. Pastikan akun COA untuk HPP sudah dibuat.');
             }
 
             // Create transaction dengan reference ke purchase
             $transaction = $this->recordTransaction([
                 'cash_account_id' => $data['cash_account_id'],
+                'coa_account_id' => $coaAccountId,
                 'type' => 'out',
                 'transaction_date' => $data['transaction_date'] ?? now()->format('Y-m-d'),
                 'amount' => $data['amount'],
@@ -166,7 +178,7 @@ class CashAccountService
 
             // Update payment_status di purchase
             $totalPaidNow = $totalPaid + $data['amount'];
-            
+
             if ($totalPaidNow >= $purchase->total_amount) {
                 $purchase->update(['payment_status' => 'paid']);
             } elseif ($totalPaidNow > 0) {
@@ -174,10 +186,11 @@ class CashAccountService
             }
 
             DB::commit();
-            return $transaction->fresh(['cashAccount', 'creator']);
+
+            return $transaction->fresh(['cashAccount', 'creator', 'coaAccount']);
         } catch (Exception $e) {
             DB::rollBack();
-            throw new Exception("Gagal catat pembayaran purchase: " . $e->getMessage());
+            throw new Exception('Gagal catat pembayaran purchase: '.$e->getMessage());
         }
     }
 
@@ -191,25 +204,25 @@ class CashAccountService
             ->orderBy('created_at', 'desc');
 
         // Filter by cash account
-        if (!empty($filters['cash_account_id'])) {
+        if (! empty($filters['cash_account_id'])) {
             $query->where('cash_account_id', $filters['cash_account_id']);
         }
 
         // Filter by type
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
         // Filter by date range
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->where('transaction_date', '>=', $filters['date_from']);
         }
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->where('transaction_date', '<=', $filters['date_to']);
         }
 
         // Filter by reference type
-        if (!empty($filters['reference_type'])) {
+        if (! empty($filters['reference_type'])) {
             $query->where('reference_type', $filters['reference_type']);
         }
 
@@ -224,10 +237,10 @@ class CashAccountService
         $account = CashAccount::with(['creator'])->findOrFail($cashAccountId);
 
         // Default date range: bulan ini
-        if (!$dateFrom) {
+        if (! $dateFrom) {
             $dateFrom = now()->startOfMonth()->format('Y-m-d');
         }
-        if (!$dateTo) {
+        if (! $dateTo) {
             $dateTo = now()->endOfMonth()->format('Y-m-d');
         }
 
@@ -276,4 +289,3 @@ class CashAccountService
         ];
     }
 }
-

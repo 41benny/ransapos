@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'sku',
         'name',
+        'product_type',
         'category_id',
         'description',
         'unit',
@@ -74,5 +78,13 @@ class Product extends Model
     public function purchaseItems(): HasMany
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    /**
+     * Relasi ke BOM header (aktif maupun tidak)
+     */
+    public function bomHeader(): 
+    \Illuminate\Database\Eloquent\Relations\HasOne {
+        return $this->hasOne(BomHeader::class, 'product_id');
     }
 }

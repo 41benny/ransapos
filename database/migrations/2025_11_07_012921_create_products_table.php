@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained('product_categories')->onDelete('restrict');
             $table->text('description')->nullable();
             $table->string('unit', 50)->comment('pcs, kg, liter, dll');
+            $table->enum('product_type', ['raw_material','finished_good','service'])->default('finished_good');
             $table->decimal('purchase_price', 15, 2)->default(0);
             $table->decimal('selling_price', 15, 2);
             $table->integer('min_stock')->default(0);

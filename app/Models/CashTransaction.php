@@ -63,11 +63,11 @@ class CashTransaction extends Model
         if ($this->reference_type === 'purchase') {
             return $this->belongsTo(Purchase::class, 'reference_id');
         }
-        
+
         if ($this->reference_type === 'sale') {
             return $this->belongsTo(Sale::class, 'reference_id');
         }
-        
+
         return null;
     }
 

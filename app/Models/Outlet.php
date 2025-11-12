@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Outlet extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'code',
         'name',
@@ -66,5 +69,21 @@ class Outlet extends Model
     public function purchases(): HasMany
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    /**
+     * Scope: Hanya outlet aktif
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Helper: Cek apakah outlet aktif
+     */
+    public function isActive(): bool
+    {
+        return $this->is_active;
     }
 }

@@ -43,8 +43,9 @@ class StockService
                 ]
             );
 
-            // Cek apakah stok mencukupi
-            if ($stock->quantity < $quantity) {
+            // Cek apakah stok mencukupi (kecuali jika allow negative stock)
+            $allowNegativeStock = config('app.allow_negative_stock', false);
+            if (!$allowNegativeStock && $stock->quantity < $quantity) {
                 $product = Product::find($productId);
                 throw new Exception("Stok {$product->name} tidak mencukupi. Tersedia: {$stock->quantity}");
             }
