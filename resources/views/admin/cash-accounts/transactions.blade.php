@@ -10,8 +10,8 @@
             <h1 class="text-2xl font-bold text-gray-900">Transaksi Kas & Bank</h1>
             <p class="text-gray-600 mt-1">Daftar semua transaksi kas masuk dan keluar</p>
         </div>
-        <a href="{{ route('admin.cash-transactions.create') }}" 
-           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+          <a href="{{ route('admin.cash-transactions.create') }}"
+              class="imperial-btn flex items-center space-x-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -49,8 +49,8 @@
                 <!-- Dari Tanggal -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-                    <input type="date" 
-                           name="date_from" 
+                    <input type="date"
+                           name="date_from"
                            value="{{ request('date_from') }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
@@ -58,16 +58,16 @@
                 <!-- Sampai Tanggal -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
-                    <input type="date" 
-                           name="date_to" 
+                    <input type="date"
+                           name="date_to"
                            value="{{ request('date_to') }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
 
                 <!-- Button -->
                 <div class="flex items-end">
-                    <button type="submit" 
-                            class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                        <button type="submit"
+                            class="imperial-btn w-full">
                         Filter
                     </button>
                 </div>
@@ -83,11 +83,11 @@
     @endif
 
     <!-- Transactions List -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="t6-card shadow overflow-hidden">
         @if($transactions->count() > 0)
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="imperial-table min-w-full">
+                    <thead class="">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
@@ -98,9 +98,9 @@
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="">
                         @foreach($transactions as $transaction)
-                            <tr class="hover:bg-gray-50">
+                            <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {{ $transaction->transaction_number }}
                                 </td>

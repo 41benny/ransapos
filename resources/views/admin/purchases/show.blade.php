@@ -85,7 +85,7 @@
             <h3 class="text-lg font-semibold text-gray-900">Item Pembelian</h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full">
+            <table class="imperial-table w-full">
                 <thead class="bg-gray-50 border-b">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
@@ -198,7 +198,7 @@
                             <div>
                                 <p class="text-sm font-medium text-gray-900">{{ $payment->transaction_number }}</p>
                                 <p class="text-xs text-gray-500">
-                                    {{ $payment->transaction_date->format('d M Y') }} • 
+                                    {{ $payment->transaction_date->format('d M Y') }} •
                                     {{ $payment->cashAccount->name }}
                                 </p>
                                 @if($payment->notes)

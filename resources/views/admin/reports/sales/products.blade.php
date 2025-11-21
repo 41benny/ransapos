@@ -6,11 +6,11 @@
 
 @section('content')
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
         <form method="GET" action="{{ route('admin.reports.sales.products') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            
+
             <!-- Date From -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
@@ -97,7 +97,7 @@
 
     <!-- Products Table -->
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">No</th>

@@ -5,16 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'POS') - Morest POS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-900 text-white">
     
-    <!-- Top Navigation (Minimal) -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-3">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .latte-gradient {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fdba74 100%);
+        }
+        .main-gradient {
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fffbeb 100%);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    
+    <!-- Top Navigation (Latte Theme) -->
+    <header class="latte-gradient px-6 py-3 shadow-lg">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <h1 class="text-xl font-bold text-white">Morest POS</h1>
-                <span class="text-gray-400">|</span>
-                <span class="text-sm text-gray-300">@yield('page-title', 'Point of Sale')</span>
+                <h1 class="text-xl font-bold text-white">POS Latte</h1>
+                <span class="text-white opacity-70">|</span>
+                <span class="text-sm text-white opacity-90">@yield('page-title', 'Point of Sale')</span>
             </div>
             
             <div class="flex items-center space-x-4">

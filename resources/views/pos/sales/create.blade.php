@@ -4,10 +4,10 @@
 @section('page-title', 'Transaksi Baru')
 
 @section('content')
-<div class="h-full flex" id="posApp">
+<div class="h-full flex flex-col md:flex-row" id="posApp">
     
     <!-- Left: Product Selection -->
-    <div class="flex-1 bg-gray-800 p-6 overflow-y-auto">
+    <div class="flex-1 bg-gray-800 p-4 md:p-6 overflow-y-auto">
         
         <!-- Alert jika tidak ada session aktif -->
         @if(!$activeSession)
@@ -66,13 +66,52 @@
         </div>
     </div>
 
-    <!-- Right: Cart & Payment -->
-    <div class="w-[420px] bg-gray-900 flex flex-col border-l border-gray-700">
+    <!-- Right: Cart, Customer & Payment -->
+    <div class="w-full md:w-[420px] bg-gray-900 flex flex-col border-t md:border-t-0 md:border-l border-gray-700">
         
         <!-- Cart Header -->
-        <div class="p-6 border-b border-gray-700">
-            <h3 class="text-xl font-semibold text-white">Keranjang</h3>
-            <p class="text-sm text-gray-400 mt-1">@{{ cart.length }} item</p>
+        <div class="p-6 border-b border-gray-700 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-xl font-semibold text-white flex items-center gap-2">
+                        <span>Keranjang</span>
+                        <span v-if="hasAnyNotes"
+                              class="inline-flex items-center rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-semibold px-2 py-0.5">
+                            Catatan
+                        </span>
+                    </h3>
+                    <p class="text-sm text-gray-400 mt-1">@{{ cart.length }} item</p>
+                </div>
+            </div>
+
+            <!-- Customer Selection -->
+            <div class="space-y-2">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Customer</label>
+                    <select v-model="selectedCustomerId"
+                            class="w-full px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-indigo-500 focus:outline-none text-sm">
+                        <option value="">Walk-in / Umum</option>
+                        <option v-for="customer in customers"
+                                :key="customer.id"
+                                :value="customer.id">
+                            @{{ customer.name }} (@{{ customer.phone || customer.customer_code }})
+                        </option>
+                    </select>
+                </div>
+                <div v-if="selectedCustomer" class="text-xs text-indigo-300">
+                    <span>Poin: @{{ formatNumber(selectedCustomer.loyalty_points || 0) }}</span>
+                    <span v-if="selectedCustomer.member_tier" class="ml-2">
+                        • Tier: @{{ selectedCustomer.member_tier }}
+                    </span>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nama Pelanggan (opsional)</label>
+                    <input type="text"
+                           v-model="customerName"
+                           placeholder="Isi untuk walk-in customer"
+                           class="w-full px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-indigo-500 focus:outline-none text-sm">
+                </div>
+            </div>
         </div>
 
         <!-- Cart Items -->
@@ -89,18 +128,27 @@
             <!-- Cart Items List -->
             <div v-else class="space-y-3">
                 <div v-for="(item, index) in cart" :key="index" 
-                     class="bg-gray-800 rounded-lg p-4">
-                    <div class="flex justify-between items-start mb-2">
+                     class="bg-gray-800 rounded-lg p-4 space-y-2">
+                    <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h4 class="text-sm font-medium text-white mb-1" v-text="item.name"></h4>
                             <p class="text-xs text-gray-400" v-text="item.sku"></p>
+                            <p v-if="item.notes" class="text-xs text-amber-300 mt-1">
+                                @{{ item.notes }}
+                            </p>
                         </div>
-                        <button @click="removeFromCart(index)" 
-                                class="text-red-400 hover:text-red-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
+                        <div class="flex flex-col items-end gap-1">
+                            <button @click="removeFromCart(index)" 
+                                    class="text-red-400 hover:text-red-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                            <button @click="editItemNotes(index)"
+                                    class="text-[10px] text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline">
+                                Catatan
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex items-center justify-between">
@@ -147,6 +195,15 @@
                 </div>
             </div>
 
+            <!-- Order Notes / Special Requests -->
+            <div class="mb-4">
+                <label class="block text-sm text-gray-300 mb-2">Catatan Pesanan (opsional)</label>
+                <textarea v-model="orderNotes"
+                          rows="2"
+                          placeholder="Contoh: Nasi goreng pedas sedang, minuman less ice, tanpa saos..."
+                          class="w-full px-3 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-indigo-500 focus:outline-none text-sm resize-none"></textarea>
+            </div>
+
             <!-- Payment Method -->
             <div v-if="cart.length > 0" class="mb-4">
                 <label class="block text-sm text-gray-300 mb-2">Metode Pembayaran</label>
@@ -178,6 +235,7 @@ createApp({
     data() {
         return {
             products: @json($categories->flatMap->products),
+            customers: @json($customers),
             cart: [],
             searchQuery: '',
             selectedCategory: null,
@@ -188,9 +246,25 @@ createApp({
             isProcessing: false,
             outletId: {{ $activeSession->outlet_id ?? 'null' }},
             cashSessionId: {{ $activeSession->id ?? 'null' }},
+            selectedCustomerId: '',
+            customerName: '',
+            orderNotes: '',
         }
     },
     computed: {
+        hasAnyNotes() {
+            if (this.orderNotes && this.orderNotes.trim().length > 0) {
+                return true;
+            }
+            return this.cart.some(item => item.notes && item.notes.trim().length > 0);
+        },
+        selectedCustomer() {
+            if (!this.selectedCustomerId) {
+                return null;
+            }
+            const id = Number(this.selectedCustomerId);
+            return this.customers.find(c => c.id === id) || null;
+        },
         subtotal() {
             return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
         },
@@ -243,7 +317,8 @@ createApp({
                     quantity: 1,
                     unit_price: product.selling_price,
                     discount_amount: 0,
-                    subtotal: product.selling_price
+                    subtotal: product.selling_price,
+                    notes: ''
                 });
             }
         },
@@ -264,6 +339,13 @@ createApp({
             const item = this.cart[index];
             item.subtotal = (item.quantity * item.unit_price) - item.discount_amount;
         },
+        editItemNotes(index) {
+            const current = this.cart[index].notes || '';
+            const updated = prompt('Catatan untuk item ini:', current);
+            if (updated !== null) {
+                this.cart[index].notes = updated.substring(0, 255);
+            }
+        },
         formatNumber(number) {
             return new Intl.NumberFormat('id-ID').format(number);
         },
@@ -282,8 +364,9 @@ createApp({
             const data = {
                 outlet_id: this.outletId,
                 cash_session_id: this.cashSessionId,
-                customer_name: null,
-                notes: null,
+                customer_id: this.selectedCustomerId ? Number(this.selectedCustomerId) : null,
+                customer_name: this.customerName || (this.selectedCustomer ? this.selectedCustomer.name : null),
+                notes: this.orderNotes || null,
                 discount_type: this.discountType,
                 discount_value: this.discountValue,
                 items: this.cart.map(item => ({

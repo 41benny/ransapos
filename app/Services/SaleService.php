@@ -7,6 +7,7 @@ use App\Models\SaleItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\CashSession;
+use App\Models\Customer;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -61,6 +62,7 @@ class SaleService
                 'cash_session_id' => $data['cash_session_id'],
                 // Gunakan auth()->id() (helper standar Laravel) jika tersedia
                 'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $data['user_id'] ?? null,
+                'customer_id' => $data['customer_id'] ?? null,
                 'sale_date' => now()->toDateString(),
                 'subtotal' => $subtotal,
                 'discount_type' => $data['discount_type'],
@@ -92,6 +94,7 @@ class SaleService
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'subtotal' => $itemSubtotal,
                     'cogs' => $itemCogs,
+                    'notes' => $item['notes'] ?? null,
                 ]);
 
                 // Penentuan tipe produk
@@ -159,9 +162,24 @@ class SaleService
             // 8. Update cash session
             $this->updateCashSession($data['cash_session_id'], $totalAmount, $data['payment_method_id']);
 
+            // 9. Loyalty points & customer stats (jika ada customer)
+            if (!empty($data['customer_id'])) {
+                /** @var Customer|null $customer */
+                $customer = $sale->customer()->first();
+                if ($customer) {
+                    $pointsEarned = (int) floor($totalAmount * 0.01); // 1 point per Rp 100
+
+                    $sale->loyalty_points_earned = $pointsEarned;
+                    $sale->save();
+
+                    $customer->addPoints($pointsEarned);
+                    $customer->updateStats((float) $totalAmount);
+                }
+            }
+
             DB::commit();
 
-            return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user']);
+            return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
 
         } catch (Exception $e) {
             DB::rollBack();

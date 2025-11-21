@@ -6,6 +6,19 @@
 @section('content')
 <div class="h-full p-6">
     
+    <div class="flex items-center justify-end mb-4">
+        @if(auth()->user()->hasRole(['admin', 'manager', 'kitchen']))
+        <a href="{{ route('pos.kitchen.index') }}"
+           class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg text-white flex items-center gap-2 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8c.917-1.833 2.75-3 5-3a4 4 0 010 8h-1m-4-5c-.917-1.833-2.75-3-5-3a4 4 0 000 8h1m3 5v-6" />
+            </svg>
+            <span>Kitchen Display</span>
+        </a>
+        @endif
+    </div>
+    
     @if($activeSession)
     <!-- Active Session Info -->
     <div class="bg-green-800 rounded-lg p-6 mb-6">

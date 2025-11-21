@@ -4,114 +4,119 @@
 @section('page-title', 'Daftar Produk')
 @section('page-subtitle', 'Kelola semua produk yang tersedia')
 
+@section('breadcrumb')
+    <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+    <span class="text-violet-600 font-medium">Produk</span>
+@endsection
+
+@section('header-actions')
+    <a href="{{ route('admin.products.create') }}" class="imperial-btn imperial-btn-sm">
+        <i class="fas fa-plus"></i>
+        <span>Tambah Produk</span>
+    </a>
+@endsection
+
 @section('content')
 
 <!-- Alert Success/Error -->
 @if(session('success'))
-<div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center">
-    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    {{ session('success') }}
+<div class="alert alert-success">
+    <i class="fas fa-check-circle text-lg"></i>
+    <span>{{ session('success') }}</span>
 </div>
 @endif
 
 @if(session('error'))
-<div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center">
-    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    {{ session('error') }}
+<div class="alert alert-error">
+    <i class="fas fa-exclamation-circle text-lg"></i>
+    <span>{{ session('error') }}</span>
 </div>
 @endif
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+<div class="page-fullwidth">
+<div class="card-premium page-card-fill">
+
     <!-- Header -->
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900">Semua Produk</h3>
-                <p class="text-sm text-gray-500 mt-1">Total: {{ $products->total() }} produk</p>
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-box text-violet-500"></i>
+                    Semua Produk
+                </h3>
+                <p class="text-sm text-gray-500 mt-1">Total: <span class="font-semibold text-violet-600">{{ $products->total() }}</span> produk</p>
             </div>
-            <a href="{{ route('admin.products.create') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                Tambah Produk
-            </a>
         </div>
     </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-100">
+        <table class="table-premium">
+            <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">SKU</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama Produk</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kategori</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Harga Jual</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Satuan</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+                    <th>SKU</th>
+                    <th>Nama Produk</th>
+                    <th>Kategori</th>
+                    <th>Harga Jual</th>
+                    <th>Satuan</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($products as $product)
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-mono text-gray-900">{{ $product->sku }}</span>
+                <tr>
+                    <td>
+                        <span class="font-mono font-semibold">{{ $product->sku }}</span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ $product->name }}</p>
+                            <p class="font-semibold text-gray-900">{{ $product->name }}</p>
                             @if($product->description)
                                 <p class="text-xs text-gray-500 mt-1">{{ Str::limit($product->description, 50) }}</p>
                             @endif
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-600">{{ $product->category->name ?? '-' }}</span>
+                    <td>
+                        <span class="badge badge-gray">
+                            <i class="fas fa-tag text-xs"></i>
+                            {{ $product->category->name ?? '-' }}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm font-semibold text-gray-900">Rp {{ number_format($product->selling_price, 0, ',', '.') }}</span>
+                    <td>
+                        <span class="font-bold text-gray-900">Rp {{ number_format($product->selling_price, 0, ',', '.') }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-600">{{ $product->unit }}</span>
+                    <td>
+                        <span>{{ $product->unit }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td>
                         @if($product->is_active)
-                            <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Aktif</span>
+                            <span class="badge badge-success">
+                                <i class="fas fa-check-circle"></i>
+                                Aktif
+                            </span>
                         @else
-                            <span class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Nonaktif</span>
+                            <span class="badge badge-gray">
+                                <i class="fas fa-times-circle"></i>
+                                Nonaktif
+                            </span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center space-x-2">
-                            <!-- Detail -->
-                            <a href="{{ route('admin.products.show', $product) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Detail">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('admin.products.show', $product) }}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Detail">
+                                <i class="fas fa-eye"></i>
                             </a>
-                            
-                            <!-- Edit -->
-                            <a href="{{ route('admin.products.edit', $product) }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
+
+                            <a href="{{ route('admin.products.edit', $product) }}" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Edit">
+                                <i class="fas fa-edit"></i>
                             </a>
-                            
-                            <!-- Delete -->
+
                             <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus produk {{ $product->name }}?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
+                                <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </form>
                         </div>
@@ -141,5 +146,5 @@
     </div>
     @endif
 </div>
+</div>
 @endsection
-

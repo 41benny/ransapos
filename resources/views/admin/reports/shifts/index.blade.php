@@ -5,12 +5,13 @@
 @section('page-subtitle', 'Ringkasan shift per kasir dengan analisis selisih')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+<div class="page-fullwidth">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
         <form method="GET" action="{{ route('admin.reports.shifts.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            
+
             <!-- Date From -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
@@ -63,20 +64,20 @@
 
             <!-- Actions -->
             <div class="md:col-span-5 flex space-x-2">
-                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     Filter
                 </button>
-                <a href="{{ route('admin.reports.shifts.index') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                <a href="{{ route('admin.reports.shifts.index') }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
                     Reset
                 </a>
-                <button type="button" onclick="window.print()" class="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                <button type="button" onclick="window.print()" class="ml-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    Print
+                    Cetak
                 </button>
             </div>
         </form>
@@ -94,7 +95,7 @@
     <!-- Summary Stats -->
     <div class="p-6 border-b border-gray-100">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            
+
             <!-- Total Shifts -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p class="text-sm text-blue-600 font-medium mb-1">Total Shift</p>
@@ -127,8 +128,8 @@
 
     <!-- Shifts Table -->
     <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-200">
+        <table class="imperial-table w-full">
+            <thead class="">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Session Number</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
@@ -141,12 +142,12 @@
                     <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase no-print">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="">
                 @forelse($sessions as $session)
-                <tr class="hover:bg-gray-50 transition">
+                <tr>
                     <td class="px-6 py-3 whitespace-nowrap">
-                        <a href="{{ route('admin.reports.shifts.show', $session) }}" 
-                           class="text-sm font-mono text-indigo-600 hover:text-indigo-800 hover:underline">
+                        <a href="{{ route('admin.reports.shifts.show', $session) }}"
+                           class="text-sm font-mono text-amber-700 hover:text-amber-800 hover:underline">
                             {{ $session->session_number }}
                         </a>
                     </td>
@@ -182,8 +183,8 @@
                         @endif
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-center no-print">
-                        <a href="{{ route('admin.reports.shifts.show', $session) }}" 
-                           class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                        <a href="{{ route('admin.reports.shifts.show', $session) }}"
+                           class="text-amber-700 hover:text-amber-800 text-sm font-medium">
                             Detail →
                         </a>
                     </td>
@@ -220,8 +221,9 @@
     }
     main {
         padding: 0 !important;
-    }
+}
 }
 </style>
+</div>
+</div>
 @endsection
-

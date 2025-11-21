@@ -5,16 +5,17 @@
 @section('page-subtitle', 'Kelola dan monitor semua shift kasir')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+<div class="page-fullwidth">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+
     <!-- Filter -->
     <div class="p-6 border-b border-gray-100">
         <form method="GET" action="{{ route('admin.cash-sessions.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            
+
             <!-- Outlet Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
-                <select name="outlet_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <select name="outlet_id" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
                     <option value="">Semua Outlet</option>
                     @foreach($outlets as $outlet)
                     <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -27,7 +28,7 @@
             <!-- User Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Kasir</label>
-                <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <select name="user_id" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
                     <option value="">Semua Kasir</option>
                     @foreach($users as $user)
                     <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -63,13 +64,13 @@
 
             <!-- Actions -->
             <div class="md:col-span-5 flex space-x-2">
-                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     Filter
                 </button>
-                <a href="{{ route('admin.cash-sessions.index') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                <a href="{{ route('admin.cash-sessions.index') }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
                     Reset
                 </a>
             </div>
@@ -78,7 +79,7 @@
 
     <!-- Table -->
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Session Number</th>
@@ -163,5 +164,5 @@
     </div>
     @endif
 </div>
+</div>
 @endsection
-

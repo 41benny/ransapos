@@ -25,8 +25,9 @@
 </div>
 @endif
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+<div class="page-fullwidth">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 w-full page-card-fill">
+
     <!-- Header & Filter -->
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between mb-4">
@@ -34,7 +35,7 @@
                 <h3 class="text-lg font-semibold text-gray-900">Semua Pembelian</h3>
                 <p class="text-sm text-gray-500 mt-1">Total: {{ $purchases->total() }} pembelian</p>
             </div>
-            <a href="{{ route('admin.purchases.create') }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center">
+            <a href="{{ route('admin.purchases.create') }}" class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
@@ -73,15 +74,15 @@
                 </select>
             </div>
             <div class="flex space-x-2">
-                <button type="submit" class="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm">Filter</button>
-                <a href="{{ route('admin.purchases.index') }}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">Reset</a>
+                <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg text-sm shadow-md hover:shadow-lg">Filter</button>
+                <a href="{{ route('admin.purchases.index') }}" class="px-4 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg text-sm hover:bg-amber-50">Reset</a>
             </div>
         </form>
     </div>
 
     <!-- Table -->
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">No. Pembelian</th>
@@ -129,7 +130,7 @@
                                 </svg>
                             </a>
                             @if($purchase->isDraft())
-                            <a href="{{ route('admin.purchases.edit', $purchase) }}" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit">
+                            <a href="{{ route('admin.purchases.edit', $purchase) }}" class="p-2 text-amber-700 hover:bg-amber-50 rounded-lg transition" title="Edit">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
@@ -162,6 +163,6 @@
     </div>
     @endif
 </div>
+</div>
 @endsection
-
 

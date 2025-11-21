@@ -3,243 +3,487 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin') - Morest POS</title>
+    <title>@yield('title', 'Admin') - PT Dua Putra Sekincau</title>
+
+    {{-- Tailwind & Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Font Awesome Icons --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-premium {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+
+        .gradient-gold {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        }
+
+        .gradient-ocean {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .gradient-sunset {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .shadow-premium {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-shine::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            animation: shine 8s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30%, 30%); }
+        }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ============================================
+           THEME PREMIUM - CONSISTENT DESIGN SYSTEM
+           ============================================ */
+
+        /* Premium Cards */
+        .card-premium {
+            background: white;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-premium:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* (Legacy btn-* removed; using imperial-btn-* variants in app.css) */
+
+        /* Premium Tables */
+        .table-premium {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-premium thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .table-premium thead th {
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            text-align: left;
+            border: none;
+        }
+
+        .table-premium thead th:first-child {
+            border-top-left-radius: 1rem;
+        }
+
+        .table-premium thead th:last-child {
+            border-top-right-radius: 1rem;
+        }
+
+        .table-premium tbody tr {
+            background: white;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-premium tbody tr:hover {
+            background: #f8fafc;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-premium tbody td {
+            padding: 1rem;
+            color: #475569;
+        }
+
+        /* Premium Form Inputs */
+        .input-premium {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-premium:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-premium:hover {
+            border-color: #cbd5e1;
+        }
+
+        /* Premium Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .badge-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .badge-gray {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        /* Premium Alerts */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #fcd34d;
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <div class="flex h-screen overflow-hidden">
-        
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-indigo-600 to-indigo-800 text-white flex-shrink-0 hidden md:flex flex-col">
-            <div class="p-6 border-b border-indigo-500">
-                <h1 class="text-2xl font-bold">Morest POS</h1>
-                <p class="text-indigo-200 text-sm mt-1">Back Office</p>
-            </div>
-            
-            <nav class="flex-1 p-4 overflow-y-auto">
-                <ul class="space-y-2">
-                    <li>
-                        <a href="{{ route('admin.dashboard') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                            </svg>
-                            Dashboard
-                        </a>
-                    </li>
+<script>
+    function toggleSidebar() {
+        document.body.classList.toggle('sidebar-collapsed');
+    }
+    function toggleMobileSidebar() {
+        document.body.classList.toggle('sidebar-mobile-open');
+    }
+</script>
+<body class="imperial-body text-slate-900">
 
-                    <!-- Master Data -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Master Data</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.products.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.products.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                            </svg>
-                            Produk
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.outlets.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.outlets.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                            Outlet
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.suppliers.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.suppliers.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                            Supplier
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.purchases.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.purchases.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                            </svg>
-                            Pembelian
-                        </a>
-                    </li>
+    <style>
+        .sidebar-transition { transition: width 0.3s cubic-bezier(.4,0,.2,1), min-width 0.3s cubic-bezier(.4,0,.2,1); }
+        body.sidebar-collapsed .imperial-sidebar { width: 4.5rem !important; min-width: 4.5rem !important; }
+        body.sidebar-collapsed .imperial-sidebar .px-6, body.sidebar-collapsed .imperial-sidebar .pt-6, body.sidebar-collapsed .imperial-sidebar .pb-5, body.sidebar-collapsed .imperial-sidebar .nav-label, body.sidebar-collapsed .imperial-sidebar .leading-tight, body.sidebar-collapsed .imperial-sidebar .mt-auto, body.sidebar-collapsed .imperial-sidebar .flex-1, body.sidebar-collapsed .imperial-sidebar .text-xs, body.sidebar-collapsed .imperial-sidebar .text-lg, body.sidebar-collapsed .imperial-sidebar .text-sm, body.sidebar-collapsed .imperial-sidebar .text-indigo-100, body.sidebar-collapsed .imperial-sidebar .text-indigo-200, body.sidebar-collapsed .imperial-sidebar .text-white, body.sidebar-collapsed .imperial-sidebar .text-emerald-300, body.sidebar-collapsed .imperial-sidebar .text-amber-300, body.sidebar-collapsed .imperial-sidebar .fa-chevron-right, body.sidebar-collapsed .imperial-sidebar .imperial-badge { display: none !important; }
+        body.sidebar-collapsed .imperial-sidebar { overflow: visible; }
+        body.sidebar-mobile-open .imperial-sidebar { position:fixed !important; left:0; top:0; height:100vh; z-index:50; box-shadow:0 0 0 9999px rgba(0,0,0,0.4); }
+        body.sidebar-mobile-open #sidebarOverlay { display:block !important; }
+        @media (max-width: 1024px) {
+            .imperial-sidebar { position:fixed !important; left:-100%; top:0; height:100vh; z-index:50; box-shadow:0 0 0 9999px rgba(0,0,0,0.4); transition:left 0.3s cubic-bezier(.4,0,.2,1); }
+            body.sidebar-mobile-open .imperial-sidebar { left:0 !important; }
+        }
+    </style>
+    <div class="flex h-screen overflow-hidden font-sans" style="font-family: 'Inter Tight', 'Roboto Condensed', 'Montserrat', 'Inter', sans-serif;">
+        {{-- APP SHELL --}}
+        <div class="flex flex-1 overflow-hidden shadow-premium border border-gray-200/50 bg-white/60 backdrop-blur-md">
 
-                    <!-- Keuangan -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Keuangan</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.cash-accounts.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.cash-accounts.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                            Kas & Bank
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.cash-transactions.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.cash-transactions.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            Transaksi Kas
-                        </a>
-                    </li>
-
-                    <!-- Akuntansi -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Akuntansi</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.coa-accounts.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.coa-accounts.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Chart of Accounts
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.profit-loss.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.reports.profit-loss.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0h2a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            Laporan Laba Rugi
-                        </a>
-                    </li>
-
-                    <!-- Operasional -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Operasional</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.purchases.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.purchases.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                            </svg>
-                            Pembelian
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.cash-sessions.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.cash-sessions.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            Shift Kasir
-                        </a>
-                    </li>
-
-                    <!-- Laporan -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Laporan</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.sales.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.reports.sales.index') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Laporan Penjualan
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.sales.products') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.reports.sales.products') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            Penjualan per Produk
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.shifts.index') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition {{ request()->routeIs('admin.reports.shifts.*') ? 'bg-indigo-700' : '' }}">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Laporan Shift
-                        </a>
-                    </li>
-
-                    <!-- POS -->
-                    <li class="pt-4 pb-2">
-                        <span class="text-indigo-300 text-xs font-semibold uppercase tracking-wider px-4">Point of Sale</span>
-                    </li>
-                    <li>
-                        <a href="{{ route('pos.dashboard') }}" 
-                           class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition">
-                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            POS Kasir
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <!-- User Profile & Logout -->
-            <div class="p-4 border-t border-indigo-500">
-                <div class="flex items-center px-4 py-3 rounded-lg bg-indigo-700">
-                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold mr-3">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-indigo-200 truncate">{{ auth()->user()->role->display_name ?? 'User' }}</p>
-                    </div>
-                </div>
-                <form action="{{ route('logout') }}" method="POST" class="mt-2">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-white">
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                        Logout
-                    </button>
-                </form>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            
-            <!-- Topbar -->
-            <header class="bg-white border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">@yield('page-title', 'Dashboard')</h2>
-                        <p class="text-sm text-gray-500 mt-1">@yield('page-subtitle', 'Selamat datang di sistem back office')</p>
-                    </div>
-                    
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                            </div>
-                            <div>
-                                <p class="text-sm font-medium text-gray-800">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-gray-500">{{ auth()->user()->role->display_name ?? 'User' }}</p>
-                            </div>
+            {{-- SIDEBAR PREMIUM --}}
+            <aside class="w-64 shrink-0 imperial-sidebar text-white relative sidebar-transition">
+                <!-- Desktop Collapse Button -->
+                <button onclick="toggleSidebar()" class="hidden lg:flex absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/40 text-amber-400 rounded-full p-2 shadow-lg transition-all" title="Collapse Sidebar">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <!-- Mobile Hamburger -->
+                <button onclick="toggleMobileSidebar()" class="lg:hidden flex absolute top-4 left-4 z-20 bg-white/20 hover:bg-white/40 text-amber-400 rounded-full p-2 shadow-lg transition-all" title="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="relative flex flex-col h-full z-10">
+                    {{-- Brand / Logo --}}
+                    <div class="px-4 pt-5 pb-4 border-b border-white/10">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-bowl-food text-xl text-amber-400"></i>
+                            <p class="text-lg font-bold text-white">Moresto</p>
                         </div>
                     </div>
-                </div>
-            </header>
 
-            <!-- Content Area -->
-            <main class="flex-1 overflow-y-auto p-6">
-                @yield('content')
-            </main>
+                    {{-- NAV PREMIUM --}}
+                    @php
+                        $mainNav = [
+                            [
+                                'label' => 'Dashboard',
+                                'desc'  => 'Ringkasan bisnis',
+                                'icon'  => 'fas fa-chart-line',
+                                'route' => 'admin.dashboard',
+                                'match' => 'admin.dashboard',
+                                'gradient' => 'from-blue-500 to-cyan-500'
+                            ],
+                            [
+                                'label' => 'Master Data',
+                                'desc'  => 'Produk, Outlet, Supplier',
+                                'icon'  => 'fas fa-database',
+                                'route' => 'admin.products.index',
+                                'match' => 'admin.products.*',
+                                'gradient' => 'from-purple-500 to-pink-500'
+                            ],
+                            [
+                                'label' => 'Inventory & Stok',
+                                'desc'  => 'Stok, mutasi, transfer',
+                                'icon'  => 'fas fa-boxes',
+                                'route' => 'admin.stocks.index',
+                                'match' => 'admin.stocks.*|admin.stock-transfers.*',
+                                'gradient' => 'from-teal-500 to-cyan-500'
+                            ],
+                            [
+                                'label' => 'Pembelian',
+                                'desc'  => 'Purchase & pembayaran',
+                                'icon'  => 'fas fa-shopping-cart',
+                                'route' => 'admin.purchases.index',
+                                'match' => 'admin.purchases.*',
+                                'gradient' => 'from-green-500 to-emerald-500'
+                            ],
+                            [
+                                'label' => 'Bill of Materials',
+                                'desc'  => 'Resep & komposisi',
+                                'icon'  => 'fas fa-clipboard-list',
+                                'route' => 'admin.boms.index',
+                                'match' => 'admin.boms.*',
+                                'gradient' => 'from-orange-500 to-red-500'
+                            ],
+                            [
+                                'label' => 'Kas & Bank',
+                                'desc'  => 'Cash accounts & transaksi',
+                                'icon'  => 'fas fa-wallet',
+                                'route' => 'admin.cash-accounts.index',
+                                'match' => 'admin.cash-accounts.*|admin.cash-transactions.*',
+                                'gradient' => 'from-yellow-500 to-amber-500'
+                            ],
+                            [
+                                'label' => 'Chart of Accounts',
+                                'desc'  => 'Akun perkiraan',
+                                'icon'  => 'fas fa-chart-pie',
+                                'route' => 'admin.coa-accounts.index',
+                                'match' => 'admin.coa-accounts.*',
+                                'gradient' => 'from-indigo-500 to-purple-500'
+                            ],
+                            [
+                                'label' => 'Expense Management',
+                                'desc'  => 'Kelola pengeluaran & kategori',
+                                'icon'  => 'fas fa-receipt',
+                                'route' => 'admin.expenses.index',
+                                'match' => 'admin.expenses.*|admin.expense-categories.*',
+                                'gradient' => 'from-purple-500 to-pink-500'
+                            ],
+                            [
+                                'label' => 'Customer Management',
+                                'desc'  => 'Kelola data customer & loyalty',
+                                'icon'  => 'fas fa-users',
+                                'route' => 'admin.customers.index',
+                                'match' => 'admin.customers.*',
+                                'gradient' => 'from-blue-500 to-cyan-500'
+                            ],
+                            [
+                                'label' => 'Laporan',
+                                'desc'  => 'Sales, shift, profit/loss',
+                                'icon'  => 'fas fa-file-invoice-dollar',
+                                'route' => 'admin.reports.sales.index',
+                                'match' => 'admin.reports.*',
+                                'gradient' => 'from-pink-500 to-rose-500'
+                            ],
+                        ];
+                    @endphp
+
+                    <nav class="px-3 pb-3 space-y-1 text-sm relative overflow-y-auto flex-1 pt-4">
+                        @foreach ($mainNav as $item)
+                            @php
+                                $isActive = $item['match']
+                                    ? request()->routeIs($item['match'])
+                                    : false;
+
+                                $linkClasses = $isActive
+                                    ? 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/10 text-white group'
+                                    : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/5 hover:text-white transition-all duration-200 group';
+                            @endphp
+
+                            <a
+                                href="{{ $item['route'] ? route($item['route']) : '#' }}"
+                                class="{{ $linkClasses }}"
+                            >
+                                <i class="{{ $item['icon'] }} text-base w-5 text-center"></i>
+                                <span class="text-sm font-medium">{{ $item['label'] }}</span>
+                            </a>
+                        @endforeach
+
+                        <div class="pt-3 mt-3 border-t border-white/10">
+                            <a href="{{ route('pos.dashboard') }}"
+                               class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/5 hover:text-white transition-all duration-200">
+                                <i class="fas fa-cash-register text-base w-5 text-center"></i>
+                                <span class="text-sm font-medium">POS Kasir</span>
+                            </a>
+
+                            <a href="{{ route('admin.cash-sessions.index') }}"
+                               class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/5 hover:text-white transition-all duration-200">
+                                <i class="fas fa-history text-base w-5 text-center"></i>
+                                <span class="text-sm font-medium">History Shift</span>
+                            </a>
+                        </div>
+                    </nav>
+                </div>
+            </aside>
+
+            {{-- MAIN CONTENT WRAPPER PREMIUM --}}
+            <div class="flex-1 bg-gradient-to-br from-gray-50 via-white to-slate-50 flex flex-col relative overflow-hidden">
+                            <!-- Mobile Sidebar Overlay -->
+                            <div class="fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 lg:hidden" style="display:none" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+                {{-- Background Pattern --}}
+                <div class="absolute inset-0 opacity-5">
+                    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184) 1px, transparent 0); background-size: 40px 40px;"></div>
+                </div>
+
+                {{-- TOP HEADER - USER PROFILE ONLY --}}
+                <header class="imperial-header relative z-10 border-b border-white/10">
+                    <div class="px-6 py-3 flex items-center justify-end gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <div class="h-9 w-9 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-sm font-bold text-amber-400">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
+                            </div>
+                            <div class="leading-tight hidden md:block">
+                                <p class="font-semibold text-white text-sm">{{ auth()->user()->name ?? 'User' }}</p>
+                                <p class="text-xs text-white/60">{{ auth()->user()->role->display_name ?? 'Super Admin' }}</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button
+                                type="submit"
+                                class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-sm text-white transition-all duration-200 flex items-center gap-2"
+                                title="Logout"
+                            >
+                                <i class="fas fa-sign-out-alt text-sm"></i>
+                                <span class="hidden md:inline">Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </header>                {{-- CONTENT AREA PREMIUM --}}
+                <main class="flex-1 overflow-y-auto p-8 md:p-12 lg:p-16 relative z-10">
+                    @yield('content')
+                </main>
+
+                {{-- FOOTER --}}
+                <footer class="relative z-10 px-6 py-4 bg-white/50 backdrop-blur-sm border-t border-gray-200/50">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm text-gray-600">
+                        <p class="flex items-center gap-2">
+                            <i class="fas fa-copyright text-gray-400"></i>
+                            <span>2025 Authorize of Moresto. All rights reserved.</span>
+                        </p>
+                        <div class="flex items-center gap-4">
+                            <a href="#" class="hover:text-indigo-200 transition-colors flex items-center gap-1">
+                                <i class="fas fa-life-ring"></i>
+                                <span>Support</span>
+                            </a>
+                            <a href="#" class="hover:text-indigo-200 transition-colors flex items-center gap-1">
+                                <i class="fas fa-book"></i>
+                                <span>Documentation</span>
+                            </a>
+                        </div>
+                    </div>
+                </footer>
+            </div>
         </div>
     </div>
+
+    {{-- Tempat menyuntikkan script halaman --}}
+    @stack('scripts')
 </body>
 </html>
-

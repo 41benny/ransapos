@@ -3,15 +3,16 @@
 @section('title', 'Chart of Accounts (COA)')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="page-fullwidth px-0">
+<div class="px-6 py-6 page-card-fill">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Chart of Accounts (COA)</h1>
             <p class="text-gray-600 mt-1">Kelola akun pendapatan dan biaya</p>
         </div>
-        <a href="{{ route('admin.coa-accounts.create') }}" 
-           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+        <a href="{{ route('admin.coa-accounts.create') }}"
+           class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow-md hover:shadow-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -54,7 +55,7 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                    <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg">
                         Filter
                     </button>
                 </div>
@@ -79,8 +80,8 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         @if($coaAccounts->count() > 0)
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="imperial-table min-w-full">
+                    <thead class="">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Akun</th>
@@ -90,7 +91,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="">
                         @foreach($coaAccounts as $coa)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -133,11 +134,11 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <a href="{{ route('admin.coa-accounts.edit', $coa) }}" 
-                                           class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                        <a href="{{ route('admin.coa-accounts.edit', $coa) }}"
+                                           class="text-amber-700 hover:text-amber-900">Edit</a>
                                         @if($coa->cashTransactions->count() == 0)
-                                            <form action="{{ route('admin.coa-accounts.destroy', $coa) }}" 
-                                                  method="POST" 
+                                            <form action="{{ route('admin.coa-accounts.destroy', $coa) }}"
+                                                  method="POST"
                                                   onsubmit="return confirm('Yakin hapus akun ini?')">
                                                 @csrf
                                                 @method('DELETE')
@@ -167,5 +168,6 @@
         @endif
     </div>
 </div>
+</div>
+</div>
 @endsection
-

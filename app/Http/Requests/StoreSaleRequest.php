@@ -25,6 +25,7 @@ class StoreSaleRequest extends FormRequest
             // Header transaksi
             'outlet_id' => 'required|exists:outlets,id',
             'cash_session_id' => 'required|exists:cash_sessions,id',
+            'customer_id' => 'nullable|exists:customers,id',
             'customer_name' => 'nullable|string|max:200',
             'notes' => 'nullable|string',
             
@@ -38,6 +39,7 @@ class StoreSaleRequest extends FormRequest
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_amount' => 'nullable|numeric|min:0',
+            'items.*.notes' => 'nullable|string|max:255',
             
             // Payment
             'payment_method_id' => 'required|exists:payment_methods,id',
@@ -63,6 +65,7 @@ class StoreSaleRequest extends FormRequest
             'items.*.quantity.required' => 'Kuantitas harus diisi',
             'items.*.quantity.min' => 'Kuantitas minimal 0.01',
             'items.*.unit_price.required' => 'Harga harus diisi',
+            'items.*.notes.max' => 'Catatan item maksimal 255 karakter',
             'payment_method_id.required' => 'Metode pembayaran harus dipilih',
             'payment_method_id.exists' => 'Metode pembayaran tidak valid',
             'payment_amount.required' => 'Jumlah pembayaran harus diisi',

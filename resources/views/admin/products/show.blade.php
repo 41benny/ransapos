@@ -83,7 +83,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full">
+            <table class="imperial-table w-full">
                 <thead class="bg-gray-50 border-b border-gray-100">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Outlet</th>
@@ -136,19 +136,19 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center justify-between">
-        <a 
+        <a
             href="{{ route('admin.products.index') }}"
-            class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition flex items-center"
+            class="px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition flex items-center"
         >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
             Kembali ke Daftar
         </a>
-        
-        <a 
+
+        <a
             href="{{ route('admin.products.edit', $product) }}"
-            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center"
+            class="px-5 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center"
         >
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>

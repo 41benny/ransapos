@@ -42,6 +42,12 @@ class DatabaseSeeder extends Seeder
             'description' => 'Store manager',
         ]);
 
+        $kitchenRole = Role::create([
+            'name' => 'kitchen',
+            'display_name' => 'Kitchen Staff',
+            'description' => 'Hanya akses ke layar dapur/kitchen display',
+        ]);
+
         // 2. Outlets
         $outlet1 = Outlet::create([
             'code' => 'OUT001',

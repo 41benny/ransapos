@@ -35,7 +35,8 @@ class BomController extends Controller
             ->orderBy('name')
             ->get();
             
-        return view('admin.boms.create', compact('finishedProducts', 'rawMaterials'));
+        // gunakan tampilan versi baru yang lebih bersih
+        return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials'));
     }
 
     public function store(Request $request)

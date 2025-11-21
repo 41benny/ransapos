@@ -18,11 +18,11 @@
             </div>
             <div class="flex space-x-3">
                 <a href="{{ route('admin.cash-accounts.mutation-report', $cashAccount) }}" 
-                   class="px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50">
+                   class="px-4 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50">
                     Lihat Laporan Mutasi
                 </a>
                 <a href="{{ route('admin.cash-accounts.edit', $cashAccount) }}" 
-                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                   class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg shadow-md hover:shadow-lg">
                     Edit Akun
                 </a>
             </div>

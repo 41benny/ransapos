@@ -81,7 +81,13 @@ class AuthController extends Controller
             return redirect()->intended(route('pos.dashboard'));
         }
 
+        // Kitchen → Kitchen Display
+        if ($user->hasRole('kitchen')) {
+            return redirect()->intended(route('pos.kitchen.index'));
+        }
+
         // Default ke admin dashboard
         return redirect()->route('admin.dashboard');
     }
 }
+

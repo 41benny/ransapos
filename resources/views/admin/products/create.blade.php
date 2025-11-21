@@ -218,13 +218,13 @@
             <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">
                 <a 
                     href="{{ route('admin.products.index') }}"
-                    class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                    class="px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
                 >
                     Batal
                 </a>
                 <button 
                     type="submit"
-                    class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center"
+                    class="px-5 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center"
                 >
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>

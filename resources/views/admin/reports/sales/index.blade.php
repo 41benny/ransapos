@@ -5,12 +5,13 @@
 @section('page-subtitle', 'Ringkasan dan detail transaksi penjualan')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-    
+<div class="page-fullwidth">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
         <form method="GET" action="{{ route('admin.reports.sales.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            
+
             <!-- Date From -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
@@ -66,18 +67,18 @@
 
             <!-- Actions -->
             <div class="md:col-span-5 flex space-x-2">
-                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     Filter
                 </button>
-                <a href="{{ route('admin.reports.sales.index') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                <a href="{{ route('admin.reports.sales.index') }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
                     Reset
                 </a>
-                <button type="button" onclick="window.print()" class="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                <button type="button" onclick="window.print()" class="ml-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     Print
                 </button>
@@ -97,7 +98,7 @@
     <!-- Summary Cards -->
     <div class="p-6 border-b border-gray-100">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            
+
             <!-- Total Transaksi -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p class="text-sm text-blue-600 font-medium mb-1">Total Transaksi</p>
@@ -131,8 +132,8 @@
 
     <!-- Detail Transactions -->
     <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-200">
+        <table class="imperial-table w-full">
+            <thead class="">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal & Jam</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Invoice</th>
@@ -142,9 +143,9 @@
                     <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="">
                 @forelse($sales as $sale)
-                <tr class="hover:bg-gray-50 transition">
+                <tr>
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
                         {{ $sale->created_at->format('d M Y, H:i') }}
                     </td>
@@ -176,12 +177,12 @@
                 @endforelse
             </tbody>
             @if($sales->count() > 0)
-            <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+            <tfoot class="">
                 <tr>
                     <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
                         TOTAL ({{ $summary['total_transactions'] }} transaksi):
                     </td>
-                    <td class="px-6 py-4 text-right text-lg font-bold text-indigo-600">
+                    <td class="px-6 py-4 text-right text-lg font-bold text-amber-700">
                         Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}
                     </td>
                 </tr>
@@ -214,8 +215,9 @@
     }
     main {
         padding: 0 !important;
-    }
+}
 }
 </style>
+</div>
+</div>
 @endsection
-

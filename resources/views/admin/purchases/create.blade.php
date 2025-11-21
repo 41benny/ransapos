@@ -7,7 +7,7 @@
 @section('content')
 <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm">
     @csrf
-    
+
     <div class="max-w-6xl space-y-6">
         <!-- Info Pembelian -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -56,7 +56,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Tanggal Pembelian <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" name="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" required 
+                    <input type="date" name="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 @error('purchase_date') border-red-500 @enderror">
                     @error('purchase_date')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -75,7 +75,7 @@
             </div>
             <div class="p-6">
                 <div class="overflow-x-auto">
-                    <table class="w-full" id="itemsTable">
+                    <table class="imperial-table w-full" id="itemsTable">
                         <thead class="bg-gray-50 border-b">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
@@ -103,7 +103,7 @@
                         <!-- Pajak -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Pajak (Rp)</label>
-                            <input type="number" name="tax_amount" value="{{ old('tax_amount', 0) }}" min="0" step="0.01" 
+                            <input type="number" name="tax_amount" value="{{ old('tax_amount', 0) }}" min="0" step="0.01"
                                    onchange="calculateTotal()" id="taxAmount"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
@@ -111,7 +111,7 @@
                         <!-- Diskon Global -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Diskon Global (Rp)</label>
-                            <input type="number" name="discount_amount" value="{{ old('discount_amount', 0) }}" min="0" step="0.01" 
+                            <input type="number" name="discount_amount" value="{{ old('discount_amount', 0) }}" min="0" step="0.01"
                                    onchange="calculateTotal()" id="discountAmount"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
@@ -166,10 +166,10 @@ function addItem() {
     const row = document.createElement('tr');
     row.className = 'border-b';
     row.id = `item-${itemIndex}`;
-    
+
     row.innerHTML = `
         <td class="px-4 py-3">
-            <select name="items[${itemIndex}][product_id]" required onchange="updateItemPrice(${itemIndex})" 
+            <select name="items[${itemIndex}][product_id]" required onchange="updateItemPrice(${itemIndex})"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Pilih produk...</option>
                 ${products.map(p => `<option value="${p.id}" data-price="${p.purchase_price}">${p.name} (${p.sku})</option>`).join('')}
@@ -194,7 +194,7 @@ function addItem() {
             <span class="font-semibold text-gray-900" id="subtotal-${itemIndex}">Rp 0</span>
         </td>
         <td class="px-4 py-3 text-center">
-            <button type="button" onclick="removeItem(${itemIndex})" 
+            <button type="button" onclick="removeItem(${itemIndex})"
                     class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -202,7 +202,7 @@ function addItem() {
             </button>
         </td>
     `;
-    
+
     tbody.appendChild(row);
     itemIndex++;
 }
@@ -220,10 +220,10 @@ function calculateItemSubtotal(index) {
     const qty = parseFloat(document.getElementById(`qty-${index}`).value) || 0;
     const price = parseFloat(document.getElementById(`price-${index}`).value) || 0;
     const discount = parseFloat(document.getElementById(`discount-${index}`).value) || 0;
-    
+
     const subtotal = (qty * price) - discount;
     document.getElementById(`subtotal-${index}`).textContent = formatRupiah(subtotal);
-    
+
     calculateTotal();
 }
 
@@ -236,12 +236,12 @@ function calculateTotal() {
     let subtotal = 0;
     const tbody = document.getElementById('itemsBody');
     const rows = tbody.getElementsByTagName('tr');
-    
+
     for (let row of rows) {
         const qtyInput = row.querySelector('input[name*="[quantity]"]');
         const priceInput = row.querySelector('input[name*="[unit_price]"]');
         const discountInput = row.querySelector('input[name*="[discount_amount]"]');
-        
+
         if (qtyInput && priceInput) {
             const qty = parseFloat(qtyInput.value) || 0;
             const price = parseFloat(priceInput.value) || 0;
@@ -249,11 +249,11 @@ function calculateTotal() {
             subtotal += (qty * price) - discount;
         }
     }
-    
+
     const tax = parseFloat(document.getElementById('taxAmount').value) || 0;
     const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
     const total = subtotal + tax - discount;
-    
+
     document.getElementById('displaySubtotal').textContent = formatRupiah(subtotal);
     document.getElementById('displayTax').textContent = formatRupiah(tax);
     document.getElementById('displayDiscount').textContent = formatRupiah(discount);

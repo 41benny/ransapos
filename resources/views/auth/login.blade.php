@@ -46,10 +46,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
                                 </svg>
                             </div>
-                            <input 
-                                type="email" 
-                                name="email" 
-                                id="email" 
+                            <input
+                                type="email"
+                                name="email"
+                                id="email"
                                 value="{{ old('email') }}"
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror"
                                 placeholder="admin@morest.com"
@@ -73,9 +73,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
                             </div>
-                            <input 
-                                type="password" 
-                                name="password" 
+                            <input
+                                type="password"
+                                name="password"
                                 id="password"
                                 class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('password') border-red-500 @enderror"
                                 placeholder="••••••••"
@@ -90,9 +90,9 @@
                     <!-- Remember Me -->
                     <div class="mb-6">
                         <label class="flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                name="remember" 
+                            <input
+                                type="checkbox"
+                                name="remember"
                                 class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             >
                             <span class="ml-2 text-sm text-gray-700">Ingat saya</span>
@@ -100,7 +100,7 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button 
+                    <button
                         type="submit"
                         class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
                     >

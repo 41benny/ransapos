@@ -8,8 +8,8 @@
 
 <!-- Back Button -->
 <div class="mb-4 no-print">
-    <a href="{{ route('admin.reports.shifts.index') }}" 
-       class="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+    <a href="{{ route('admin.reports.shifts.index') }}"
+       class="inline-flex items-center text-amber-700 hover:text-amber-800">
         <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -145,7 +145,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 10 Produk di Shift Ini</h3>
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
@@ -184,7 +184,7 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Waktu</th>

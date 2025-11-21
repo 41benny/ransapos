@@ -17,6 +17,7 @@ class SaleItem extends Model
         'discount_amount',
         'subtotal',
         'cogs',
+        'notes',
     ];
 
     protected $casts = [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSaleRequest;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\PaymentMethod;
@@ -31,8 +32,23 @@ class SaleController extends Controller
                 $query->where('is_active', true);
             }])
             ->get();
-
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
+
+        // Ambil beberapa customer aktif untuk pilihan di POS (loyalty)
+        $customers = Customer::active()
+            ->orderBy('name')
+            ->limit(100)
+            ->get()
+            ->map(function (Customer $c) {
+                return [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'customer_code' => $c->customer_code,
+                    'phone' => $c->phone,
+                    'loyalty_points' => $c->loyalty_points,
+                    'member_tier' => $c->member_tier,
+                ];
+            });
         
         // Ambil cash session aktif untuk user yang login
         $activeSession = CashSession::where('status', 'open')
@@ -41,7 +57,7 @@ class SaleController extends Controller
             ->orderBy('opened_at', 'desc')
             ->first();
 
-        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession'));
+        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers'));
     }
 
     /**

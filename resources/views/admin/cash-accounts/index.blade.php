@@ -3,15 +3,16 @@
 @section('title', 'Manajemen Kas & Bank')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="page-fullwidth px-0">
+<div class="px-6 py-6 page-card-fill">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Manajemen Kas & Bank</h1>
             <p class="text-gray-600 mt-1">Kelola akun kas dan bank perusahaan</p>
         </div>
-        <a href="{{ route('admin.cash-accounts.create') }}" 
-           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+        <a href="{{ route('admin.cash-accounts.create') }}"
+           class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow-md hover:shadow-lg">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -82,14 +83,14 @@
 
     <!-- Quick Actions -->
     <div class="bg-white rounded-lg shadow p-4 mb-6 flex space-x-4">
-        <a href="{{ route('admin.cash-transactions.index') }}" 
+        <a href="{{ route('admin.cash-transactions.index') }}"
            class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
             <span>Lihat Transaksi</span>
         </a>
-        <a href="{{ route('admin.cash-transactions.create') }}" 
+        <a href="{{ route('admin.cash-transactions.create') }}"
            class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -99,15 +100,15 @@
     </div>
 
     <!-- Accounts List -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="t6-card shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Daftar Akun Kas & Bank</h2>
         </div>
 
         @if($accounts->count() > 0)
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="imperial-table min-w-full">
+                    <thead class="">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Akun</th>
@@ -119,9 +120,9 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="">
                         @foreach($accounts as $account)
-                            <tr class="hover:bg-gray-50">
+                            <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-medium text-gray-900">{{ $account->code }}</span>
                                 </td>
@@ -148,7 +149,7 @@
                                     Rp {{ number_format($account->opening_balance, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-semibold text-indigo-600">
+                                    <span class="text-sm font-semibold text-amber-700">
                                         Rp {{ number_format($account->current_balance, 0, ',', '.') }}
                                     </span>
                                 </td>
@@ -168,11 +169,11 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex space-x-2">
-                                        <a href="{{ route('admin.cash-accounts.show', $account) }}" 
+                                        <a href="{{ route('admin.cash-accounts.show', $account) }}"
                                            class="text-indigo-600 hover:text-indigo-900">Detail</a>
-                                        <a href="{{ route('admin.cash-accounts.mutation-report', $account) }}" 
+                                        <a href="{{ route('admin.cash-accounts.mutation-report', $account) }}"
                                            class="text-blue-600 hover:text-blue-900">Mutasi</a>
-                                        <a href="{{ route('admin.cash-accounts.edit', $account) }}" 
+                                        <a href="{{ route('admin.cash-accounts.edit', $account) }}"
                                            class="text-yellow-600 hover:text-yellow-900">Edit</a>
                                     </div>
                                 </td>
@@ -189,8 +190,8 @@
                 <h3 class="mt-2 text-sm font-medium text-gray-900">Belum ada akun kas/bank</h3>
                 <p class="mt-1 text-sm text-gray-500">Mulai dengan membuat akun kas atau bank baru.</p>
                 <div class="mt-6">
-                    <a href="{{ route('admin.cash-accounts.create') }}" 
-                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <a href="{{ route('admin.cash-accounts.create') }}"
+                       class="inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:shadow-lg">
                         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
@@ -202,4 +203,3 @@
     </div>
 </div>
 @endsection
-

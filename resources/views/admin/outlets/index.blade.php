@@ -5,7 +5,8 @@
 @section('page-subtitle', 'Kelola cabang/toko Anda')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
+<div class="page-fullwidth">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
     
     <!-- Header -->
     <div class="p-6 border-b border-gray-100">
@@ -14,7 +15,7 @@
                 <h3 class="text-lg font-semibold text-gray-900">Semua Outlet</h3>
                 <p class="text-sm text-gray-500 mt-1">Total: {{ $outlets->total() }} outlet</p>
             </div>
-            <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center">
+            <button class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
@@ -78,10 +79,10 @@
                 </div>
 
                 <div class="flex items-center space-x-2 pt-4 border-t border-gray-100">
-                    <button class="flex-1 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                    <button class="flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition">
                         Edit
                     </button>
-                    <button class="flex-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                    <button class="flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition">
                         Detail
                     </button>
                 </div>
@@ -104,6 +105,7 @@
         </div>
         @endif
     </div>
+</div>
 </div>
 @endsection
 

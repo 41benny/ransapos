@@ -13,6 +13,7 @@ class Sale extends Model
         'outlet_id',
         'cash_session_id',
         'user_id',
+        'customer_id',
         'sale_date',
         'subtotal',
         'discount_type',
@@ -21,8 +22,10 @@ class Sale extends Model
         'tax_amount',
         'total_amount',
         'customer_name',
+        'loyalty_points_earned',
         'notes',
         'status',
+        'kitchen_status',
     ];
 
     protected $casts = [
@@ -56,6 +59,14 @@ class Sale extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relasi ke customer
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     /**
