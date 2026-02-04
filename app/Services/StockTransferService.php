@@ -19,6 +19,7 @@ class StockTransferService
         $date = now()->format('Ymd');
 
         $lastTransfer = StockTransfer::where('transfer_number', 'like', "TRF-{$fromOutletId}-{$toOutletId}-{$date}-%")
+            ->lockForUpdate()
             ->orderBy('transfer_number', 'desc')
             ->first();
 

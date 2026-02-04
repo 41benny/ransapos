@@ -24,6 +24,7 @@ class StoreCashTransactionRequest extends FormRequest
         return [
             'cash_account_id' => 'required|exists:cash_accounts,id',
             'type' => 'required|in:in,out',
+            'coa_account_id' => 'nullable|exists:coa_accounts,id',
             'transaction_date' => 'required|date',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:255',
@@ -41,6 +42,7 @@ class StoreCashTransactionRequest extends FormRequest
         return [
             'cash_account_id' => 'akun kas/bank',
             'type' => 'jenis transaksi',
+            'coa_account_id' => 'akun biaya (COA)',
             'transaction_date' => 'tanggal transaksi',
             'amount' => 'jumlah',
             'description' => 'deskripsi',

@@ -79,7 +79,58 @@ class CashSessionController extends Controller
                 ->with('payments.paymentMethod');
         }]);
 
-        return view('pos.sessions.close', compact('activeSession'));
+        // Calculate Payment Method Stats
+        $paymentStats = [];
+        foreach ($activeSession->sales as $sale) {
+            foreach ($sale->payments as $payment) {
+                $methodName = $payment->paymentMethod->name ?? 'Unknown';
+                if (!isset($paymentStats[$methodName])) {
+                    $paymentStats[$methodName] = [
+                        'name' => $methodName,
+                        'count' => 0,
+                        'total' => 0
+                    ];
+                }
+                $paymentStats[$methodName]['count']++;
+                $paymentStats[$methodName]['total'] += $payment->amount;
+            }
+        }
+
+        return view('pos.sessions.close', compact('activeSession', 'paymentStats'));
+    }
+
+    /**
+     * Cetak Laporan Shift (Thermal)
+     */
+    public function print(CashSession $session)
+    {
+        // Pastikan user punya akses ke session outlet ini
+        if ($session->outlet_id !== auth()->user()->outlet_id && !auth()->user()->hasRole(['admin', 'manager'])) {
+            abort(403);
+        }
+
+        $session->load(['outlet', 'user', 'sales' => function($q) {
+            $q->where('status', 'completed')->with('payments.paymentMethod');
+        }]);
+
+        // Calculate Stats (Sama logicnya)
+        $paymentStats = [];
+        foreach ($session->sales as $sale) {
+            foreach ($sale->payments as $payment) {
+                $methodName = $payment->paymentMethod->name ?? 'Unknown';
+                if (!isset($paymentStats[$methodName])) {
+                    $paymentStats[$methodName] = [
+                        'name' => $methodName,
+                        'count' => 0,
+                        'total' => 0
+                    ];
+                }
+                $paymentStats[$methodName]['count']++;
+                $paymentStats[$methodName]['total'] += $payment->amount;
+            }
+        }
+
+        return view('pos.sessions.print', compact('session', 'paymentStats'));
     }
 
     /**

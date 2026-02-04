@@ -17,10 +17,14 @@ class Outlet extends Model
         'phone',
         'email',
         'is_active',
+        'tax_rate',
+        'service_charge_rate',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'tax_rate' => 'decimal:2',
+        'service_charge_rate' => 'decimal:2',
     ];
 
     /**

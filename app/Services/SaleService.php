@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\CashSession;
 use App\Models\Customer;
+use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -51,9 +52,24 @@ class SaleService
                 $discountAmount = $data['discount_value'];
             }
 
-            // 4. Hitung total
-            $taxAmount = 0; // Nanti bisa ditambahkan logic pajak
-            $totalAmount = $subtotal - $discountAmount + $taxAmount;
+            // 4. Hitung Service Charge & Tax (PB1)
+            $outlet = \App\Models\Outlet::find($data['outlet_id']);
+            
+            // Tax base (DPP) = Subtotal - Discount
+            $taxBase = $subtotal - $discountAmount;
+            
+            // Service Charge: X% dari Tax Base
+            $serviceChargeRate = $outlet->service_charge_rate ?? 0;
+            $serviceChargeAmount = $taxBase * ($serviceChargeRate / 100);
+            
+            // Tax: Y% dari (Tax Base + Service Charge)
+            // Note: PB1 biasanya dikenakan atas total layanan
+            $taxableAmount = $taxBase + $serviceChargeAmount;
+            $taxRate = $outlet->tax_rate ?? 10; // Default 10% jika null
+            $taxAmount = $taxableAmount * ($taxRate / 100);
+
+            // Total: Tax Base + Service + Tax
+            $totalAmount = $taxBase + $serviceChargeAmount + $taxAmount;
 
             // 5. Buat record sale
             $sale = Sale::create([
@@ -68,6 +84,7 @@ class SaleService
                 'discount_type' => $data['discount_type'],
                 'discount_value' => $data['discount_value'] ?? 0,
                 'discount_amount' => $discountAmount,
+                'service_charge_amount' => $serviceChargeAmount,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
                 'customer_name' => $data['customer_name'] ?? null,
@@ -198,9 +215,10 @@ class SaleService
         $date = now()->format('Ymd');
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
         
-        // Cari invoice terakhir hari ini untuk outlet ini
+        // Cari invoice terakhir hari ini untuk outlet ini dengan locking supaya sequence aman
         $lastSale = Sale::where('outlet_id', $outletId)
             ->whereDate('sale_date', now())
+            ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();
 
@@ -232,13 +250,12 @@ class SaleService
         // Update total sales
         $session->total_sales += $saleAmount;
 
-        // Update total cash atau non-cash
-        // Asumsi: payment_method_id 1 adalah CASH
-        if ($paymentMethodId == 1) {
-            $session->total_cash += $saleAmount;
-        } else {
-            $session->total_non_cash += $saleAmount;
-        }
+        // Update total cash atau non-cash (berbasis code payment method, fallback ke id)
+        $paymentMethod = PaymentMethod::find($paymentMethodId);
+        $isCash = $paymentMethod?->code === 'CASH' || $paymentMethodId === 1;
+
+        $session->total_cash += $isCash ? $saleAmount : 0;
+        $session->total_non_cash += $isCash ? 0 : $saleAmount;
 
         // Update expected balance
         $session->expected_balance = $session->opening_balance + $session->total_cash;
@@ -266,33 +283,35 @@ class SaleService
                 throw new Exception('Transaksi sudah dibatalkan sebelumnya');
             }
 
-            // Kembalikan stok
+            // Kembalikan stok sesuai tipe produk & BOM
             foreach ($sale->items as $item) {
-                // Catat mutasi untuk pengembalian stok
-                $stock = \App\Models\Stock::where('product_id', $item->product_id)
-                    ->where('outlet_id', $sale->outlet_id)
-                    ->first();
+                $product = Product::with(['bomHeader' => function ($q) {
+                    $q->where('is_active', true)->with('details.component');
+                }])->find($item->product_id);
 
-                if ($stock) {
-                    $stockBefore = $stock->quantity;
-                    $stock->quantity += $item->quantity;
-                    $stock->last_mutation_at = now();
-                    $stock->save();
+                $type = $product?->product_type ?? 'finished_good';
 
-                    // Catat mutasi
-                    \App\Models\StockMutation::create([
-                        'product_id' => $item->product_id,
-                        'outlet_id' => $sale->outlet_id,
-                        'mutation_type' => 'in',
-                        'quantity' => $item->quantity,
-                        'stock_before' => $stockBefore,
-                        'stock_after' => $stock->quantity,
-                        'reference_type' => 'sale_cancellation',
-                        'reference_id' => $sale->id,
-                        'mutation_date' => now()->toDateString(),
-                        'notes' => "Pembatalan transaksi: {$reason}",
-                        'created_by' => \Illuminate\Support\Facades\Auth::id(),
-                    ]);
+                if ($type === 'finished_good' && $product?->bomHeader && $product->bomHeader->is_active) {
+                    foreach ($product->bomHeader->details as $detail) {
+                        $consumeQty = $detail->quantity * $item->quantity;
+                        $this->stockService->restoreSaleStock(
+                            productId: $detail->component_product_id,
+                            outletId: $sale->outlet_id,
+                            quantity: $consumeQty,
+                            saleId: $sale->id,
+                            userId: \Illuminate\Support\Facades\Auth::id(),
+                            notes: "Pembatalan transaksi (komponen BOM): {$reason}"
+                        );
+                    }
+                } elseif ($type !== 'service') {
+                    $this->stockService->restoreSaleStock(
+                        productId: $item->product_id,
+                        outletId: $sale->outlet_id,
+                        quantity: $item->quantity,
+                        saleId: $sale->id,
+                        userId: \Illuminate\Support\Facades\Auth::id(),
+                        notes: "Pembatalan transaksi: {$reason}"
+                    );
                 }
             }
 

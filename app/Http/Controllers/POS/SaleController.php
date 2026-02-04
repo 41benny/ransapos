@@ -9,7 +9,9 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\PaymentMethod;
 use App\Models\CashSession;
+use App\Models\Outlet;
 use App\Services\SaleService;
+use App\Models\Sale;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -57,7 +59,9 @@ class SaleController extends Controller
             ->orderBy('opened_at', 'desc')
             ->first();
 
-        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers'));
+        $outlet = Outlet::find(auth()->user()->outlet_id);
+
+        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers', 'outlet'));
     }
 
     /**
@@ -125,5 +129,20 @@ class SaleController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Cetak struk belanja
+     */
+    public function print(Sale $sale)
+    {
+        // Pastikan user punya akses ke outlet ini (kecuali super admin)
+        if (!auth()->user()->hasRole('admin') && $sale->outlet_id !== auth()->user()->outlet_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
+
+        return view('pos.sales.print', compact('sale'));
     }
 }

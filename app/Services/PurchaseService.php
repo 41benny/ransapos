@@ -254,6 +254,7 @@ class PurchaseService
         // Cari purchase terakhir hari ini untuk outlet ini
         $lastPurchase = Purchase::where('outlet_id', $outletId)
             ->whereDate('purchase_date', now())
+            ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();
 

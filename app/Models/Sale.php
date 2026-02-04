@@ -20,6 +20,7 @@ class Sale extends Model
         'discount_value',
         'discount_amount',
         'tax_amount',
+        'service_charge_amount',
         'total_amount',
         'customer_name',
         'loyalty_points_earned',

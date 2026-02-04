@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +12,13 @@ use Carbon\Carbon;
 
 class ExpenseService
 {
+    protected CashAccountService $cashAccountService;
+
+    public function __construct(CashAccountService $cashAccountService)
+    {
+        $this->cashAccountService = $cashAccountService;
+    }
+
     /**
      * Generate expense number
      * Format: EXP-OUTLET-YYYYMMDD-XXX
@@ -64,7 +70,19 @@ class ExpenseService
             $expense = Expense::create($data);
 
             // If status is approved and paid, create cash transaction
-            if ($data['status'] === 'paid' && isset($data['cash_account_id']) && $data['cash_account_id']) {
+            if ($data['status'] === 'paid') {
+                if (empty($data['cash_account_id'])) {
+                    throw new \Exception('Cash account harus dipilih untuk expense dengan status paid.');
+                }
+
+                // Paid implies approved (minimal audit fields)
+                if (empty($expense->approved_at)) {
+                    $expense->forceFill([
+                        'approved_at' => now(),
+                        'approved_by' => Auth::id(),
+                    ])->save();
+                }
+
                 $this->createCashTransaction($expense);
             }
 
@@ -196,26 +214,37 @@ class ExpenseService
      */
     protected function createCashTransaction(Expense $expense): void
     {
-        // Check if cash account is set
         if (!$expense->cash_account_id) {
+            throw new \Exception('Cash account belum di-set untuk expense ini.');
+        }
+
+        $existing = CashTransaction::whereIn('reference_type', ['expense', Expense::class])
+            ->where('reference_id', $expense->id)
+            ->first();
+
+        if ($existing) {
             return;
         }
 
-        // Create cash transaction (debit/withdrawal)
-        CashTransaction::create([
+        $expense->loadMissing('category');
+
+        $coaAccountId = $expense->category?->coa_account_id;
+        if (!$coaAccountId) {
+            throw new \Exception('Expense category belum terhubung ke COA account. Set COA di master Expense Category.');
+        }
+
+        $this->cashAccountService->recordTransaction([
             'cash_account_id' => $expense->cash_account_id,
-            'transaction_date' => $expense->expense_date,
-            'type' => 'expense',
-            'amount' => $expense->amount,
+            'coa_account_id' => $coaAccountId,
+            'type' => 'out',
+            'transaction_date' => $expense->expense_date?->format('Y-m-d') ?? now()->format('Y-m-d'),
+            'amount' => (float) $expense->amount,
             'description' => "Expense: {$expense->description} ({$expense->expense_number})",
-            'reference_type' => Expense::class,
+            'reference_type' => 'expense',
             'reference_id' => $expense->id,
+            'notes' => $expense->reference_no ? "Reference: {$expense->reference_no}" : null,
             'created_by' => Auth::id(),
         ]);
-
-        // Update cash account balance
-        $cashAccount = CashAccount::find($expense->cash_account_id);
-        $cashAccount->decrement('balance', (float) $expense->amount);
     }
 
     /**
@@ -252,16 +281,18 @@ class ExpenseService
     protected function reverseCashTransaction(Expense $expense): void
     {
         // Find and delete cash transaction
-        $transaction = CashTransaction::where('reference_type', Expense::class)
+        $transaction = CashTransaction::whereIn('reference_type', ['expense', Expense::class])
             ->where('reference_id', $expense->id)
             ->first();
 
         if ($transaction) {
-            $transaction->delete();
+            // Revert cash account balance (note: ini delete-based, bukan reversal transaction)
+            $cashAccount = $transaction->cashAccount()->lockForUpdate()->first();
+            if ($cashAccount) {
+                $cashAccount->increment('current_balance', (float) $transaction->amount);
+            }
 
-            // Update cash account balance
-            $cashAccount = CashAccount::find($expense->cash_account_id);
-            $cashAccount->increment('balance', (float) $expense->amount);
+            $transaction->delete();
         }
     }
 

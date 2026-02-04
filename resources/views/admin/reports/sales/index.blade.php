@@ -5,8 +5,7 @@
 @section('page-subtitle', 'Ringkasan dan detail transaksi penjualan')
 
 @section('content')
-<div class="page-fullwidth">
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100">
 
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
@@ -133,7 +132,7 @@
     <!-- Detail Transactions -->
     <div class="overflow-x-auto">
         <table class="imperial-table w-full">
-            <thead class="">
+            <thead>
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal & Jam</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Invoice</th>
@@ -143,7 +142,7 @@
                     <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                 </tr>
             </thead>
-            <tbody class="">
+            <tbody>
                 @forelse($sales as $sale)
                 <tr>
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
@@ -177,7 +176,7 @@
                 @endforelse
             </tbody>
             @if($sales->count() > 0)
-            <tfoot class="">
+            <tfoot>
                 <tr>
                     <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
                         TOTAL ({{ $summary['total_transactions'] }} transaksi):
@@ -215,9 +214,7 @@
     }
     main {
         padding: 0 !important;
-}
+    }
 }
 </style>
-</div>
-</div>
 @endsection

@@ -150,7 +150,13 @@ class CashAccountController extends Controller
     public function createTransaction()
     {
         $accounts = CashAccount::active()->orderBy('name')->get();
-        return view('admin.cash-accounts.create-transaction', compact('accounts'));
+        
+        // Get approved expenses for linking
+        $approvedExpenses = \App\Models\Expense::where('status', 'approved')
+            ->orderBy('expense_date', 'desc')
+            ->get();
+        
+        return view('admin.cash-accounts.create-transaction', compact('accounts', 'approvedExpenses'));
     }
 
     /**
@@ -165,7 +171,7 @@ class CashAccountController extends Controller
             $transaction = $this->cashAccountService->recordTransaction($data);
 
             return redirect()
-                ->route('admin.cash-accounts.transactions')
+                ->route('admin.cash-transactions.index')
                 ->with('success', 'Transaksi berhasil dicatat! Nomor: ' . $transaction->transaction_number);
         } catch (\Exception $e) {
             return back()

@@ -136,6 +136,7 @@ class CashSessionService
         // Cari session terakhir hari ini untuk outlet ini
         $lastSession = CashSession::where('outlet_id', $outletId)
             ->whereDate('opened_at', now())
+            ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();
 

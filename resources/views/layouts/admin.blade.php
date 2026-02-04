@@ -266,11 +266,11 @@
         body.sidebar-collapsed .imperial-sidebar { width: 4.5rem !important; min-width: 4.5rem !important; }
         body.sidebar-collapsed .imperial-sidebar .px-6, body.sidebar-collapsed .imperial-sidebar .pt-6, body.sidebar-collapsed .imperial-sidebar .pb-5, body.sidebar-collapsed .imperial-sidebar .nav-label, body.sidebar-collapsed .imperial-sidebar .leading-tight, body.sidebar-collapsed .imperial-sidebar .mt-auto, body.sidebar-collapsed .imperial-sidebar .flex-1, body.sidebar-collapsed .imperial-sidebar .text-xs, body.sidebar-collapsed .imperial-sidebar .text-lg, body.sidebar-collapsed .imperial-sidebar .text-sm, body.sidebar-collapsed .imperial-sidebar .text-indigo-100, body.sidebar-collapsed .imperial-sidebar .text-indigo-200, body.sidebar-collapsed .imperial-sidebar .text-white, body.sidebar-collapsed .imperial-sidebar .text-emerald-300, body.sidebar-collapsed .imperial-sidebar .text-amber-300, body.sidebar-collapsed .imperial-sidebar .fa-chevron-right, body.sidebar-collapsed .imperial-sidebar .imperial-badge { display: none !important; }
         body.sidebar-collapsed .imperial-sidebar { overflow: visible; }
-        body.sidebar-mobile-open .imperial-sidebar { position:fixed !important; left:0; top:0; height:100vh; z-index:50; box-shadow:0 0 0 9999px rgba(0,0,0,0.4); }
+        body.sidebar-mobile-open .imperial-sidebar { position:fixed !important; left:0; top:0; height:100vh; z-index:50; }
         body.sidebar-mobile-open #sidebarOverlay { display:block !important; }
         @media (max-width: 1024px) {
-            .imperial-sidebar { position:fixed !important; left:-100%; top:0; height:100vh; z-index:50; box-shadow:0 0 0 9999px rgba(0,0,0,0.4); transition:left 0.3s cubic-bezier(.4,0,.2,1); }
-            body.sidebar-mobile-open .imperial-sidebar { left:0 !important; }
+            .imperial-sidebar { position:fixed !important; left:-100%; top:0; height:100vh; z-index:50; box-shadow:none; transition:left 0.3s cubic-bezier(.4,0,.2,1); }
+            body.sidebar-mobile-open .imperial-sidebar { left:0 !important; box-shadow:0 0 0 9999px rgba(0,0,0,0.4); }
         }
     </style>
     <div class="flex h-screen overflow-hidden font-sans" style="font-family: 'Inter Tight', 'Roboto Condensed', 'Montserrat', 'Inter', sans-serif;">
@@ -356,8 +356,8 @@
                                 'gradient' => 'from-indigo-500 to-purple-500'
                             ],
                             [
-                                'label' => 'Expense Management',
-                                'desc'  => 'Kelola pengeluaran & kategori',
+                                'label' => 'Request Expense',
+                                'desc'  => 'Pengajuan biaya & approval',
                                 'icon'  => 'fas fa-receipt',
                                 'route' => 'admin.expenses.index',
                                 'match' => 'admin.expenses.*|admin.expense-categories.*',
@@ -431,7 +431,10 @@
 
                 {{-- TOP HEADER - USER PROFILE ONLY --}}
                 <header class="imperial-header relative z-10 border-b border-white/10">
-                    <div class="px-6 py-3 flex items-center justify-end gap-4">
+                    <div class="px-6 py-3 flex items-center justify-between">
+                        <button onclick="toggleMobileSidebar()" class="lg:hidden inline-flex items-center justify-center p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20">
+                            <i class="fas fa-bars"></i>
+                        </button>
                         <div class="flex items-center gap-3">
                             <div class="relative">
                                 <div class="h-9 w-9 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-sm font-bold text-amber-400">

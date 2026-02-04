@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Expenses')
+@section('title', 'Request Expense')
 
 @section('content')
 <div class="page-fullwidth px-0">
@@ -8,12 +8,12 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Expenses</h1>
-            <p class="text-gray-600 mt-1">Manage business expenses</p>
+            <h1 class="text-2xl font-bold text-gray-800">Request Expense</h1>
+            <p class="text-gray-600 mt-1">Kelola pengajuan biaya</p>
         </div>
         <a href="{{ route('admin.expenses.create') }}"
            class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 shadow-md transition">
-            <i class="fas fa-plus mr-2"></i> Add Expense
+            <i class="fas fa-plus mr-2"></i> Buat Pengajuan
         </a>
     </div>
 

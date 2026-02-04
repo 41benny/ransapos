@@ -89,6 +89,30 @@
                     <p class="mt-1 text-sm text-gray-500">Wajib dipilih untuk transaksi keluar (biaya operasional)</p>
                 </div>
 
+                <!-- Referensi Expense (opsional, untuk pelunasan pengajuan) -->
+                <div id="expense-field" style="display: {{ old('type') == 'out' ? 'block' : 'none' }};">
+                    <label for="expense_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Link ke Pengajuan (opsional)
+                    </label>
+                    <select id="expense_id" 
+                            name="expense_id" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            onchange="autoFillFromExpense()">
+                        <option value="">-- Tidak terkait pengajuan --</option>
+                        @if(isset($approvedExpenses))
+                        @foreach($approvedExpenses as $expense)
+                            <option value="{{ $expense->id }}" 
+                                    data-amount="{{ $expense->amount }}"
+                                    data-description="{{ $expense->description }}"
+                                    {{ old('expense_id') == $expense->id ? 'selected' : '' }}>
+                                {{ $expense->expense_number }} - Rp {{ number_format($expense->amount, 0, ',', '.') }} ({{ Str::limit($expense->description, 30) }})
+                            </option>
+                        @endforeach
+                        @endif
+                    </select>
+                    <p class="mt-1 text-sm text-gray-500">Pilih jika transaksi ini adalah pelunasan dari pengajuan biaya yang sudah approved</p>
+                </div>
+
                 <!-- Tanggal Transaksi -->
                 <div>
                     <label for="transaction_date" class="block text-sm font-medium text-gray-700 mb-2">
@@ -179,15 +203,36 @@
 function toggleCoaField() {
     const type = document.getElementById('type').value;
     const coaField = document.getElementById('coa-field');
+    const expenseField = document.getElementById('expense-field');
     const coaSelect = document.getElementById('coa_account_id');
     
     if (type === 'out') {
         coaField.style.display = 'block';
+        expenseField.style.display = 'block';
         coaSelect.required = true;
     } else {
         coaField.style.display = 'none';
+        expenseField.style.display = 'none';
         coaSelect.required = false;
         coaSelect.value = '';
+        document.getElementById('expense_id').value = '';
+    }
+}
+
+function autoFillFromExpense() {
+    const expenseSelect = document.getElementById('expense_id');
+    const selectedOption = expenseSelect.options[expenseSelect.selectedIndex];
+    
+    if (selectedOption.value) {
+        const amount = selectedOption.getAttribute('data-amount');
+        const description = selectedOption.getAttribute('data-description');
+        
+        if (amount) {
+            document.getElementById('amount').value = amount;
+        }
+        if (description) {
+            document.getElementById('description').value = 'Pelunasan: ' + description;
+        }
     }
 }
 

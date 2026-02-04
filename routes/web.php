@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\POS\DashboardController as POSDashboardController;
 use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
+use App\Http\Controllers\POS\CashSessionController;
 
 // Redirect root ke login
 Route::get('/', function () {
@@ -108,14 +109,17 @@ Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
     Route::get('/sessions/open', [\App\Http\Controllers\POS\CashSessionController::class, 'open'])
         ->name('sessions.open')
         ->middleware('role:kasir,admin');
-    Route::post('/sessions', [\App\Http\Controllers\POS\CashSessionController::class, 'store'])
+    Route::post('/sessions', [CashSessionController::class, 'store'])
         ->name('sessions.store')
         ->middleware('role:kasir,admin');
-    Route::get('/sessions/close', [\App\Http\Controllers\POS\CashSessionController::class, 'close'])
+    Route::get('/sessions/close', [CashSessionController::class, 'close'])
         ->name('sessions.close')
         ->middleware('role:kasir,admin');
-    Route::post('/sessions/{cashSession}/close', [\App\Http\Controllers\POS\CashSessionController::class, 'closeStore'])
+    Route::post('/sessions/{cashSession}/close', [CashSessionController::class, 'closeStore'])
         ->name('sessions.close.store')
+        ->middleware('role:kasir,admin');
+    Route::get('/sessions/{cashSession}/print', [CashSessionController::class, 'print'])
+        ->name('sessions.print')
         ->middleware('role:kasir,admin');
 
     // Sales Transactions (Kasir/Admin)
@@ -124,6 +128,10 @@ Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
         ->middleware('role:kasir,admin');
     Route::post('/sales', [SaleController::class, 'store'])
         ->name('sales.store')
+        ->middleware('role:kasir,admin');
+
+    Route::get('/sales/{sale}/print', [SaleController::class, 'print'])
+        ->name('sales.print')
         ->middleware('role:kasir,admin');
 
     // Simple Kitchen Display (Admin/Kasir/Kitchen)

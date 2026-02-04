@@ -69,6 +69,7 @@ class CashAccountService
 
         // Cari nomor terakhir hari ini untuk akun ini
         $lastTransaction = CashTransaction::where('transaction_number', 'like', $prefix.'%')
+            ->lockForUpdate()
             ->orderBy('transaction_number', 'desc')
             ->first();
 
@@ -93,9 +94,18 @@ class CashAccountService
 
             $account = CashAccount::findOrFail($data['cash_account_id']);
 
-            // Validasi: Transaksi keluar harus ada COA (akun biaya)
-            if ($data['type'] === 'out' && empty($data['coa_account_id'])) {
-                throw new Exception('Transaksi kas keluar harus memilih akun biaya (COA)');
+            // Validasi: Transaksi keluar harus ada COA (akun biaya) - kecuali untuk transaksi dengan referensi
+            if ($data['type'] === 'out' && empty($data['reference_type'])) {
+                if (!isset($data['coa_account_id']) || $data['coa_account_id'] === '' || $data['coa_account_id'] === null) {
+                    throw new Exception('Transaksi kas keluar harus memilih akun biaya (COA)');
+                }
+            }
+
+            // Handle expense reference if provided
+            if (!empty($data['expense_id'])) {
+                $data['reference_type'] = 'expense';
+                $data['reference_id'] = $data['expense_id'];
+                unset($data['expense_id']);
             }
 
             // Generate transaction number
@@ -123,6 +133,17 @@ class CashAccountService
             $account->update([
                 'current_balance' => $data['balance_after'],
             ]);
+
+            // Mark linked expense as paid
+            if (!empty($data['reference_type']) && $data['reference_type'] === 'expense' && !empty($data['reference_id'])) {
+                $expense = \App\Models\Expense::find($data['reference_id']);
+                if ($expense && $expense->status === 'approved') {
+                    $expense->update([
+                        'status' => 'paid',
+                        'cash_account_id' => $account->id,
+                    ]);
+                }
+            }
 
             DB::commit();
 

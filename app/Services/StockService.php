@@ -88,6 +88,63 @@ class StockService
     }
 
     /**
+    */
+    public function restoreSaleStock(
+        int $productId,
+        int $outletId,
+        float $quantity,
+        int $saleId,
+        ?int $userId = null,
+        ?string $notes = null
+    ): void {
+        DB::beginTransaction();
+
+        try {
+            $stock = Stock::firstOrCreate(
+                [
+                    'product_id' => $productId,
+                    'outlet_id' => $outletId,
+                ],
+                [
+                    'quantity' => 0,
+                    'last_mutation_at' => now(),
+                ]
+            );
+
+            $stockBefore = $stock->quantity;
+            $stock->quantity += $quantity;
+            $stock->last_mutation_at = now();
+            $stock->save();
+
+            // Ambil cost referensi: gunakan purchase_price sebagai unit cost reversal
+            $product = Product::find($productId);
+            $unitCost = $product->purchase_price ?? 0;
+            $totalCost = $unitCost * $quantity;
+
+            StockMutation::create([
+                'product_id' => $productId,
+                'outlet_id' => $outletId,
+                'mutation_type' => 'in',
+                'quantity' => $quantity,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
+                'stock_before' => $stockBefore,
+                'stock_after' => $stock->quantity,
+                'reference_type' => 'sale_cancellation',
+                'reference_id' => $saleId,
+                'mutation_date' => now()->toDateString(),
+                'notes' => $notes ?: 'Pembatalan transaksi',
+                'created_by' => $userId,
+            ]);
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Tambah stok karena pembelian
      * 
      * @param int $productId

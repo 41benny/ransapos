@@ -57,14 +57,12 @@ class SalesReportController extends Controller
             'total_non_cash' => 0,
         ];
 
-        // Hitung cash vs non-cash (asumsi payment_method_id 1 = CASH)
+        // Hitung cash vs non-cash (berbasis code PAYMENT CASH)
         foreach ($sales as $sale) {
             foreach ($sale->payments as $payment) {
-                if ($payment->payment_method_id == 1) {
-                    $summary['total_cash'] += $payment->amount;
-                } else {
-                    $summary['total_non_cash'] += $payment->amount;
-                }
+                $isCash = $payment->paymentMethod?->code === 'CASH' || $payment->payment_method_id == 1;
+                $summary['total_cash'] += $isCash ? $payment->amount : 0;
+                $summary['total_non_cash'] += $isCash ? 0 : $payment->amount;
             }
         }
 
