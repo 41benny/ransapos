@@ -494,7 +494,7 @@
                                             @php
                                                 $isChildActive = $child['match'] ? request()->routeIs($child['match']) : false;
                                                 $childClasses = $isChildActive
-                                                    ? 'block px-3 py-2 rounded-lg text-white bg-white/10 text-xs font-medium'
+                                                    ? 'block px-3 py-2 rounded-lg text-amber-400 text-xs font-bold'
                                                     : 'block px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-xs transition-colors';
                                             @endphp
                                             <a href="{{ route($child['route']) }}" class="{{ $childClasses }}">
