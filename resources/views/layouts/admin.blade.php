@@ -488,7 +488,7 @@
                                     </div>
                                     <!-- Submenu -->
                                     <div id="{{ $menuId }}"
-                                        class="overflow-hidden transition-all duration-300 ease-in-out pl-9 space-y-1"
+                                        class="overflow-hidden transition-all duration-300 ease-in-out pl-14 space-y-1"
                                         style="{{ $isActive ? 'max-height: 1000px;' : 'max-height: 0px;' }}">
                                         @foreach($item['children'] as $child)
                                             @php
