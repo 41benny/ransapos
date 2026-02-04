@@ -13,6 +13,28 @@ use Illuminate\Support\Facades\Auth;
 class ProductController extends Controller
 {
     /**
+     * Import products from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xls,xlsx'
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ProductImport, $request->file('file'));
+
+            return redirect()
+                ->route('admin.products.index')
+                ->with('success', 'Produk berhasil diimport!');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('admin.products.index')
+                ->with('error', 'Gagal import produk: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Tampilkan daftar produk
      */
     public function index()
@@ -32,7 +54,7 @@ class ProductController extends Controller
         $categories = ProductCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
-            
+
         return view('admin.products.create', compact('categories'));
     }
 
@@ -44,9 +66,9 @@ class ProductController extends Controller
         $data = $request->validated();
         $data['created_by'] = Auth::id();
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
-        
+
         Product::create($data);
-        
+
         return redirect()
             ->route('admin.products.index')
             ->with('success', 'Produk berhasil ditambahkan!');
@@ -58,7 +80,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->load('category', 'creator', 'stocks.outlet');
-        
+
         return view('admin.products.show', compact('product'));
     }
 
@@ -70,7 +92,7 @@ class ProductController extends Controller
         $categories = ProductCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
-            
+
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
@@ -81,9 +103,9 @@ class ProductController extends Controller
     {
         $data = $request->validated();
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
-        
+
         $product->update($data);
-        
+
         return redirect()
             ->route('admin.products.index')
             ->with('success', 'Produk berhasil diperbarui!');
@@ -96,7 +118,7 @@ class ProductController extends Controller
     {
         try {
             $product->delete();
-            
+
             return redirect()
                 ->route('admin.products.index')
                 ->with('success', 'Produk berhasil dihapus!');

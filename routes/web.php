@@ -26,6 +26,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // Master Data
+    Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
     Route::resource('products', ProductController::class);
     Route::resource('outlets', OutletController::class)->only(['index']);
     Route::resource('suppliers', SupplierController::class)->only(['index']);
