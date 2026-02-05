@@ -40,10 +40,13 @@ class ProductImport implements ToModel, WithHeadingRow
         $sellingPrice = isset($row['harga_jual']) ? (float) preg_replace('/[^0-9.]/', '', $row['harga_jual']) : 0;
         $stock = isset($row['stok']) ? (int) $row['stok'] : 0;
 
+        $productType = $this->guessProductType($row);
+
         return new Product([
             'name'           => $row['nama_produk'],
             'sku'            => $row['sku'] ?? $this->generateSku($row['nama_produk']),
             'category_id'    => $category->id,
+            'product_type'   => $productType,
             'purchase_price' => $purchasePrice,
             'selling_price'  => $sellingPrice,
             'unit'           => $unit,
@@ -62,6 +65,34 @@ class ProductImport implements ToModel, WithHeadingRow
             // I will skip saving stock here to avoid errors, or handle it via AfterImport event if needed.
             // For now, let's just save the product master data.
         ]);
+    }
+
+    private function guessProductType(array $row): string
+    {
+        $raw = $row['product_type']
+            ?? $row['jenis_produk']
+            ?? $row['jenis']
+            ?? $row['tipe']
+            ?? null;
+
+        if (!$raw) {
+            return 'finished_good';
+        }
+
+        $value = strtolower(trim((string) $raw));
+        $value = str_replace(['-', ' '], '_', $value);
+
+        if (in_array($value, ['raw_material', 'bahan', 'bahan_baku', 'material', 'ingredient'], true)) {
+            return 'raw_material';
+        }
+        if (in_array($value, ['service', 'jasa'], true)) {
+            return 'service';
+        }
+        if (in_array($value, ['finished_good', 'produk', 'produk_jadi', 'menu'], true)) {
+            return 'finished_good';
+        }
+
+        return 'finished_good';
     }
 
     private function generateSku($name)

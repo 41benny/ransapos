@@ -60,8 +60,8 @@
                     </div>
                 </div>
 
-                <!-- Kategori & Satuan -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kategori, Jenis, & Satuan -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Kategori -->
                     <div>
                         <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">
@@ -81,6 +81,26 @@
                             @endforeach
                         </select>
                         @error('category_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Jenis Produk -->
+                    <div>
+                        <label for="product_type" class="block text-sm font-medium text-gray-700 mb-2">
+                            Jenis Produk <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="product_type"
+                            id="product_type"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('product_type') border-red-500 @enderror"
+                            required
+                        >
+                            <option value="finished_good" {{ old('product_type', $product->product_type) == 'finished_good' ? 'selected' : '' }}>Produk Jadi</option>
+                            <option value="raw_material" {{ old('product_type', $product->product_type) == 'raw_material' ? 'selected' : '' }}>Bahan Baku</option>
+                            <option value="service" {{ old('product_type', $product->product_type) == 'service' ? 'selected' : '' }}>Jasa</option>
+                        </select>
+                        @error('product_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
