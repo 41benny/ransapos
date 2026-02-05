@@ -138,7 +138,7 @@ class StockController extends Controller
         $outlets = Outlet::where('is_active', true)->get();
         $products = Product::where('is_active', true)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
 
         return view('admin.stocks.adjustment', compact('outlets', 'products'));
     }
@@ -172,6 +172,41 @@ class StockController extends Controller
      */
     public function storeAdjustment(Request $request)
     {
+        // Bulk mode (preferred): items[][product_id,new_quantity]
+        if ($request->filled('items')) {
+            $data = $request->validate([
+                'outlet_id' => 'required|exists:outlets,id',
+                'notes' => 'required|string|max:500',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.new_quantity' => 'required|numeric|min:0',
+            ]);
+
+            try {
+                DB::beginTransaction();
+
+                foreach ($data['items'] as $item) {
+                    $this->stockService->adjustStock(
+                        (int) $item['product_id'],
+                        (int) $data['outlet_id'],
+                        (float) $item['new_quantity'],
+                        (string) $data['notes'],
+                        auth()->id()
+                    );
+                }
+
+                DB::commit();
+
+                return redirect()->route('admin.stocks.index')
+                    ->with('success', 'Stock adjustment berhasil dilakukan.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->withInput()
+                    ->with('error', 'Gagal melakukan adjustment: ' . $e->getMessage());
+            }
+        }
+
+        // Legacy single-item mode
         $request->validate([
             'outlet_id' => 'required|exists:outlets,id',
             'product_id' => 'required|exists:products,id',
