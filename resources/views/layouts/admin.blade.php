@@ -580,8 +580,7 @@
 
                 {{-- FOOTER --}}
                 <footer class="relative z-10 px-6 py-4 bg-white/50 backdrop-blur-sm border-t border-gray-200/50">
-                    <div
-                        class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm text-gray-600">
+                    <div class="flex flex-col items-center justify-center gap-2 text-sm text-gray-600">
                         <p class="flex items-center gap-2">
                             <i class="fas fa-copyright text-gray-400"></i>
                             <span>2025 Authorize of Moresto. All rights reserved.</span>
