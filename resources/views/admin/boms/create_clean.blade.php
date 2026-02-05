@@ -9,7 +9,7 @@
                 <p class="text-sm text-slate-500">Atur komposisi produk jadi</p>
                 <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials</h1>
             </div>
-            <a href="{{ route('admin.boms.index') }}" class="imperial-btn-secondary imperial-btn-sm">
+            <a href="{{ route('admin.boms.index') }}" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -111,8 +111,8 @@
                                                     placeholder="kg, pcs, liter..." value="{{ $component['uom'] ?? '' }}">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
-                                                <button type="button" class="imperial-btn-danger w-full remove-component">
-                                                    <i class="fas fa-trash"></i>
+                                                <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2">
+                                                    <i class="fas fa-trash"></i> Hapus
                                                 </button>
                                             </div>
                                         </div>
@@ -145,8 +145,8 @@
                                                 placeholder="kg, pcs, liter...">
                                         </div>
                                         <div class="md:col-span-1 flex items-end">
-                                            <button type="button" class="imperial-btn-danger w-full remove-component">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2">
+                                                <i class="fas fa-trash"></i> Hapus
                                             </button>
                                         </div>
                                     </div>
@@ -220,9 +220,7 @@
                                    placeholder="kg, pcs, liter..." value="${data.uom ?? ''}">
                         </div>
                         <div class="md:col-span-1 flex items-end">
-                            <button type="button" class="imperial-btn-danger w-full remove-component">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2"><i class="fas fa-trash"></i> Hapus</button>
                         </div>
                     </div>
                 </div>
