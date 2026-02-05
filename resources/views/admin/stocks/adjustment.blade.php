@@ -235,7 +235,7 @@
                     <td class="px-4 py-3">
                         <div class="relative" data-autocomplete-wrap>
                             <input type="text"
-                                class="w-full rounded-lg border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                class="w-full rounded-lg border border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                                 placeholder="Ketik nama/SKU..." data-product-input required>
                             <input type="hidden" data-product-id value="">
                             <div class="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -246,12 +246,12 @@
                     <td class="px-4 py-3 text-right text-slate-700 tabular-nums" data-system>0.00</td>
                     <td class="px-4 py-3 text-right">
                         <input type="number" step="0.01" min="0"
-                            class="w-36 text-right rounded-lg border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            class="w-36 text-right rounded-lg border border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                             value="0" data-actual required>
                     </td>
                     <td class="px-4 py-3 text-right font-semibold text-slate-600 tabular-nums" data-diff>0.00</td>
                     <td class="px-4 py-3 text-right">
-                        <button type="button" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm" data-remove
+                        <button type="button" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm" data-remove
                             title="Hapus baris">
                             <i class="fas fa-trash"></i>
                         </button>
