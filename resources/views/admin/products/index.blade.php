@@ -9,20 +9,6 @@
         <span class="text-violet-600 font-medium">Produk</span>
     @endsection
 
-    @section('header-actions')
-        <div class="flex items-center gap-3">
-            <button onclick="document.getElementById('importModal').classList.remove('hidden')"
-                class="imperial-btn imperial-btn-outline imperial-btn-sm">
-                <i class="fas fa-file-import"></i>
-                <span>Import Excel</span>
-            </button>
-            <a href="{{ route('admin.products.create') }}" class="imperial-btn imperial-btn-sm">
-                <i class="fas fa-plus"></i>
-                <span>Tambah Produk</span>
-            </a>
-        </div>
-    @endsection
-
     @section('content')
 
         <!-- Alert Success/Error -->
@@ -45,7 +31,7 @@
 
                 <!-- Header -->
                 <div class="p-6 border-b border-gray-100">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
                                 <i class="fas fa-box text-violet-500"></i>
@@ -53,6 +39,17 @@
                             </h3>
                             <p class="text-sm text-gray-500 mt-1">Total: <span
                                     class="font-semibold text-violet-600">{{ $products->total() }}</span> produk</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button onclick="document.getElementById('importModal').classList.remove('hidden')"
+                                class="imperial-btn imperial-btn-outline imperial-btn-sm">
+                                <i class="fas fa-file-import"></i>
+                                <span>Import Excel</span>
+                            </button>
+                            <a href="{{ route('admin.products.create') }}" class="imperial-btn imperial-btn-sm">
+                                <i class="fas fa-plus"></i>
+                                <span>Tambah Produk</span>
+                            </a>
                         </div>
                     </div>
                 </div>
