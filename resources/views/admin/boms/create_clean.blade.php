@@ -38,14 +38,16 @@
             <div class="bg-white rounded-2xl shadow-premium border border-slate-200 p-6 space-y-6">
                 <div class="grid gap-5 md:grid-cols-2">
                     <div class="space-y-4">
-                        <div>
+                        <div class="relative" data-autocomplete-wrap>
                             <label for="product_id" class="block text-sm font-medium text-slate-700 mb-1">
                                 Produk Utama <span class="text-rose-500">*</span>
                             </label>
-                            <input type="text" list="finished-products-list" id="product_id"
+                            <input type="text" id="product_id"
                                 class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
                                 placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
                             <input type="hidden" name="product_id" value="{{ old('product_id') }}" data-finished-id>
+                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                data-autocomplete-panel></div>
                         </div>
 
                         <div>
@@ -86,17 +88,19 @@
                                 @foreach(old('components') as $index => $component)
                                     <div class="component-row bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                                         <div class="grid gap-3 md:grid-cols-12">
-                                            <div class="md:col-span-6">
+                                            <div class="md:col-span-6 relative" data-autocomplete-wrap>
                                                 <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
                                                 @php
                                                     $selectedRaw = $rawMap->get($component['component_product_id'] ?? null);
                                                     $selectedLabel = $selectedRaw ? ($selectedRaw->name . ' (' . $selectedRaw->sku . ')') : '';
                                                 @endphp
-                                                <input type="text" list="raw-materials-list"
+                                                <input type="text"
                                                     class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
                                                     placeholder="Ketik bahan..." value="{{ $selectedLabel }}" data-raw-input required>
                                                 <input type="hidden" name="components[{{ $index }}][component_product_id]"
                                                     value="{{ $component['component_product_id'] ?? '' }}" data-raw-id>
+                                                <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                                    data-autocomplete-panel></div>
                                             </div>
                                             <div class="md:col-span-3">
                                                 <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -121,12 +125,14 @@
                             @else
                                 <div class="component-row bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                                     <div class="grid gap-3 md:grid-cols-12">
-                                        <div class="md:col-span-6">
+                                        <div class="md:col-span-6 relative" data-autocomplete-wrap>
                                             <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
-                                            <input type="text" list="raw-materials-list"
+                                            <input type="text"
                                                 class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
                                                 placeholder="Ketik bahan..." data-raw-input required>
                                             <input type="hidden" name="components[0][component_product_id]" value="" data-raw-id>
+                                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                                data-autocomplete-panel></div>
                                         </div>
                                         <div class="md:col-span-3">
                                             <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -167,18 +173,6 @@
         </form>
     </div>
 
-    <datalist id="finished-products-list">
-        @foreach($finishedProducts as $product)
-            <option value="{{ $product->name }} ({{ $product->sku }})" data-id="{{ $product->id }}"></option>
-        @endforeach
-    </datalist>
-
-    <datalist id="raw-materials-list">
-        @foreach($rawMaterials as $raw)
-            <option value="{{ $raw->name }} ({{ $raw->sku }})" data-id="{{ $raw->id }}"></option>
-        @endforeach
-    </datalist>
-
     <script type="application/json" id="raw-materials-data">
     {!! json_encode($rawMaterials->map(fn($raw) => ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku])) !!}
     </script>
@@ -191,11 +185,21 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const rawMaterials = JSON.parse(document.getElementById('raw-materials-data').textContent || '[]');
-            const rawIdByLabel = new Map(rawMaterials.map(raw => [`${raw.name} (${raw.sku})`, String(raw.id)]));
-            const rawLabelById = new Map(rawMaterials.map(raw => [String(raw.id), `${raw.name} (${raw.sku})`]));
+            const rawItems = rawMaterials.map(raw => ({
+                id: String(raw.id),
+                label: `${raw.name} (${raw.sku})`,
+                search: `${raw.name} ${raw.sku}`.toLowerCase()
+            }));
+            const rawIdByLabel = new Map(rawItems.map(raw => [raw.label, raw.id]));
+            const rawLabelById = new Map(rawItems.map(raw => [raw.id, raw.label]));
             const finishedProducts = @json($finishedProducts->map(fn($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku]));
-            const finishedIdByLabel = new Map(finishedProducts.map(product => [`${product.name} (${product.sku})`, String(product.id)]));
-            const finishedLabelById = new Map(finishedProducts.map(product => [String(product.id), `${product.name} (${product.sku})`]));
+            const finishedItems = finishedProducts.map(product => ({
+                id: String(product.id),
+                label: `${product.name} (${product.sku})`,
+                search: `${product.name} ${product.sku}`.toLowerCase()
+            }));
+            const finishedIdByLabel = new Map(finishedItems.map(product => [product.label, product.id]));
+            const finishedLabelById = new Map(finishedItems.map(product => [product.id, product.label]));
             let componentIndex = parseInt(document.getElementById('component-index-data').textContent || '1', 10);
             const container = document.getElementById('components-container');
             const addBtn = document.getElementById('add-component');
@@ -203,40 +207,87 @@
             const finishedInput = document.querySelector('[data-finished-input]');
             const finishedHidden = document.querySelector('[data-finished-id]');
 
-            function syncRawSelection(input) {
-                const row = input.closest('.component-row');
-                if (!row) return;
-                const hidden = row.querySelector('[data-raw-id]');
-                const mapped = rawIdByLabel.get(input.value) || '';
-                if (hidden) hidden.value = mapped;
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function syncSelection(input, hidden, mapByLabel, label) {
+                const mapped = mapByLabel.get(input.value) || '';
+                hidden.value = mapped;
                 if (input.value && !mapped) {
-                    input.setCustomValidity('Pilih bahan dari daftar.');
+                    input.setCustomValidity(`Pilih ${label} dari daftar.`);
                 } else {
                     input.setCustomValidity('');
                 }
             }
 
-            function syncFinishedSelection() {
-                if (!finishedInput || !finishedHidden) return;
-                const mapped = finishedIdByLabel.get(finishedInput.value) || '';
-                finishedHidden.value = mapped;
-                if (finishedInput.value && !mapped) {
-                    finishedInput.setCustomValidity('Pilih produk dari daftar.');
-                } else {
-                    finishedInput.setCustomValidity('');
+            function initAutocomplete(input, hidden, items, mapByLabel, label) {
+                if (!input || !hidden || input.dataset.autocompleteReady) return;
+                const wrap = input.closest('[data-autocomplete-wrap]');
+                const panel = wrap?.querySelector('[data-autocomplete-panel]');
+                if (!panel) return;
+                input.dataset.autocompleteReady = 'true';
+
+                function renderList() {
+                    const query = input.value.trim().toLowerCase();
+                    const results = query
+                        ? items.filter(item => item.search.includes(query)).slice(0, 40)
+                        : items.slice(0, 40);
+                    if (results.length === 0) {
+                        panel.innerHTML = '<div class="px-3 py-2 text-slate-500">Tidak ada hasil.</div>';
+                    } else {
+                        panel.innerHTML = results.map(item =>
+                            `<button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-100" data-id="${item.id}">${escapeHtml(item.label)}</button>`
+                        ).join('');
+                    }
+                    panel.classList.remove('hidden');
                 }
+
+                function hideList() {
+                    panel.classList.add('hidden');
+                }
+
+                input.addEventListener('focus', renderList);
+                input.addEventListener('input', function () {
+                    renderList();
+                    syncSelection(input, hidden, mapByLabel, label);
+                });
+                input.addEventListener('blur', function () {
+                    setTimeout(hideList, 150);
+                    syncSelection(input, hidden, mapByLabel, label);
+                });
+
+                panel.addEventListener('mousedown', function (event) {
+                    const target = event.target.closest('[data-id]');
+                    if (!target) return;
+                    const picked = items.find(item => item.id === target.dataset.id);
+                    if (!picked) return;
+                    input.value = picked.label;
+                    hidden.value = picked.id;
+                    input.setCustomValidity('');
+                    hideList();
+                });
+
+                syncSelection(input, hidden, mapByLabel, label);
             }
 
             function createComponentRow(index, data = {}) {
                 return `
                 <div class="component-row bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                     <div class="grid gap-3 md:grid-cols-12">
-                        <div class="md:col-span-6">
+                        <div class="md:col-span-6 relative" data-autocomplete-wrap>
                             <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
-                            <input type="text" list="raw-materials-list"
+                            <input type="text"
                                    class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
                                    placeholder="Ketik bahan..." data-raw-input required>
                             <input type="hidden" name="components[${index}][component_product_id]" value="${data.component_product_id ?? ''}" data-raw-id>
+                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                data-autocomplete-panel></div>
                         </div>
                         <div class="md:col-span-3">
                             <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -267,10 +318,7 @@
                     input.value = rawLabelById.get(String(hidden.value)) || '';
                 }
 
-                const handler = () => syncRawSelection(input);
-                input.addEventListener('input', handler);
-                input.addEventListener('change', handler);
-                handler();
+                initAutocomplete(input, hidden, rawItems, rawIdByLabel, 'bahan');
             }
 
             addBtn?.addEventListener('click', function () {
@@ -298,12 +346,17 @@
 
             form?.addEventListener('submit', function (e) {
                 let firstInvalid = null;
-                syncFinishedSelection();
+                if (finishedInput && finishedHidden) {
+                    syncSelection(finishedInput, finishedHidden, finishedIdByLabel, 'produk');
+                }
                 if (finishedInput && !finishedInput.checkValidity()) {
                     firstInvalid = finishedInput;
                 }
                 container?.querySelectorAll('[data-raw-input]').forEach(input => {
-                    syncRawSelection(input);
+                    const hidden = input.closest('.component-row')?.querySelector('[data-raw-id]');
+                    if (hidden) {
+                        syncSelection(input, hidden, rawIdByLabel, 'bahan');
+                    }
                     if (!input.checkValidity() && !firstInvalid) {
                         firstInvalid = input;
                     }
@@ -319,9 +372,7 @@
                 if (finishedHidden.value && !finishedInput.value) {
                     finishedInput.value = finishedLabelById.get(String(finishedHidden.value)) || '';
                 }
-                finishedInput.addEventListener('input', syncFinishedSelection);
-                finishedInput.addEventListener('change', syncFinishedSelection);
-                syncFinishedSelection();
+                initAutocomplete(finishedInput, finishedHidden, finishedItems, finishedIdByLabel, 'produk');
             }
         });
     </script>
