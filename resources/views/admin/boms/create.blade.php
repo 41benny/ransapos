@@ -171,7 +171,7 @@
 <!-- Data for JavaScript (without mixing Blade syntax in script tags) -->
 <div id="app-data" style="display: none;"
      data-component-index="{{ old('components') ? count(old('components')) : 1 }}"
-     data-raw-materials="{{ json_encode($rawMaterials->map(fn($raw) => ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku])) }}">
+     data-raw-materials="{{ json_encode($rawMaterials->map(function ($raw) { return ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku]; })) }}">
 </div>
 @endsection
 

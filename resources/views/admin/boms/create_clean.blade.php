@@ -174,7 +174,7 @@
     </div>
 
     <script type="application/json" id="raw-materials-data">
-    {!! json_encode($rawMaterials->map(fn($raw) => ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku])) !!}
+    {!! json_encode($rawMaterials->map(function ($raw) { return ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku]; })) !!}
     </script>
     <script type="application/json" id="component-index-data">
     {{ old('components') ? count(old('components')) : 1 }}
@@ -192,7 +192,7 @@
             }));
             const rawIdByLabel = new Map(rawItems.map(raw => [raw.label, raw.id]));
             const rawLabelById = new Map(rawItems.map(raw => [raw.id, raw.label]));
-            const finishedProducts = @json($finishedProducts->map(fn($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku]));
+            const finishedProducts = @json($finishedProducts->map(function ($product) { return ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku]; }));
             const finishedItems = finishedProducts.map(product => ({
                 id: String(product.id),
                 label: `${product.name} (${product.sku})`,

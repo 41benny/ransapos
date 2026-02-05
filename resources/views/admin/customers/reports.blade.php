@@ -205,7 +205,7 @@
     new Chart(typeDistributionCtx, {
         type: 'doughnut',
         data: {
-            labels: {!! json_encode($typeDistribution->pluck('customer_type')->map(fn($t) => ucfirst($t))->toArray()) !!},
+            labels: {!! json_encode($typeDistribution->pluck('customer_type')->map(function ($t) { return ucfirst($t); })->toArray()) !!},
             datasets: [{
                 data: {!! json_encode($typeDistribution->pluck('total')->toArray()) !!},
                 backgroundColor: [
