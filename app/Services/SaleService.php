@@ -153,14 +153,22 @@ class SaleService
                             );
                         }
                     } else {
-                        // Fallback: produk tidak punya BOM aktif => kurangi stok produk jadi
-                        $this->stockService->reduceSaleStock(
-                            productId: $product->id,
-                            outletId: $data['outlet_id'],
-                            quantity: $item['quantity'],
-                            saleId: $sale->id,
-                            userId: $sale->user_id
-                        );
+                        $behavior = config('sales.finished_good_without_bom', 'reduce');
+                        if ($behavior === 'block') {
+                            throw new Exception("Produk {$product->name} belum memiliki BOM aktif. Silakan buat BOM terlebih dahulu.");
+                        }
+                        if ($behavior === 'skip') {
+                            // Made-to-order menu without BOM: do not mutate stock.
+                        } else {
+                            // Legacy behavior: reduce finished_good stock directly.
+                            $this->stockService->reduceSaleStock(
+                                productId: $product->id,
+                                outletId: $data['outlet_id'],
+                                quantity: $item['quantity'],
+                                saleId: $sale->id,
+                                userId: $sale->user_id
+                            );
+                        }
                     }
                 } elseif ($type === 'service') {
                     // Tidak mengurangi stok
@@ -301,6 +309,18 @@ class SaleService
                             saleId: $sale->id,
                             userId: \Illuminate\Support\Facades\Auth::id(),
                             notes: "Pembatalan transaksi (komponen BOM): {$reason}"
+                        );
+                    }
+                } elseif ($type === 'finished_good') {
+                    $behavior = config('sales.finished_good_without_bom', 'reduce');
+                    if ($behavior === 'reduce') {
+                        $this->stockService->restoreSaleStock(
+                            productId: $item->product_id,
+                            outletId: $sale->outlet_id,
+                            quantity: $item->quantity,
+                            saleId: $sale->id,
+                            userId: \Illuminate\Support\Facades\Auth::id(),
+                            notes: "Pembatalan transaksi: {$reason}"
                         );
                     }
                 } elseif ($type !== 'service') {
