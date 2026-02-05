@@ -140,7 +140,20 @@ class StockController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
 
-        return view('admin.stocks.adjustment', compact('outlets', 'products'));
+        $productsPayload = $products->map(function (Product $product) {
+            $sku = !empty($product->sku) ? $product->sku : 'No SKU';
+            $searchSku = !empty($product->sku) ? $product->sku : '';
+            $unit = !empty($product->unit) ? $product->unit : 'pcs';
+
+            return [
+                'id' => (string) $product->id,
+                'label' => $product->name . ' - ' . $sku,
+                'search' => strtolower($product->name . ' ' . $searchSku),
+                'unit' => $unit,
+            ];
+        })->values();
+
+        return view('admin.stocks.adjustment', compact('outlets', 'productsPayload'));
     }
 
     /**

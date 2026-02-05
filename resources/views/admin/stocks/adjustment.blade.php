@@ -124,17 +124,7 @@
             const clearBtn = document.getElementById('clear-rows');
             const form = document.getElementById('bulkAdjustmentForm');
 
-            const products = @json($products->map(function ($p) {
-                $sku = !empty($p->sku) ? $p->sku : 'No SKU';
-                $searchSku = !empty($p->sku) ? $p->sku : '';
-                $unit = !empty($p->unit) ? $p->unit : 'pcs';
-                return [
-                    'id' => (string) $p->id,
-                    'label' => $p->name . ' - ' . $sku,
-                    'search' => strtolower($p->name . ' ' . $searchSku),
-                    'unit' => $unit,
-                ];
-            }));
+            const products = @json($productsPayload);
 
             const idByLabel = new Map(products.map(p => [p.label, p.id]));
 
