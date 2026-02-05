@@ -166,7 +166,6 @@
                 @endif
             </div>
         </div>
-    @endsection
 
     <!-- Import Modal -->
     <div id="importModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
@@ -237,6 +236,9 @@
         </div>
     </div>
 
+@endsection
+
+@push('scripts')
     <script>
         document.getElementById('file-upload').addEventListener('change', function (e) {
             var fileName = e.target.files[0].name;
@@ -245,4 +247,4 @@
             display.querySelector('span').textContent = fileName;
         });
     </script>
-@endsection
+@endpush
