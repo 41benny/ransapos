@@ -26,7 +26,10 @@ class ProductImport implements ToModel, WithHeadingRow
         $categoryName = $row['kategori'] ?? 'Uncategorized';
         $category = ProductCategory::firstOrCreate(
             ['name' => $categoryName],
-            ['slug' => Str::slug($categoryName)]
+            [
+                'code' => $this->generateCategoryCode($categoryName),
+                'is_active' => true,
+            ]
         );
 
         // Handle Unit (default to pcs)
@@ -64,5 +67,22 @@ class ProductImport implements ToModel, WithHeadingRow
     private function generateSku($name)
     {
         return strtoupper(substr(Str::slug($name), 0, 3) . '-' . rand(1000, 9999));
+    }
+
+    private function generateCategoryCode($name)
+    {
+        $base = strtoupper(substr(Str::slug($name), 0, 8));
+        if ($base === '') {
+            $base = 'CAT';
+        }
+
+        $base = 'CAT-' . $base;
+        $code = $base . '-' . rand(1000, 9999);
+
+        while (ProductCategory::where('code', $code)->exists()) {
+            $code = $base . '-' . rand(1000, 9999);
+        }
+
+        return $code;
     }
 }
