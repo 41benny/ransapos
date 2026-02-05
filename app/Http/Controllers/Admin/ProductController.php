@@ -9,6 +9,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -22,12 +23,12 @@ class ProductController extends Controller
         ]);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ProductImport, $request->file('file'));
+            Excel::import(new \App\Imports\ProductImport, $request->file('file'));
 
             return redirect()
                 ->route('admin.products.index')
                 ->with('success', 'Produk berhasil diimport!');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.products.index')
                 ->with('error', 'Gagal import produk: ' . $e->getMessage());
