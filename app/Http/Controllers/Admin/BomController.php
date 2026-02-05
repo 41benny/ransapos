@@ -7,11 +7,18 @@ use Illuminate\Http\Request;
 use App\Models\BomHeader;
 use App\Models\BomDetail;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class BomController extends Controller
 {
+    private function rawMaterialCategory(): ?ProductCategory
+    {
+        $name = config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku'));
+        return ProductCategory::where('name', $name)->first();
+    }
+
     public function index()
     {
         $boms = BomHeader::with(['product'])->withCount('details')->orderByDesc('id')->paginate(20);
@@ -25,15 +32,31 @@ class BomController extends Controller
 
     public function create()
     {
-        $finishedProducts = Product::where('product_type', 'finished_good')
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-            
-        $rawMaterials = Product::where('product_type', 'raw_material')
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        $rawCategory = $this->rawMaterialCategory();
+
+        if ($rawCategory) {
+            // Prefer category-based selection: Komponen = kategori bahan baku; Produk Utama = selain itu.
+            $rawMaterials = Product::where('category_id', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $finishedProducts = Product::where('category_id', '!=', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Fallback for older data setups that still use product_type.
+            $finishedProducts = Product::where('product_type', 'finished_good')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $rawMaterials = Product::where('product_type', 'raw_material')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
             
         // gunakan tampilan versi baru yang lebih bersih
         return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials'));
@@ -52,9 +75,10 @@ class BomController extends Controller
             'components.*.uom' => 'nullable|string|max:50',
         ]);
 
-        // Validasi produk utama bukan raw_material atau service
+        // Validasi produk utama bukan bahan baku (kategori) atau service
         $product = Product::findOrFail($data['product_id']);
-        if (in_array($product->product_type, ['raw_material','service'])) {
+        $rawCategory = $this->rawMaterialCategory();
+        if (($rawCategory && $product->category_id == $rawCategory->id) || $product->product_type === 'service') {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Produk utama harus finished_good'], 422);
             }
@@ -112,16 +136,30 @@ class BomController extends Controller
     public function edit(BomHeader $bom)
     {
         $bom->load('details.component');
-        
-        $finishedProducts = Product::where('product_type', 'finished_good')
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-            
-        $rawMaterials = Product::where('product_type', 'raw_material')
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+
+        $rawCategory = $this->rawMaterialCategory();
+
+        if ($rawCategory) {
+            $rawMaterials = Product::where('category_id', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $finishedProducts = Product::where('category_id', '!=', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        } else {
+            $finishedProducts = Product::where('product_type', 'finished_good')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $rawMaterials = Product::where('product_type', 'raw_material')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
             
         return view('admin.boms.edit', compact('bom', 'finishedProducts', 'rawMaterials'));
     }
