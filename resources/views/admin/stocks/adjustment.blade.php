@@ -43,7 +43,7 @@
                             Outlet <span class="text-rose-500">*</span>
                         </label>
                         <select name="outlet_id" id="outlet_id" required
-                            class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors">
+                            class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors">
                             <option value="">Pilih Outlet</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
                         </label>
                         <input type="text" name="notes" id="notes" required maxlength="500"
                             value="{{ old('notes') }}"
-                            class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
+                            class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
                             placeholder="Contoh: Stok awal per 2026-02-05 / hasil stock opname...">
                         <p class="text-xs text-slate-500 mt-1">Satu catatan ini akan dipakai untuk semua baris penyesuaian.</p>
                     </div>
@@ -72,11 +72,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" id="add-row"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
                             <i class="fas fa-plus"></i> Tambah Baris
                         </button>
                         <button type="button" id="clear-rows"
-                            class="px-4 py-2 bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+                            class="px-3 py-1.5 bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
                             <i class="fas fa-times"></i> Hapus Semua
                         </button>
                     </div>
@@ -106,7 +106,7 @@
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="submit"
-                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all flex items-center gap-2">
+                        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all flex items-center gap-2">
                         <i class="fas fa-save"></i> Simpan Penyesuaian
                     </button>
                 </div>
@@ -235,7 +235,7 @@
                     <td class="px-4 py-3">
                         <div class="relative" data-autocomplete-wrap>
                             <input type="text"
-                                class="w-full rounded-lg border border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                                 placeholder="Ketik nama/SKU..." data-product-input required>
                             <input type="hidden" data-product-id value="">
                             <div class="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -246,14 +246,14 @@
                     <td class="px-4 py-3 text-right text-slate-700 tabular-nums" data-system>0.00</td>
                     <td class="px-4 py-3 text-right">
                         <input type="number" step="0.01" min="0"
-                            class="w-36 text-right rounded-lg border border-gray-300 bg-white focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            class="w-32 h-11 text-right rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                             value="0" data-actual required>
                     </td>
                     <td class="px-4 py-3 text-right font-semibold text-slate-600 tabular-nums" data-diff>0.00</td>
                     <td class="px-4 py-3 text-right">
-                        <button type="button" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm" data-remove
+                        <button type="button" class="h-10 w-10 inline-flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm" data-remove
                             title="Hapus baris">
-                            <i class="fas fa-trash"></i>
+                            <i class="fas fa-trash text-sm"></i>
                         </button>
                     </td>
                 `;
