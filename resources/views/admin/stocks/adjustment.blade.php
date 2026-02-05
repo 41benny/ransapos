@@ -125,11 +125,14 @@
             const form = document.getElementById('bulkAdjustmentForm');
 
             const products = @json($products->map(function ($p) {
+                $sku = !empty($p->sku) ? $p->sku : 'No SKU';
+                $searchSku = !empty($p->sku) ? $p->sku : '';
+                $unit = !empty($p->unit) ? $p->unit : 'pcs';
                 return [
                     'id' => (string) $p->id,
-                    'label' => $p->name . ' - ' . ($p->sku ?? 'No SKU'),
-                    'search' => strtolower($p->name . ' ' . ($p->sku ?? '')),
-                    'unit' => $p->unit ?? 'pcs',
+                    'label' => $p->name . ' - ' . $sku,
+                    'search' => strtolower($p->name . ' ' . $searchSku),
+                    'unit' => $unit,
                 ];
             }));
 
