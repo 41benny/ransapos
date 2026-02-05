@@ -25,6 +25,13 @@
             </div>
         @endif
 
+        @php
+            $rawMap = $rawMaterials->keyBy('id');
+            $finishedMap = $finishedProducts->keyBy('id');
+            $selectedFinished = $finishedMap->get(old('product_id'));
+            $selectedFinishedLabel = $selectedFinished ? ($selectedFinished->name . ' (' . $selectedFinished->sku . ')') : '';
+        @endphp
+
         <form action="{{ route('admin.boms.store') }}" method="POST" class="space-y-6">
             @csrf
 
@@ -35,16 +42,10 @@
                             <label for="product_id" class="block text-sm font-medium text-slate-700 mb-1">
                                 Produk Utama <span class="text-rose-500">*</span>
                             </label>
-                            <select name="product_id" id="product_id"
+                            <input type="text" list="finished-products-list" id="product_id"
                                 class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
-                                required>
-                                <option value="">Pilih produk...</option>
-                                @foreach($finishedProducts as $product)
-                                    <option value="{{ $product->id }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
-                                        {{ $product->name }} ({{ $product->sku }})
-                                    </option>
-                                @endforeach
-                            </select>
+                                placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
+                            <input type="hidden" name="product_id" value="{{ old('product_id') }}" data-finished-id>
                         </div>
 
                         <div>
@@ -87,16 +88,15 @@
                                         <div class="grid gap-3 md:grid-cols-12">
                                             <div class="md:col-span-6">
                                                 <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
-                                                <select name="components[{{ $index }}][component_product_id]"
+                                                @php
+                                                    $selectedRaw = $rawMap->get($component['component_product_id'] ?? null);
+                                                    $selectedLabel = $selectedRaw ? ($selectedRaw->name . ' (' . $selectedRaw->sku . ')') : '';
+                                                @endphp
+                                                <input type="text" list="raw-materials-list"
                                                     class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
-                                                    required>
-                                                    <option value="">Pilih bahan...</option>
-                                                    @foreach($rawMaterials as $raw)
-                                                        <option value="{{ $raw->id }}" {{ $component['component_product_id'] == $raw->id ? 'selected' : '' }}>
-                                                            {{ $raw->name }} ({{ $raw->sku }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                                    placeholder="Ketik bahan..." value="{{ $selectedLabel }}" data-raw-input required>
+                                                <input type="hidden" name="components[{{ $index }}][component_product_id]"
+                                                    value="{{ $component['component_product_id'] ?? '' }}" data-raw-id>
                                             </div>
                                             <div class="md:col-span-3">
                                                 <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -123,14 +123,10 @@
                                     <div class="grid gap-3 md:grid-cols-12">
                                         <div class="md:col-span-6">
                                             <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
-                                            <select name="components[0][component_product_id]"
+                                            <input type="text" list="raw-materials-list"
                                                 class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
-                                                required>
-                                                <option value="">Pilih bahan...</option>
-                                                @foreach($rawMaterials as $raw)
-                                                    <option value="{{ $raw->id }}">{{ $raw->name }} ({{ $raw->sku }})</option>
-                                                @endforeach
-                                            </select>
+                                                placeholder="Ketik bahan..." data-raw-input required>
+                                            <input type="hidden" name="components[0][component_product_id]" value="" data-raw-id>
                                         </div>
                                         <div class="md:col-span-3">
                                             <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -171,6 +167,18 @@
         </form>
     </div>
 
+    <datalist id="finished-products-list">
+        @foreach($finishedProducts as $product)
+            <option value="{{ $product->name }} ({{ $product->sku }})" data-id="{{ $product->id }}"></option>
+        @endforeach
+    </datalist>
+
+    <datalist id="raw-materials-list">
+        @foreach($rawMaterials as $raw)
+            <option value="{{ $raw->name }} ({{ $raw->sku }})" data-id="{{ $raw->id }}"></option>
+        @endforeach
+    </datalist>
+
     <script type="application/json" id="raw-materials-data">
     {!! json_encode($rawMaterials->map(fn($raw) => ['id' => $raw->id, 'name' => $raw->name, 'sku' => $raw->sku])) !!}
     </script>
@@ -183,15 +191,40 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const rawMaterials = JSON.parse(document.getElementById('raw-materials-data').textContent || '[]');
+            const rawIdByLabel = new Map(rawMaterials.map(raw => [`${raw.name} (${raw.sku})`, String(raw.id)]));
+            const rawLabelById = new Map(rawMaterials.map(raw => [String(raw.id), `${raw.name} (${raw.sku})`]));
+            const finishedProducts = @json($finishedProducts->map(fn($product) => ['id' => $product->id, 'name' => $product->name, 'sku' => $product->sku]));
+            const finishedIdByLabel = new Map(finishedProducts.map(product => [`${product.name} (${product.sku})`, String(product.id)]));
+            const finishedLabelById = new Map(finishedProducts.map(product => [String(product.id), `${product.name} (${product.sku})`]));
             let componentIndex = parseInt(document.getElementById('component-index-data').textContent || '1', 10);
             const container = document.getElementById('components-container');
             const addBtn = document.getElementById('add-component');
+            const form = container?.closest('form');
+            const finishedInput = document.querySelector('[data-finished-input]');
+            const finishedHidden = document.querySelector('[data-finished-id]');
 
-            function buildRawOptions(selectedId) {
-                return rawMaterials.map(raw => {
-                    const selected = Number(selectedId) === Number(raw.id) ? 'selected' : '';
-                    return `<option value="${raw.id}" ${selected}>${raw.name} (${raw.sku})</option>`;
-                }).join('');
+            function syncRawSelection(input) {
+                const row = input.closest('.component-row');
+                if (!row) return;
+                const hidden = row.querySelector('[data-raw-id]');
+                const mapped = rawIdByLabel.get(input.value) || '';
+                if (hidden) hidden.value = mapped;
+                if (input.value && !mapped) {
+                    input.setCustomValidity('Pilih bahan dari daftar.');
+                } else {
+                    input.setCustomValidity('');
+                }
+            }
+
+            function syncFinishedSelection() {
+                if (!finishedInput || !finishedHidden) return;
+                const mapped = finishedIdByLabel.get(finishedInput.value) || '';
+                finishedHidden.value = mapped;
+                if (finishedInput.value && !mapped) {
+                    finishedInput.setCustomValidity('Pilih produk dari daftar.');
+                } else {
+                    finishedInput.setCustomValidity('');
+                }
             }
 
             function createComponentRow(index, data = {}) {
@@ -200,12 +233,10 @@
                     <div class="grid gap-3 md:grid-cols-12">
                         <div class="md:col-span-6">
                             <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
-                            <select name="components[${index}][component_product_id]"
-                                    class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
-                                    required>
-                                <option value="">Pilih bahan...</option>
-                                ${buildRawOptions(data.component_product_id)}
-                            </select>
+                            <input type="text" list="raw-materials-list"
+                                   class="w-full rounded-lg border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
+                                   placeholder="Ketik bahan..." data-raw-input required>
+                            <input type="hidden" name="components[${index}][component_product_id]" value="${data.component_product_id ?? ''}" data-raw-id>
                         </div>
                         <div class="md:col-span-3">
                             <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
@@ -227,9 +258,27 @@
             `;
             }
 
+            function bindRow(row) {
+                const input = row.querySelector('[data-raw-input]');
+                const hidden = row.querySelector('[data-raw-id]');
+                if (!input || !hidden) return;
+
+                if (hidden.value && !input.value) {
+                    input.value = rawLabelById.get(String(hidden.value)) || '';
+                }
+
+                const handler = () => syncRawSelection(input);
+                input.addEventListener('input', handler);
+                input.addEventListener('change', handler);
+                handler();
+            }
+
             addBtn?.addEventListener('click', function () {
                 const newRow = createComponentRow(componentIndex);
                 container.insertAdjacentHTML('beforeend', newRow);
+                const rows = container.querySelectorAll('.component-row');
+                const lastRow = rows[rows.length - 1];
+                if (lastRow) bindRow(lastRow);
                 componentIndex++;
             });
 
@@ -244,6 +293,36 @@
                 }
                 btn.closest('.component-row')?.remove();
             });
+
+            container?.querySelectorAll('.component-row').forEach(bindRow);
+
+            form?.addEventListener('submit', function (e) {
+                let firstInvalid = null;
+                syncFinishedSelection();
+                if (finishedInput && !finishedInput.checkValidity()) {
+                    firstInvalid = finishedInput;
+                }
+                container?.querySelectorAll('[data-raw-input]').forEach(input => {
+                    syncRawSelection(input);
+                    if (!input.checkValidity() && !firstInvalid) {
+                        firstInvalid = input;
+                    }
+                });
+                if (firstInvalid) {
+                    e.preventDefault();
+                    firstInvalid.reportValidity();
+                    firstInvalid.focus();
+                }
+            });
+
+            if (finishedInput && finishedHidden) {
+                if (finishedHidden.value && !finishedInput.value) {
+                    finishedInput.value = finishedLabelById.get(String(finishedHidden.value)) || '';
+                }
+                finishedInput.addEventListener('input', syncFinishedSelection);
+                finishedInput.addEventListener('change', syncFinishedSelection);
+                syncFinishedSelection();
+            }
         });
     </script>
 @endpush
