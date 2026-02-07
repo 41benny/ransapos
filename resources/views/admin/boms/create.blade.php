@@ -7,7 +7,7 @@
             <div class="bg-white rounded-xl shadow-md mb-6 p-6">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h3 class="text-xl font-bold text-gray-800">Tambah Bill of Materials</h3>
+                        <h3 class="text-xl font-bold text-gray-800">Tambah Bill of Materials (v1.1)</h3>
                         <p class="text-sm text-gray-500 mt-1">Buat resep produksi untuk produk finished good</p>
                     </div>
                     <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary">
