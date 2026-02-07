@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'pos.device' => \App\Http\Middleware\EnsurePosDevice::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

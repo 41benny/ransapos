@@ -6,10 +6,12 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OutletController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\PosDeviceController as AdminPosDeviceController;
 use App\Http\Controllers\POS\DashboardController as POSDashboardController;
 use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
 use App\Http\Controllers\POS\CashSessionController;
+use App\Http\Controllers\POS\DeviceController as PosDeviceController;
 
 // Redirect root ke login
 Route::get('/', function () {
@@ -31,6 +33,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::resource('products', ProductController::class);
     Route::resource('outlets', OutletController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::resource('suppliers', SupplierController::class)->only(['index', 'create', 'store']);
+
+    // POS Device Management
+    Route::get('pos-devices', [AdminPosDeviceController::class, 'index'])->name('pos-devices.index');
+    Route::post('pos-devices/pairing', [AdminPosDeviceController::class, 'storePairing'])->name('pos-devices.pairing');
+    Route::post('pos-devices/{posDevice}/revoke', [AdminPosDeviceController::class, 'revoke'])->name('pos-devices.revoke');
 
     // Purchases
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class);
@@ -107,8 +114,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::post('/users/{user}/set-pin', [\App\Http\Controllers\Admin\UserController::class, 'setAttendancePin'])->name('users.set-pin');
 });
 
-// POS (Kasir / Kitchen) Routes
+// POS Device Registration (Kasir/Admin/Kitchen)
 Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
+    Route::get('/device/register', [PosDeviceController::class, 'showRegister'])
+        ->name('device.register')
+        ->middleware('role:kasir,admin,manager,kitchen');
+    Route::post('/device/register', [PosDeviceController::class, 'register'])
+        ->name('device.register.store')
+        ->middleware('role:kasir,admin,manager,kitchen');
+});
+
+// POS (Kasir / Kitchen) Routes
+Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(function () {
     Route::get('/dashboard', [POSDashboardController::class, 'index'])
         ->name('dashboard')
         ->middleware('role:kasir,admin');

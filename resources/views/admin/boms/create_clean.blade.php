@@ -7,7 +7,7 @@
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-sm text-slate-500">Atur komposisi produk jadi</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.3)</h1>
+                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.4)</h1>
             </div>
             <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary rounded-sm">
                 <i class="fas fa-arrow-left"></i> Kembali
@@ -39,11 +39,11 @@
                 <div class="grid gap-5 md:grid-cols-2">
                     <div class="space-y-4">
                         <div class="relative" data-autocomplete-wrap>
-                            <label for="product_id" class="block text-sm font-medium text-slate-700 mb-1">
+                            <label for="product_id" class="form-label">
                                 Produk Utama <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" id="product_id"
-                                class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
+                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
                             <input type="hidden" name="product_id" value="{{ old('product_id') }}" data-finished-id>
                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -51,16 +51,16 @@
                         </div>
 
                         <div>
-                            <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nama BOM</label>
+                            <label for="name" class="form-label">Nama BOM</label>
                             <input type="text" name="name" id="name"
-                                class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
+                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Contoh: Resep Nasi Goreng Spesial" value="{{ old('name') }}">
                         </div>
 
                         <div>
-                            <label for="notes" class="block text-sm font-medium text-slate-700 mb-1">Catatan</label>
+                            <label for="notes" class="form-label">Catatan</label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
+                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                         </div>
 
@@ -89,13 +89,13 @@
                                     <div class="component-row bg-white border border-slate-200 rounded-sm p-4 shadow-sm">
                                         <div class="grid gap-3 md:grid-cols-12">
                                             <div class="md:col-span-6 relative" data-autocomplete-wrap>
-                                                <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
+                                                <label class="form-label mb-1 block">Bahan/Komponen</label>
                                                 @php
                                                     $selectedRaw = $rawMap->get($component['component_product_id'] ?? null);
                                                     $selectedLabel = $selectedRaw ? ($selectedRaw->name . ' (' . $selectedRaw->sku . ')') : '';
                                                 @endphp
                                                 <input type="text"
-                                                    class="w-full rounded-sm border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                    class="w-full form-input rounded-sm"
                                                     placeholder="Ketik bahan..." value="{{ $selectedLabel }}" data-raw-input required>
                                                 <input type="hidden" name="components[{{ $index }}][component_product_id]"
                                                     value="{{ $component['component_product_id'] ?? '' }}" data-raw-id>
@@ -103,15 +103,15 @@
                                                     data-autocomplete-panel></div>
                                             </div>
                                             <div class="md:col-span-3">
-                                                <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
+                                                <label class="form-label mb-1 block">Jumlah</label>
                                                 <input type="number" name="components[{{ $index }}][quantity]"
-                                                    class="w-full rounded-sm border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                    class="w-full form-input rounded-sm"
                                                     step="0.0001" min="0.0001" value="{{ $component['quantity'] }}" required>
                                             </div>
                                             <div class="md:col-span-2">
-                                                <label class="text-sm font-medium text-slate-700 mb-1 block">Satuan</label>
+                                                <label class="form-label mb-1 block">Satuan</label>
                                                 <input type="text" name="components[{{ $index }}][uom]"
-                                                    class="w-full rounded-sm border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                    class="w-full form-input rounded-sm"
                                                     placeholder="kg, pcs, liter..." value="{{ $component['uom'] ?? '' }}">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
@@ -281,24 +281,24 @@
                 <div class="component-row bg-white border border-slate-200 rounded-sm p-4 shadow-sm">
                     <div class="grid gap-3 md:grid-cols-12">
                         <div class="md:col-span-6 relative" data-autocomplete-wrap>
-                            <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
+                            <label class="form-label mb-1 block">Bahan/Komponen</label>
                             <input type="text"
-                                   class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
+                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
                                    placeholder="Ketik bahan..." data-raw-input required>
                             <input type="hidden" name="components[${index}][component_product_id]" value="${data.component_product_id ?? ''}" data-raw-id>
                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
                                 data-autocomplete-panel></div>
                         </div>
                         <div class="md:col-span-3">
-                            <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
+                            <label class="form-label mb-1 block">Jumlah</label>
                             <input type="number" name="components[${index}][quantity]"
-                                   class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
+                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
                                    step="0.0001" min="0.0001" value="${data.quantity ?? ''}" required>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="text-sm font-medium text-slate-700 mb-1 block">Satuan</label>
+                            <label class="form-label mb-1 block">Satuan</label>
                             <input type="text" name="components[${index}][uom]"
-                                   class="w-full rounded-sm border-gray-400 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm"
+                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
                                    placeholder="kg, pcs, liter..." value="${data.uom ?? ''}">
                         </div>
                         <div class="md:col-span-1 flex items-end">
