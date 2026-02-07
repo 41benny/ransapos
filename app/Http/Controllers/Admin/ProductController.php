@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -145,6 +146,21 @@ class ProductController extends Controller
         }
 
         $data['selling_price'] = $data['price_levels']['regular'];
+        $components = collect();
+
+        if ($isBundleMode) {
+            $components = $this->sanitizeBundleComponents($request->input('bundle_components', []));
+
+            if ($components->isEmpty()) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'bundle_components' => 'Bundle harus memiliki minimal 1 komponen bahan.',
+                    ]);
+            }
+
+            $data['purchase_price'] = $this->calculateBundlePurchasePrice($components);
+        }
 
         DB::beginTransaction();
         $uploadedImagePath = null;
@@ -158,12 +174,6 @@ class ProductController extends Controller
             $product = Product::create($data);
 
             if ($isBundleMode) {
-                $components = $this->sanitizeBundleComponents($request->input('bundle_components', []));
-
-                if ($components->isEmpty()) {
-                    throw new \InvalidArgumentException('Bundle harus memiliki minimal 1 komponen bahan.');
-                }
-
                 $bomHeader = BomHeader::create([
                     'product_id' => $product->id,
                     'name' => $request->filled('name') ? ('Resep ' . $request->input('name')) : null,
@@ -374,16 +384,16 @@ class ProductController extends Controller
             return Product::where('category_id', $rawCategory->id)
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'sku', 'unit']);
+                ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
         }
 
         return Product::where('product_type', 'raw_material')
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit']);
+            ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
     }
 
-    private function sanitizeBundleComponents(mixed $components): \Illuminate\Support\Collection
+    private function sanitizeBundleComponents(mixed $components): Collection
     {
         if (!is_array($components)) {
             return collect();
@@ -416,5 +426,28 @@ class ProductController extends Controller
             })
             ->filter()
             ->values();
+    }
+
+    private function calculateBundlePurchasePrice(Collection $components): float
+    {
+        $componentIds = $components->pluck('component_product_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $purchasePriceById = Product::whereIn('id', $componentIds)
+            ->pluck('purchase_price', 'id');
+
+        if ($purchasePriceById->count() !== $componentIds->count()) {
+            throw new \InvalidArgumentException('Ada komponen bundle yang tidak ditemukan.');
+        }
+
+        return (float) $components->sum(function (array $component) use ($purchasePriceById) {
+            $componentId = (int) $component['component_product_id'];
+            $quantity = (float) $component['quantity'];
+            $purchasePrice = (float) ($purchasePriceById[$componentId] ?? 0);
+
+            return $quantity * $purchasePrice;
+        });
     }
 }

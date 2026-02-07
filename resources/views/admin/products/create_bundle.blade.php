@@ -149,12 +149,14 @@
                             name="purchase_price"
                             id="purchase_price"
                             value="{{ old('purchase_price', 0) }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('purchase_price') border-red-500 @enderror"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('purchase_price') border-red-500 @enderror"
                             placeholder="0"
                             min="0"
                             step="0.01"
+                            readonly
                             required
                         >
+                        <p class="mt-1 text-xs text-gray-500">Diisi otomatis dari total komponen pada tab Bundle/Bahan.</p>
                         @error('purchase_price')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -285,6 +287,7 @@
                                             <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200">Item</th>
                                             <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-32">Qty</th>
                                             <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-32">Satuan</th>
+                                            <th class="text-right text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-40">Harga Modal</th>
                                             <th class="text-center text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-20">Aksi</th>
                                         </tr>
                                     </thead>
@@ -298,7 +301,7 @@
                                                     <select name="bundle_components[{{ $index }}][component_product_id]" class="component-product w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                                                         <option value="">Pilih bahan...</option>
                                                         @foreach($rawMaterials as $raw)
-                                                            <option value="{{ $raw->id }}" data-unit="{{ $raw->unit }}" {{ (string)($component['component_product_id'] ?? '') === (string)$raw->id ? 'selected' : '' }}>
+                                                            <option value="{{ $raw->id }}" data-unit="{{ $raw->unit }}" data-purchase-price="{{ (float) ($raw->purchase_price ?? 0) }}" {{ (string)($component['component_product_id'] ?? '') === (string)$raw->id ? 'selected' : '' }}>
                                                                 {{ $raw->name }} ({{ $raw->sku }})
                                                             </option>
                                                         @endforeach
@@ -306,12 +309,13 @@
                                                 </td>
                                                 <td class="px-4 py-3">
                                                     <input type="number" name="bundle_components[{{ $index }}][quantity]" value="{{ $component['quantity'] ?? '' }}" min="0.0001" step="0.0001"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
+                                                        class="component-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
                                                 </td>
                                                 <td class="px-4 py-3">
                                                     <input type="text" name="bundle_components[{{ $index }}][uom]" value="{{ $component['uom'] ?? '' }}"
                                                         class="component-uom w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="pcs">
                                                 </td>
+                                                <td class="px-4 py-3 text-right font-semibold text-gray-700 component-row-cost-value">Rp 0,00</td>
                                                 <td class="px-4 py-3 text-center">
                                                     <button type="button" class="remove-component-row text-red-600 hover:text-red-800">
                                                         <i class="fas fa-trash"></i>
@@ -326,6 +330,13 @@
                             @error('bundle_components')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
+
+                            <div class="mt-4 flex justify-end">
+                                <div class="w-full md:w-80 flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
+                                    <span class="text-sm font-semibold text-gray-700">Total Harga Modal</span>
+                                    <span id="components-total-cost" class="text-base font-bold text-gray-900">Rp 0,00</span>
+                                </div>
+                            </div>
 
                             <div class="mt-4 flex items-center gap-3">
                                 <button type="button" id="add-component-row" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
@@ -643,6 +654,8 @@
 
         const componentBody = document.getElementById('bundle-components-body');
         const addRowBtn = document.getElementById('add-component-row');
+        const purchasePriceInput = document.getElementById('purchase_price');
+        const componentsTotalCostLabel = document.getElementById('components-total-cost');
         let componentIndex = componentBody.querySelectorAll('.component-row').length;
 
         function makeOptionsHtml() {
@@ -650,9 +663,66 @@
             return firstRowSelect ? firstRowSelect.innerHTML : '<option value="">Pilih bahan...</option>';
         }
 
-        function bindAutoUnit(row) {
+        function parseNumber(value) {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(value);
+        }
+
+        function getComponentPurchasePrice(selectElement) {
+            if (!selectElement || selectElement.selectedIndex < 0) {
+                return 0;
+            }
+
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (!selectedOption) {
+                return 0;
+            }
+
+            return parseNumber(selectedOption.getAttribute('data-purchase-price'));
+        }
+
+        function recalculateComponentCosts() {
+            let totalCost = 0;
+            const rows = componentBody.querySelectorAll('.component-row');
+
+            rows.forEach(function (row) {
+                const select = row.querySelector('.component-product');
+                const quantityInput = row.querySelector('.component-quantity');
+                const rowCostLabel = row.querySelector('.component-row-cost-value');
+
+                const quantity = parseNumber(quantityInput ? quantityInput.value : 0);
+                const purchasePrice = getComponentPurchasePrice(select);
+                const rowCost = quantity * purchasePrice;
+
+                if (rowCostLabel) {
+                    rowCostLabel.textContent = formatCurrency(rowCost);
+                }
+
+                totalCost += rowCost;
+            });
+
+            if (componentsTotalCostLabel) {
+                componentsTotalCostLabel.textContent = formatCurrency(totalCost);
+            }
+
+            if (purchasePriceInput) {
+                purchasePriceInput.value = totalCost.toFixed(2);
+            }
+        }
+
+        function bindComponentRowEvents(row) {
             const select = row.querySelector('.component-product');
             const unitInput = row.querySelector('.component-uom');
+            const quantityInput = row.querySelector('.component-quantity');
             if (!select || !unitInput) return;
 
             select.addEventListener('change', function () {
@@ -661,7 +731,12 @@
                 if (!unitInput.value && unit) {
                     unitInput.value = unit;
                 }
+                recalculateComponentCosts();
             });
+
+            if (quantityInput) {
+                quantityInput.addEventListener('input', recalculateComponentCosts);
+            }
         }
 
         function addComponentRow() {
@@ -675,18 +750,20 @@
                 </td>
                 <td class="px-4 py-3">
                     <input type="number" name="bundle_components[${componentIndex}][quantity]" min="0.0001" step="0.0001"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
+                        class="component-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
                 </td>
                 <td class="px-4 py-3">
                     <input type="text" name="bundle_components[${componentIndex}][uom]"
                         class="component-uom w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="pcs">
                 </td>
+                <td class="px-4 py-3 text-right font-semibold text-gray-700 component-row-cost-value">Rp 0,00</td>
                 <td class="px-4 py-3 text-center">
                     <button type="button" class="remove-component-row text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             componentBody.appendChild(row);
-            bindAutoUnit(row);
+            bindComponentRowEvents(row);
+            recalculateComponentCosts();
             componentIndex += 1;
         }
 
@@ -694,7 +771,8 @@
             addRowBtn.addEventListener('click', addComponentRow);
         }
 
-        componentBody.querySelectorAll('.component-row').forEach(bindAutoUnit);
+        componentBody.querySelectorAll('.component-row').forEach(bindComponentRowEvents);
+        recalculateComponentCosts();
 
         componentBody.addEventListener('click', function (event) {
             const removeBtn = event.target.closest('.remove-component-row');
@@ -707,6 +785,7 @@
             }
 
             removeBtn.closest('.component-row').remove();
+            recalculateComponentCosts();
         });
 
         const form = document.getElementById('bundleForm');
