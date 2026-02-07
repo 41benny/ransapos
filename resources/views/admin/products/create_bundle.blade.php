@@ -10,7 +10,7 @@
     $oldUserIds = collect(old('pos_user_ids', []))->map(fn ($id) => (int) $id)->values()->all();
 @endphp
 
-<div class="max-w-6xl">
+<div class="max-w-6xl mx-auto w-full">
     @if(session('error'))
         <div class="mb-4 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
             <i class="fas fa-exclamation-circle text-lg mr-2"></i>
