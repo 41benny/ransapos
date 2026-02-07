@@ -7,9 +7,9 @@
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-sm text-slate-500">Atur komposisi produk jadi</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials</h1>
+                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.2)</h1>
             </div>
-            <a href="{{ route('admin.boms.index') }}" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+            <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -78,7 +78,7 @@
                                 <h2 class="text-lg font-semibold text-slate-900">Bahan Penyusun</h2>
                             </div>
                             <button type="button" id="add-component"
-                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                                class="btn btn-secondary">
                                 <i class="fas fa-plus"></i> Tambah Komponen
                             </button>
                         </div>
@@ -115,8 +115,8 @@
                                                     placeholder="kg, pcs, liter..." value="{{ $component['uom'] ?? '' }}">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
-                                                <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2">
-                                                    <i class="fas fa-trash"></i> Hapus
+                                                <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -147,8 +147,8 @@
                                                 placeholder="kg, pcs, liter...">
                                         </div>
                                         <div class="md:col-span-1 flex items-end">
-                                            <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2">
-                                                <i class="fas fa-trash"></i> Hapus
+                                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -163,9 +163,9 @@
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.boms.index') }}"
-                        class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors">Batal</a>
+                        class="btn btn-secondary">Batal</a>
                     <button type="submit"
-                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all flex items-center gap-2">
+                        class="btn btn-primary">
                         <i class="fas fa-save"></i> Simpan BOM
                     </button>
                 </div>
@@ -302,7 +302,7 @@
                                    placeholder="kg, pcs, liter..." value="${data.uom ?? ''}">
                         </div>
                         <div class="md:col-span-1 flex items-end">
-                            <button type="button" class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-150 remove-component flex items-center justify-center gap-2"><i class="fas fa-trash"></i> Hapus</button>
+                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
