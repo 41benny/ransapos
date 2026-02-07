@@ -28,8 +28,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     // Master Data
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
     Route::resource('products', ProductController::class);
-    Route::resource('outlets', OutletController::class)->only(['index']);
-    Route::resource('suppliers', SupplierController::class)->only(['index']);
+    Route::resource('outlets', OutletController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+    Route::resource('suppliers', SupplierController::class)->only(['index', 'create', 'store']);
 
     // Purchases
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class);

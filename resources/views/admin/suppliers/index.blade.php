@@ -8,6 +8,24 @@
 <div class="page-fullwidth">
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
 
+    @if(session('success'))
+        <div class="p-6">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle text-lg"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="p-6">
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle text-lg"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
+
     <!-- Header -->
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
@@ -15,12 +33,12 @@
                 <h3 class="text-lg font-semibold text-gray-900">Semua Supplier</h3>
                 <p class="text-sm text-gray-500 mt-1">Total: {{ $suppliers->total() }} supplier</p>
             </div>
-            <button class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
+            <a href="{{ route('admin.suppliers.create') }}" class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg inline-flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
                 Tambah Supplier
-            </button>
+            </a>
         </div>
     </div>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class OutletController extends Controller
 {
@@ -23,7 +24,7 @@ class OutletController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.outlets.create');
     }
 
     /**
@@ -31,31 +32,70 @@ class OutletController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'code' => 'required|string|max:50|unique:outlets,code',
+            'name' => 'required|string|max:200',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'tax_rate' => 'required|numeric|min:0|max:100',
+            'service_charge_rate' => 'required|numeric|min:0|max:100',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->boolean('is_active');
+
+        Outlet::create($validated);
+
+        return redirect()
+            ->route('admin.outlets.index')
+            ->with('success', 'Outlet berhasil ditambahkan!');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Outlet $outlet)
     {
-        //
+        return view('admin.outlets.show', compact('outlet'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Outlet $outlet)
     {
-        //
+        return view('admin.outlets.edit', compact('outlet'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Outlet $outlet)
     {
-        //
+        $validated = $request->validate([
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('outlets', 'code')->ignore($outlet->id),
+            ],
+            'name' => 'required|string|max:200',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'tax_rate' => 'required|numeric|min:0|max:100',
+            'service_charge_rate' => 'required|numeric|min:0|max:100',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->boolean('is_active');
+
+        $outlet->update($validated);
+
+        return redirect()
+            ->route('admin.outlets.index')
+            ->with('success', 'Outlet berhasil diperbarui!');
     }
 
     /**

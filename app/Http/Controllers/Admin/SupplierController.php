@@ -23,7 +23,7 @@ class SupplierController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.suppliers.create');
     }
 
     /**
@@ -31,7 +31,23 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'code' => 'required|string|max:50|unique:suppliers,code',
+            'name' => 'required|string|max:200',
+            'contact_person' => 'nullable|string|max:200',
+            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:100',
+            'address' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $validated['is_active'] = $request->boolean('is_active');
+
+        Supplier::create($validated);
+
+        return redirect()
+            ->route('admin.suppliers.index')
+            ->with('success', 'Supplier berhasil ditambahkan!');
     }
 
     /**
