@@ -150,13 +150,10 @@ class CashAccountController extends Controller
     public function createTransaction()
     {
         $accounts = CashAccount::active()->orderBy('name')->get();
-        
-        // Get approved expenses for linking
-        $approvedExpenses = \App\Models\Expense::where('status', 'approved')
-            ->orderBy('expense_date', 'desc')
-            ->get();
-        
-        return view('admin.cash-accounts.create-transaction', compact('accounts', 'approvedExpenses'));
+        $coaIncomeAccounts = \App\Models\CoaAccount::active()->income()->orderBy('code')->get();
+        $coaExpenseAccounts = \App\Models\CoaAccount::active()->expense()->orderBy('code')->get();
+
+        return view('admin.cash-accounts.create-transaction', compact('accounts', 'coaIncomeAccounts', 'coaExpenseAccounts'));
     }
 
     /**
