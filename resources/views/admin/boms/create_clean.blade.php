@@ -7,9 +7,9 @@
         <div class="flex items-center justify-between gap-3">
             <div>
                 <p class="text-sm text-slate-500">Atur komposisi produk jadi</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.4)</h1>
+                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.6)</h1>
             </div>
-            <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary rounded-sm">
+            <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary !rounded-none">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -35,7 +35,7 @@
         <form action="{{ route('admin.boms.store') }}" method="POST" class="space-y-6">
             @csrf
 
-            <div class="bg-white rounded-sm shadow-premium border border-slate-200 p-6 space-y-6">
+            <div class="bg-white !rounded-none shadow-premium border border-slate-200 p-6 space-y-6">
                 <div class="grid gap-5 md:grid-cols-2">
                     <div class="space-y-4">
                         <div class="relative" data-autocomplete-wrap>
@@ -43,24 +43,24 @@
                                 Produk Utama <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" id="product_id"
-                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
+                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
                             <input type="hidden" name="product_id" value="{{ old('product_id') }}" data-finished-id>
-                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
                                 data-autocomplete-panel></div>
                         </div>
 
                         <div>
                             <label for="name" class="form-label">Nama BOM</label>
                             <input type="text" name="name" id="name"
-                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
+                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Contoh: Resep Nasi Goreng Spesial" value="{{ old('name') }}">
                         </div>
 
                         <div>
                             <label for="notes" class="form-label">Catatan</label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full form-input rounded-sm bg-gray-50 shadow-sm transition-colors"
+                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                         </div>
 
@@ -78,7 +78,7 @@
                                 <h2 class="text-lg font-semibold text-slate-900">Bahan Penyusun</h2>
                             </div>
                             <button type="button" id="add-component"
-                                class="btn btn-secondary rounded-sm">
+                                class="btn btn-secondary !rounded-none">
                                 <i class="fas fa-plus"></i> Tambah Komponen
                             </button>
                         </div>
@@ -86,7 +86,7 @@
                         <div id="components-container" class="space-y-3">
                             @if(old('components'))
                                 @foreach(old('components') as $index => $component)
-                                    <div class="component-row bg-white border border-slate-200 rounded-sm p-4 shadow-sm">
+                                    <div class="component-row bg-white border border-slate-200 !rounded-none p-4 shadow-sm">
                                         <div class="grid gap-3 md:grid-cols-12">
                                             <div class="md:col-span-6 relative" data-autocomplete-wrap>
                                                 <label class="form-label mb-1 block">Bahan/Komponen</label>
@@ -95,27 +95,27 @@
                                                     $selectedLabel = $selectedRaw ? ($selectedRaw->name . ' (' . $selectedRaw->sku . ')') : '';
                                                 @endphp
                                                 <input type="text"
-                                                    class="w-full form-input rounded-sm"
+                                                    class="w-full form-input !rounded-none"
                                                     placeholder="Ketik bahan..." value="{{ $selectedLabel }}" data-raw-input required>
                                                 <input type="hidden" name="components[{{ $index }}][component_product_id]"
                                                     value="{{ $component['component_product_id'] ?? '' }}" data-raw-id>
-                                                <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                                <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
                                                     data-autocomplete-panel></div>
                                             </div>
                                             <div class="md:col-span-3">
                                                 <label class="form-label mb-1 block">Jumlah</label>
                                                 <input type="number" name="components[{{ $index }}][quantity]"
-                                                    class="w-full form-input rounded-sm"
+                                                    class="w-full form-input !rounded-none"
                                                     step="0.0001" min="0.0001" value="{{ $component['quantity'] }}" required>
                                             </div>
                                             <div class="md:col-span-2">
                                                 <label class="form-label mb-1 block">Satuan</label>
                                                 <input type="text" name="components[{{ $index }}][uom]"
-                                                    class="w-full form-input rounded-sm"
+                                                    class="w-full form-input !rounded-none"
                                                     placeholder="kg, pcs, liter..." value="{{ $component['uom'] ?? '' }}">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
-                                                <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-sm transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                                <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -123,31 +123,31 @@
                                     </div>
                                 @endforeach
                             @else
-                                <div class="component-row bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                                <div class="component-row bg-white border border-slate-200 !rounded-none p-4 shadow-sm">
                                     <div class="grid gap-3 md:grid-cols-12">
                                         <div class="md:col-span-6 relative" data-autocomplete-wrap>
-                                            <label class="text-sm font-medium text-slate-700 mb-1 block">Bahan/Komponen</label>
+                                            <label class="form-label mb-1 block">Bahan/Komponen</label>
                                             <input type="text"
-                                                class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 placeholder="Ketik bahan..." data-raw-input required>
                                             <input type="hidden" name="components[0][component_product_id]" value="" data-raw-id>
-                                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
                                                 data-autocomplete-panel></div>
                                         </div>
                                         <div class="md:col-span-3">
-                                            <label class="text-sm font-medium text-slate-700 mb-1 block">Jumlah</label>
+                                            <label class="form-label mb-1 block">Jumlah</label>
                                             <input type="number" name="components[0][quantity]"
-                                                class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 step="0.0001" min="0.0001" required>
                                         </div>
                                         <div class="md:col-span-2">
-                                            <label class="text-sm font-medium text-slate-700 mb-1 block">Satuan</label>
+                                            <label class="form-label mb-1 block">Satuan</label>
                                             <input type="text" name="components[0][uom]"
-                                                class="w-full rounded-lg border-slate-300 focus:ring-amber-500 focus:border-amber-500"
+                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 placeholder="kg, pcs, liter...">
                                         </div>
                                         <div class="md:col-span-1 flex items-end">
-                                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -163,9 +163,9 @@
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.boms.index') }}"
-                        class="btn btn-secondary">Batal</a>
+                        class="btn btn-secondary !rounded-none">Batal</a>
                     <button type="submit"
-                        class="btn btn-primary">
+                        class="btn btn-primary !rounded-none">
                         <i class="fas fa-save"></i> Simpan BOM
                     </button>
                 </div>
@@ -278,31 +278,31 @@
 
             function createComponentRow(index, data = {}) {
                 return `
-                <div class="component-row bg-white border border-slate-200 rounded-sm p-4 shadow-sm">
+                <div class="component-row bg-white border border-slate-200 !rounded-none p-4 shadow-sm">
                     <div class="grid gap-3 md:grid-cols-12">
                         <div class="md:col-span-6 relative" data-autocomplete-wrap>
                             <label class="form-label mb-1 block">Bahan/Komponen</label>
                             <input type="text"
-                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
+                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    placeholder="Ketik bahan..." data-raw-input required>
                             <input type="hidden" name="components[${index}][component_product_id]" value="${data.component_product_id ?? ''}" data-raw-id>
-                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
+                            <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
                                 data-autocomplete-panel></div>
                         </div>
                         <div class="md:col-span-3">
                             <label class="form-label mb-1 block">Jumlah</label>
                             <input type="number" name="components[${index}][quantity]"
-                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
+                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    step="0.0001" min="0.0001" value="${data.quantity ?? ''}" required>
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label mb-1 block">Satuan</label>
                             <input type="text" name="components[${index}][uom]"
-                                   class="w-full form-input rounded-sm bg-gray-50 text-sm shadow-sm"
+                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    placeholder="kg, pcs, liter..." value="${data.uom ?? ''}">
                         </div>
                         <div class="md:col-span-1 flex items-end">
-                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-sm transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus"><i class="fas fa-trash"></i></button>
+                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
