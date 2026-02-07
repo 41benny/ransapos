@@ -45,7 +45,8 @@
                 <div class="text-right hidden md:block">
                     <p class="text-sm font-bold text-white">{{ auth()->user()->name }}</p>
                     <p class="text-xs text-white/80">{{ auth()->user()->role->display_name ?? 'Kasir' }} •
-                        {{ now()->format('d M, H:i') }}</p>
+                        {{ now()->format('d M, H:i') }}
+                    </p>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -97,7 +98,7 @@
     </header>
 
     <!-- Main Content (Fills remaining height) -->
-    <main class="flex-1 overflow-hidden relative">
+    <main class="flex-1 overflow-auto relative">
         @yield('content')
     </main>
 
