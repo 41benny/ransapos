@@ -86,10 +86,10 @@
             onclick="toggleMobileSidebar()"></div>
 
         <!-- Sidebar -->
-        <aside class="sidebar w-64 bg-slate-900 text-white flex flex-col shrink-0 h-full">
+        <aside class="sidebar w-64 sidebar-gradient text-white flex flex-col shrink-0 h-full">
             <!-- Logo -->
-            <div class="h-16 flex items-center px-6 border-b border-slate-800">
-                <i class="fas fa-bowl-food text-2xl text-blue-500 mr-3"></i>
+            <div class="h-16 flex items-center px-6 border-b border-white/10">
+                <i class="fas fa-bowl-food text-2xl text-blue-400 mr-3"></i>
                 <span class="logo-text font-bold text-lg tracking-wide">Moresto</span>
             </div>
 
@@ -168,8 +168,8 @@
                             $menuId = 'submenu-' . $index;
 
                             $baseClass = "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150 group cursor-pointer";
-                            $activeClass = "bg-blue-600 text-white shadow-sm";
-                            $inactiveClass = "text-slate-400 hover:text-white hover:bg-slate-800";
+                            $activeClass = "bg-white/10 text-white shadow-sm border border-white/5";
+                            $inactiveClass = "text-slate-400 hover:text-white hover:bg-white/5";
 
                             $linkClass = $isActive ? "$baseClass $activeClass" : "$baseClass $inactiveClass";
                         @endphp
@@ -207,10 +207,10 @@
                     @endforeach
                 </div>
 
-                <div class="px-6 py-4 mt-4 border-t border-slate-800">
+                <div class="px-6 py-4 mt-4 border-t border-white/10">
                     <p class="text-xs uppercase text-slate-500 font-semibold mb-2 sidebar-text">Kasir</p>
                     <a href="{{ route('pos.dashboard') }}"
-                        class="flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors mb-1">
+                        class="flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-1">
                         <i class="fas fa-cash-register w-5 text-center mr-3"></i>
                         <span class="sidebar-text">POS Kasir</span>
                     </a>
@@ -218,7 +218,7 @@
             </nav>
 
             <!-- User Profile -->
-            <div class="p-4 border-t border-slate-800 bg-slate-900">
+            <div class="p-4 border-t border-white/10 bg-black/20">
                 <div class="flex items-center">
                     <div
                         class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
