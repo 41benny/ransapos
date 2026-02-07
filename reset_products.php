@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * ⚠️⚠️⚠️ DANGER ZONE ⚠️⚠️⚠️
+ * 
+ * Script ini akan MENGHAPUS SEMUA DATA PRODUK dan transaksi terkait!
+ * HANYA untuk development/testing!
+ * JANGAN JALANKAN di production!
+ */
+
 require __DIR__ . '/vendor/autoload.php';
 
 $app = require_once __DIR__ . '/bootstrap/app.php';
@@ -13,9 +21,29 @@ use App\Models\Purchase;
 use App\Models\Stock;
 use App\Models\BomHeader;
 
+// ============================================
+// SAFETY CHECK #1: Environment Check
+// ============================================
+$environment = config('app.env');
+
+if ($environment === 'production') {
+    echo "╔════════════════════════════════════════════════════════════╗\n";
+    echo "║  ❌ ERROR: SCRIPT DIBLOKIR!                                ║\n";
+    echo "╚════════════════════════════════════════════════════════════╝\n\n";
+    echo "Script ini TIDAK BOLEH dijalankan di environment PRODUCTION!\n";
+    echo "Environment saat ini: {$environment}\n\n";
+    echo "Jika Anda yakin ingin menjalankan di production:\n";
+    echo "1. Backup database terlebih dahulu\n";
+    echo "2. Edit file ini dan hapus environment check\n";
+    echo "3. Tapi SANGAT TIDAK DISARANKAN!\n\n";
+    exit(1);
+}
+
 echo "╔════════════════════════════════════════════════════════════╗\n";
-echo "║  RESET SEMUA DATA PRODUK DAN TRANSAKSI TERKAIT             ║\n";
+echo "║  ⚠️⚠️⚠️  DANGER ZONE - RESET DATA  ⚠️⚠️⚠️                  ║\n";
 echo "╚════════════════════════════════════════════════════════════╝\n\n";
+
+echo "Environment: {$environment}\n\n";
 
 echo "⚠️  PERINGATAN: Script ini akan menghapus:\n";
 echo "   - Semua produk (" . Product::count() . " produk)\n";
@@ -25,11 +53,29 @@ echo "   - Semua stock (" . Stock::count() . " records)\n";
 echo "   - Semua BOM (" . BomHeader::count() . " BOM)\n";
 echo "   - Dan semua data terkait lainnya\n\n";
 
-echo "Apakah Anda yakin ingin melanjutkan? (ketik 'YA HAPUS SEMUA' untuk konfirmasi): ";
-$confirmation = trim(fgets(STDIN));
+// ============================================
+// SAFETY CHECK #2: First Confirmation
+// ============================================
+echo "KONFIRMASI #1 - Apakah Anda yakin? (ketik 'ya' untuk lanjut): ";
+$confirm1 = trim(fgets(STDIN));
 
-if ($confirmation !== 'YA HAPUS SEMUA') {
+if (strtolower($confirm1) !== 'ya') {
     echo "\n❌ Dibatalkan. Tidak ada data yang dihapus.\n";
+    exit(0);
+}
+
+// ============================================
+// SAFETY CHECK #3: Second Confirmation (Extra Safe)
+// ============================================
+echo "\n⚠️⚠️⚠️ KONFIRMASI TERAKHIR ⚠️⚠️⚠️\n";
+echo "Data yang dihapus TIDAK BISA dikembalikan!\n";
+echo "Ketik PERSIS: 'YA HAPUS SEMUA' (huruf besar semua): ";
+$confirm2 = trim(fgets(STDIN));
+
+if ($confirm2 !== 'YA HAPUS SEMUA') {
+    echo "\n❌ Dibatalkan. Tidak ada data yang dihapus.\n";
+    echo "Anda mengetik: '{$confirm2}'\n";
+    echo "Harus mengetik: 'YA HAPUS SEMUA' (tanpa tanda petik)\n";
     exit(0);
 }
 
