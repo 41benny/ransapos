@@ -197,11 +197,11 @@
                                 <label for="selling_price" class="form-label">
                                     Harga Jual Reguler <span class="text-red-500">*</span>
                                 </label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
                                     <input type="number" name="selling_price" id="selling_price"
                                         value="{{ old('selling_price', 0) }}"
-                                        class="form-input pl-16"
+                                        class="form-input rounded-l-none flex-1"
                                         min="0" step="0.01" required>
                                 </div>
                                 @error('selling_price')
@@ -358,8 +358,8 @@
                                             <tr>
                                                 <td class="text-sm text-gray-700 font-medium">{{ $levelLabel }}</td>
                                                 <td class="p-2">
-                                                    <div class="relative max-w-xs">
-                                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
+                                                    <div class="flex max-w-xs">
+                                                        <span class="inline-flex items-center px-3 text-xs text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
                                                         <input
                                                             type="number"
                                                             name="price_levels[{{ $levelKey }}]"
@@ -367,7 +367,7 @@
                                                             min="0"
                                                             step="0.01"
                                                             @if($levelKey === 'regular') required @endif
-                                                            class="form-input pl-16 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
+                                                            class="form-input rounded-l-none flex-1 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
                                                             @if($levelKey === 'regular') id="price_level_regular" @endif
                                                         >
                                                     </div>
