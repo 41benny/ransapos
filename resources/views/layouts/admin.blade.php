@@ -112,6 +112,7 @@
                                 'children' => [
                                     ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => 'admin.products.*'],
                                     ['label' => 'Outlet', 'route' => 'admin.outlets.index', 'match' => 'admin.outlets.*'],
+                                    ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
                                     ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*'],
                                     ['label' => 'Customer', 'route' => 'admin.customers.index', 'match' => 'admin.customers.*'],
                                     ['label' => 'Chart of Accounts', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*'],

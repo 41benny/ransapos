@@ -111,6 +111,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
         Route::post('/anomalies/{id}/dismiss', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'dismissAnomaly'])->name('anomalies.dismiss');
     });
 
+    // User Management
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['show']);
+
     // Employee PIN Management
     Route::post('/users/{user}/set-pin', [\App\Http\Controllers\Admin\UserController::class, 'setAttendancePin'])->name('users.set-pin');
 });
