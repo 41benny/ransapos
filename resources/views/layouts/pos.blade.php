@@ -44,7 +44,7 @@
             <div class="flex items-center space-x-4">
                 <div class="text-right hidden md:block">
                     <p class="text-sm font-bold text-white">{{ auth()->user()->name }}</p>
-                    <p class="text-xs text-white/80">{{ auth()->user()->role->display_name ?? 'Kasir' }} •
+                    <p class="text-xs text-white/80">{{ auth()->user()->role?->display_name ?? 'Kasir' }} •
                         {{ now()->format('d M, H:i') }}
                     </p>
                 </div>

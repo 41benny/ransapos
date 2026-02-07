@@ -226,7 +226,7 @@
                     </div>
                     <div class="ml-3 sidebar-text overflow-hidden">
                         <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ auth()->user()->role->display_name ?? 'Admin' }}
+                        <p class="text-xs text-slate-400 truncate">{{ auth()->user()->role?->display_name ?? 'Admin' }}
                         </p>
                     </div>
                 </div>

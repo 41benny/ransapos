@@ -122,11 +122,17 @@ class User extends Authenticatable
      */
     public function hasRole(string|array $roles): bool
     {
-        if (is_array($roles)) {
-            return in_array($this->role->name, $roles);
+        $roleName = $this->role?->name;
+
+        if (!$roleName) {
+            return false;
         }
 
-        return $this->role->name === $roles;
+        if (is_array($roles)) {
+            return in_array($roleName, $roles, true);
+        }
+
+        return $roleName === $roles;
     }
 
     /**
@@ -134,7 +140,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role->name === 'admin';
+        return $this->role?->name === 'admin';
     }
 
     /**
@@ -142,7 +148,7 @@ class User extends Authenticatable
      */
     public function isKasir(): bool
     {
-        return $this->role->name === 'kasir';
+        return $this->role?->name === 'kasir';
     }
 
     /**
@@ -150,6 +156,6 @@ class User extends Authenticatable
      */
     public function isManager(): bool
     {
-        return $this->role->name === 'manager';
+        return $this->role?->name === 'manager';
     }
 }

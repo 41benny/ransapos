@@ -69,7 +69,7 @@
                         <div class="flex-1">
                             <h3 class="font-semibold text-gray-900 dark:text-white">{{ $employee->name }}</h3>
                             <p class="text-xs text-gray-600 dark:text-gray-400">
-                                {{ $employee->role->display_name ?? 'Karyawan' }}</p>
+                                {{ $employee->role?->display_name ?? 'Karyawan' }}</p>
                         </div>
                     </div>
 
