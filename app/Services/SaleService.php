@@ -133,18 +133,8 @@ class SaleService
                     // Cek BOM aktif
                     $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
                     if ($bom) {
-                        // Validasi stok komponen BOM (kecuali jika allow negative stock)
-                        $allowNegativeStock = config('app.allow_negative_stock', true);
-                        if (!$allowNegativeStock) {
-                            foreach ($bom->details as $detail) {
-                                $consumeQty = $detail->quantity * $item['quantity'];
-                                $available = $this->stockService->getAvailableStock($detail->component_product_id, $data['outlet_id']);
-                                if ($available < $consumeQty) {
-                                    throw new Exception("Stok bahan {$detail->component->name} tidak mencukupi. Dibutuhkan: {$consumeQty}, tersedia: {$available}");
-                                }
-                            }
-                        }
-                        // Jika semua cukup, lakukan pengurangan stok per komponen
+                        // BOM concept: Validasi stok dihapus - stok boleh negatif
+                        // Pembelian bahan baku dilakukan kemudian untuk menutupi stok negatif
                         foreach ($bom->details as $detail) {
                             $consumeQty = $detail->quantity * $item['quantity'];
                             $this->stockService->reduceSaleStock(

@@ -42,13 +42,8 @@ class StockService
                     'last_mutation_at' => now(),
                 ]
             );
-
-            // Cek apakah stok mencukupi (kecuali jika allow negative stock)
-            $allowNegativeStock = config('app.allow_negative_stock', true);
-            if (!$allowNegativeStock && $stock->quantity < $quantity) {
-                $product = Product::find($productId);
-                throw new Exception("Stok {$product->name} tidak mencukupi. Tersedia: {$stock->quantity}");
-            }
+            // BOM concept: Stok boleh negatif, validasi dihapus
+            // Pembelian bahan baku dilakukan kemudian untuk menutupi stok negatif
 
             // Simpan stok sebelumnya
             $stockBefore = $stock->quantity;
