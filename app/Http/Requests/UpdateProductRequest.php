@@ -30,6 +30,7 @@ class UpdateProductRequest extends FormRequest
             'category_id' => 'required|exists:product_categories,id',
             'product_type' => 'required|in:raw_material,finished_good,service',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
             'unit' => 'required|string|max:50',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
@@ -43,6 +44,8 @@ class UpdateProductRequest extends FormRequest
             'is_available_all_users' => 'boolean',
             'pos_outlet_ids' => 'nullable|array',
             'pos_outlet_ids.*' => 'exists:outlets,id',
+            'pos_user_ids' => 'nullable|array',
+            'pos_user_ids.*' => 'exists:users,id',
             'is_active' => 'boolean',
         ];
     }
@@ -58,6 +61,7 @@ class UpdateProductRequest extends FormRequest
             'category_id' => 'kategori',
             'product_type' => 'jenis produk',
             'description' => 'deskripsi',
+            'image' => 'gambar produk',
             'unit' => 'satuan',
             'purchase_price' => 'harga beli',
             'selling_price' => 'harga jual',
@@ -69,6 +73,7 @@ class UpdateProductRequest extends FormRequest
             'is_available_all_outlets' => 'ketersediaan semua outlet',
             'is_available_all_users' => 'ketersediaan semua pengguna',
             'pos_outlet_ids' => 'outlet POS',
+            'pos_user_ids' => 'pengguna POS',
             'is_active' => 'status',
         ];
     }

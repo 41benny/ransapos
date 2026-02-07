@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -21,8 +22,10 @@ class Product extends Model
         'is_available_all_outlets',
         'is_available_all_users',
         'pos_outlet_ids',
+        'pos_user_ids',
         'category_id',
         'description',
+        'image_path',
         'unit',
         'purchase_price',
         'selling_price',
@@ -43,7 +46,12 @@ class Product extends Model
         'is_available_all_outlets' => 'boolean',
         'is_available_all_users' => 'boolean',
         'pos_outlet_ids' => 'array',
+        'pos_user_ids' => 'array',
         'is_active' => 'boolean',
+    ];
+
+    protected $appends = [
+        'image_url',
     ];
 
     /**
@@ -129,5 +137,27 @@ class Product extends Model
         }
 
         return (float) $this->selling_price;
+    }
+
+    public function isAvailableForUser(?int $userId): bool
+    {
+        if ($this->is_available_all_users || !$userId) {
+            return true;
+        }
+
+        $allowedUserIds = collect($this->pos_user_ids ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return in_array((int) $userId, $allowedUserIds, true);
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+
+        return Storage::url($this->image_path);
     }
 }

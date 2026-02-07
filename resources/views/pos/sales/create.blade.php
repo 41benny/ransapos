@@ -84,17 +84,20 @@
                             <!-- Image / Placeholder -->
                             <div
                                 class="aspect-[4/3] bg-gray-700/50 rounded-xl mb-3 flex items-center justify-center relative overflow-hidden group-hover:bg-gray-700 transition">
-                                <!-- Pattern bg -->
-                                <div
-                                    class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent">
-                                </div>
-
-                                <!-- Icon -->
-                                <svg class="w-10 h-10 text-gray-600 group-hover:text-indigo-400 transition transform group-hover:scale-110 duration-300"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                </svg>
+                                <img v-if="product.image_url"
+                                    :src="product.image_url"
+                                    :alt="product.name"
+                                    class="w-full h-full object-cover">
+                                <template v-else>
+                                    <div
+                                        class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent">
+                                    </div>
+                                    <svg class="w-10 h-10 text-gray-600 group-hover:text-indigo-400 transition transform group-hover:scale-110 duration-300"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                </template>
 
                                 <!-- Price Tag Overlay -->
                                 <div

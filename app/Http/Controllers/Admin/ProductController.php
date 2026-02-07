@@ -8,11 +8,13 @@ use App\Models\BomHeader;
 use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
@@ -79,6 +81,13 @@ class ProductController extends Controller
         $outlets = Outlet::active()
             ->orderBy('name')
             ->get(['id', 'name']);
+        $posUsers = User::with(['role:id,name', 'outlet:id,name'])
+            ->where('is_active', true)
+            ->whereHas('role', function ($query) {
+                $query->whereIn('name', ['kasir', 'admin', 'manager']);
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'role_id', 'outlet_id']);
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
         $defaults = [
             'product_type' => $formMode === 'bundle' ? 'finished_good' : 'finished_good',
@@ -92,10 +101,10 @@ class ProductController extends Controller
         if ($formMode === 'bundle') {
             $rawMaterials = $this->loadRawMaterialsForBundle();
 
-            return view('admin.products.create_bundle', compact('categories', 'outlets', 'priceLevels', 'formMode', 'defaults', 'rawMaterials'));
+            return view('admin.products.create_bundle', compact('categories', 'outlets', 'posUsers', 'priceLevels', 'formMode', 'defaults', 'rawMaterials'));
         }
 
-        return view('admin.products.create', compact('categories', 'outlets', 'priceLevels', 'formMode', 'defaults'));
+        return view('admin.products.create', compact('categories', 'outlets', 'posUsers', 'priceLevels', 'formMode', 'defaults'));
     }
 
     /**
@@ -104,6 +113,8 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
         $data = $request->validated();
+        unset($data['image'], $data['bundle_components'], $data['bundle_mode']);
+
         $data['created_by'] = Auth::id();
         $isBundleMode = $request->boolean('bundle_mode');
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
@@ -115,6 +126,9 @@ class ProductController extends Controller
         $data['pos_outlet_ids'] = $data['is_available_all_outlets']
             ? null
             : $this->sanitizeOutletIds($request->input('pos_outlet_ids', []));
+        $data['pos_user_ids'] = $data['is_available_all_users']
+            ? null
+            : $this->sanitizeUserIds($request->input('pos_user_ids', []));
         $data['price_levels'] = $this->normalizePriceLevels(
             $request->input('price_levels', []),
             (float) ($data['selling_price'] ?? 0)
@@ -127,13 +141,20 @@ class ProductController extends Controller
             $data['is_available_all_outlets'] = 1;
             $data['is_available_all_users'] = 1;
             $data['pos_outlet_ids'] = null;
+            $data['pos_user_ids'] = null;
         }
 
         $data['selling_price'] = $data['price_levels']['regular'];
 
         DB::beginTransaction();
+        $uploadedImagePath = null;
 
         try {
+            if ($request->hasFile('image')) {
+                $uploadedImagePath = $request->file('image')->store('products', 'public');
+                $data['image_path'] = $uploadedImagePath;
+            }
+
             $product = Product::create($data);
 
             if ($isBundleMode) {
@@ -167,6 +188,9 @@ class ProductController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+            if ($uploadedImagePath) {
+                Storage::disk('public')->delete($uploadedImagePath);
+            }
 
             return back()
                 ->withInput()
@@ -199,9 +223,16 @@ class ProductController extends Controller
         $outlets = Outlet::active()
             ->orderBy('name')
             ->get(['id', 'name']);
+        $posUsers = User::with(['role:id,name', 'outlet:id,name'])
+            ->where('is_active', true)
+            ->whereHas('role', function ($query) {
+                $query->whereIn('name', ['kasir', 'admin', 'manager']);
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'role_id', 'outlet_id']);
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
 
-        return view('admin.products.edit', compact('product', 'categories', 'outlets', 'priceLevels'));
+        return view('admin.products.edit', compact('product', 'categories', 'outlets', 'posUsers', 'priceLevels'));
     }
 
     /**
@@ -210,6 +241,8 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product)
     {
         $data = $request->validated();
+        unset($data['image']);
+
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
         $data['is_sellable'] = $request->has('is_sellable') ? 1 : 0;
         $data['is_pos_available'] = $request->has('is_pos_available') ? 1 : 0;
@@ -219,6 +252,9 @@ class ProductController extends Controller
         $data['pos_outlet_ids'] = $data['is_available_all_outlets']
             ? null
             : $this->sanitizeOutletIds($request->input('pos_outlet_ids', []));
+        $data['pos_user_ids'] = $data['is_available_all_users']
+            ? null
+            : $this->sanitizeUserIds($request->input('pos_user_ids', []));
         $data['price_levels'] = $this->normalizePriceLevels(
             $request->input('price_levels', []),
             (float) ($data['selling_price'] ?? $product->selling_price)
@@ -231,9 +267,18 @@ class ProductController extends Controller
             $data['is_available_all_outlets'] = 1;
             $data['is_available_all_users'] = 1;
             $data['pos_outlet_ids'] = null;
+            $data['pos_user_ids'] = null;
         }
 
         $data['selling_price'] = $data['price_levels']['regular'];
+
+        if ($request->hasFile('image')) {
+            $newImagePath = $request->file('image')->store('products', 'public');
+            if (!empty($product->image_path)) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $data['image_path'] = $newImagePath;
+        }
 
         $product->update($data);
 
@@ -270,6 +315,23 @@ class ProductController extends Controller
         }
 
         return collect($outletIds)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Bersihkan daftar user POS dari request.
+     */
+    private function sanitizeUserIds(mixed $userIds): array
+    {
+        if (!is_array($userIds)) {
+            return [];
+        }
+
+        return collect($userIds)
             ->filter(fn ($id) => is_numeric($id))
             ->map(fn ($id) => (int) $id)
             ->unique()

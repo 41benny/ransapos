@@ -31,6 +31,7 @@ class SaleController extends Controller
     {
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
         $currentOutletId = auth()->user()->outlet_id;
+        $currentUserId = auth()->id();
 
         $categories = ProductCategory::where('is_active', true)
             ->with(['products' => function($query) {
@@ -41,9 +42,9 @@ class SaleController extends Controller
             }])
             ->orderBy('name')
             ->get()
-            ->map(function (ProductCategory $category) use ($currentOutletId, $priceLevels) {
+            ->map(function (ProductCategory $category) use ($currentOutletId, $currentUserId, $priceLevels) {
                 $products = $category->products
-                    ->filter(fn (Product $product) => $product->isAvailableForOutlet($currentOutletId))
+                    ->filter(fn (Product $product) => $product->isAvailableForOutlet($currentOutletId) && $product->isAvailableForUser($currentUserId))
                     ->map(function (Product $product) use ($priceLevels) {
                         $rawPriceLevels = $product->price_levels ?? [];
                         $normalizedPriceLevels = [];
