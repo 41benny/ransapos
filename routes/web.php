@@ -37,6 +37,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     // POS Device Management
     Route::get('pos-devices', [AdminPosDeviceController::class, 'index'])->name('pos-devices.index');
     Route::post('pos-devices/pairing', [AdminPosDeviceController::class, 'storePairing'])->name('pos-devices.pairing');
+    Route::post('pos-devices/enforce', [AdminPosDeviceController::class, 'updateEnforcement'])->name('pos-devices.enforce');
     Route::post('pos-devices/{posDevice}/revoke', [AdminPosDeviceController::class, 'revoke'])->name('pos-devices.revoke');
 
     // Purchases

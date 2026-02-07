@@ -54,6 +54,31 @@
             </div>
 
             <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900">Kontrol Fitur Perangkat</h4>
+                        <p class="text-xs text-gray-500 mt-1">Jika nonaktif, POS bisa dibuka dari perangkat mana saja.</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.pos-devices.enforce') }}">
+                        @csrf
+                        <input type="hidden" name="enabled" value="0">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="enabled" value="1" class="sr-only peer"
+                                onchange="this.form.submit()" {{ $deviceEnforced ? 'checked' : '' }}>
+                            <div
+                                class="w-12 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-amber-200 rounded-full peer peer-checked:bg-emerald-500 relative transition">
+                                <span
+                                    class="absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full shadow-sm transition peer-checked:translate-x-6"></span>
+                            </div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">
+                                {{ $deviceEnforced ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                        </label>
+                    </form>
+                </div>
+            </div>
+
+            <div class="p-6 border-b border-gray-100">
                 <form method="POST" action="{{ route('admin.pos-devices.pairing') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     @csrf
                     <div>

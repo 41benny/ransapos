@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\PosDevice;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,8 +19,9 @@ class PosDeviceController extends Controller
             ->with(['outlet', 'creator'])
             ->orderByDesc('created_at')
             ->get();
+        $deviceEnforced = Setting::getBool('pos_device_enforce', config('pos.device_enforce', false));
 
-        return view('admin.pos-devices.index', compact('outlets', 'devices'));
+        return view('admin.pos-devices.index', compact('outlets', 'devices', 'deviceEnforced'));
     }
 
     public function storePairing(Request $request): RedirectResponse
@@ -59,6 +61,17 @@ class PosDeviceController extends Controller
         return redirect()
             ->route('admin.pos-devices.index')
             ->with('success', 'Perangkat berhasil dinonaktifkan.');
+    }
+
+    public function updateEnforcement(Request $request): RedirectResponse
+    {
+        $enabled = $request->boolean('enabled');
+
+        Setting::setValue('pos_device_enforce', $enabled);
+
+        return redirect()
+            ->route('admin.pos-devices.index')
+            ->with('success', $enabled ? 'Fitur perangkat POS diaktifkan.' : 'Fitur perangkat POS dinonaktifkan.');
     }
 
     protected function generatePairingCode(): string

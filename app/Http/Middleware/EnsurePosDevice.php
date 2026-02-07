@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use App\Models\PosDevice;
 use Closure;
 use Illuminate\Http\Request;
@@ -16,7 +17,9 @@ class EnsurePosDevice
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!config('pos.device_enforce', false)) {
+        $enforced = Setting::getBool('pos_device_enforce', config('pos.device_enforce', false));
+
+        if (!$enforced) {
             return $next($request);
         }
 
