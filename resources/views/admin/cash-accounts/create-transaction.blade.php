@@ -114,16 +114,16 @@
                 </div>
 
                 <div class="overflow-x-auto rounded-lg border border-gray-200">
-                    <table class="min-w-[980px] w-full text-sm">
+                    <table class="min-w-[1400px] w-full text-sm">
                         <thead class="bg-gray-50 text-gray-600">
                             <tr>
                                 <th class="px-4 py-3 text-left font-semibold w-12">#</th>
                                 <th class="px-4 py-3 text-left font-semibold w-40">Jenis</th>
-                                <th class="px-4 py-3 text-left font-semibold min-w-[220px]">Akun COA</th>
-                                <th class="px-4 py-3 text-left font-semibold min-w-[260px]">Link Pengajuan</th>
+                                <th class="px-4 py-3 text-left font-semibold min-w-[240px]">Akun COA</th>
+                                <th class="px-4 py-3 text-left font-semibold min-w-[300px]">Link Pengajuan</th>
                                 <th class="px-4 py-3 text-left font-semibold w-40">Jumlah</th>
-                                <th class="px-4 py-3 text-left font-semibold min-w-[240px]">Deskripsi</th>
-                                <th class="px-4 py-3 text-left font-semibold min-w-[220px]">Catatan</th>
+                                <th class="px-4 py-3 text-left font-semibold min-w-[260px]">Deskripsi</th>
+                                <th class="px-4 py-3 text-left font-semibold min-w-[240px]">Catatan</th>
                                 <th class="px-4 py-3 text-right font-semibold w-16"></th>
                             </tr>
                         </thead>
@@ -131,7 +131,7 @@
                             @foreach($rows as $i => $row)
                                 <tr data-index="{{ $i }}">
                                     <td class="px-4 py-3 text-gray-500" data-role="row-number">{{ $i + 1 }}</td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 min-w-[240px]">
                                         <select name="rows[{{ $i }}][type]"
                                                 class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.type') border-red-500 @enderror"
                                                 data-role="type" required>
@@ -143,7 +143,7 @@
                                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                         @enderror
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 min-w-[300px]">
                                         <div data-role="coa-wrap">
                                             <select name="rows[{{ $i }}][coa_account_id]"
                                                     class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
@@ -161,7 +161,7 @@
                                             @enderror
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 min-w-[260px]">
                                         <div data-role="expense-wrap">
                                             <select name="rows[{{ $i }}][expense_id]"
                                                     class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -181,7 +181,7 @@
                                             <p class="mt-1 text-xs text-gray-500">Opsional untuk pelunasan pengajuan.</p>
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 min-w-[240px]">
                                         <div class="relative">
                                             <span class="absolute left-3 top-2 text-gray-500">Rp</span>
                                             <input type="number"
@@ -252,7 +252,7 @@
 <template id="row-template">
     <tr data-index="__INDEX__">
         <td class="px-4 py-3 text-gray-500" data-role="row-number"></td>
-        <td class="px-4 py-3">
+        <td class="px-4 py-3 min-w-[240px]">
             <select name="rows[__INDEX__][type]"
                     class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     data-role="type" required>
@@ -261,7 +261,7 @@
                 <option value="out">Kas Keluar</option>
             </select>
         </td>
-        <td class="px-4 py-3">
+        <td class="px-4 py-3 min-w-[300px]">
             <div data-role="coa-wrap">
                 <select name="rows[__INDEX__][coa_account_id]"
                         class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -274,7 +274,7 @@
                 <p class="mt-1 text-xs text-gray-500">Wajib untuk transaksi keluar.</p>
             </div>
         </td>
-        <td class="px-4 py-3">
+        <td class="px-4 py-3 min-w-[260px]">
             <div data-role="expense-wrap">
                 <select name="rows[__INDEX__][expense_id]"
                         class="w-full px-2.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -293,7 +293,7 @@
                 <p class="mt-1 text-xs text-gray-500">Opsional untuk pelunasan pengajuan.</p>
             </div>
         </td>
-        <td class="px-4 py-3">
+        <td class="px-4 py-3 min-w-[240px]">
             <div class="relative">
                 <span class="absolute left-3 top-2 text-gray-500">Rp</span>
                 <input type="number"
