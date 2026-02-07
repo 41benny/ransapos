@@ -168,11 +168,18 @@ class CashAccountController extends Controller
             $data = $request->validated();
             $data['created_by'] = auth()->id() ?? 1; // TODO: Replace with actual auth
 
-            $transaction = $this->cashAccountService->recordTransaction($data);
+            $rows = $data['rows'] ?? [];
+            unset($data['rows']);
+
+            $transactions = $this->cashAccountService->recordTransactionsBulk($data, $rows);
+            $count = count($transactions);
+            $firstNumber = $transactions[0]->transaction_number ?? null;
 
             return redirect()
                 ->route('admin.cash-transactions.index')
-                ->with('success', 'Transaksi berhasil dicatat! Nomor: ' . $transaction->transaction_number);
+                ->with('success', $count === 1
+                    ? 'Transaksi berhasil dicatat! Nomor: ' . $firstNumber
+                    : 'Transaksi berhasil dicatat! Total: ' . $count . ' baris.');
         } catch (\Exception $e) {
             return back()
                 ->withInput()

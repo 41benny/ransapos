@@ -93,61 +93,41 @@ class CashAccountService
             DB::beginTransaction();
 
             $account = CashAccount::findOrFail($data['cash_account_id']);
-
-            // Validasi: Transaksi keluar harus ada COA (akun biaya) - kecuali untuk transaksi dengan referensi
-            if ($data['type'] === 'out' && empty($data['reference_type'])) {
-                if (!isset($data['coa_account_id']) || $data['coa_account_id'] === '' || $data['coa_account_id'] === null) {
-                    throw new Exception('Transaksi kas keluar harus memilih akun biaya (COA)');
-                }
-            }
-
-            // Handle expense reference if provided
-            if (!empty($data['expense_id'])) {
-                $data['reference_type'] = 'expense';
-                $data['reference_id'] = $data['expense_id'];
-                unset($data['expense_id']);
-            }
-
-            // Generate transaction number
-            $data['transaction_number'] = $this->generateTransactionNumber($account->code);
-
-            // Set balance before
-            $data['balance_before'] = $account->current_balance;
-
-            // Calculate balance after
-            if ($data['type'] === 'in') {
-                $data['balance_after'] = $account->current_balance + $data['amount'];
-            } else { // out
-                $data['balance_after'] = $account->current_balance - $data['amount'];
-            }
-
-            // Validasi saldo tidak boleh negatif
-            if ($data['balance_after'] < 0) {
-                throw new Exception('Saldo tidak mencukupi. Saldo saat ini: '.number_format($account->current_balance, 0, ',', '.'));
-            }
-
-            // Create transaction
-            $transaction = CashTransaction::create($data);
-
-            // Update current balance di account
-            $account->update([
-                'current_balance' => $data['balance_after'],
-            ]);
-
-            // Mark linked expense as paid
-            if (!empty($data['reference_type']) && $data['reference_type'] === 'expense' && !empty($data['reference_id'])) {
-                $expense = \App\Models\Expense::find($data['reference_id']);
-                if ($expense && $expense->status === 'approved') {
-                    $expense->update([
-                        'status' => 'paid',
-                        'cash_account_id' => $account->id,
-                    ]);
-                }
-            }
+            $transaction = $this->applyTransaction($account, $data);
 
             DB::commit();
 
             return $transaction->fresh(['cashAccount', 'creator', 'coaAccount']);
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw new Exception('Gagal catat transaksi: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Catat transaksi kas/bank secara bulk
+     *
+     * @return array<CashTransaction>
+     */
+    public function recordTransactionsBulk(array $header, array $rows): array
+    {
+        try {
+            DB::beginTransaction();
+
+            $account = CashAccount::findOrFail($header['cash_account_id']);
+            $transactions = [];
+
+            foreach ($rows as $row) {
+                $data = array_merge($header, $row);
+                unset($data['rows']);
+
+                $transactions[] = $this->applyTransaction($account, $data)
+                    ->fresh(['cashAccount', 'creator', 'coaAccount']);
+            }
+
+            DB::commit();
+
+            return $transactions;
         } catch (Exception $e) {
             DB::rollBack();
             throw new Exception('Gagal catat transaksi: '.$e->getMessage());
@@ -213,6 +193,64 @@ class CashAccountService
             DB::rollBack();
             throw new Exception('Gagal catat pembayaran purchase: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Terapkan 1 transaksi pada akun (tanpa commit transaction DB)
+     */
+    protected function applyTransaction(CashAccount $account, array $data): CashTransaction
+    {
+        // Validasi: Transaksi keluar harus ada COA (akun biaya) - kecuali untuk transaksi dengan referensi
+        if ($data['type'] === 'out' && empty($data['reference_type'])) {
+            if (!isset($data['coa_account_id']) || $data['coa_account_id'] === '' || $data['coa_account_id'] === null) {
+                throw new Exception('Transaksi kas keluar harus memilih akun biaya (COA)');
+            }
+        }
+
+        // Handle expense reference if provided
+        if (!empty($data['expense_id'])) {
+            $data['reference_type'] = 'expense';
+            $data['reference_id'] = $data['expense_id'];
+            unset($data['expense_id']);
+        }
+
+        // Generate transaction number
+        $data['transaction_number'] = $this->generateTransactionNumber($account->code);
+
+        // Set balance before
+        $data['balance_before'] = $account->current_balance;
+
+        // Calculate balance after
+        if ($data['type'] === 'in') {
+            $data['balance_after'] = $account->current_balance + $data['amount'];
+        } else { // out
+            $data['balance_after'] = $account->current_balance - $data['amount'];
+        }
+
+        // Validasi saldo tidak boleh negatif
+        if ($data['balance_after'] < 0) {
+            throw new Exception('Saldo tidak mencukupi. Saldo saat ini: '.number_format($account->current_balance, 0, ',', '.'));
+        }
+
+        // Create transaction
+        $transaction = CashTransaction::create($data);
+
+        // Update current balance di account
+        $account->current_balance = $data['balance_after'];
+        $account->save();
+
+        // Mark linked expense as paid
+        if (!empty($data['reference_type']) && $data['reference_type'] === 'expense' && !empty($data['reference_id'])) {
+            $expense = \App\Models\Expense::find($data['reference_id']);
+            if ($expense && $expense->status === 'approved') {
+                $expense->update([
+                    'status' => 'paid',
+                    'cash_account_id' => $account->id,
+                ]);
+            }
+        }
+
+        return $transaction;
     }
 
     /**
