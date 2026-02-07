@@ -20,7 +20,7 @@
         </div>
     @endif
 
-    <div class="w-full">
+    <div class="w-full max-w-7xl mx-auto">
         <div class="card bg-white p-6">
 
             <!-- Header Content -->
