@@ -12,15 +12,15 @@
 
 <div class="max-w-6xl">
     @if(session('error'))
-        <div class="alert alert-error mb-4">
-            <i class="fas fa-exclamation-circle text-lg"></i>
+        <div class="mb-4 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
+            <i class="fas fa-exclamation-circle text-lg mr-2"></i>
             <span>{{ session('error') }}</span>
         </div>
     @endif
 
     @if($errors->any())
-        <div class="alert alert-error mb-4">
-            <i class="fas fa-exclamation-triangle text-lg"></i>
+        <div class="mb-4 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
+            <i class="fas fa-exclamation-triangle text-lg mr-2"></i>
             <span>Periksa kembali input bundle Anda.</span>
         </div>
     @endif
@@ -30,39 +30,38 @@
         <input type="hidden" name="bundle_mode" value="1">
         <input type="hidden" name="product_type" id="product_type" value="finished_good">
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-900">Informasi Bundle</h3>
-                <p class="text-sm text-gray-500 mt-1">Bundle disimpan sebagai produk jadi dan dapat langsung dipakai di POS.</p>
+        <div class="card p-0 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+                <h3 class="text-base font-bold text-gray-900">Informasi Bundle</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Bundle disimpan sebagai produk jadi dan dapat langsung dipakai di POS.</p>
             </div>
 
-            <div class="p-6 space-y-8">
+            <div class="p-6 space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Gambar Produk</label>
-                        <div class="border border-gray-200 rounded-xl p-3 bg-gray-50">
-                            <div class="aspect-square rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
-                                <img id="imagePreview" src="" alt="Preview gambar produk" class="hidden w-full h-full object-cover">
+                        <label class="form-label mb-2">Gambar Produk</label>
+                        <div class="border border-gray-200 rounded-lg p-3 bg-white">
+                            <div class="aspect-square rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center relative">
+                                <img id="imagePreview" src="" alt="Preview" class="hidden w-full h-full object-cover">
                                 <div id="imagePlaceholder" class="text-gray-400 text-center">
-                                    <i class="fas fa-image text-4xl"></i>
-                                    <p class="text-xs mt-2">Belum ada gambar</p>
+                                    <i class="fas fa-image text-3xl"></i>
+                                    <p class="text-[10px] mt-1">No Image</p>
                                 </div>
                             </div>
-                            <label for="image" class="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 cursor-pointer">
-                                <i class="fas fa-upload"></i>
-                                Upload Gambar
+                            <label for="image" class="mt-3 btn btn-secondary w-full justify-center text-xs">
+                                <i class="fas fa-upload mr-1"></i> Upload
                             </label>
                             <input type="file" id="image" name="image" accept="image/*" class="hidden">
-                            <p class="text-xs text-gray-500 mt-2">Gambar ini akan tampil di POS kasir. Maks 2MB.</p>
+                            <p class="text-[10px] text-gray-400 mt-2 text-center">Maks 2MB.</p>
                             @error('image')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
 
-                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="name" class="form-label">
                                 Nama Bundle <span class="text-red-500">*</span>
                             </label>
                             <input
@@ -70,17 +69,17 @@
                                 name="name"
                                 id="name"
                                 value="{{ old('name') }}"
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                                class="form-input"
                                 placeholder="Contoh: Paket Nasi + Es Teh"
                                 required
                             >
                             @error('name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="sku" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="sku" class="form-label">
                                 SKU <span class="text-red-500">*</span>
                             </label>
                             <input
@@ -88,60 +87,60 @@
                                 name="sku"
                                 id="sku"
                                 value="{{ old('sku') }}"
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sku') border-red-500 @enderror"
+                                class="form-input"
                                 placeholder="Contoh: BUNDLE-001"
                                 required
                             >
                             @error('sku')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        
+                        <div>
+                            <label for="category_id" class="form-label">
+                                Kategori <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="category_id"
+                                id="category_id"
+                                class="form-input"
+                                required
+                            >
+                                <option value="">-- Pilih Kategori --</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('category_id')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="unit" class="form-label">
+                                Unit <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="unit"
+                                id="unit"
+                                value="{{ old('unit', 'pcs') }}"
+                                class="form-input"
+                                placeholder="pcs"
+                                required
+                            >
+                            @error('unit')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Kategori <span class="text-red-500">*</span>
-                        </label>
-                        <select
-                            name="category_id"
-                            id="category_id"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('category_id') border-red-500 @enderror"
-                            required
-                        >
-                            <option value="">-- Pilih Kategori --</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('category_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="unit" class="block text-sm font-medium text-gray-700 mb-2">
-                            Unit <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="unit"
-                            id="unit"
-                            value="{{ old('unit', 'pcs') }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('unit') border-red-500 @enderror"
-                            placeholder="pcs"
-                            required
-                        >
-                        @error('unit')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="purchase_price" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="purchase_price" class="form-label">
                             Harga Modal <span class="text-red-500">*</span>
                         </label>
                         <input
@@ -149,21 +148,21 @@
                             name="purchase_price"
                             id="purchase_price"
                             value="{{ old('purchase_price', 0) }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('purchase_price') border-red-500 @enderror"
+                            class="form-input bg-gray-50 text-gray-500"
                             placeholder="0"
                             min="0"
                             step="0.01"
                             readonly
                             required
                         >
-                        <p class="mt-1 text-xs text-gray-500">Diisi otomatis dari total komponen pada tab Bundle/Bahan.</p>
+                        <p class="mt-1 text-xs text-gray-400">Otomatis dari total komponen.</p>
                         @error('purchase_price')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="min_stock" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="min_stock" class="form-label">
                             Stok Minimal
                         </label>
                         <input
@@ -171,99 +170,99 @@
                             name="min_stock"
                             id="min_stock"
                             value="{{ old('min_stock', 0) }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('min_stock') border-red-500 @enderror"
+                            class="form-input"
                             placeholder="0"
                             min="0"
                         >
                         @error('min_stock')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-gray-50/60">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-100 rounded-lg bg-gray-50/50">
                     <div>
-                        <h4 class="text-base font-semibold text-gray-900">Informasi Produk</h4>
-                        <p class="text-xs text-gray-500 mt-1">Pengaturan harga jual utama dan status bundle.</p>
+                        <h4 class="text-sm font-bold text-gray-900 mb-1">Informasi Produk</h4>
+                        <p class="text-xs text-gray-500 mb-4">Pengaturan harga jual utama dan status.</p>
 
-                        <div class="mt-4 space-y-4">
-                            <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="space-y-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_sellable" id="is_sellable" value="1"
                                     {{ old('is_sellable', data_get($defaults, 'is_sellable', true)) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Saya menjual bundle ini</span>
                             </label>
 
                             <div>
-                                <label for="selling_price" class="block text-sm font-medium text-gray-700 mb-2">
+                                <label for="selling_price" class="form-label">
                                     Harga Jual Reguler <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
-                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
                                     <input type="number" name="selling_price" id="selling_price"
                                         value="{{ old('selling_price', 0) }}"
-                                        class="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('selling_price') border-red-500 @enderror"
+                                        class="form-input pl-10"
                                         min="0" step="0.01" required>
                                 </div>
                                 @error('selling_price')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
-                            <label class="flex items-center gap-3 cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_active" value="1"
                                     {{ old('is_active', true) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Bundle aktif</span>
                             </label>
                         </div>
                     </div>
 
                     <div>
-                        <h4 class="text-base font-semibold text-gray-900">Informasi POS</h4>
-                        <p class="text-xs text-gray-500 mt-1">Atur bundle tampil di outlet dan channel penjualan.</p>
+                        <h4 class="text-sm font-bold text-gray-900 mb-1">Informasi POS</h4>
+                        <p class="text-xs text-gray-500 mb-4">Tampilkan di outlet dan channel penjualan.</p>
 
-                        <div class="mt-4 space-y-3">
-                            <label class="flex items-center gap-3 cursor-pointer">
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_pos_available" id="is_pos_available" value="1"
                                     {{ old('is_pos_available', data_get($defaults, 'is_pos_available', true)) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Tersedia di POS</span>
                             </label>
 
-                            <label class="flex items-center gap-3 cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_online_order_available" value="1"
                                     {{ old('is_online_order_available', data_get($defaults, 'is_online_order_available', false)) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Tersedia di Online Order</span>
                             </label>
 
-                            <label class="flex items-center gap-3 cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_available_all_outlets" id="is_available_all_outlets" value="1"
                                     {{ old('is_available_all_outlets', data_get($defaults, 'is_available_all_outlets', true)) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                                 <span class="text-sm text-gray-700">Tersedia di semua outlet</span>
                             </label>
 
-                            <div id="outlet-selector-tools" class="pt-1">
-                                <p class="text-sm text-gray-600" id="selected-outlet-count">0 outlet dipilih</p>
-                                <button type="button" id="open-outlet-modal" class="mt-2 px-3 py-2 bg-indigo-700 text-white rounded-lg text-sm font-medium hover:bg-indigo-800">
-                                    Pilih outlet
+                            <div id="outlet-selector-tools" class="pl-6 pt-1">
+                                <p class="text-xs text-gray-500" id="selected-outlet-count">0 outlet dipilih</p>
+                                <button type="button" id="open-outlet-modal" class="text-blue-600 hover:text-blue-700 text-xs font-medium mt-1">
+                                    Pilih outlet manual
                                 </button>
                             </div>
                             <div id="posOutletHiddenInputs"></div>
 
-                            <label class="flex items-center gap-3 cursor-pointer">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_available_all_users" id="is_available_all_users" value="1"
                                     {{ old('is_available_all_users', data_get($defaults, 'is_available_all_users', true)) ? 'checked' : '' }}
-                                    class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                                <span class="text-sm text-gray-700">Tersedia untuk semua pengguna POS</span>
+                                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tersedia untuk semua pengguna</span>
                             </label>
 
-                            <div id="user-selector-tools" class="pt-1">
-                                <p class="text-sm text-gray-600" id="selected-user-count">0 pengguna POS dipilih</p>
-                                <button type="button" id="open-user-modal" class="mt-2 px-3 py-2 bg-indigo-700 text-white rounded-lg text-sm font-medium hover:bg-indigo-800">
-                                    Pilih pengguna POS
+                            <div id="user-selector-tools" class="pl-6 pt-1">
+                                <p class="text-xs text-gray-500" id="selected-user-count">0 pengguna dipilih</p>
+                                <button type="button" id="open-user-modal" class="text-blue-600 hover:text-blue-700 text-xs font-medium mt-1">
+                                    Pilih pengguna manual
                                 </button>
                             </div>
                             <div id="posUserHiddenInputs"></div>
@@ -271,24 +270,24 @@
                     </div>
                 </div>
 
-                <div class="p-5 border border-gray-200 rounded-xl">
-                    <div class="flex items-center gap-2 overflow-x-auto" id="bundle-tabs">
-                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white" data-target="tab-components">Bundle/Bahan</button>
-                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700" data-target="tab-pricing">Pengaturan Harga</button>
-                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700" data-target="tab-extra">Info Tambahan</button>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="flex items-center gap-1 bg-gray-50 border-b border-gray-200 px-2 pt-2" id="bundle-tabs">
+                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-t-lg text-sm font-medium bg-white text-blue-600 border-t border-x border-gray-200 relative top-[1px]" data-target="tab-components">Bundle/Bahan</button>
+                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-t-lg text-sm font-medium text-gray-500 hover:text-gray-700" data-target="tab-pricing">Pengaturan Harga</button>
+                        <button type="button" class="bundle-tab-btn px-4 py-2 rounded-t-lg text-sm font-medium text-gray-500 hover:text-gray-700" data-target="tab-extra">Info Tambahan</button>
                     </div>
 
-                    <div class="mt-5">
+                    <div class="p-5 bg-white">
                         <div id="tab-components" class="bundle-tab-panel">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden" id="components-table">
+                            <div class="table-container mb-4">
+                                <table class="table-modern" id="components-table">
                                     <thead>
-                                        <tr class="bg-gray-50">
-                                            <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200">Item</th>
-                                            <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-32">Qty</th>
-                                            <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-32">Satuan</th>
-                                            <th class="text-right text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-40">Harga Modal</th>
-                                            <th class="text-center text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-20">Aksi</th>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="w-24">Qty</th>
+                                            <th class="w-24">Satuan</th>
+                                            <th class="w-32 text-right">Biaya</th>
+                                            <th class="w-16 text-center"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="bundle-components-body">
@@ -296,9 +295,9 @@
                                             $oldComponents = old('bundle_components', [['component_product_id' => '', 'quantity' => '', 'uom' => '']]);
                                         @endphp
                                         @foreach($oldComponents as $index => $component)
-                                            <tr class="component-row border-b border-gray-200 last:border-b-0">
-                                                <td class="px-4 py-3">
-                                                    <select name="bundle_components[{{ $index }}][component_product_id]" class="component-product w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                            <tr class="component-row">
+                                                <td class="p-2">
+                                                    <select name="bundle_components[{{ $index }}][component_product_id]" class="component-product form-input text-sm">
                                                         <option value="">Pilih bahan...</option>
                                                         @foreach($rawMaterials as $raw)
                                                             <option value="{{ $raw->id }}" data-unit="{{ $raw->unit }}" data-purchase-price="{{ (float) ($raw->purchase_price ?? 0) }}" {{ (string)($component['component_product_id'] ?? '') === (string)$raw->id ? 'selected' : '' }}>
@@ -307,17 +306,17 @@
                                                         @endforeach
                                                     </select>
                                                 </td>
-                                                <td class="px-4 py-3">
+                                                <td class="p-2">
                                                     <input type="number" name="bundle_components[{{ $index }}][quantity]" value="{{ $component['quantity'] ?? '' }}" min="0.0001" step="0.0001"
-                                                        class="component-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
+                                                        class="component-quantity form-input text-sm" placeholder="0">
                                                 </td>
-                                                <td class="px-4 py-3">
+                                                <td class="p-2">
                                                     <input type="text" name="bundle_components[{{ $index }}][uom]" value="{{ $component['uom'] ?? '' }}"
-                                                        class="component-uom w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="pcs">
+                                                        class="component-uom form-input text-sm" placeholder="pcs">
                                                 </td>
-                                                <td class="px-4 py-3 text-right font-semibold text-gray-700 component-row-cost-value">Rp 0,00</td>
-                                                <td class="px-4 py-3 text-center">
-                                                    <button type="button" class="remove-component-row text-red-600 hover:text-red-800">
+                                                <td class="p-2 text-right font-medium text-gray-700 component-row-cost-value text-sm">Rp 0</td>
+                                                <td class="p-2 text-center">
+                                                    <button type="button" class="remove-component-row text-red-500 hover:text-red-700 text-sm">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </td>
@@ -328,40 +327,39 @@
                             </div>
 
                             @error('bundle_components')
-                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
                             @enderror
 
-                            <div class="mt-4 flex justify-end">
-                                <div class="w-full md:w-80 flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
-                                    <span class="text-sm font-semibold text-gray-700">Total Harga Modal</span>
-                                    <span id="components-total-cost" class="text-base font-bold text-gray-900">Rp 0,00</span>
+                            <div class="flex items-center justify-between mt-4">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="add-component-row" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-plus mr-1"></i> Tambah Item
+                                    </button>
+                                    <span class="text-[10px] text-gray-400">Minimal 1 bahan.</span>
                                 </div>
-                            </div>
-
-                            <div class="mt-4 flex items-center gap-3">
-                                <button type="button" id="add-component-row" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
-                                    <i class="fas fa-plus mr-1"></i> Tambahkan Item
-                                </button>
-                                <span class="text-xs text-gray-500">Minimal 1 bahan agar BOM bundle terbentuk otomatis.</span>
+                                <div class="px-4 py-2 border border-gray-100 rounded bg-gray-50">
+                                    <span class="text-xs text-gray-500 mr-2">Total Harga Modal:</span>
+                                    <span id="components-total-cost" class="text-sm font-bold text-gray-900">Rp 0,00</span>
+                                </div>
                             </div>
                         </div>
 
                         <div id="tab-pricing" class="bundle-tab-panel hidden">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="table-container">
+                                <table class="table-modern">
                                     <thead>
-                                        <tr class="bg-gray-50">
-                                            <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200 w-1/2">Price Level</th>
-                                            <th class="text-left text-sm font-semibold text-gray-700 px-4 py-3 border-b border-gray-200">Harga</th>
+                                        <tr>
+                                            <th>Price Level</th>
+                                            <th>Harga Jual</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($priceLevels as $levelKey => $levelLabel)
-                                            <tr class="border-b border-gray-200 last:border-b-0">
-                                                <td class="px-4 py-3 text-sm text-gray-700">{{ $levelLabel }}</td>
-                                                <td class="px-4 py-3">
-                                                    <div class="relative">
-                                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
+                                            <tr>
+                                                <td class="text-sm text-gray-700 font-medium">{{ $levelLabel }}</td>
+                                                <td class="p-2">
+                                                    <div class="relative max-w-xs">
+                                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
                                                         <input
                                                             type="number"
                                                             name="price_levels[{{ $levelKey }}]"
@@ -369,7 +367,7 @@
                                                             min="0"
                                                             step="0.01"
                                                             @if($levelKey === 'regular') required @endif
-                                                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @if($levelKey === 'regular') bg-indigo-50/40 @endif"
+                                                            class="form-input pl-8 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
                                                             @if($levelKey === 'regular') id="price_level_regular" @endif
                                                         >
                                                     </div>
@@ -382,63 +380,61 @@
                         </div>
 
                         <div id="tab-extra" class="bundle-tab-panel hidden">
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi Bundle</label>
+                            <label for="description" class="form-label mb-2">Deskripsi Bundle</label>
                             <textarea name="description" id="description" rows="5"
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                class="form-input"
                                 placeholder="Catatan tambahan untuk bundle ini...">{{ old('description') }}</textarea>
-                            <p class="text-xs text-gray-500 mt-2">Catatan ini juga akan dipakai sebagai notes BOM awal.</p>
+                            <p class="text-xs text-gray-400 mt-2">Catatan ini juga akan dipakai sebagai notes BOM awal.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3">
-                <a href="{{ route('admin.products.index') }}" class="px-5 py-2.5 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition">Batal</a>
-                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Simpan Bundle
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Batal</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Simpan Bundle
                 </button>
             </div>
         </div>
     </form>
 </div>
 
-<div id="outletModal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm p-4">
-    <div class="max-w-xl w-full mx-auto mt-16 bg-white rounded-xl shadow-2xl border border-gray-200">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-base font-semibold text-gray-900">Pilih Outlet</h3>
-            <button type="button" class="close-modal text-gray-500 hover:text-gray-700" data-target="outletModal"><i class="fas fa-times"></i></button>
+<!-- Modal Templates (Outlet & User) -->
+<div id="outletModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
+            <h3 class="text-sm font-bold text-gray-900">Pilih Outlet</h3>
+            <button type="button" class="close-modal text-gray-400 hover:text-gray-600" data-target="outletModal"><i class="fas fa-times"></i></button>
         </div>
-        <div class="p-5 max-h-[60vh] overflow-y-auto space-y-2">
+        <div class="p-2 max-h-[60vh] overflow-y-auto">
             @foreach($outlets as $outlet)
-                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input type="checkbox" class="outlet-option w-4 h-4" value="{{ $outlet->id }}">
+                <label class="flex items-center gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
+                    <input type="checkbox" class="outlet-option w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" value="{{ $outlet->id }}">
                     <span class="text-sm text-gray-700">{{ $outlet->name }}</span>
                 </label>
             @endforeach
         </div>
-        <div class="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
-            <button type="button" class="close-modal px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg" data-target="outletModal">Tutup</button>
-            <button type="button" class="close-modal px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg" data-target="outletModal">Simpan Pilihan</button>
+        <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+            <button type="button" class="close-modal btn btn-secondary btn-sm" data-target="outletModal">Tutup</button>
+            <button type="button" class="close-modal btn btn-primary btn-sm" data-target="outletModal">Simpan</button>
         </div>
     </div>
 </div>
 
-<div id="userModal" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm p-4">
-    <div class="max-w-xl w-full mx-auto mt-16 bg-white rounded-xl shadow-2xl border border-gray-200">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-base font-semibold text-gray-900">Pilih Pengguna POS</h3>
-            <button type="button" class="close-modal text-gray-500 hover:text-gray-700" data-target="userModal"><i class="fas fa-times"></i></button>
+<div id="userModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
+            <h3 class="text-sm font-bold text-gray-900">Pilih Pengguna</h3>
+            <button type="button" class="close-modal text-gray-400 hover:text-gray-600" data-target="userModal"><i class="fas fa-times"></i></button>
         </div>
-        <div class="p-5 max-h-[60vh] overflow-y-auto space-y-2">
+        <div class="p-2 max-h-[60vh] overflow-y-auto">
             @foreach($posUsers as $user)
-                <label class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input type="checkbox" class="user-option w-4 h-4 mt-1" value="{{ $user->id }}">
+                <label class="flex items-start gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
+                    <input type="checkbox" class="user-option w-4 h-4 mt-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500" value="{{ $user->id }}">
                     <div>
                         <p class="text-sm font-medium text-gray-800">{{ $user->name }}</p>
-                        <p class="text-xs text-gray-500">
+                        <p class="text-[10px] text-gray-400">
                             {{ optional($user->role)->name ?? '-' }}
                             @if(optional($user->outlet)->name)
                                 • {{ $user->outlet->name }}
@@ -448,9 +444,9 @@
                 </label>
             @endforeach
         </div>
-        <div class="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
-            <button type="button" class="close-modal px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg" data-target="userModal">Tutup</button>
-            <button type="button" class="close-modal px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg" data-target="userModal">Simpan Pilihan</button>
+        <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+            <button type="button" class="close-modal btn btn-secondary btn-sm" data-target="userModal">Tutup</button>
+            <button type="button" class="close-modal btn btn-primary btn-sm" data-target="userModal">Simpan</button>
         </div>
     </div>
 </div>
@@ -466,10 +462,15 @@
             panels.forEach(panel => panel.classList.toggle('hidden', panel.id !== targetId));
             tabs.forEach(tab => {
                 const isActive = tab.dataset.target === targetId;
-                tab.classList.toggle('bg-indigo-600', isActive);
-                tab.classList.toggle('text-white', isActive);
-                tab.classList.toggle('bg-gray-100', !isActive);
-                tab.classList.toggle('text-gray-700', !isActive);
+                if(isActive) {
+                    tab.classList.remove('text-gray-500', 'hover:text-gray-700', 'bg-transparent');
+                    tab.classList.add('bg-white', 'text-blue-600', 'border-t', 'border-x', 'border-gray-200');
+                    tab.style.top = '1px';
+                } else {
+                    tab.classList.add('text-gray-500', 'hover:text-gray-700', 'bg-transparent');
+                    tab.classList.remove('bg-white', 'text-blue-600', 'border-t', 'border-x', 'border-gray-200');
+                    tab.style.top = '0px';
+                }
             });
         }
 
@@ -479,6 +480,7 @@
             });
         });
 
+        // Image Preview logic
         const imageInput = document.getElementById('image');
         const imagePreview = document.getElementById('imagePreview');
         const imagePlaceholder = document.getElementById('imagePlaceholder');
@@ -492,7 +494,6 @@
                     imagePlaceholder.classList.remove('hidden');
                     return;
                 }
-
                 const reader = new FileReader();
                 reader.onload = function (loadEvent) {
                     imagePreview.src = loadEvent.target.result;
@@ -503,6 +504,7 @@
             });
         }
 
+        // Outlet & User Selection Logic
         const selectedOutletIds = new Set(@json($oldOutletIds));
         const selectedUserIds = new Set(@json($oldUserIds));
 
@@ -525,11 +527,7 @@
 
         function renderHiddenInputs(container, fieldName, idSet, isAllSelected) {
             container.innerHTML = '';
-
-            if (isAllSelected) {
-                return;
-            }
-
+            if (isAllSelected) return;
             idSet.forEach(function (id) {
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -541,7 +539,7 @@
 
         function refreshSelectionTexts() {
             outletCountText.textContent = `${selectedOutletIds.size} outlet dipilih`;
-            userCountText.textContent = `${selectedUserIds.size} pengguna POS dipilih`;
+            userCountText.textContent = `${selectedUserIds.size} pengguna dipilih`;
         }
 
         function refreshAvailabilitySections() {
@@ -575,56 +573,36 @@
             refreshAvailabilitySections();
         }
 
-        openOutletModalBtn.addEventListener('click', function () {
-            openModal(outletModal);
-        });
-
-        openUserModalBtn.addEventListener('click', function () {
-            openModal(userModal);
-        });
+        openOutletModalBtn.addEventListener('click', () => openModal(outletModal));
+        openUserModalBtn.addEventListener('click', () => openModal(userModal));
 
         document.querySelectorAll('.close-modal').forEach(button => {
             button.addEventListener('click', function () {
                 const target = document.getElementById(button.dataset.target);
-                if (target) {
-                    closeModal(target);
-                }
+                if (target) closeModal(target);
             });
         });
 
-        outletModal.addEventListener('click', function (event) {
-            if (event.target === outletModal) {
-                closeModal(outletModal);
-            }
-        });
-
-        userModal.addEventListener('click', function (event) {
-            if (event.target === userModal) {
-                closeModal(userModal);
-            }
+        // Close modal on cloud click
+        [outletModal, userModal].forEach(modal => {
+            modal.addEventListener('click', function(event) {
+                if(event.target === modal) closeModal(modal);
+            });
         });
 
         outletOptions.forEach(option => {
             option.addEventListener('change', function () {
                 const value = Number(option.value);
-                if (option.checked) {
-                    selectedOutletIds.add(value);
-                } else {
-                    selectedOutletIds.delete(value);
-                }
-                refreshSelectionTexts();
+                if (option.checked) selectedOutletIds.add(value);
+                else selectedOutletIds.delete(value);
             });
         });
 
         userOptions.forEach(option => {
             option.addEventListener('change', function () {
                 const value = Number(option.value);
-                if (option.checked) {
-                    selectedUserIds.add(value);
-                } else {
-                    selectedUserIds.delete(value);
-                }
-                refreshSelectionTexts();
+                if (option.checked) selectedUserIds.add(value);
+                else selectedUserIds.delete(value);
             });
         });
 
@@ -634,6 +612,7 @@
         refreshSelectionTexts();
         refreshAvailabilitySections();
 
+        // Price Sync
         const sellingPriceInput = document.getElementById('selling_price');
         const regularPriceInput = document.getElementById('price_level_regular');
 
@@ -643,15 +622,11 @@
         }
 
         if (sellingPriceInput && regularPriceInput) {
-            sellingPriceInput.addEventListener('input', function () {
-                syncPrice(sellingPriceInput, regularPriceInput);
-            });
-
-            regularPriceInput.addEventListener('input', function () {
-                syncPrice(regularPriceInput, sellingPriceInput);
-            });
+            sellingPriceInput.addEventListener('input', () => syncPrice(sellingPriceInput, regularPriceInput));
+            regularPriceInput.addEventListener('input', () => syncPrice(regularPriceInput, sellingPriceInput));
         }
 
+        // Dynamic Component Rows
         const componentBody = document.getElementById('bundle-components-body');
         const addRowBtn = document.getElementById('add-component-row');
         const purchasePriceInput = document.getElementById('purchase_price');
@@ -678,45 +653,28 @@
         }
 
         function getComponentPurchasePrice(selectElement) {
-            if (!selectElement || selectElement.selectedIndex < 0) {
-                return 0;
-            }
-
+            if (!selectElement || selectElement.selectedIndex < 0) return 0;
             const selectedOption = selectElement.options[selectElement.selectedIndex];
-            if (!selectedOption) {
-                return 0;
-            }
-
+            if (!selectedOption) return 0;
             return parseNumber(selectedOption.getAttribute('data-purchase-price'));
         }
 
         function recalculateComponentCosts() {
             let totalCost = 0;
             const rows = componentBody.querySelectorAll('.component-row');
-
             rows.forEach(function (row) {
                 const select = row.querySelector('.component-product');
                 const quantityInput = row.querySelector('.component-quantity');
                 const rowCostLabel = row.querySelector('.component-row-cost-value');
-
                 const quantity = parseNumber(quantityInput ? quantityInput.value : 0);
                 const purchasePrice = getComponentPurchasePrice(select);
                 const rowCost = quantity * purchasePrice;
-
-                if (rowCostLabel) {
-                    rowCostLabel.textContent = formatCurrency(rowCost);
-                }
-
+                if (rowCostLabel) rowCostLabel.textContent = formatCurrency(rowCost);
                 totalCost += rowCost;
             });
 
-            if (componentsTotalCostLabel) {
-                componentsTotalCostLabel.textContent = formatCurrency(totalCost);
-            }
-
-            if (purchasePriceInput) {
-                purchasePriceInput.value = totalCost.toFixed(2);
-            }
+            if (componentsTotalCostLabel) componentsTotalCostLabel.textContent = formatCurrency(totalCost);
+            if (purchasePriceInput) purchasePriceInput.value = totalCost.toFixed(2);
         }
 
         function bindComponentRowEvents(row) {
@@ -728,9 +686,7 @@
             select.addEventListener('change', function () {
                 const selected = select.options[select.selectedIndex];
                 const unit = selected ? selected.getAttribute('data-unit') : '';
-                if (!unitInput.value && unit) {
-                    unitInput.value = unit;
-                }
+                if (!unitInput.value && unit) unitInput.value = unit;
                 recalculateComponentCosts();
             });
 
@@ -741,24 +697,24 @@
 
         function addComponentRow() {
             const row = document.createElement('tr');
-            row.className = 'component-row border-b border-gray-200 last:border-b-0';
+            row.className = 'component-row';
             row.innerHTML = `
-                <td class="px-4 py-3">
-                    <select name="bundle_components[${componentIndex}][component_product_id]" class="component-product w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <td class="p-2">
+                    <select name="bundle_components[${componentIndex}][component_product_id]" class="component-product form-input text-sm">
                         ${makeOptionsHtml()}
                     </select>
                 </td>
-                <td class="px-4 py-3">
+                <td class="p-2">
                     <input type="number" name="bundle_components[${componentIndex}][quantity]" min="0.0001" step="0.0001"
-                        class="component-quantity w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0">
+                        class="component-quantity form-input text-sm" placeholder="0">
                 </td>
-                <td class="px-4 py-3">
+                <td class="p-2">
                     <input type="text" name="bundle_components[${componentIndex}][uom]"
-                        class="component-uom w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="pcs">
+                        class="component-uom form-input text-sm" placeholder="pcs">
                 </td>
-                <td class="px-4 py-3 text-right font-semibold text-gray-700 component-row-cost-value">Rp 0,00</td>
-                <td class="px-4 py-3 text-center">
-                    <button type="button" class="remove-component-row text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                <td class="p-2 text-right font-medium text-gray-700 component-row-cost-value text-sm">Rp 0</td>
+                <td class="p-2 text-center">
+                    <button type="button" class="remove-component-row text-red-500 hover:text-red-700 text-sm"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             componentBody.appendChild(row);
@@ -767,9 +723,7 @@
             componentIndex += 1;
         }
 
-        if (addRowBtn) {
-            addRowBtn.addEventListener('click', addComponentRow);
-        }
+        if (addRowBtn) addRowBtn.addEventListener('click', addComponentRow);
 
         componentBody.querySelectorAll('.component-row').forEach(bindComponentRowEvents);
         recalculateComponentCosts();
@@ -777,13 +731,11 @@
         componentBody.addEventListener('click', function (event) {
             const removeBtn = event.target.closest('.remove-component-row');
             if (!removeBtn) return;
-
             const rows = componentBody.querySelectorAll('.component-row');
             if (rows.length <= 1) {
                 alert('Minimal harus ada 1 komponen bahan.');
                 return;
             }
-
             removeBtn.closest('.component-row').remove();
             recalculateComponentCosts();
         });
@@ -795,10 +747,10 @@
                 alert('Pilih minimal 1 outlet atau centang tersedia di semua outlet.');
                 return;
             }
-
             if (!allUsersCheckbox.checked && selectedUserIds.size === 0) {
                 event.preventDefault();
-                alert('Pilih minimal 1 pengguna POS atau centang tersedia untuk semua pengguna.');
+                alert('Pilih minimal 1 pengguna atau centang tersedia semua pengguna.');
+                return;
             }
         });
     });
