@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BomDetail;
+use App\Models\BomHeader;
+use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\Outlet;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
@@ -86,6 +89,12 @@ class ProductController extends Controller
             'is_available_all_users' => true,
         ];
 
+        if ($formMode === 'bundle') {
+            $rawMaterials = $this->loadRawMaterialsForBundle();
+
+            return view('admin.products.create_bundle', compact('categories', 'outlets', 'priceLevels', 'formMode', 'defaults', 'rawMaterials'));
+        }
+
         return view('admin.products.create', compact('categories', 'outlets', 'priceLevels', 'formMode', 'defaults'));
     }
 
@@ -96,6 +105,7 @@ class ProductController extends Controller
     {
         $data = $request->validated();
         $data['created_by'] = Auth::id();
+        $isBundleMode = $request->boolean('bundle_mode');
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
         $data['is_sellable'] = $request->has('is_sellable') ? 1 : 0;
         $data['is_pos_available'] = $request->has('is_pos_available') ? 1 : 0;
@@ -121,11 +131,51 @@ class ProductController extends Controller
 
         $data['selling_price'] = $data['price_levels']['regular'];
 
-        Product::create($data);
+        DB::beginTransaction();
+
+        try {
+            $product = Product::create($data);
+
+            if ($isBundleMode) {
+                $components = $this->sanitizeBundleComponents($request->input('bundle_components', []));
+
+                if ($components->isEmpty()) {
+                    throw new \InvalidArgumentException('Bundle harus memiliki minimal 1 komponen bahan.');
+                }
+
+                $bomHeader = BomHeader::create([
+                    'product_id' => $product->id,
+                    'name' => $request->filled('name') ? ('Resep ' . $request->input('name')) : null,
+                    'is_active' => true,
+                    'notes' => $request->input('description'),
+                ]);
+
+                foreach ($components as $component) {
+                    if ((int) $component['component_product_id'] === (int) $product->id) {
+                        throw new \InvalidArgumentException('Komponen tidak boleh sama dengan produk bundle.');
+                    }
+
+                    BomDetail::create([
+                        'bom_id' => $bomHeader->id,
+                        'component_product_id' => (int) $component['component_product_id'],
+                        'quantity' => (float) $component['quantity'],
+                        'uom' => $component['uom'] ?? null,
+                    ]);
+                }
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+        }
 
         return redirect()
             ->route('admin.products.index')
-            ->with('success', 'Produk berhasil ditambahkan!');
+            ->with('success', $isBundleMode ? 'Bundle dan BOM berhasil ditambahkan!' : 'Produk berhasil ditambahkan!');
     }
 
     /**
@@ -251,5 +301,58 @@ class ProductController extends Controller
         $normalized['regular'] = max(0, (float) $regularPrice);
 
         return $normalized;
+    }
+
+    private function loadRawMaterialsForBundle()
+    {
+        $rawCategoryName = config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku'));
+        $rawCategory = ProductCategory::where('name', $rawCategoryName)->first();
+
+        if ($rawCategory) {
+            return Product::where('category_id', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku', 'unit']);
+        }
+
+        return Product::where('product_type', 'raw_material')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku', 'unit']);
+    }
+
+    private function sanitizeBundleComponents(mixed $components): \Illuminate\Support\Collection
+    {
+        if (!is_array($components)) {
+            return collect();
+        }
+
+        return collect($components)
+            ->map(function ($component) {
+                if (!is_array($component)) {
+                    return null;
+                }
+
+                $componentProductId = $component['component_product_id'] ?? null;
+                $quantity = $component['quantity'] ?? null;
+                $uom = $component['uom'] ?? null;
+
+                if (!is_numeric($componentProductId) || !is_numeric($quantity)) {
+                    return null;
+                }
+
+                $quantityValue = (float) $quantity;
+                if ($quantityValue <= 0) {
+                    return null;
+                }
+
+                return [
+                    'component_product_id' => (int) $componentProductId,
+                    'quantity' => $quantityValue,
+                    'uom' => !empty($uom) ? (string) $uom : null,
+                ];
+            })
+            ->filter()
+            ->values();
     }
 }
