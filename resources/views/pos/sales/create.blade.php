@@ -39,6 +39,20 @@
                             placeholder="Cari menu, kode, kategori..."
                             class="w-full pl-11 pr-4 py-3.5 bg-gray-800 text-white placeholder-gray-500 rounded-xl border border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition shadow-sm">
                     </div>
+
+                    <div class="relative md:w-64">
+                        <select v-model="salesType"
+                            class="w-full pl-3 pr-8 py-3.5 bg-gray-800 text-sm text-white rounded-xl border border-gray-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 appearance-none font-medium">
+                            <option v-for="(label, key) in priceLevels" :key="key" :value="key">
+                                @{{ label }}
+                            </option>
+                        </select>
+                        <div class="absolute right-3 top-4 pointer-events-none text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Category Filter (Pills) -->
@@ -85,7 +99,7 @@
                                 <!-- Price Tag Overlay -->
                                 <div
                                     class="absolute top-2 right-2 bg-gray-900/90 backdrop-blur text-indigo-400 text-xs font-bold px-2 py-1 rounded-lg border border-gray-700 shadow-sm">
-                                    Rp @{{ formatNumber(product.selling_price) }}
+                                    Rp @{{ formatNumber(getProductPrice(product)) }}
                                 </div>
                             </div>
 
@@ -132,6 +146,9 @@
                     <div class="text-xs font-mono text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-700">
                         @{{ cart.length }} Item
                     </div>
+                </div>
+                <div class="text-xs text-indigo-300 mb-3">
+                    Tipe penjualan: <span class="font-semibold">@{{ priceLevels[salesType] || 'Reguler' }}</span>
                 </div>
 
                 <!-- Customer Selector -->
@@ -344,11 +361,13 @@
             data() {
                 return {
                     products: @json($categories->flatMap->products),
+                    priceLevels: @json($priceLevels),
                     customers: @json($customers),
                     cart: [],
                     searchQuery: '',
                     selectedCategory: null,
                     filteredProducts: [],
+                    salesType: 'regular',
                     selectedPaymentMethod: '',
                     showSuccessModal: false,
                     lastSale: null,
@@ -428,11 +447,32 @@
 
                     this.filteredProducts = filtered;
                 },
+                getProductPrice(product, forcedSalesType = null) {
+                    if (!product) {
+                        return 0;
+                    }
+
+                    const level = forcedSalesType || this.salesType || 'regular';
+                    const priceMap = product.price_levels || {};
+                    const selectedPrice = priceMap[level];
+
+                    if (selectedPrice !== undefined && selectedPrice !== null && selectedPrice !== '') {
+                        return Number(selectedPrice);
+                    }
+
+                    const regularPrice = priceMap.regular;
+                    if (regularPrice !== undefined && regularPrice !== null && regularPrice !== '') {
+                        return Number(regularPrice);
+                    }
+
+                    return Number(product.selling_price || 0);
+                },
                 addToCart(product) {
-                    const existingItem = this.cart.find(item => item.product_id === product.id);
-                    const price = Number(product.selling_price);
+                    const existingItem = this.cart.find(item => Number(item.product_id) === Number(product.id));
+                    const price = this.getProductPrice(product);
 
                     if (existingItem) {
+                        existingItem.unit_price = price;
                         existingItem.quantity++;
                         existingItem.subtotal = existingItem.quantity * existingItem.unit_price;
                     } else {
@@ -440,6 +480,7 @@
                             product_id: product.id,
                             name: product.name,
                             sku: product.sku,
+                            sales_type: this.salesType,
                             quantity: 1,
                             unit_price: price,
                             discount_amount: 0,
@@ -447,6 +488,20 @@
                             notes: ''
                         });
                     }
+                },
+                updateCartPricesBySalesType() {
+                    this.cart = this.cart.map(item => {
+                        const product = this.products.find(p => Number(p.id) === Number(item.product_id));
+                        const unitPrice = this.getProductPrice(product);
+                        const discountAmount = Number(item.discount_amount || 0);
+
+                        return {
+                            ...item,
+                            sales_type: this.salesType,
+                            unit_price: unitPrice,
+                            subtotal: (item.quantity * unitPrice) - discountAmount
+                        };
+                    });
                 },
                 removeFromCart(index) {
                     this.cart.splice(index, 1);
@@ -494,6 +549,7 @@
                         customer_id: this.selectedCustomerId ? Number(this.selectedCustomerId) : null,
                         customer_name: this.customerName || (this.selectedCustomer ? this.selectedCustomer.name : null),
                         notes: this.orderNotes || null,
+                        sales_type: this.salesType,
                         discount_type: this.discountType,
                         discount_value: this.discountValue,
                         items: this.cart.map(item => ({
@@ -558,6 +614,9 @@
             watch: {
                 selectedCategory() {
                     this.filterProducts();
+                },
+                salesType() {
+                    this.updateCartPricesBySalesType();
                 }
             }
         }).mount('#posApp');

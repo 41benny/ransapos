@@ -47,10 +47,29 @@
                             <i class="fas fa-file-import"></i>
                             <span>Import Excel</span>
                         </button>
-                        <a href="{{ route('admin.products.create') }}" class="imperial-btn imperial-btn-sm">
-                            <i class="fas fa-plus"></i>
-                            <span>Tambah Produk</span>
-                        </a>
+                        <div class="relative" id="productCreateDropdownWrapper">
+                            <button type="button" id="productCreateDropdownButton"
+                                class="imperial-btn imperial-btn-sm inline-flex items-center gap-2"
+                                aria-expanded="false"
+                                aria-haspopup="true">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Tambah Baru</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <div id="productCreateDropdownMenu"
+                                class="hidden absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl z-30 overflow-hidden">
+                                <a href="{{ route('admin.products.create') }}"
+                                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+                                    <i class="fas fa-box"></i>
+                                    <span>Tambah Produk</span>
+                                </a>
+                                <a href="{{ route('admin.products.create-bundle') }}"
+                                    class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span>Tambah Bundle</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -237,11 +256,45 @@
 
 @push('scripts')
     <script>
-        document.getElementById('file-upload').addEventListener('change', function (e) {
-            var fileName = e.target.files[0].name;
-            var display = document.getElementById('filename-display');
-            display.classList.remove('hidden');
-            display.querySelector('span').textContent = fileName;
-        });
+        const fileUploadEl = document.getElementById('file-upload');
+        if (fileUploadEl) {
+            fileUploadEl.addEventListener('change', function (e) {
+                const fileName = e.target.files[0]?.name;
+                if (!fileName) {
+                    return;
+                }
+
+                const display = document.getElementById('filename-display');
+                display.classList.remove('hidden');
+                display.querySelector('span').textContent = fileName;
+            });
+        }
+
+        const createMenuWrapper = document.getElementById('productCreateDropdownWrapper');
+        const createMenuButton = document.getElementById('productCreateDropdownButton');
+        const createMenu = document.getElementById('productCreateDropdownMenu');
+
+        function closeCreateMenu() {
+            if (!createMenu || !createMenuButton) {
+                return;
+            }
+
+            createMenu.classList.add('hidden');
+            createMenuButton.setAttribute('aria-expanded', 'false');
+        }
+
+        if (createMenuButton && createMenu && createMenuWrapper) {
+            createMenuButton.addEventListener('click', function () {
+                const isHidden = createMenu.classList.contains('hidden');
+                createMenu.classList.toggle('hidden', !isHidden);
+                createMenuButton.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!createMenuWrapper.contains(event.target)) {
+                    closeCreateMenu();
+                }
+            });
+        }
     </script>
 @endpush

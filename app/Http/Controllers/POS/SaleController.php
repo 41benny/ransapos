@@ -29,11 +29,47 @@ class SaleController extends Controller
      */
     public function create()
     {
+        $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
+        $currentOutletId = auth()->user()->outlet_id;
+
         $categories = ProductCategory::where('is_active', true)
             ->with(['products' => function($query) {
-                $query->where('is_active', true);
+                $query->where('is_active', true)
+                    ->where('is_sellable', true)
+                    ->where('is_pos_available', true)
+                    ->whereIn('product_type', ['finished_good', 'service']);
             }])
-            ->get();
+            ->orderBy('name')
+            ->get()
+            ->map(function (ProductCategory $category) use ($currentOutletId, $priceLevels) {
+                $products = $category->products
+                    ->filter(fn (Product $product) => $product->isAvailableForOutlet($currentOutletId))
+                    ->map(function (Product $product) use ($priceLevels) {
+                        $rawPriceLevels = $product->price_levels ?? [];
+                        $normalizedPriceLevels = [];
+
+                        foreach (array_keys($priceLevels) as $levelKey) {
+                            if (!array_key_exists($levelKey, $rawPriceLevels) || $rawPriceLevels[$levelKey] === null || $rawPriceLevels[$levelKey] === '') {
+                                continue;
+                            }
+
+                            $normalizedPriceLevels[$levelKey] = (float) $rawPriceLevels[$levelKey];
+                        }
+
+                        $normalizedPriceLevels['regular'] = (float) ($normalizedPriceLevels['regular'] ?? $product->selling_price);
+                        $product->setAttribute('price_levels', $normalizedPriceLevels);
+                        $product->setAttribute('selling_price', $normalizedPriceLevels['regular']);
+
+                        return $product;
+                    })
+                    ->values();
+
+                $category->setRelation('products', $products);
+
+                return $category;
+            })
+            ->filter(fn (ProductCategory $category) => $category->products->isNotEmpty())
+            ->values();
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
         // Ambil beberapa customer aktif untuk pilihan di POS (loyalty)
@@ -61,7 +97,7 @@ class SaleController extends Controller
 
         $outlet = Outlet::find(auth()->user()->outlet_id);
 
-        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers', 'outlet'));
+        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers', 'outlet', 'priceLevels'));
     }
 
     /**

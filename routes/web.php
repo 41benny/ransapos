@@ -27,6 +27,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
 
     // Master Data
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+    Route::get('products/create-bundle', [ProductController::class, 'createBundle'])->name('products.create-bundle');
     Route::resource('products', ProductController::class);
     Route::resource('outlets', OutletController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::resource('suppliers', SupplierController::class)->only(['index', 'create', 'store']);

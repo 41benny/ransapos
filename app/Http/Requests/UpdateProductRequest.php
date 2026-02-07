@@ -21,7 +21,8 @@ class UpdateProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $productId = $this->route('product');
+        $productParam = $this->route('product');
+        $productId = is_object($productParam) ? $productParam->id : $productParam;
         
         return [
             'sku' => 'required|string|max:50|unique:products,sku,' . $productId,
@@ -32,7 +33,16 @@ class UpdateProductRequest extends FormRequest
             'unit' => 'required|string|max:50',
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
+            'price_levels' => 'nullable|array',
+            'price_levels.*' => 'nullable|numeric|min:0',
             'min_stock' => 'nullable|integer|min:0',
+            'is_sellable' => 'boolean',
+            'is_pos_available' => 'boolean',
+            'is_online_order_available' => 'boolean',
+            'is_available_all_outlets' => 'boolean',
+            'is_available_all_users' => 'boolean',
+            'pos_outlet_ids' => 'nullable|array',
+            'pos_outlet_ids.*' => 'exists:outlets,id',
             'is_active' => 'boolean',
         ];
     }
@@ -51,7 +61,14 @@ class UpdateProductRequest extends FormRequest
             'unit' => 'satuan',
             'purchase_price' => 'harga beli',
             'selling_price' => 'harga jual',
+            'price_levels' => 'harga per level',
             'min_stock' => 'stok minimal',
+            'is_sellable' => 'status produk dijual',
+            'is_pos_available' => 'status tersedia di POS',
+            'is_online_order_available' => 'status tersedia di online order',
+            'is_available_all_outlets' => 'ketersediaan semua outlet',
+            'is_available_all_users' => 'ketersediaan semua pengguna',
+            'pos_outlet_ids' => 'outlet POS',
             'is_active' => 'status',
         ];
     }

@@ -80,6 +80,7 @@ class SaleService
                 'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $data['user_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
                 'sale_date' => now()->toDateString(),
+                'sales_type' => $data['sales_type'] ?? 'regular',
                 'subtotal' => $subtotal,
                 'discount_type' => $data['discount_type'],
                 'discount_value' => $data['discount_value'] ?? 0,

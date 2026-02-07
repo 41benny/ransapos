@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -21,6 +22,8 @@ class StoreSaleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $salesTypeKeys = array_keys(config('sales.price_levels', ['regular' => 'Reguler']));
+
         return [
             // Header transaksi
             'outlet_id' => 'required|exists:outlets,id',
@@ -28,6 +31,7 @@ class StoreSaleRequest extends FormRequest
             'customer_id' => 'nullable|exists:customers,id',
             'customer_name' => 'nullable|string|max:200',
             'notes' => 'nullable|string',
+            'sales_type' => ['nullable', 'string', Rule::in($salesTypeKeys)],
             
             // Diskon global
             'discount_type' => 'required|in:none,percentage,fixed',
@@ -58,6 +62,7 @@ class StoreSaleRequest extends FormRequest
             'outlet_id.exists' => 'Outlet tidak valid',
             'cash_session_id.required' => 'Sesi kasir harus aktif',
             'cash_session_id.exists' => 'Sesi kasir tidak valid',
+            'sales_type.in' => 'Tipe penjualan tidak valid',
             'items.required' => 'Minimal harus ada 1 produk',
             'items.min' => 'Minimal harus ada 1 produk',
             'items.*.product_id.required' => 'Produk harus dipilih',

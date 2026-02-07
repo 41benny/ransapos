@@ -41,12 +41,22 @@ class ProductImport implements ToModel, WithHeadingRow
         $stock = isset($row['stok']) ? (int) $row['stok'] : 0;
 
         $productType = $this->guessProductType($row);
+        $isRawMaterial = $productType === 'raw_material';
 
         return new Product([
             'name'           => $row['nama_produk'],
             'sku'            => $row['sku'] ?? $this->generateSku($row['nama_produk']),
             'category_id'    => $category->id,
             'product_type'   => $productType,
+            'is_sellable'    => !$isRawMaterial,
+            'is_pos_available' => !$isRawMaterial,
+            'is_online_order_available' => false,
+            'is_available_all_outlets' => true,
+            'is_available_all_users' => true,
+            'pos_outlet_ids' => null,
+            'price_levels'   => [
+                'regular' => $sellingPrice,
+            ],
             'purchase_price' => $purchasePrice,
             'selling_price'  => $sellingPrice,
             'unit'           => $unit,
