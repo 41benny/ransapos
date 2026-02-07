@@ -59,20 +59,23 @@
                         <h4 class="text-sm font-semibold text-gray-900">Kontrol Fitur Perangkat</h4>
                         <p class="text-xs text-gray-500 mt-1">Jika nonaktif, POS bisa dibuka dari perangkat mana saja.</p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="px-2 py-1 text-xs rounded-full {{ $deviceEnforced ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700' }}">
-                            {{ $deviceEnforced ? 'Aktif' : 'Nonaktif' }}
-                        </span>
-                        <form method="POST" action="{{ route('admin.pos-devices.enforce') }}">
-                            @csrf
-                            <input type="hidden" name="enabled" value="{{ $deviceEnforced ? 0 : 1 }}">
-                            <button type="submit"
-                                class="px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50">
-                                {{ $deviceEnforced ? 'Nonaktifkan Fitur' : 'Aktifkan Fitur' }}
-                            </button>
-                        </form>
-                    </div>
+                    <form method="POST" action="{{ route('admin.pos-devices.enforce') }}" class="flex items-center gap-3">
+                        @csrf
+                        <label
+                            class="inline-flex items-center gap-2 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition {{ $deviceEnforced ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600' }}">
+                            <input type="radio" name="enabled" value="1" class="sr-only"
+                                onchange="this.form.submit()" {{ $deviceEnforced ? 'checked' : '' }}>
+                            <span class="h-2.5 w-2.5 rounded-full {{ $deviceEnforced ? 'bg-blue-500' : 'bg-gray-300' }}"></span>
+                            Aktif
+                        </label>
+                        <label
+                            class="inline-flex items-center gap-2 cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition {{ !$deviceEnforced ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 text-gray-600' }}">
+                            <input type="radio" name="enabled" value="0" class="sr-only"
+                                onchange="this.form.submit()" {{ !$deviceEnforced ? 'checked' : '' }}>
+                            <span class="h-2.5 w-2.5 rounded-full {{ !$deviceEnforced ? 'bg-red-500' : 'bg-gray-300' }}"></span>
+                            Nonaktif
+                        </label>
+                    </form>
                 </div>
             </div>
 
