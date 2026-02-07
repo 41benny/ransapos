@@ -4,10 +4,10 @@
 @section('page-title', 'Transaksi Baru')
 
 @section('content')
-    <div class="min-h-screen flex flex-col md:flex-row md:h-screen md:overflow-hidden bg-gray-900" id="posApp">
+    <div class="h-full flex flex-col md:flex-row overflow-hidden bg-gray-900" id="posApp">
 
         <!-- LEFT PANEL: Products (Flexible width) -->
-        <div class="flex-1 flex flex-col min-w-0 min-h-0 bg-gray-900 md:border-r border-gray-800 relative">
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-900 md:border-r border-gray-800">
 
             <!-- Header: Search & Categories -->
             <div class="flex-none p-4 md:p-6 space-y-4 bg-gray-900 z-10">
@@ -59,16 +59,16 @@
                 <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1">
                     <button @click="selectedCategory = null"
                         :class="selectedCategory === null 
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
+                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
                         class="px-5 py-2.5 rounded-full whitespace-nowrap transition font-medium text-sm flex-shrink-0">
                         Semua Menu
                     </button>
                     @foreach($categories as $category)
                         <button @click="selectedCategory = {{ $category->id }}"
                             :class="selectedCategory === {{ $category->id }} 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
-                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
+                                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
+                                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
                             class="px-5 py-2.5 rounded-full whitespace-nowrap transition font-medium text-sm flex-shrink-0">
                             {{ $category->name }}
                         </button>
@@ -77,7 +77,7 @@
             </div>
 
             <!-- Product Grid Content -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 pt-0 custom-scrollbar md:max-h-none">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 pt-0 custom-scrollbar">
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     <template v-for="product in filteredProducts" :key="product.id">
                         <button @click="addToCart(product)"
@@ -132,7 +132,7 @@
 
         <!-- RIGHT PANEL: Cart & Checkout (Fixed width on desktop) -->
         <div
-            class="w-full md:w-[400px] xl:w-[450px] bg-gray-900 flex flex-col md:border-l border-gray-800 shadow-2xl z-20 min-h-0">
+            class="w-full md:w-[400px] xl:w-[450px] bg-gray-900 flex flex-col md:border-l border-gray-800 shadow-2xl z-20 overflow-hidden">
 
             <!-- Cart Header -->
             <div class="flex-none p-5 border-b border-gray-800 bg-gray-900 shadow-sm z-20">
@@ -178,7 +178,7 @@
             </div>
 
             <!-- Cart Items List -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-900/50 md:max-h-none">
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-900/50">
                 <template v-if="cart.length > 0">
                     <div v-for="(item, index) in cart" :key="index"
                         class="group bg-gray-800 rounded-xl p-3 border border-gray-700/50 hover:border-gray-600 transition flex gap-3 relative overflow-hidden">
@@ -296,8 +296,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700' 
-                                    : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/30'"
+                                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700' 
+                                            : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/30'"
                         class="px-8 py-3.5 rounded-xl font-bold transition transform active:scale-95 flex items-center justify-center min-w-[120px]">
                         <span v-if="!isProcessing">BAYAR</span>
                         <svg v-else class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
