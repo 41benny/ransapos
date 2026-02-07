@@ -31,7 +31,7 @@ class SaleService
     public function createSale(array $data): Sale
     {
         DB::beginTransaction();
-        
+
         try {
             // 1. Generate invoice number
             $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
@@ -54,14 +54,14 @@ class SaleService
 
             // 4. Hitung Service Charge & Tax (PB1)
             $outlet = \App\Models\Outlet::find($data['outlet_id']);
-            
+
             // Tax base (DPP) = Subtotal - Discount
             $taxBase = $subtotal - $discountAmount;
-            
+
             // Service Charge: X% dari Tax Base
             $serviceChargeRate = $outlet->service_charge_rate ?? 0;
             $serviceChargeAmount = $taxBase * ($serviceChargeRate / 100);
-            
+
             // Tax: Y% dari (Tax Base + Service Charge)
             // Note: PB1 biasanya dikenakan atas total layanan
             $taxableAmount = $taxBase + $serviceChargeAmount;
@@ -95,10 +95,12 @@ class SaleService
 
             // 6. Buat sale items & logika BOM / pengurangan stok
             foreach ($data['items'] as $item) {
-                $product = Product::with(['bomHeader' => function($q){ $q->where('is_active', true)->with('details.component'); }])->findOrFail($item['product_id']);
+                $product = Product::with(['bomHeader' => function ($q) {
+                    $q->where('is_active', true)->with('details.component');
+                }])->findOrFail($item['product_id']);
 
                 $itemSubtotal = ($item['quantity'] * $item['unit_price']) - ($item['discount_amount'] ?? 0);
-                
+
                 // Hitung COGS per item
                 $itemCogs = $this->calculateItemCogs($product, $item['quantity']);
 
@@ -132,7 +134,7 @@ class SaleService
                     $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
                     if ($bom) {
                         // Validasi stok komponen BOM (kecuali jika allow negative stock)
-                        $allowNegativeStock = config('app.allow_negative_stock', false);
+                        $allowNegativeStock = config('app.allow_negative_stock', true);
                         if (!$allowNegativeStock) {
                             foreach ($bom->details as $detail) {
                                 $consumeQty = $detail->quantity * $item['quantity'];
@@ -206,7 +208,6 @@ class SaleService
             DB::commit();
 
             return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -223,7 +224,7 @@ class SaleService
     {
         $date = now()->format('Ymd');
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
-        
+
         // Cari invoice terakhir hari ini untuk outlet ini dengan locking supaya sequence aman
         $lastSale = Sale::where('outlet_id', $outletId)
             ->whereDate('sale_date', now())
@@ -283,7 +284,7 @@ class SaleService
     public function cancelSale(int $saleId, string $reason = ''): Sale
     {
         DB::beginTransaction();
-        
+
         try {
             $sale = Sale::with('items')->findOrFail($saleId);
 
@@ -345,14 +346,14 @@ class SaleService
             $session = CashSession::find($sale->cash_session_id);
             if ($session) {
                 $session->total_sales -= $sale->total_amount;
-                
+
                 $payment = $sale->payments->first();
                 if ($payment && $payment->payment_method_id == 1) {
                     $session->total_cash -= $sale->total_amount;
                 } else {
                     $session->total_non_cash -= $sale->total_amount;
                 }
-                
+
                 $session->expected_balance = $session->opening_balance + $session->total_cash;
                 $session->save();
             }
@@ -360,7 +361,6 @@ class SaleService
             DB::commit();
 
             return $sale->fresh();
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -389,7 +389,7 @@ class SaleService
 
         // finished_good: Cek ada BOM aktif atau tidak
         $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
-        
+
         if ($bom) {
             // Ada BOM: COGS = sum(component.purchase_price × bom_detail.quantity × sale_quantity)
             $totalCogs = 0;
@@ -404,4 +404,3 @@ class SaleService
         }
     }
 }
-

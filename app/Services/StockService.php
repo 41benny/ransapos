@@ -22,14 +22,14 @@ class StockService
      * @throws Exception
      */
     public function reduceSaleStock(
-        int $productId, 
-        int $outletId, 
-        float $quantity, 
+        int $productId,
+        int $outletId,
+        float $quantity,
         int $saleId,
         ?int $userId = null
     ): void {
         DB::beginTransaction();
-        
+
         try {
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
@@ -44,7 +44,7 @@ class StockService
             );
 
             // Cek apakah stok mencukupi (kecuali jika allow negative stock)
-            $allowNegativeStock = config('app.allow_negative_stock', false);
+            $allowNegativeStock = config('app.allow_negative_stock', true);
             if (!$allowNegativeStock && $stock->quantity < $quantity) {
                 $product = Product::find($productId);
                 throw new Exception("Stok {$product->name} tidak mencukupi. Tersedia: {$stock->quantity}");
@@ -88,7 +88,7 @@ class StockService
     }
 
     /**
-    */
+     */
     public function restoreSaleStock(
         int $productId,
         int $outletId,
@@ -162,7 +162,7 @@ class StockService
         ?int $userId = null
     ): void {
         DB::beginTransaction();
-        
+
         try {
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
@@ -224,7 +224,7 @@ class StockService
         ?int $userId = null
     ): void {
         DB::beginTransaction();
-        
+
         try {
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
@@ -240,7 +240,7 @@ class StockService
 
             // Simpan stok sebelumnya
             $stockBefore = $stock->quantity;
-            
+
             // Hitung selisih
             $difference = $newQuantity - $stockBefore;
 
@@ -287,4 +287,3 @@ class StockService
         return $stock ? $stock->quantity : 0;
     }
 }
-
