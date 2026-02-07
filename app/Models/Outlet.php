@@ -76,6 +76,14 @@ class Outlet extends Model
     }
 
     /**
+     * Relasi ke attendances (absensi karyawan)
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    /**
      * Scope: Hanya outlet aktif
      */
     public function scopeActive($query)

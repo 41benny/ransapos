@@ -26,6 +26,7 @@ class User extends Authenticatable
         'role_id',
         'outlet_id',
         'is_active',
+        'attendance_pin',
     ];
 
     /**
@@ -106,6 +107,14 @@ class User extends Authenticatable
     public function purchases(): HasMany
     {
         return $this->hasMany(Purchase::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke attendances (absensi karyawan)
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
     }
 
     /**

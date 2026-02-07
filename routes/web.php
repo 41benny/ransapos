@@ -94,6 +94,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
         Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show');
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index');
     });
+
+    // Attendance Monitoring & Reports
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'dashboard'])->name('dashboard');
+        Route::get('/outlet/{outlet}', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'outletReport'])->name('outlet');
+        Route::get('/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])->name('export');
+        Route::post('/anomalies/{id}/dismiss', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'dismissAnomaly'])->name('anomalies.dismiss');
+    });
+
+    // Employee PIN Management
+    Route::post('/users/{user}/set-pin', [\App\Http\Controllers\Admin\UserController::class, 'setAttendancePin'])->name('users.set-pin');
 });
 
 // POS (Kasir / Kitchen) Routes
@@ -146,4 +157,11 @@ Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
     Route::get('/kitchen/{sale}/print', [KitchenController::class, 'print'])
         ->name('kitchen.print')
         ->middleware('role:admin,kasir,kitchen');
+
+    // Attendance (Kasir/Admin)
+    Route::prefix('attendance')->name('attendance.')->middleware('role:kasir,admin')->group(function () {
+        Route::get('/', [\App\Http\Controllers\POS\AttendanceController::class, 'index'])->name('index');
+        Route::post('/clock-in', [\App\Http\Controllers\POS\AttendanceController::class, 'clockIn'])->name('clock-in');
+        Route::post('/clock-out', [\App\Http\Controllers\POS\AttendanceController::class, 'clockOut'])->name('clock-out');
+    });
 });
