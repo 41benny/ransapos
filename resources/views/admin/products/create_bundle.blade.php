@@ -201,7 +201,7 @@
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
                                     <input type="number" name="selling_price" id="selling_price"
                                         value="{{ old('selling_price', 0) }}"
-                                        class="form-input pl-12"
+                                        class="form-input pl-16"
                                         min="0" step="0.01" required>
                                 </div>
                                 @error('selling_price')
@@ -367,7 +367,7 @@
                                                             min="0"
                                                             step="0.01"
                                                             @if($levelKey === 'regular') required @endif
-                                                            class="form-input pl-12 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
+                                                            class="form-input pl-16 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
                                                             @if($levelKey === 'regular') id="price_level_regular" @endif
                                                         >
                                                     </div>
