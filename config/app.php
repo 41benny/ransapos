@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'allow_negative_stock' => env('ALLOW_NEGATIVE_STOCK', false),
+    'allow_negative_stock' => env('ALLOW_NEGATIVE_STOCK', true),
 
     /*
     |--------------------------------------------------------------------------
