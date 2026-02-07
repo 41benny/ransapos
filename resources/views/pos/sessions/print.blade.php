@@ -35,8 +35,8 @@
 </head>
 <body>
     <div class="text-center mb-2">
-        <div class="font-bold" style="font-size: 14px;">{{ $session->outlet->name }}</div>
-        <div>{{ $session->outlet->address ?? 'Alamat Outlet' }}</div>
+        <div class="font-bold" style="font-size: 14px;">{{ $session->outlet?->name ?? 'Outlet' }}</div>
+        <div>{{ $session->outlet?->address ?? 'Alamat Outlet' }}</div>
     </div>
 
     <div class="border-t"></div>
@@ -50,7 +50,7 @@
         </div>
         <div class="flex">
             <span>Kasir:</span>
-            <span>{{ $session->user->name }}</span>
+            <span>{{ $session->user?->name ?? 'Kasir' }}</span>
         </div>
         <div class="flex">
             <span>Buka:</span>
