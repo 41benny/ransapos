@@ -265,3 +265,107 @@ body {
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+/* ================================================
+   LEGACY COMPATIBILITY - Imperial Classes
+   Style minimalis untuk backward compatibility
+   ================================================ */
+
+/* Imperial Table - versi bersih */
+.imperial-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  background-color: white;
+}
+
+.imperial-table thead {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.imperial-table th {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-weight: 500;
+  color: #475569;
+  font-size: 0.75rem;
+  letter-spacing: 0.025em;
+}
+
+.imperial-table td {
+  padding: 0.625rem 0.75rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.8125rem;
+}
+
+.imperial-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Imperial Buttons - versi bersih */
+.imperial-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.15s;
+  background-color: var(--primary-600);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.imperial-btn:hover {
+  background-color: var(--primary-700);
+}
+
+.imperial-btn-sm {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.imperial-btn-info {
+  background-color: #0284c7;
+  color: white;
+}
+
+.imperial-btn-info:hover {
+  background-color: #0369a1;
+}
+
+.imperial-btn-warning {
+  background-color: #d97706;
+  color: white;
+}
+
+.imperial-btn-warning:hover {
+  background-color: #b45309;
+}
+
+.imperial-btn-danger {
+  background-color: #dc2626;
+  color: white;
+}
+
+.imperial-btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+/* Imperial Badge - versi bersih */
+.imperial-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background-color: var(--success-50);
+  color: var(--success-600);
+  border: 1px solid #bbf7d0;
+}
