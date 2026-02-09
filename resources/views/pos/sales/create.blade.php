@@ -4,22 +4,25 @@
 @section('page-title', 'MorestoPOS')
 
 @section('content')
-    <div class="h-full flex flex-col md:flex-row overflow-hidden bg-gray-50 font-sans text-gray-800" id="posApp">
+    <div class="h-full flex flex-col md:flex-row overflow-hidden bg-background-light font-display text-slate-900"
+        id="posApp">
 
         <!-- LEFT PANEL: Products & Header -->
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
             <!-- Top Bar -->
-            <div class="flex-none px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between z-10">
+            <div
+                class="flex-none px-6 py-4 bg-surface-light border-b border-gray-200 dark:border-red-900/30 flex items-center justify-between z-10">
                 <!-- Brand / Logo Area -->
                 <div class="flex items-center gap-3">
-                    <div class="bg-red-600 text-white p-2 rounded-lg">
+                    <div class="bg-primary text-white p-2 rounded-lg">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                     </div>
-                    <h1 class="text-xl font-bold text-gray-900 tracking-tight">Moresto<span class="text-red-600">POS</span>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Moresto<span
+                            class="text-primary">POS</span>
                     </h1>
                 </div>
 
@@ -27,14 +30,14 @@
                 <div class="flex-1 max-w-xl mx-8">
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400 group-focus-within:text-red-500 transition" fill="none"
+                            <svg class="w-5 h-5 text-gray-400 group-focus-within:text-primary transition" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
                         <input type="text" v-model="searchQuery" @input="filterProducts" placeholder="Search menu items..."
-                            class="w-full pl-11 pr-4 py-3 bg-gray-100 border-none text-gray-700 placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:bg-white transition shadow-sm">
+                            class="w-full pl-11 pr-4 py-3 bg-gray-100 dark:bg-red-950/20 border-none text-gray-700 placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-primary/50 focus:bg-white transition shadow-sm">
                     </div>
                 </div>
 
@@ -53,19 +56,19 @@
 
             <!-- Categories & Filters -->
             <div
-                class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
+                class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
-                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category->id }}"
                         :class="Number(selectedCategory) === {{ $category->id }} 
-                                                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
-                                                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                            ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                            : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category->name }}
                     </button>
@@ -85,7 +88,7 @@
 
                 <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                     <template v-for="product in filteredProducts" :key="product.id">
-                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-transparent hover:border-red-500/30 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-300 group flex flex-col h-full cursor-pointer"
+                        <div class="bg-surface-light rounded-2xl p-4 shadow-sm border border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col h-full cursor-pointer"
                             @click="addToCart(product)">
 
                             <!-- Image -->
@@ -102,8 +105,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                            Best Seller
-                                                        </span> -->
+                                                                            Best Seller
+                                                                        </span> -->
                             </div>
 
                             <!-- Content -->
@@ -116,12 +119,12 @@
                                 </p>
 
                                 <div class="mt-auto flex items-center justify-between">
-                                    <span class="text-lg font-bold text-red-600">
-                                        <span class="text-xs text-red-400 align-top mr-0.5">Rp</span>@{{
+                                    <span class="text-lg font-bold text-primary">
+                                        <span class="text-xs text-primary/70 align-top mr-0.5">Rp</span>@{{
                                         formatNumber(getProductPrice(product)) }}
                                     </span>
                                     <button
-                                        class="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition shadow-sm">
+                                        class="w-8 h-8 rounded-full bg-red-50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition shadow-sm">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 4v16m8-8H4"></path>
@@ -147,13 +150,13 @@
 
         <!-- RIGHT PANEL: Current Order -->
         <div
-            class="w-full md:w-[400px] xl:w-[420px] bg-white border-l border-gray-200 flex flex-col h-full shadow-2xl z-20">
+            class="w-full md:w-[400px] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full shadow-2xl z-20">
             <!-- Order Header -->
             <div class="flex-none p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-1">
-                    <h2 class="text-2xl font-bold text-gray-900">Current Order</h2>
+                    <h2 class="text-2xl font-bold text-slate-900">Current Order</h2>
                     <button @click="cart = []" v-if="cart.length > 0"
-                        class="text-red-500 p-2 hover:bg-red-50 rounded-lg transition">
+                        class="text-primary p-2 hover:bg-red-50 rounded-lg transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -171,7 +174,7 @@
                 <!-- Customer & Type Selector -->
                 <div class="grid grid-cols-2 gap-3 mt-4">
                     <select v-model="selectedCustomerId"
-                        class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                        class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5">
                         <option value="">Guest (Walk-in)</option>
                         <option v-for="customer in customers" :key="customer.id" :value="customer.id">
                             @{{ customer.name }}
@@ -244,11 +247,11 @@
             </div>
 
             <!-- Checkout Section -->
-            <div class="flex-none p-6 border-t border-gray-100 bg-gray-50/50">
+            <div class="flex-none p-6 border-t border-gray-100 bg-background-light/50">
                 <!-- Order Note Input -->
                 <div class="mb-4">
                     <input type="text" v-model="orderNotes" placeholder="Add order note..."
-                        class="w-full bg-transparent border-b border-gray-300 focus:border-red-500 py-2 text-sm focus:outline-none placeholder-gray-400 transition">
+                        class="w-full bg-transparent border-b border-gray-300 focus:border-primary py-2 text-sm focus:outline-none placeholder-gray-400 transition">
                 </div>
 
                 <!-- Totals -->
@@ -264,7 +267,7 @@
 
                     <div class="flex justify-between items-end pt-3 border-t border-dashed border-gray-200">
                         <span class="text-base font-bold text-gray-800">Total</span>
-                        <span class="text-2xl font-black text-red-600 tracking-tight">Rp @{{ formatNumber(totalAmount)
+                        <span class="text-2xl font-black text-primary tracking-tight">Rp @{{ formatNumber(totalAmount)
                             }}</span>
                     </div>
                 </div>
@@ -281,7 +284,7 @@
                             @endforeach
                         </select>
                         <div
-                            class="w-full py-3 border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition flex items-center justify-center gap-2">
+                            class="w-full py-3 border border-primary/20 text-primary rounded-xl font-bold hover:bg-red-50 transition flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
@@ -302,7 +305,7 @@
                                 @endforeach
                             </select>
                             <button
-                                class="w-full h-full border border-red-200 text-red-600 rounded-xl font-bold text-sm hover:bg-red-50 transition flex flex-col items-center justify-center p-1">
+                                class="w-full h-full border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-red-50 transition flex flex-col items-center justify-center p-1">
                                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
@@ -315,8 +318,8 @@
                         <button @click="processPayment"
                             :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                             :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                        : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30'"
+                                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                             class="py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
                             <span v-if="!isProcessing">Pay Now</span>
                             <span v-else class="flex items-center gap-2">
