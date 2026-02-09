@@ -59,16 +59,16 @@
                 <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1">
                     <button @click="selectedCategory = null"
                         :class="selectedCategory === null 
-                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
-                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
+                                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
+                                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
                         class="px-5 py-2.5 rounded-full whitespace-nowrap transition font-medium text-sm flex-shrink-0">
                         Semua Menu
                     </button>
                     @foreach($categories as $category)
                         <button @click="selectedCategory = {{ $category->id }}"
                             :class="selectedCategory === {{ $category->id }} 
-                                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
-                                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
+                                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 ring-2 ring-indigo-600 ring-offset-2 ring-offset-gray-900' 
+                                                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700'"
                             class="px-5 py-2.5 rounded-full whitespace-nowrap transition font-medium text-sm flex-shrink-0">
                             {{ $category->name }}
                         </button>
@@ -296,8 +296,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                            ? 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700' 
-                                            : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/30'"
+                                                ? 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700' 
+                                                : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/30'"
                         class="px-8 py-3.5 rounded-xl font-bold transition transform active:scale-95 flex items-center justify-center min-w-[120px]">
                         <span v-if="!isProcessing">BAYAR</span>
                         <svg v-else class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -434,7 +434,7 @@
 
                     // Filter by category
                     if (this.selectedCategory !== null) {
-                        filtered = filtered.filter(p => p.category_id === this.selectedCategory);
+                        filtered = filtered.filter(p => Number(p.category_id) === Number(this.selectedCategory));
                     }
 
                     // Filter by search
