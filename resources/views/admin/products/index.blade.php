@@ -1,128 +1,127 @@
 @extends('layouts.admin')
 
-@section('title', 'Produk')
-@section('page-title', 'Daftar Produk')
+@section('title', 'Daftar Produk')
 
 @section('content')
-
-    <!-- Alert Success/Error -->
-    @if(session('success'))
-        <div class="mb-4 bg-green-50 text-green-700 p-4 rounded-lg border border-green-200">
-            <i class="fas fa-check-circle mr-2"></i>
-            <span>{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="mb-4 bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
-            <i class="fas fa-exclamation-circle mr-2"></i>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
-
-    <div class="w-full max-w-7xl mx-auto">
-        <div class="card bg-white p-6">
-
-            <!-- Header Content -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h2 class="text-xl font-bold text-gray-900">Semua Produk</h2>
-                    <p class="text-sm text-gray-500">Total: <span class="font-semibold">{{ $products->total() }}</span>
-                        produk</p>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3">
-                    <button
-                        onclick="document.getElementById('importModal').classList.remove('hidden'); document.getElementById('importModal').style.display = 'block';"
-                        class="btn btn-secondary">
-                        <i class="fas fa-file-import"></i>
-                        <span>Import Excel</span>
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Daftar Produk</h1>
+            <div class="flex gap-2">
+                <button type="button" onclick="document.getElementById('importModal').classList.remove('hidden'); document.getElementById('importModal').style.display = 'flex';"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition-colors flex items-center gap-2">
+                    <i class="fas fa-file-excel"></i>
+                    Import Excel
+                </button>
+                
+                <div class="relative inline-block text-left" id="productCreateDropdownWrapper">
+                    <button type="button" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition-colors flex items-center gap-2"
+                        id="productCreateDropdownButton" aria-expanded="false" aria-haspopup="true">
+                        <i class="fas fa-plus"></i>
+                        Tambah Produk
+                        <i class="fas fa-chevron-down text-xs ml-1"></i>
                     </button>
-
-                    <div class="relative" id="productCreateDropdownWrapper">
-                        <button type="button" id="productCreateDropdownButton" class="btn btn-primary" aria-expanded="false"
-                            aria-haspopup="true">
-                            <i class="fas fa-plus"></i>
-                            <span>Tambah Baru</span>
-                            <i class="fas fa-chevron-down text-xs ml-1"></i>
-                        </button>
-                        <div id="productCreateDropdownMenu"
-                            class="hidden absolute right-0 mt-2 w-48 rounded-lg border border-gray-100 bg-white shadow-lg z-30 overflow-hidden">
-                            <a href="{{ route('admin.products.create') }}"
-                                class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                <i class="fas fa-box w-5"></i>
-                                <span>Tambah Produk</span>
+                    
+                    <div class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                        id="productCreateDropdownMenu" role="menu" aria-orientation="vertical" aria-labelledby="productCreateDropdownButton">
+                        <div class="py-1" role="none">
+                            <a href="{{ route('admin.products.create') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                <i class="fas fa-box text-blue-500 w-5"></i>
+                                Produk Satuan
                             </a>
-                            <a href="{{ route('admin.products.create-bundle') }}"
-                                class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                <i class="fas fa-layer-group w-5"></i>
-                                <span>Tambah Bundle</span>
+                            <a href="{{ route('admin.products.create-bundle') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                <i class="fas fa-cubes text-purple-500 w-5"></i>
+                                Produk Bundle
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Table -->
-            <div class="table-container overflow-x-auto">
-                <table class="table-modern" id="productsTable" style="table-layout: auto;">
-                    <thead>
-                        <tr>
-                            <th class="resizable" style="min-width: 100px; position: relative;">
+        @if(session('success'))
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 shadow-sm rounded-r" role="alert">
+                <div class="flex">
+                    <div class="py-1"><i class="fas fa-check-circle mr-3"></i></div>
+                    <div>
+                        <p class="font-bold">Berhasil!</p>
+                        <p>{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 shadow-sm rounded-r" role="alert">
+                <div class="flex">
+                    <div class="py-1"><i class="fas fa-exclamation-circle mr-3"></i></div>
+                    <div>
+                        <p class="font-bold">Error!</p>
+                        <p>{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full whitespace-no-wrap" id="productsTable" style="table-layout: auto;">
+                    <thead class="bg-gray-50">
+                        <tr class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 SKU
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable" style="min-width: 150px; position: relative;">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 Nama Produk
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable" style="min-width: 120px; position: relative;">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 Kategori
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable" style="min-width: 120px; position: relative;">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 Harga Jual
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable" style="min-width: 80px; position: relative;">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 Satuan
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable" style="min-width: 100px; position: relative;">
+                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
                                 Status
                                 <div class="resize-handle"></div>
                             </th>
-                            <th style="min-width: 100px;">Aksi</th>
+                            <th scope="col" class="px-3 py-2 font-bold" style="min-width: 100px;">Aksi</th>
                         </tr>
                         <!-- Filter Row -->
-                        <!-- Filter Row -->
                         <tr class="filter-row bg-gray-50">
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="sku" placeholder="Filter SKU...">
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="name" placeholder="Filter Nama...">
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="category" placeholder="Filter Kategori...">
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="price" placeholder="Filter Harga...">
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="unit" placeholder="Filter Satuan...">
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <select
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="status">
@@ -131,7 +130,7 @@
                                     <option value="nonaktif">Nonaktif</option>
                                 </select>
                             </th>
-                            <th class="px-3 py-2">
+                            <th class="px-3 py-1 pb-2">
                                 <button type="button" id="clearFilters"
                                     class="w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
                                     title="Clear all filters">
