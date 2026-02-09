@@ -1,4 +1,4 @@
-@extends('layouts.pos')
+@extends('layouts.pos_v2')
 
 @section('title', 'Transaksi Penjualan')
 @section('page-title', 'MorestoPOS')
@@ -55,16 +55,16 @@
             <div
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-gray-50/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null" :class="selectedCategory === null 
-                                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
-                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
+                                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category->id }}"
                         :class="Number(selectedCategory) === {{ $category->id }} 
-                                                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
-                                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' 
+                                                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category->name }}
                     </button>
@@ -102,8 +102,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                Best Seller
-                                            </span> -->
+                                                    Best Seller
+                                                </span> -->
                             </div>
 
                             <!-- Content -->
@@ -314,8 +314,8 @@
 
                         <button @click="processPayment"
                             :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing" :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                            : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30'"
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30'"
                             class="py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
                             <span v-if="!isProcessing">Pay Now</span>
                             <span v-else class="flex items-center gap-2">
