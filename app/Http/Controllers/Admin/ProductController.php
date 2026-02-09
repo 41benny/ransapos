@@ -245,6 +245,7 @@ class ProductController extends Controller
                 $bomHeader = BomHeader::create([
                     'product_id' => $product->id,
                     'name' => $request->filled('name') ? ('Resep ' . $request->input('name')) : null,
+                    'source_type' => 'bundle',
                     'is_active' => true,
                     'notes' => $request->input('description'),
                 ]);

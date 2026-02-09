@@ -191,7 +191,7 @@
                                                     <i class="fas fa-flask"></i>
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.boms.create') }}" class="text-gray-500 hover:text-gray-700"
+                                                <a href="{{ route('admin.boms.create', ['product_id' => $product->id]) }}" class="text-gray-500 hover:text-gray-700"
                                                     title="Buat Resep/BOM">
                                                     <i class="fas fa-receipt"></i>
                                                 </a>

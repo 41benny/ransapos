@@ -21,13 +21,26 @@ class BomController extends Controller
 
     public function index()
     {
-        $boms = BomHeader::with(['product'])->withCount('details')->orderByDesc('id')->paginate(20);
+        $sourceType = request()->query('source_type', 'production');
+        if (!in_array($sourceType, ['production', 'bundle', 'all'], true)) {
+            $sourceType = 'production';
+        }
+
+        $bomsQuery = BomHeader::with(['product'])->withCount('details');
+        if ($sourceType !== 'all') {
+            $bomsQuery->where('source_type', $sourceType);
+        }
+
+        $boms = $bomsQuery
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
         
         if (request()->expectsJson()) {
             return response()->json($boms);
         }
         
-        return view('admin.boms.index', compact('boms'));
+        return view('admin.boms.index', compact('boms', 'sourceType'));
     }
 
     public function create()
@@ -57,9 +70,17 @@ class BomController extends Controller
                 ->orderBy('name')
                 ->get();
         }
-            
+
+        $prefillProductId = null;
+        if (request()->filled('product_id')) {
+            $candidateId = (int) request()->query('product_id');
+            if ($candidateId > 0 && $finishedProducts->contains('id', $candidateId)) {
+                $prefillProductId = $candidateId;
+            }
+        }
+
         // gunakan tampilan versi baru yang lebih bersih
-        return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials'));
+        return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials', 'prefillProductId'));
     }
 
     public function store(Request $request)
@@ -90,6 +111,7 @@ class BomController extends Controller
             $bom = BomHeader::create([
                 'product_id' => $product->id,
                 'name' => $data['name'] ?? null,
+                'source_type' => 'production',
                 'is_active' => $data['is_active'] ?? true,
                 'notes' => $data['notes'] ?? null,
             ]);

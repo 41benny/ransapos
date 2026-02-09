@@ -103,11 +103,13 @@ class Product extends Model
     }
 
     /**
-     * Relasi ke BOM header (aktif maupun tidak)
+     * Relasi ke resep bundle (aktif maupun tidak).
+     * Bundle disimpan sebagai source_type=bundle agar terpisah dari BOM produksi.
      */
     public function bomHeader(): 
     \Illuminate\Database\Eloquent\Relations\HasOne {
-        return $this->hasOne(BomHeader::class, 'product_id');
+        return $this->hasOne(BomHeader::class, 'product_id')
+            ->where('source_type', 'bundle');
     }
 
     public function isAvailableForOutlet(?int $outletId): bool

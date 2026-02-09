@@ -143,7 +143,10 @@ class ProductImport implements OnEachRow, WithHeadingRow
             }
 
             $bomHeader = BomHeader::firstOrCreate(
-                ['product_id' => $product->id],
+                [
+                    'product_id' => $product->id,
+                    'source_type' => 'bundle',
+                ],
                 [
                     'name' => 'Resep ' . $product->name,
                     'is_active' => true,

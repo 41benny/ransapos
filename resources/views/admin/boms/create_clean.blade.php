@@ -26,9 +26,10 @@
         @endif
 
         @php
+            $selectedProductId = old('product_id', $prefillProductId ?? null);
             $rawMap = $rawMaterials->keyBy('id');
             $finishedMap = $finishedProducts->keyBy('id');
-            $selectedFinished = $finishedMap->get(old('product_id'));
+            $selectedFinished = $finishedMap->get($selectedProductId);
             $selectedFinishedLabel = $selectedFinished ? ($selectedFinished->name . ' (' . $selectedFinished->sku . ')') : '';
         @endphp
 
@@ -45,7 +46,7 @@
                             <input type="text" id="product_id"
                                 class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
-                            <input type="hidden" name="product_id" value="{{ old('product_id') }}" data-finished-id>
+                            <input type="hidden" name="product_id" value="{{ $selectedProductId }}" data-finished-id>
                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
                                 data-autocomplete-panel></div>
                         </div>

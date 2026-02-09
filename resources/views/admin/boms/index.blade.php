@@ -4,6 +4,15 @@
 @section('page-title', 'Daftar Bill of Materials (BOM)')
 
 @section('content')
+    @php
+        $activeSourceType = $sourceType ?? 'production';
+        $sourceLabels = [
+            'production' => 'Produksi',
+            'bundle' => 'Bundle',
+            'all' => 'Semua',
+        ];
+    @endphp
+
     <div class="max-w-7xl mx-auto w-full">
         @if(session('success'))
             <div class="mb-4 bg-green-50 text-green-700 p-4 rounded-lg border border-green-200 shadow-sm flex items-center">
@@ -22,14 +31,36 @@
                         <h3 class="text-lg font-bold text-gray-900">Resep Produk (BOM)</h3>
                         <span
                             class="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ $boms->total() }}
-                            Resep</span>
+                            {{ $sourceLabels[$activeSourceType] ?? 'Resep' }}</span>
                     </div>
-                    <p class="text-sm text-gray-500 mt-1">Kelola komposisi bahan baku untuk setiap produk.</p>
+                    <p class="text-sm text-gray-500 mt-1">
+                        @if($activeSourceType === 'production')
+                            Kelola resep untuk proses produksi.
+                        @elseif($activeSourceType === 'bundle')
+                            Daftar resep yang dibuat dari menu bundle.
+                        @else
+                            Semua resep (produksi dan bundle).
+                        @endif
+                    </p>
+                    <div class="mt-3 flex items-center gap-2">
+                        <a href="{{ route('admin.boms.index', ['source_type' => 'production']) }}"
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold {{ $activeSourceType === 'production' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                            Produksi
+                        </a>
+                        <a href="{{ route('admin.boms.index', ['source_type' => 'bundle']) }}"
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold {{ $activeSourceType === 'bundle' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                            Bundle
+                        </a>
+                        <a href="{{ route('admin.boms.index', ['source_type' => 'all']) }}"
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold {{ $activeSourceType === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                            Semua
+                        </a>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <a href="{{ route('admin.boms.create') }}" class="btn btn-primary shadow-lg shadow-blue-500/20">
                         <i class="fas fa-plus"></i>
-                        <span>Buat Resep Baru</span>
+                        <span>Buat Resep Produksi</span>
                     </a>
                 </div>
             </div>

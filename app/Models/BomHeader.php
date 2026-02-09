@@ -11,6 +11,7 @@ class BomHeader extends Model
     protected $fillable = [
         'product_id',
         'name',
+        'source_type',
         'is_active',
         'notes',
     ];
