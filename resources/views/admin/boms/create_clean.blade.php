@@ -1,15 +1,26 @@
 @extends('layouts.admin')
 
-@section('title', 'Tambah BOM')
+@section('title', ($sourceType ?? 'production') === 'bundle' ? 'Tambah Resep Bundle' : 'Tambah BOM Produksi')
 
 @section('content')
+    @php
+        $formSourceType = $sourceType ?? 'production';
+        $isBundleRecipe = $formSourceType === 'bundle';
+        $defaultBackUrl = $isBundleRecipe ? route('admin.products.index') : route('admin.boms.index', ['source_type' => 'production']);
+        $backUrl = $returnTo ?? $defaultBackUrl;
+    @endphp
+
     <div class="max-w-6xl mx-auto space-y-6">
         <div class="flex items-center justify-between gap-3">
             <div>
-                <p class="text-sm text-slate-500">Atur komposisi produk jadi</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Bill of Materials (v1.6)</h1>
+                <p class="text-sm text-slate-500">
+                    {{ $isBundleRecipe ? 'Atur komponen resep bundle/menu jual' : 'Atur komposisi bahan untuk proses produksi' }}
+                </p>
+                <h1 class="text-2xl font-semibold text-slate-900">
+                    {{ $isBundleRecipe ? 'Resep Bundle' : 'Resep Produksi (BOM)' }}
+                </h1>
             </div>
-            <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary !rounded-none">
+            <a href="{{ $backUrl }}" class="btn btn-secondary !rounded-none">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -35,6 +46,8 @@
 
         <form action="{{ route('admin.boms.store') }}" method="POST" class="space-y-6">
             @csrf
+            <input type="hidden" name="source_type" value="{{ $formSourceType }}">
+            <input type="hidden" name="return_to" value="{{ $backUrl }}">
 
             <div class="bg-white !rounded-none shadow-premium border border-slate-200 p-6 space-y-6">
                 <div class="grid gap-5 md:grid-cols-2">
@@ -163,11 +176,11 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <a href="{{ route('admin.boms.index') }}"
+                    <a href="{{ $backUrl }}"
                         class="btn btn-secondary !rounded-none">Batal</a>
                     <button type="submit"
                         class="btn btn-primary !rounded-none">
-                        <i class="fas fa-save"></i> Simpan BOM
+                        <i class="fas fa-save"></i> {{ $isBundleRecipe ? 'Simpan Resep Bundle' : 'Simpan Resep Produksi' }}
                     </button>
                 </div>
             </div>

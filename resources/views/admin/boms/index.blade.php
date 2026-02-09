@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('admin.boms.create') }}" class="btn btn-primary shadow-lg shadow-blue-500/20">
+                    <a href="{{ route('admin.boms.create', ['source_type' => 'production', 'return_to' => request()->fullUrl()]) }}" class="btn btn-primary shadow-lg shadow-blue-500/20">
                         <i class="fas fa-plus"></i>
                         <span>Buat Resep Produksi</span>
                     </a>
@@ -132,15 +132,15 @@
                                 </td>
                                 <td class="text-center pr-6">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('admin.boms.show', $bom) }}" class="btn btn-info btn-sm px-2.5"
+                                        <a href="{{ route('admin.boms.show', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-info btn-sm px-2.5"
                                             title="Lihat Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.boms.edit', $bom) }}" class="btn btn-warning btn-sm px-2.5"
+                                        <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-warning btn-sm px-2.5"
                                             title="Edit Resep">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <form action="{{ route('admin.boms.destroy', $bom) }}" method="POST"
+                                        <form action="{{ route('admin.boms.destroy', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}" method="POST"
                                             onsubmit="return confirm('Yakin hapus BOM ini? Aksi ini tidak dapat dibatalkan.')">
                                             @csrf
                                             @method('DELETE')

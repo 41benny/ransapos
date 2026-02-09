@@ -1,10 +1,15 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit BOM')
+@section('title', ($sourceType ?? ($bom->source_type ?? 'bundle')) === 'bundle' ? 'Edit Resep Bundle' : 'Edit BOM Produksi')
 @section('page-title', 'Edit Resep Produk')
 
 @section('content')
     @php
+        $recipeSourceType = $sourceType ?? ($bom->source_type ?? 'bundle');
+        $isBundleRecipe = $recipeSourceType === 'bundle';
+        $defaultBackUrl = $isBundleRecipe ? route('admin.products.index') : route('admin.boms.index', ['source_type' => 'production']);
+        $backUrl = $returnTo ?? $defaultBackUrl;
+
         $components = old('components');
         if (!$components) {
             $components = $bom->details->map(function ($detail) {
@@ -24,10 +29,14 @@
     <div class="max-w-6xl mx-auto space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-slate-500">Kelola komposisi bahan untuk produk</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Edit Bill of Materials</h1>
+                <p class="text-sm text-slate-500">
+                    {{ $isBundleRecipe ? 'Kelola komponen resep bundle/menu jual' : 'Kelola komposisi bahan untuk produksi' }}
+                </p>
+                <h1 class="text-2xl font-semibold text-slate-900">
+                    {{ $isBundleRecipe ? 'Edit Resep Bundle' : 'Edit Resep Produksi (BOM)' }}
+                </h1>
             </div>
-            <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary">
+            <a href="{{ $backUrl }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -45,6 +54,8 @@
         <form action="{{ route('admin.boms.update', $bom) }}" method="POST" class="space-y-6">
             @csrf
             @method('PUT')
+            <input type="hidden" name="source_type" value="{{ $recipeSourceType }}">
+            <input type="hidden" name="return_to" value="{{ $backUrl }}">
 
             <div class="bg-white border border-slate-200 rounded-lg p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -118,9 +129,9 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">
-                    <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary">Batal</a>
+                    <a href="{{ $backUrl }}" class="btn btn-secondary">Batal</a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Update BOM
+                        <i class="fas fa-save"></i> {{ $isBundleRecipe ? 'Update Resep Bundle' : 'Update Resep Produksi' }}
                     </button>
                 </div>
             </div>

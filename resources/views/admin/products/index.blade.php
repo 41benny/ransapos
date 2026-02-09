@@ -182,17 +182,17 @@
 
                                         @if($product->product_type === 'finished_good')
                                             @if($product->bomHeader)
-                                                <a href="{{ route('admin.boms.show', $product->bomHeader) }}"
-                                                    class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep/BOM">
+                                                <a href="{{ route('admin.boms.show', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
+                                                    class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep Bundle">
                                                     <i class="fas fa-book-open"></i>
                                                 </a>
-                                                <a href="{{ route('admin.boms.edit', $product->bomHeader) }}"
-                                                    class="text-teal-600 hover:text-teal-800" title="Edit Resep/BOM">
+                                                <a href="{{ route('admin.boms.edit', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
+                                                    class="text-teal-600 hover:text-teal-800" title="Edit Resep Bundle">
                                                     <i class="fas fa-flask"></i>
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.boms.create', ['product_id' => $product->id]) }}" class="text-gray-500 hover:text-gray-700"
-                                                    title="Buat Resep/BOM">
+                                                <a href="{{ route('admin.boms.create', ['source_type' => 'bundle', 'product_id' => $product->id, 'return_to' => request()->fullUrl()]) }}" class="text-gray-500 hover:text-gray-700"
+                                                    title="Buat Resep Bundle">
                                                     <i class="fas fa-receipt"></i>
                                                 </a>
                                             @endif

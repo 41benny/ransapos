@@ -1,20 +1,29 @@
 @extends('layouts.admin')
 
-@section('title', 'Detail BOM')
+@section('title', ($sourceType ?? ($bom->source_type ?? 'bundle')) === 'bundle' ? 'Detail Resep Bundle' : 'Detail BOM Produksi')
 @section('page-title', 'Detail Resep Produk')
 
 @section('content')
+    @php
+        $recipeSourceType = $sourceType ?? ($bom->source_type ?? 'bundle');
+        $isBundleRecipe = $recipeSourceType === 'bundle';
+        $defaultBackUrl = $isBundleRecipe ? route('admin.products.index') : route('admin.boms.index', ['source_type' => 'production']);
+        $backUrl = $returnTo ?? $defaultBackUrl;
+    @endphp
+
     <div class="max-w-5xl mx-auto space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-slate-500">Ringkasan resep produk</p>
+                <p class="text-sm text-slate-500">
+                    {{ $isBundleRecipe ? 'Ringkasan resep bundle/menu jual' : 'Ringkasan resep produksi' }}
+                </p>
                 <h1 class="text-2xl font-semibold text-slate-900">{{ $bom->name ?: 'Resep ' . ($bom->product->name ?? '-') }}</h1>
             </div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.boms.edit', $bom) }}" class="btn btn-primary">
+                <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $recipeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Edit Resep
                 </a>
-                <a href="{{ route('admin.boms.index') }}" class="btn btn-secondary">
+                <a href="{{ $backUrl }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
@@ -39,6 +48,10 @@
                 <div>
                     <div class="text-slate-500">Catatan</div>
                     <div class="text-slate-900">{{ $bom->notes ?: '-' }}</div>
+                </div>
+                <div>
+                    <div class="text-slate-500">Jenis Resep</div>
+                    <div class="font-medium text-slate-900">{{ $isBundleRecipe ? 'Bundle' : 'Produksi' }}</div>
                 </div>
                 <div>
                     <div class="text-slate-500">Total Komponen</div>

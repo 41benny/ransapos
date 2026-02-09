@@ -13,21 +13,54 @@ use Exception;
 
 class BomController extends Controller
 {
+    private const SOURCE_TYPE_PRODUCTION = 'production';
+    private const SOURCE_TYPE_BUNDLE = 'bundle';
+    private const SOURCE_TYPE_ALL = 'all';
+
     private function rawMaterialCategory(): ?ProductCategory
     {
         $name = config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku'));
         return ProductCategory::where('name', $name)->first();
     }
 
-    public function index()
+    private function normalizeSourceType(?string $sourceType, string $default = self::SOURCE_TYPE_PRODUCTION): string
     {
-        $sourceType = request()->query('source_type', 'production');
-        if (!in_array($sourceType, ['production', 'bundle', 'all'], true)) {
-            $sourceType = 'production';
+        $normalized = strtolower(trim((string) $sourceType));
+        $allowed = [self::SOURCE_TYPE_PRODUCTION, self::SOURCE_TYPE_BUNDLE, self::SOURCE_TYPE_ALL];
+
+        return in_array($normalized, $allowed, true) ? $normalized : $default;
+    }
+
+    private function resolveSafeReturnTo(?string $returnTo, string $fallback): string
+    {
+        if (!$returnTo) {
+            return $fallback;
         }
 
+        $parsed = parse_url($returnTo);
+        if ($parsed === false) {
+            return $fallback;
+        }
+
+        // Allow relative internal URLs only.
+        if (!isset($parsed['host'])) {
+            return str_starts_with($returnTo, '/') ? $returnTo : $fallback;
+        }
+
+        $currentHost = parse_url(url('/'), PHP_URL_HOST);
+        $currentScheme = parse_url(url('/'), PHP_URL_SCHEME);
+        $hostMatch = strtolower((string) $parsed['host']) === strtolower((string) $currentHost);
+        $schemeMatch = !isset($parsed['scheme']) || strtolower((string) $parsed['scheme']) === strtolower((string) $currentScheme);
+
+        return ($hostMatch && $schemeMatch) ? $returnTo : $fallback;
+    }
+
+    public function index()
+    {
+        $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+
         $bomsQuery = BomHeader::with(['product'])->withCount('details');
-        if ($sourceType !== 'all') {
+        if ($sourceType !== self::SOURCE_TYPE_ALL) {
             $bomsQuery->where('source_type', $sourceType);
         }
 
@@ -45,6 +78,15 @@ class BomController extends Controller
 
     public function create()
     {
+        $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+        if ($sourceType === self::SOURCE_TYPE_ALL) {
+            $sourceType = self::SOURCE_TYPE_PRODUCTION;
+        }
+        $defaultBackUrl = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
+        $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultBackUrl);
+
         $rawCategory = $this->rawMaterialCategory();
 
         if ($rawCategory) {
@@ -80,7 +122,7 @@ class BomController extends Controller
         }
 
         // gunakan tampilan versi baru yang lebih bersih
-        return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials', 'prefillProductId'));
+        return view('admin.boms.create_clean', compact('finishedProducts', 'rawMaterials', 'prefillProductId', 'sourceType', 'returnTo'));
     }
 
     public function store(Request $request)
@@ -88,6 +130,8 @@ class BomController extends Controller
         $data = $request->validate([
             'product_id' => 'required|exists:products,id',
             'name' => 'nullable|string|max:200',
+            'source_type' => 'nullable|in:production,bundle',
+            'return_to' => 'nullable|string|max:2000',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
             'components' => 'required|array|min:1',
@@ -95,6 +139,15 @@ class BomController extends Controller
             'components.*.quantity' => 'required|numeric|min:0.0001',
             'components.*.uom' => 'nullable|string|max:50',
         ]);
+
+        $sourceType = $this->normalizeSourceType($data['source_type'] ?? null, self::SOURCE_TYPE_PRODUCTION);
+        if ($sourceType === self::SOURCE_TYPE_ALL) {
+            $sourceType = self::SOURCE_TYPE_PRODUCTION;
+        }
+        $defaultRedirect = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
+        $returnTo = $this->resolveSafeReturnTo($data['return_to'] ?? null, $defaultRedirect);
 
         // Validasi produk utama bukan bahan baku (kategori) atau service
         $product = Product::findOrFail($data['product_id']);
@@ -111,7 +164,7 @@ class BomController extends Controller
             $bom = BomHeader::create([
                 'product_id' => $product->id,
                 'name' => $data['name'] ?? null,
-                'source_type' => 'production',
+                'source_type' => $sourceType,
                 'is_active' => $data['is_active'] ?? true,
                 'notes' => $data['notes'] ?? null,
             ]);
@@ -134,7 +187,11 @@ class BomController extends Controller
                 return response()->json($bom->load('details.component'), 201);
             }
             
-            return redirect()->route('admin.boms.index')->with('success', 'BOM berhasil dibuat');
+            $successMessage = $sourceType === self::SOURCE_TYPE_BUNDLE
+                ? 'Resep bundle berhasil dibuat'
+                : 'Resep produksi berhasil dibuat';
+
+            return redirect($returnTo)->with('success', $successMessage);
         } catch (Exception $e) {
             DB::rollBack();
             if ($request->expectsJson()) {
@@ -147,17 +204,27 @@ class BomController extends Controller
     public function show(BomHeader $bom)
     {
         $bom->load('product','details.component');
+        $sourceType = $this->normalizeSourceType($bom->source_type, self::SOURCE_TYPE_BUNDLE);
+        $defaultBackUrl = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
+        $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultBackUrl);
         
         if (request()->expectsJson()) {
             return response()->json($bom);
         }
         
-        return view('admin.boms.show', compact('bom'));
+        return view('admin.boms.show', compact('bom', 'sourceType', 'returnTo'));
     }
 
     public function edit(BomHeader $bom)
     {
         $bom->load('details.component');
+        $sourceType = $this->normalizeSourceType($bom->source_type, self::SOURCE_TYPE_BUNDLE);
+        $defaultBackUrl = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
+        $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultBackUrl);
 
         $rawCategory = $this->rawMaterialCategory();
 
@@ -183,13 +250,15 @@ class BomController extends Controller
                 ->get();
         }
             
-        return view('admin.boms.edit', compact('bom', 'finishedProducts', 'rawMaterials'));
+        return view('admin.boms.edit', compact('bom', 'finishedProducts', 'rawMaterials', 'sourceType', 'returnTo'));
     }
 
     public function update(Request $request, BomHeader $bom)
     {
         $data = $request->validate([
             'name' => 'nullable|string|max:200',
+            'source_type' => 'nullable|in:production,bundle',
+            'return_to' => 'nullable|string|max:2000',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
             'components' => 'nullable|array',
@@ -199,10 +268,21 @@ class BomController extends Controller
             'components.*.uom' => 'nullable|string|max:50',
         ]);
 
+        $currentSourceType = $this->normalizeSourceType($bom->source_type, self::SOURCE_TYPE_BUNDLE);
+        $sourceType = $this->normalizeSourceType($data['source_type'] ?? null, $currentSourceType);
+        if ($sourceType === self::SOURCE_TYPE_ALL) {
+            $sourceType = $currentSourceType;
+        }
+        $defaultRedirect = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
+        $returnTo = $this->resolveSafeReturnTo($data['return_to'] ?? null, $defaultRedirect);
+
         DB::beginTransaction();
         try {
             $bom->update([
                 'name' => $data['name'] ?? $bom->name,
+                'source_type' => $sourceType,
                 'is_active' => $data['is_active'] ?? $bom->is_active,
                 'notes' => $data['notes'] ?? $bom->notes,
             ]);
@@ -229,9 +309,13 @@ class BomController extends Controller
                 return response()->json($bom->load('details.component'));
             }
 
+            $successMessage = $sourceType === self::SOURCE_TYPE_BUNDLE
+                ? 'Resep bundle berhasil diperbarui'
+                : 'Resep produksi berhasil diperbarui';
+
             return redirect()
-                ->route('admin.boms.index')
-                ->with('success', 'BOM berhasil diperbarui');
+                ->to($returnTo)
+                ->with('success', $successMessage);
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -247,12 +331,21 @@ class BomController extends Controller
 
     public function destroy(BomHeader $bom)
     {
+        $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+        if ($sourceType === self::SOURCE_TYPE_ALL) {
+            $sourceType = self::SOURCE_TYPE_PRODUCTION;
+        }
+        $defaultRedirect = $sourceType === self::SOURCE_TYPE_BUNDLE
+            ? route('admin.products.index')
+            : route('admin.boms.index', ['source_type' => $sourceType]);
+        $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultRedirect);
+
         $bom->delete();
         
         if (request()->expectsJson()) {
             return response()->json(['message' => 'Deleted']);
         }
         
-        return redirect()->route('admin.boms.index')->with('success', 'BOM berhasil dihapus');
+        return redirect($returnTo)->with('success', 'Resep berhasil dihapus');
     }
 }
