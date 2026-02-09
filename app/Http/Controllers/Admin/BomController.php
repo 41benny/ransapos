@@ -202,10 +202,24 @@ class BomController extends Controller
             }
 
             DB::commit();
-            return response()->json($bom->load('details.component'));
+
+            if ($request->expectsJson()) {
+                return response()->json($bom->load('details.component'));
+            }
+
+            return redirect()
+                ->route('admin.boms.index')
+                ->with('success', 'BOM berhasil diperbarui');
         } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => $e->getMessage()], 422);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()
+                ->withInput()
+                ->withErrors(['general' => $e->getMessage()]);
         }
     }
 
