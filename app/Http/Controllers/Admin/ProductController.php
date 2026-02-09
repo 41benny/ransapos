@@ -34,7 +34,7 @@ class ProductController extends Controller
 
             return redirect()
                 ->route('admin.products.index')
-                ->with('success', 'Produk berhasil diimport!');
+                ->with('success', 'Produk dan resep BOM berhasil diimport!');
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.products.index')
@@ -451,3 +451,4 @@ class ProductController extends Controller
         });
     }
 }
+

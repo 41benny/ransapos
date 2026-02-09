@@ -65,17 +65,84 @@
             </div>
 
             <!-- Table -->
-            <div class="table-container">
-                <table class="table-modern">
+            <div class="table-container overflow-x-auto">
+                <table class="table-modern" id="productsTable" style="table-layout: auto;">
                     <thead>
                         <tr>
-                            <th>SKU</th>
-                            <th>Nama Produk</th>
-                            <th>Kategori</th>
-                            <th>Harga Jual</th>
-                            <th>Satuan</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
+                            <th class="resizable" style="min-width: 100px; position: relative;">
+                                SKU
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable" style="min-width: 150px; position: relative;">
+                                Nama Produk
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable" style="min-width: 120px; position: relative;">
+                                Kategori
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable" style="min-width: 120px; position: relative;">
+                                Harga Jual
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable" style="min-width: 80px; position: relative;">
+                                Satuan
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable" style="min-width: 100px; position: relative;">
+                                Status
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th style="min-width: 100px;">Aksi</th>
+                        </tr>
+                        <!-- Filter Row -->
+                        <tr class="filter-row bg-gray-50">
+                            <th class="px-3 py-2">
+                                <input type="text" 
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="0" 
+                                    placeholder="Filter SKU...">
+                            </th>
+                            <th class="px-3 py-2">
+                                <input type="text" 
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="1" 
+                                    placeholder="Filter Nama...">
+                            </th>
+                            <th class="px-3 py-2">
+                                <input type="text" 
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="2" 
+                                    placeholder="Filter Kategori...">
+                            </th>
+                            <th class="px-3 py-2">
+                                <input type="text" 
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="3" 
+                                    placeholder="Filter Harga...">
+                            </th>
+                            <th class="px-3 py-2">
+                                <input type="text" 
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="4" 
+                                    placeholder="Filter Satuan...">
+                            </th>
+                            <th class="px-3 py-2">
+                                <select class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                    data-column="5">
+                                    <option value="">Semua Status</option>
+                                    <option value="aktif">Aktif</option>
+                                    <option value="nonaktif">Nonaktif</option>
+                                </select>
+                            </th>
+                            <th class="px-3 py-2">
+                                <button type="button" 
+                                    id="clearFilters" 
+                                    class="w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                                    title="Clear all filters">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,7 +232,7 @@
                     <h3 class="text-lg font-bold leading-6 text-gray-900" id="modal-title">Import Data Produk</h3>
                     <div class="mt-2">
                         <p class="text-sm text-gray-500">
-                            Upload file Excel (.xlsx) sesuai format. Pastikan kolom: Nama Produk, SKU, Harga, dsb.
+                            Upload file Excel (.xlsx) sesuai format. Bisa import produk sekaligus resep/BOM (kolom bom_komponen_*).
                         </p>
                     </div>
                 </div>
@@ -210,7 +277,44 @@
 @endsection
 
 @push('scripts')
+    <style>
+        /* Resize handle styling */
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            z-index: 10;
+        }
+        
+        .resize-handle:hover {
+            background-color: rgba(59, 130, 246, 0.5);
+        }
+        
+        .resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+        
+        /* Filter row styling */
+        .filter-row th {
+            background-color: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        /* Hidden row for filtering */
+        .hidden-row {
+            display: none !important;
+        }
+    </style>
+    
     <script>
+        // ========================================
+        // FILE UPLOAD HANDLER
+        // ========================================
         const fileUploadEl = document.getElementById('file-upload');
         if (fileUploadEl) {
             fileUploadEl.addEventListener('change', function (e) {
@@ -225,6 +329,9 @@
             });
         }
 
+        // ========================================
+        // DROPDOWN MENU HANDLER
+        // ========================================
         const createMenuWrapper = document.getElementById('productCreateDropdownWrapper');
         const createMenuButton = document.getElementById('productCreateDropdownButton');
         const createMenu = document.getElementById('productCreateDropdownMenu');
@@ -251,5 +358,192 @@
                 }
             });
         }
+
+        // ========================================
+        // TABLE FILTERING WITH PARTIAL MATCH
+        // ========================================
+        const filterInputs = document.querySelectorAll('.filter-input');
+        const tableBody = document.querySelector('#productsTable tbody');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+
+        // Debounce function for better performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Filter table rows based on input values
+        function filterTable() {
+            const rows = tableBody.querySelectorAll('tr');
+            
+            // Get all filter values
+            const filters = Array.from(filterInputs).map(input => {
+                return {
+                    column: parseInt(input.dataset.column),
+                    value: input.value.toLowerCase().trim()
+                };
+            });
+
+            // Filter each row
+            rows.forEach(row => {
+                // Skip empty state row
+                if (row.querySelector('td[colspan]')) {
+                    return;
+                }
+
+                let shouldShow = true;
+                const cells = row.querySelectorAll('td');
+
+                // Check each filter
+                filters.forEach(filter => {
+                    if (filter.value === '') return; // Skip empty filters
+
+                    const cell = cells[filter.column];
+                    if (!cell) return;
+
+                    // Get cell text content (handle nested elements)
+                    let cellText = cell.textContent.toLowerCase().trim();
+                    
+                    // For status column, normalize text
+                    if (filter.column === 5) {
+                        cellText = cellText.includes('aktif') && !cellText.includes('nonaktif') ? 'aktif' : 'nonaktif';
+                    }
+
+                    // Partial match - check if cell contains filter value
+                    if (!cellText.includes(filter.value)) {
+                        shouldShow = false;
+                    }
+                });
+
+                // Show or hide row
+                if (shouldShow) {
+                    row.classList.remove('hidden-row');
+                } else {
+                    row.classList.add('hidden-row');
+                }
+            });
+
+            // Update empty state visibility
+            updateEmptyState();
+        }
+
+        // Update empty state message
+        function updateEmptyState() {
+            const rows = tableBody.querySelectorAll('tr:not(.hidden-row)');
+            const emptyRow = tableBody.querySelector('td[colspan]')?.parentElement;
+            
+            if (emptyRow) {
+                const visibleDataRows = Array.from(rows).filter(row => !row.querySelector('td[colspan]'));
+                if (visibleDataRows.length === 0) {
+                    emptyRow.classList.remove('hidden-row');
+                    const emptyMessage = emptyRow.querySelector('p');
+                    if (emptyMessage) {
+                        emptyMessage.textContent = 'Tidak ada produk yang sesuai dengan filter';
+                    }
+                } else {
+                    emptyRow.classList.add('hidden-row');
+                }
+            }
+        }
+
+        // Attach filter event listeners with debounce
+        filterInputs.forEach(input => {
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', filterTable);
+            } else {
+                input.addEventListener('input', debounce(filterTable, 300));
+            }
+        });
+
+        // Clear all filters
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function() {
+                filterInputs.forEach(input => {
+                    input.value = '';
+                });
+                filterTable();
+            });
+        }
+
+        // ========================================
+        // RESIZABLE COLUMNS
+        // ========================================
+        const table = document.getElementById('productsTable');
+        const STORAGE_KEY = 'products_table_column_widths';
+
+        // Load saved column widths from localStorage
+        function loadColumnWidths() {
+            const savedWidths = localStorage.getItem(STORAGE_KEY);
+            if (savedWidths) {
+                try {
+                    const widths = JSON.parse(savedWidths);
+                    const headers = table.querySelectorAll('th.resizable');
+                    headers.forEach((th, index) => {
+                        if (widths[index]) {
+                            th.style.width = widths[index] + 'px';
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error loading column widths:', e);
+                }
+            }
+        }
+
+        // Save column widths to localStorage
+        function saveColumnWidths() {
+            const headers = table.querySelectorAll('th.resizable');
+            const widths = Array.from(headers).map(th => th.offsetWidth);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
+        }
+
+        // Initialize resizable columns
+        function initResizableColumns() {
+            const headers = table.querySelectorAll('th.resizable');
+            
+            headers.forEach((th, index) => {
+                const handle = th.querySelector('.resize-handle');
+                if (!handle) return;
+
+                let startX, startWidth;
+
+                handle.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    startX = e.pageX;
+                    startWidth = th.offsetWidth;
+
+                    document.body.classList.add('resizing');
+
+                    function onMouseMove(e) {
+                        const diff = e.pageX - startX;
+                        const newWidth = Math.max(50, startWidth + diff); // Minimum 50px
+                        th.style.width = newWidth + 'px';
+                    }
+
+                    function onMouseUp() {
+                        document.body.classList.remove('resizing');
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        saveColumnWidths();
+                    }
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+        }
+
+        // Initialize on page load
+        if (table) {
+            loadColumnWidths();
+            initResizableColumns();
+        }
     </script>
 @endpush
+
