@@ -71,7 +71,18 @@ class ProductImport implements OnEachRow, WithHeadingRow
                 throw new \InvalidArgumentException("Baris {$rowNumber}: SKU wajib diisi untuk baris yang memiliki BOM.");
             }
 
-            $sku = $skuInput ?? $this->generateSku($productName);
+            // Fix Duplication: If SKU is empty, check if product with same name exists
+            if ($skuInput) {
+                $sku = $skuInput;
+            } else {
+                $existingProduct = Product::where('name', $productName)->first();
+                if ($existingProduct) {
+                    $sku = $existingProduct->sku;
+                } else {
+                    $sku = $this->generateSku($productName);
+                }
+            }
+
             $defaultCreatedBy = auth()->id() ?: User::query()->value('id');
 
             $product = Product::updateOrCreate(
