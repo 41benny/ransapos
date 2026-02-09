@@ -68,31 +68,31 @@
                 <table class="w-full whitespace-no-wrap" id="productsTable" style="table-layout: auto;">
                     <thead class="bg-gray-50">
                         <tr class="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 100px; position: relative;">
                                 SKU
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 150px; position: relative;">
                                 Nama Produk
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 120px; position: relative;">
                                 Kategori
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 120px; position: relative;">
                                 Harga Jual
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 80px; position: relative;">
                                 Satuan
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold resizable" style="position: relative;">
+                            <th class="resizable px-3 py-2" style="min-width: 100px; position: relative;">
                                 Status
                                 <div class="resize-handle"></div>
                             </th>
-                            <th scope="col" class="px-3 py-2 font-bold" style="min-width: 100px;">Aksi</th>
+                            <th class="px-3 py-2" style="min-width: 100px;">Aksi</th>
                         </tr>
                         <!-- Filter Row -->
                         <tr class="filter-row bg-gray-50">
