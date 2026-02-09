@@ -27,9 +27,10 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">Semua Produk</h2>
-                    <p class="text-sm text-gray-500">Total: <span class="font-semibold">{{ $products->total() }}</span> produk</p>
+                    <p class="text-sm text-gray-500">Total: <span class="font-semibold">{{ $products->total() }}</span>
+                        produk</p>
                 </div>
-                
+
                 <div class="flex flex-wrap items-center gap-3">
                     <button
                         onclick="document.getElementById('importModal').classList.remove('hidden'); document.getElementById('importModal').style.display = 'block';"
@@ -37,11 +38,9 @@
                         <i class="fas fa-file-import"></i>
                         <span>Import Excel</span>
                     </button>
-                    
+
                     <div class="relative" id="productCreateDropdownWrapper">
-                        <button type="button" id="productCreateDropdownButton"
-                            class="btn btn-primary"
-                            aria-expanded="false"
+                        <button type="button" id="productCreateDropdownButton" class="btn btn-primary" aria-expanded="false"
                             aria-haspopup="true">
                             <i class="fas fa-plus"></i>
                             <span>Tambah Baru</span>
@@ -96,48 +95,44 @@
                             <th style="min-width: 100px;">Aksi</th>
                         </tr>
                         <!-- Filter Row -->
+                        <!-- Filter Row -->
                         <tr class="filter-row bg-gray-50">
                             <th class="px-3 py-2">
-                                <input type="text" 
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="0" 
-                                    placeholder="Filter SKU...">
+                                <input type="text"
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="sku" placeholder="Filter SKU...">
                             </th>
                             <th class="px-3 py-2">
-                                <input type="text" 
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="1" 
-                                    placeholder="Filter Nama...">
+                                <input type="text"
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="name" placeholder="Filter Nama...">
                             </th>
                             <th class="px-3 py-2">
-                                <input type="text" 
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="2" 
-                                    placeholder="Filter Kategori...">
+                                <input type="text"
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="category" placeholder="Filter Kategori...">
                             </th>
                             <th class="px-3 py-2">
-                                <input type="text" 
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="3" 
-                                    placeholder="Filter Harga...">
+                                <input type="text"
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="price" placeholder="Filter Harga...">
                             </th>
                             <th class="px-3 py-2">
-                                <input type="text" 
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="4" 
-                                    placeholder="Filter Satuan...">
+                                <input type="text"
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="unit" placeholder="Filter Satuan...">
                             </th>
                             <th class="px-3 py-2">
-                                <select class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    data-column="5">
+                                <select
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="status">
                                     <option value="">Semua Status</option>
                                     <option value="aktif">Aktif</option>
                                     <option value="nonaktif">Nonaktif</option>
                                 </select>
                             </th>
                             <th class="px-3 py-2">
-                                <button type="button" 
-                                    id="clearFilters" 
+                                <button type="button" id="clearFilters"
                                     class="w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
                                     title="Clear all filters">
                                     <i class="fas fa-times"></i>
@@ -152,11 +147,13 @@
                                 <td>
                                     <div class="font-medium text-gray-900">{{ $product->name }}</div>
                                     @if($product->description)
-                                        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{{ Str::limit($product->description, 50) }}</div>
+                                        <div class="text-xs text-gray-500 mt-0.5 truncate max-w-xs">
+                                            {{ Str::limit($product->description, 50) }}</div>
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
                                         {{ $product->category->name ?? '-' }}
                                     </span>
                                 </td>
@@ -174,25 +171,39 @@
                                 <td>
                                     <div class="flex items-center gap-2">
                                         <a href="{{ route('admin.products.show', $product) }}"
-                                            class="text-blue-600 hover:text-blue-800"
-                                            title="Detail">
+                                            class="text-blue-600 hover:text-blue-800" title="Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
 
                                         <a href="{{ route('admin.products.edit', $product) }}"
-                                            class="text-amber-600 hover:text-amber-800"
-                                            title="Edit">
+                                            class="text-amber-600 hover:text-amber-800" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+
+                                        @if($product->product_type === 'finished_good')
+                                            @if($product->bomHeader)
+                                                <a href="{{ route('admin.boms.show', $product->bomHeader) }}"
+                                                    class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep/BOM">
+                                                    <i class="fas fa-book-open"></i>
+                                                </a>
+                                                <a href="{{ route('admin.boms.edit', $product->bomHeader) }}"
+                                                    class="text-teal-600 hover:text-teal-800" title="Edit Resep/BOM">
+                                                    <i class="fas fa-flask"></i>
+                                                </a>
+                                            @else
+                                                <a href="{{ route('admin.boms.create') }}" class="text-gray-500 hover:text-gray-700"
+                                                    title="Buat Resep/BOM">
+                                                    <i class="fas fa-receipt"></i>
+                                                </a>
+                                            @endif
+                                        @endif
 
                                         <form action="{{ route('admin.products.destroy', $product) }}" method="POST"
                                             class="inline"
                                             onsubmit="return confirm('Yakin ingin menghapus produk {{ $product->name }}?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit"
-                                                class="text-red-600 hover:text-red-800"
-                                                title="Hapus">
+                                            <button type="submit" class="text-red-600 hover:text-red-800" title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -223,16 +234,19 @@
     </div>
 
     <!-- Import Modal -->
-    <div id="importModal" style="display: none;" class="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="importModal" style="display: none;" class="fixed inset-0 z-[9999] overflow-y-auto"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"></div>
         <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                
+            <div
+                class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 border-b border-gray-100">
                     <h3 class="text-lg font-bold leading-6 text-gray-900" id="modal-title">Import Data Produk</h3>
                     <div class="mt-2">
                         <p class="text-sm text-gray-500">
-                            Upload file Excel (.xlsx) sesuai format. Bisa import produk sekaligus resep/BOM (kolom bom_komponen_*).
+                            Upload file Excel (.xlsx) sesuai format. Bisa import produk sekaligus resep/BOM (kolom
+                            bom_komponen_*).
                         </p>
                     </div>
                 </div>
@@ -240,21 +254,25 @@
                 <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="bg-white px-4 py-6 sm:p-6">
-                        <div class="relative flex w-full justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10 hover:border-blue-500 hover:bg-blue-50/50 transition-colors">
+                        <div
+                            class="relative flex w-full justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10 hover:border-blue-500 hover:bg-blue-50/50 transition-colors">
                             <div class="text-center">
                                 <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-3"></i>
                                 <div class="flex text-sm leading-6 text-gray-600 justify-center">
-                                    <label for="file-upload" class="relative cursor-pointer rounded-md bg-white font-semibold text-blue-600 focus-within:outline-none hover:text-blue-500">
+                                    <label for="file-upload"
+                                        class="relative cursor-pointer rounded-md bg-white font-semibold text-blue-600 focus-within:outline-none hover:text-blue-500">
                                         <span>Upload a file</span>
-                                        <input id="file-upload" name="file" type="file" class="sr-only" required accept=".xlsx, .xls">
+                                        <input id="file-upload" name="file" type="file" class="sr-only" required
+                                            accept=".xlsx, .xls">
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">XLSX up to 10MB</p>
                             </div>
                         </div>
-                        
-                        <div id="filename-display" class="mt-3 hidden rounded-md bg-gray-50 p-2 text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
+
+                        <div id="filename-display"
+                            class="mt-3 hidden rounded-md bg-gray-50 p-2 text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                             <i class="fas fa-file-excel text-green-600"></i>
                             <span class="font-medium truncate"></span>
                         </div>
@@ -289,28 +307,28 @@
             user-select: none;
             z-index: 10;
         }
-        
+
         .resize-handle:hover {
             background-color: rgba(59, 130, 246, 0.5);
         }
-        
+
         .resizing {
             cursor: col-resize;
             user-select: none;
         }
-        
+
         /* Filter row styling */
         .filter-row th {
             background-color: #f9fafb;
             border-bottom: 2px solid #e5e7eb;
         }
-        
+
         /* Hidden row for filtering */
         .hidden-row {
             display: none !important;
         }
     </style>
-    
+
     <script>
         // ========================================
         // FILE UPLOAD HANDLER
@@ -360,117 +378,74 @@
         }
 
         // ========================================
-        // TABLE FILTERING WITH PARTIAL MATCH
+        // SERVER-SIDE FILTERING
         // ========================================
         const filterInputs = document.querySelectorAll('.filter-input');
-        const tableBody = document.querySelector('#productsTable tbody');
         const clearFiltersBtn = document.getElementById('clearFilters');
 
-        // Debounce function for better performance
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
+        // Populate inputs from URL parameters
+        function populateFilters() {
+            const params = new URLSearchParams(window.location.search);
 
-        // Filter table rows based on input values
-        function filterTable() {
-            const rows = tableBody.querySelectorAll('tr');
-            
-            // Get all filter values
-            const filters = Array.from(filterInputs).map(input => {
-                return {
-                    column: parseInt(input.dataset.column),
-                    value: input.value.toLowerCase().trim()
-                };
-            });
-
-            // Filter each row
-            rows.forEach(row => {
-                // Skip empty state row
-                if (row.querySelector('td[colspan]')) {
-                    return;
-                }
-
-                let shouldShow = true;
-                const cells = row.querySelectorAll('td');
-
-                // Check each filter
-                filters.forEach(filter => {
-                    if (filter.value === '') return; // Skip empty filters
-
-                    const cell = cells[filter.column];
-                    if (!cell) return;
-
-                    // Get cell text content (handle nested elements)
-                    let cellText = cell.textContent.toLowerCase().trim();
-                    
-                    // For status column, normalize text
-                    if (filter.column === 5) {
-                        cellText = cellText.includes('aktif') && !cellText.includes('nonaktif') ? 'aktif' : 'nonaktif';
-                    }
-
-                    // Partial match - check if cell contains filter value
-                    if (!cellText.includes(filter.value)) {
-                        shouldShow = false;
-                    }
-                });
-
-                // Show or hide row
-                if (shouldShow) {
-                    row.classList.remove('hidden-row');
-                } else {
-                    row.classList.add('hidden-row');
+            filterInputs.forEach(input => {
+                const name = input.dataset.name;
+                if (params.has(name)) {
+                    input.value = params.get(name);
                 }
             });
-
-            // Update empty state visibility
-            updateEmptyState();
         }
 
-        // Update empty state message
-        function updateEmptyState() {
-            const rows = tableBody.querySelectorAll('tr:not(.hidden-row)');
-            const emptyRow = tableBody.querySelector('td[colspan]')?.parentElement;
-            
-            if (emptyRow) {
-                const visibleDataRows = Array.from(rows).filter(row => !row.querySelector('td[colspan]'));
-                if (visibleDataRows.length === 0) {
-                    emptyRow.classList.remove('hidden-row');
-                    const emptyMessage = emptyRow.querySelector('p');
-                    if (emptyMessage) {
-                        emptyMessage.textContent = 'Tidak ada produk yang sesuai dengan filter';
-                    }
+        // Debounce function
+        let debounceTimer;
+        function updateFilter(name, value) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const url = new URL(window.location.href);
+
+                if (value.trim() !== '') {
+                    url.searchParams.set(name, value.trim());
                 } else {
-                    emptyRow.classList.add('hidden-row');
+                    url.searchParams.delete(name);
                 }
-            }
+
+                // Reset to page 1 when filtering changes
+                url.searchParams.delete('page');
+
+                window.location.href = url.toString();
+            }, 500); // 500ms debounce
         }
 
-        // Attach filter event listeners with debounce
+        // Attach listeners
         filterInputs.forEach(input => {
+            const name = input.dataset.name;
+
             if (input.tagName === 'SELECT') {
-                input.addEventListener('change', filterTable);
+                input.addEventListener('change', (e) => {
+                    updateFilter(name, e.target.value);
+                });
             } else {
-                input.addEventListener('input', debounce(filterTable, 300));
+                input.addEventListener('input', (e) => {
+                    updateFilter(name, e.target.value);
+                });
             }
         });
 
         // Clear all filters
         if (clearFiltersBtn) {
-            clearFiltersBtn.addEventListener('click', function() {
+            clearFiltersBtn.addEventListener('click', function () {
+                const url = new URL(window.location.href);
+
                 filterInputs.forEach(input => {
-                    input.value = '';
+                    url.searchParams.delete(input.dataset.name);
                 });
-                filterTable();
+
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
             });
         }
+
+        // Initialize on load
+        populateFilters();
 
         // ========================================
         // RESIZABLE COLUMNS
@@ -506,14 +481,14 @@
         // Initialize resizable columns
         function initResizableColumns() {
             const headers = table.querySelectorAll('th.resizable');
-            
+
             headers.forEach((th, index) => {
                 const handle = th.querySelector('.resize-handle');
                 if (!handle) return;
 
                 let startX, startWidth;
 
-                handle.addEventListener('mousedown', function(e) {
+                handle.addEventListener('mousedown', function (e) {
                     e.preventDefault();
                     startX = e.pageX;
                     startWidth = th.offsetWidth;
@@ -546,4 +521,3 @@
         }
     </script>
 @endpush
-

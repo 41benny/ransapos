@@ -30,14 +30,15 @@ class ProductController extends Controller
         ]);
 
         try {
-            Excel::import(new \App\Imports\ProductImport, $request->file('file'));
+            $importer = new \App\Imports\ProductImport();
+            Excel::import($importer, $request->file('file'));
+            $summary = $importer->getSummary();
 
-            return redirect()
-                ->route('admin.products.index')
-                ->with('success', 'Produk dan resep BOM berhasil diimport!');
+            // Redirect back to index with preserved filters
+            return redirect(session('product_index_url', route('admin.products.index')))
+                ->with('success', $this->buildImportSuccessMessage($summary));
         } catch (\Throwable $e) {
-            return redirect()
-                ->route('admin.products.index')
+            return redirect(session('product_index_url', route('admin.products.index')))
                 ->with('error', 'Gagal import produk: ' . $e->getMessage());
         }
     }
@@ -45,13 +46,80 @@ class ProductController extends Controller
     /**
      * Tampilkan daftar produk
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category')
-            ->orderBy('name')
-            ->paginate(15);
+        // Save current URL for redirection after actions
+        session(['product_index_url' => $request->fullUrl()]);
+
+        $query = Product::with(['category', 'bomHeader']);
+
+        // Filter SKU
+        if ($request->filled('sku')) {
+            $query->where('sku', 'like', '%' . $request->sku . '%');
+        }
+
+        // Filter Name
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->category . '%');
+            });
+        }
+
+        // Filter Price (flexible search)
+        if ($request->filled('price')) {
+            $query->whereRaw("CAST(selling_price AS CHAR) LIKE ?", ['%' . $request->price . '%']);
+        }
+
+        // Filter Unit
+        if ($request->filled('unit')) {
+            $query->where('unit', 'like', '%' . $request->unit . '%');
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $isActive = $request->status === 'aktif';
+            $query->where('is_active', $isActive);
+        }
+
+        $products = $query->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('admin.products.index', compact('products'));
+    }
+
+    /**
+     * @param array{
+     *     mode: string,
+     *     processed_rows: int,
+     *     master_only_rows: int,
+     *     bom_rows: int,
+     *     unique_products: int,
+     *     unique_bundle_products: int
+     * } $summary
+     */
+    private function buildImportSuccessMessage(array $summary): string
+    {
+        $modeLabel = match ($summary['mode']) {
+            'bundle_only' => 'Import bundle-only terdeteksi',
+            'mixed' => 'Import campuran (master + bundle) terdeteksi',
+            default => 'Import master-only terdeteksi',
+        };
+
+        return sprintf(
+            '%s. Total baris: %d, baris master: %d, baris BOM: %d, produk unik: %d, bundle unik: %d.',
+            $modeLabel,
+            (int) $summary['processed_rows'],
+            (int) $summary['master_only_rows'],
+            (int) $summary['bom_rows'],
+            (int) $summary['unique_products'],
+            (int) $summary['unique_bundle_products']
+        );
     }
 
     /**
@@ -207,8 +275,8 @@ class ProductController extends Controller
                 ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
 
-        return redirect()
-            ->route('admin.products.index')
+        // Redirect back to index with preserved filters
+        return redirect(session('product_index_url', route('admin.products.index')))
             ->with('success', $isBundleMode ? 'Bundle dan BOM berhasil ditambahkan!' : 'Produk berhasil ditambahkan!');
     }
 
@@ -292,8 +360,8 @@ class ProductController extends Controller
 
         $product->update($data);
 
-        return redirect()
-            ->route('admin.products.index')
+        // Redirect back to index with preserved filters
+        return redirect(session('product_index_url', route('admin.products.index')))
             ->with('success', 'Produk berhasil diperbarui!');
     }
 
@@ -305,12 +373,11 @@ class ProductController extends Controller
         try {
             $product->delete();
 
-            return redirect()
-                ->route('admin.products.index')
+            // Redirect back to index with preserved filters
+            return redirect(session('product_index_url', route('admin.products.index')))
                 ->with('success', 'Produk berhasil dihapus!');
         } catch (\Exception $e) {
-            return redirect()
-                ->route('admin.products.index')
+            return redirect(session('product_index_url', route('admin.products.index')))
                 ->with('error', 'Gagal menghapus produk. Produk mungkin masih digunakan dalam transaksi.');
         }
     }
@@ -325,8 +392,8 @@ class ProductController extends Controller
         }
 
         return collect($outletIds)
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => is_numeric($id))
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
@@ -342,8 +409,8 @@ class ProductController extends Controller
         }
 
         return collect($userIds)
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => is_numeric($id))
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
@@ -431,7 +498,7 @@ class ProductController extends Controller
     private function calculateBundlePurchasePrice(Collection $components): float
     {
         $componentIds = $components->pluck('component_product_id')
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values();
 
@@ -451,4 +518,3 @@ class ProductController extends Controller
         });
     }
 }
-
