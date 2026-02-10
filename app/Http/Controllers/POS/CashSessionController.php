@@ -155,7 +155,7 @@ class CashSessionController extends Controller
      *   paymentStats: array<int, array{name: string, count: int, total: float}>,
      *   salesTypeStats: array<int, array{name: string, count: int, total: float}>,
      *   categoryStats: array<int, array{name: string, qty: float, total: float}>,
-     *   productStats: array<int, array{name: string, qty: float, total: float}>
+     *   productStats: array<int, array{name: string, sku: string, unit: string, qty: float, total: float}>
      * }
      */
     protected function buildSessionReportStats(CashSession $session): array
@@ -210,16 +210,27 @@ class CashSessionController extends Controller
                 $categoryStats[$categoryName]['qty'] += (float) $item->quantity;
                 $categoryStats[$categoryName]['total'] += (float) $item->subtotal;
 
-                $productKey = (string) ($item->product_id ?? strtolower((string) $item->product_name));
+                $productSku = trim((string) ($item->product_sku ?? ''));
                 $productName = (string) ($item->product_name ?? $item->product?->name ?? 'Item');
+                $productUnit = trim((string) ($item->product?->unit ?? ''));
+                $productKey = $productSku !== ''
+                    ? 'SKU:' . strtoupper($productSku)
+                    : (string) ($item->product_id ?? strtolower($productName));
 
                 if (!isset($productStats[$productKey])) {
                     $productStats[$productKey] = [
                         'name' => $productName,
+                        'sku' => $productSku,
+                        'unit' => $productUnit,
                         'qty' => 0,
                         'total' => 0,
                     ];
                 }
+
+                if ($productStats[$productKey]['unit'] === '' && $productUnit !== '') {
+                    $productStats[$productKey]['unit'] = $productUnit;
+                }
+
                 $productStats[$productKey]['qty'] += (float) $item->quantity;
                 $productStats[$productKey]['total'] += (float) $item->subtotal;
             }
@@ -232,7 +243,10 @@ class CashSessionController extends Controller
         $paymentStats = $sortByTotalDesc($paymentStats);
         $salesTypeStats = $sortByTotalDesc($salesTypeStats);
         $categoryStats = $sortByTotalDesc($categoryStats);
-        $productStats = collect($sortByTotalDesc($productStats))->take(10)->values()->all();
+        $productStats = collect($productStats)
+            ->sortBy(fn (array $item) => strtolower($item['name']))
+            ->values()
+            ->all();
 
         return compact('paymentStats', 'salesTypeStats', 'categoryStats', 'productStats');
     }

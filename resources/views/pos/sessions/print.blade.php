@@ -168,11 +168,15 @@
     <div class="divider"></div>
 
     <div class="section">
-        <div class="section-title">PER ITEM (TOP 10)</div>
+        <div class="section-title">PER ITEM (QTY KELUAR)</div>
         @forelse($productStats as $stat)
         <div class="row">
-            <span class="left">{{ $stat['name'] }} x{{ $formatQty($stat['qty']) }}</span>
-            <span class="right">{{ number_format($stat['total'], 0, ',', '.') }}</span>
+            <span class="left">
+                {{ ($stat['sku'] ?? '') !== '' ? '[' . $stat['sku'] . '] ' : '' }}{{ $stat['name'] }}
+            </span>
+            <span class="right">
+                {{ $formatQty($stat['qty']) }}{{ ($stat['unit'] ?? '') !== '' ? ' ' . $stat['unit'] : '' }}
+            </span>
         </div>
         @empty
         <div class="row muted">
@@ -180,6 +184,17 @@
             <span class="right">0</span>
         </div>
         @endforelse
+
+        @if(count($productStats) > 0)
+        <div class="row font-bold">
+            <span class="left">Total Qty Keluar</span>
+            <span class="right">{{ $formatQty(collect($productStats)->sum('qty')) }}</span>
+        </div>
+        <div class="row">
+            <span class="left">Jumlah Item/SKU</span>
+            <span class="right">{{ count($productStats) }}</span>
+        </div>
+        @endif
     </div>
 
     <div class="divider"></div>
