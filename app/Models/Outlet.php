@@ -84,6 +84,22 @@ class Outlet extends Model
     }
 
     /**
+     * Relasi ke bank accounts (akun kas/bank milik outlet)
+     */
+    public function bankAccounts(): HasMany
+    {
+        return $this->hasMany(\App\Models\CashAccount::class);
+    }
+
+    /**
+     * Helper: Get active bank accounts saja
+     */
+    public function activeBankAccounts(): HasMany
+    {
+        return $this->bankAccounts()->where('is_active', true);
+    }
+
+    /**
      * Scope: Hanya outlet aktif
      */
     public function scopeActive($query)

@@ -54,6 +54,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::post('cash-transactions', [\App\Http\Controllers\Admin\CashAccountController::class, 'storeTransaction'])->name('cash-transactions.store');
     Route::get('cash-accounts/{cashAccount}/mutation-report', [\App\Http\Controllers\Admin\CashAccountController::class, 'mutationReport'])->name('cash-accounts.mutation-report');
 
+    // Bank Transfers
+    Route::resource('bank-transfers', \App\Http\Controllers\Admin\BankTransferController::class)->only(['index', 'create', 'store', 'show']);
     // COA (Chart of Accounts)
     Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class);
 

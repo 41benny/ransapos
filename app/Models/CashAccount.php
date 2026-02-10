@@ -9,9 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CashAccount extends Model
 {
     protected $fillable = [
+        'outlet_id',
         'name',
         'code',
         'type',
+        'bank_name',
+        'account_number',
+        'account_holder',
+        'branch',
         'is_active',
         'opening_balance',
         'current_balance',
@@ -24,6 +29,30 @@ class CashAccount extends Model
         'opening_balance' => 'decimal:2',
         'current_balance' => 'decimal:2',
     ];
+
+    /**
+     * Relasi ke Outlet
+     */
+    public function outlet(): BelongsTo
+    {
+        return $this->belongsTo(Outlet::class);
+    }
+
+    /**
+     * Relasi ke transfers out (sebagai rekening sumber)
+     */
+    public function transfersOut(): HasMany
+    {
+        return $this->hasMany(BankTransfer::class, 'from_cash_account_id');
+    }
+
+    /**
+     * Relasi ke transfers in (sebagai rekening tujuan)
+     */
+    public function transfersIn(): HasMany
+    {
+        return $this->hasMany(BankTransfer::class, 'to_cash_account_id');
+    }
 
     /**
      * Relasi ke User (creator)
@@ -87,5 +116,13 @@ class CashAccount extends Model
     public function scopeBank($query)
     {
         return $query->where('type', 'bank');
+    }
+
+    /**
+     * Scope: Filter by outlet
+     */
+    public function scopeByOutlet($query, $outletId)
+    {
+        return $query->where('outlet_id', $outletId);
     }
 }

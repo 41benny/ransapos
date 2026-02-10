@@ -62,6 +62,26 @@
                     <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi akun</p>
                 </div>
 
+                <!-- Outlet -->
+                <div>
+                    <label for="outlet_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Outlet <span class="text-red-500">*</span>
+                    </label>
+                    <select id="outlet_id" name="outlet_id" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror"
+                            required>
+                        <option value="">-- Pilih Outlet --</option>
+                        @foreach(\App\Models\Outlet::active()->orderBy('name')->get() as $outlet)
+                            <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                {{ $outlet->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('outlet_id')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Jenis Akun -->
                 <div>
                     <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
@@ -78,6 +98,31 @@
                     @error('type')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- Bank Details (Conditional) -->
+                <div id="bank-details" style="display:none;" class="space-y-4 pl-4 border-l-2 border-indigo-200">
+                    <div>
+                        <label for="bank_name" class="block text-sm font-medium text-gray-700 mb-2">Nama Bank</label>
+                        <input type="text" id="bank_name" name="bank_name" value="{{ old('bank_name') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                               placeholder="Contoh: BCA, Mandiri, BRI">
+                    </div>
+                    <div>
+                        <label for="account_number" class="block text-sm font-medium text-gray-700 mb-2">Nomor Rekening</label>
+                        <input type="text" id="account_number" name="account_number" value="{{ old('account_number') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="account_holder" class="block text-sm font-medium text-gray-700 mb-2">Nama Pemegang Rekening</label>
+                        <input type="text" id="account_holder" name="account_holder" value="{{ old('account_holder') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="branch" class="block text-sm font-medium text-gray-700 mb-2">Cabang Bank (Opsional)</label>
+                        <input type="text" id="branch" name="branch" value="{{ old('branch') }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
                 </div>
 
                 <!-- Saldo Awal -->
@@ -146,5 +191,21 @@
         </form>
     </div>
 </div>
+
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const bankDetails = document.getElementById('bank-details');
+    if (this.value === 'bank') {
+        bankDetails.style.display = 'block';
+    } else {
+        bankDetails.style.display = 'none';
+    }
+});
+
+// Trigger on page load untuk old() values
+if (document.getElementById('type').value === 'bank') {
+    document.getElementById('bank-details').style.display = 'block';
+}
+</script>
 @endsection
 
