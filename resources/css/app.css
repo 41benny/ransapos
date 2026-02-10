@@ -108,14 +108,14 @@ body {
 }
 
 .btn-primary {
-  background: #ec4913;
+  background: linear-gradient(135deg, #ec4913 0%, #ea580c 50%, #c2410c 100%);
   color: white;
   border: none;
   box-shadow: 0 4px 6px -1px rgba(236, 73, 19, 0.2), 0 2px 4px -1px rgba(236, 73, 19, 0.1);
 }
 
 .btn-primary:hover {
-  background: #d54211;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 50%, #9a3412 100%);
   box-shadow: 0 10px 15px -3px rgba(236, 73, 19, 0.3), 0 4px 6px -2px rgba(236, 73, 19, 0.15);
   transform: translateY(-1px);
 }
