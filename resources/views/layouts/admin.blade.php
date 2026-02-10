@@ -169,7 +169,7 @@
                             $menuId = 'submenu-' . $index;
 
                             $baseClass = "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150 group cursor-pointer";
-                            $activeClass = "bg-white/10 text-white shadow-sm border border-white/5";
+                            $activeClass = "bg-primary text-white shadow-md border border-white/10 shadow-orange-900/20";
                             $inactiveClass = "text-slate-400 hover:text-white hover:bg-white/5";
 
                             $linkClass = $isActive ? "$baseClass $activeClass" : "$baseClass $inactiveClass";
@@ -190,7 +190,7 @@
                                         @php
                                             $isChildActive = $child['match'] ? request()->routeIs($child['match']) : false;
                                             $childClass = $isChildActive
-                                                ? 'block pl-11 pr-3 py-2 text-sm font-medium text-blue-400'
+                                                ? 'block pl-11 pr-3 py-2 text-sm font-medium text-primary'
                                                 : 'block pl-11 pr-3 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors';
                                         @endphp
                                         <a href="{{ route($child['route']) }}" class="{{ $childClass }} sidebar-text">
