@@ -101,20 +101,20 @@ class CashSessionController extends Controller
     /**
      * Cetak Laporan Shift (Thermal)
      */
-    public function print(CashSession $session)
+    public function print(CashSession $cashSession)
     {
         // Pastikan user punya akses ke session outlet ini
-        if ($session->outlet_id !== auth()->user()->outlet_id && !auth()->user()->hasRole(['admin', 'manager'])) {
+        if ($cashSession->outlet_id !== auth()->user()->outlet_id && !auth()->user()->hasRole(['admin', 'manager'])) {
             abort(403);
         }
 
-        $session->load(['outlet', 'user', 'sales' => function($q) {
+        $cashSession->load(['outlet', 'user', 'sales' => function($q) {
             $q->where('status', 'completed')->with(['payments.paymentMethod', 'items.product.category']);
         }]);
 
-        $stats = $this->buildSessionReportStats($session);
+        $stats = $this->buildSessionReportStats($cashSession);
 
-        return view('pos.sessions.print', array_merge(['session' => $session], $stats));
+        return view('pos.sessions.print', array_merge(['session' => $cashSession], $stats));
     }
 
     /**

@@ -47,10 +47,137 @@
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Server</p>
                         <p class="text-sm font-semibold text-gray-700">{{ auth()->user()->name }}</p>
                     </div>
+                    <div class="hidden xl:flex items-center gap-2">
+                        @if($activeSession)
+                            <span
+                                class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Shift Aktif #{{ $activeSession->id }}
+                            </span>
+
+                            <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                                title="Cetak Rekap Shift">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                            </a>
+
+                            <a href="{{ route('pos.sessions.close') }}"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 transition"
+                                title="Tutup Shift">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </a>
+                        @else
+                            <span
+                                class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                Shift Belum Dibuka
+                            </span>
+
+                            <a href="{{ route('pos.sessions.open') }}"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 transition"
+                                title="Buka Shift">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                            </a>
+                        @endif
+
+                        <a href="{{ route('pos.attendance.index') }}"
+                            class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 transition"
+                            title="Absensi">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+                            </svg>
+                        </a>
+
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 transition"
+                                title="Logout">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                     <div class="w-10 h-10 rounded-full bg-gray-200 p-0.5 border-2 border-white shadow-sm overflow-hidden">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=EF4444&color=fff"
                             alt="User" class="w-full h-full rounded-full object-cover">
                     </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions (Tablet) -->
+            <div
+                class="hidden md:flex xl:hidden flex-none px-6 py-3 bg-surface-light border-b border-gray-200 dark:border-red-900/30">
+                <div class="w-full flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    @if($activeSession)
+                        <span
+                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                            Shift Aktif #{{ $activeSession->id }}
+                        </span>
+
+                        <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            Rekap
+                        </a>
+
+                        <a href="{{ route('pos.sessions.close') }}"
+                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold transition shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Tutup Shift
+                        </a>
+                    @else
+                        <span
+                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                            Shift Belum Dibuka
+                        </span>
+
+                        <a href="{{ route('pos.sessions.open') }}"
+                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold transition shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            Buka Shift
+                        </a>
+                    @endif
+
+                    <a href="{{ route('pos.attendance.index') }}"
+                        class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold transition shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+                        </svg>
+                        Absensi
+                    </a>
+
+                    <form action="{{ route('logout') }}" method="POST" class="shrink-0">
+                        @csrf
+                        <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </div>
 
