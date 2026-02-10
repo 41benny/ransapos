@@ -373,17 +373,17 @@ body {
   font-weight: 500;
   border-radius: 0px;
   transition: all 0.15s;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #ec4913 0%, #ea580c 50%, #c2410c 100%);
   color: white;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 4px -1px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 4px -1px rgba(236, 73, 19, 0.2);
 }
 
 .imperial-btn:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 50%, #9a3412 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 6px -1px rgba(236, 73, 19, 0.3);
 }
 
 .imperial-btn-sm {
