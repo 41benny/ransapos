@@ -106,8 +106,8 @@ class Product extends Model
      * Relasi ke resep bundle (aktif maupun tidak).
      * Bundle disimpan sebagai source_type=bundle agar terpisah dari BOM produksi.
      */
-    public function bomHeader(): 
-    \Illuminate\Database\Eloquent\Relations\HasOne {
+    public function bomHeader(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
         return $this->hasOne(BomHeader::class, 'product_id')
             ->where('source_type', 'bundle');
     }
@@ -123,22 +123,64 @@ class Product extends Model
         }
 
         $allowedOutletIds = collect($this->pos_outlet_ids ?? [])
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->all();
 
         return in_array((int) $outletId, $allowedOutletIds, true);
     }
 
-    public function getPriceByLevel(string $priceLevel): float
+    /**
+     * Get price by level and outlet
+     * Supports both legacy format (numeric) and new format (object with default and outlets)
+     * 
+     * @param string $priceLevel  Level harga (regular, gofood, dll)
+     * @param int|null $outletId  ID outlet, jika null maka ambil default
+     * @return float
+     */
+    public function getPriceByLevelAndOutlet(string $priceLevel, ?int $outletId = null): float
     {
         $normalizedLevel = strtolower(trim($priceLevel));
         $priceMap = $this->price_levels ?? [];
 
-        if (array_key_exists($normalizedLevel, $priceMap) && $priceMap[$normalizedLevel] !== null) {
-            return (float) $priceMap[$normalizedLevel];
+        if (!array_key_exists($normalizedLevel, $priceMap)) {
+            return (float) $this->selling_price;
+        }
+
+        $levelData = $priceMap[$normalizedLevel];
+
+        // Backward compatible: jika masih format lama (number)
+        if (is_numeric($levelData)) {
+            return (float) $levelData;
+        }
+
+        // Format baru (object dengan default dan outlets)
+        if (is_array($levelData)) {
+            // Jika ada outlet_id dan ada harga khusus untuk outlet tersebut
+            if ($outletId && isset($levelData['outlets'][(string) $outletId])) {
+                $outletPrice = $levelData['outlets'][(string) $outletId];
+                if (is_numeric($outletPrice) && (float) $outletPrice > 0) {
+                    return (float) $outletPrice;
+                }
+            }
+
+            // Fallback ke default
+            if (isset($levelData['default']) && is_numeric($levelData['default'])) {
+                return (float) $levelData['default'];
+            }
         }
 
         return (float) $this->selling_price;
+    }
+
+    /**
+     * Get price by level (legacy method, maintains backward compatibility)
+     * 
+     * @param string $priceLevel
+     * @return float
+     */
+    public function getPriceByLevel(string $priceLevel): float
+    {
+        return $this->getPriceByLevelAndOutlet($priceLevel, null);
     }
 
     public function isAvailableForUser(?int $userId): bool
@@ -148,7 +190,7 @@ class Product extends Model
         }
 
         $allowedUserIds = collect($this->pos_user_ids ?? [])
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->all();
 
         return in_array((int) $userId, $allowedUserIds, true);

@@ -345,38 +345,154 @@
                         </div>
 
                         <div id="tab-pricing" class="bundle-tab-panel hidden">
-                            <div class="table-container">
-                                <table class="table-modern">
-                                    <thead>
-                                        <tr>
-                                            <th>Price Level</th>
-                                            <th>Harga Jual</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($priceLevels as $levelKey => $levelLabel)
-                                            <tr>
-                                                <td class="text-sm text-gray-700 font-medium">{{ $levelLabel }}</td>
-                                                <td class="p-2">
-                                                    <div class="flex max-w-xs">
-                                                        <span class="inline-flex items-center px-3 text-xs text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
-                                                        <input
-                                                            type="number"
-                                                            name="price_levels[{{ $levelKey }}]"
-                                                            value="{{ old('price_levels.' . $levelKey, $levelKey === 'regular' ? old('selling_price', 0) : '') }}"
-                                                            min="0"
-                                                            step="0.01"
-                                                            @if($levelKey === 'regular') required @endif
-                                                            class="form-input rounded-l-none flex-1 text-sm @if($levelKey === 'regular') bg-blue-50/20 border-blue-200 @endif"
-                                                            @if($levelKey === 'regular') id="price_level_regular" @endif
-                                                        >
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                            <!-- Info Banner -->
+                            <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    <i class="fas fa-info-circle text-blue-600 mr-1"></i>
+                                    <strong>Pengaturan Harga Per Outlet:</strong><br>
+                                    Pilih outlet yang ingin diatur harga khusus. Outlet yang tidak dipilih akan menggunakan harga default.
+                                </p>
                             </div>
+
+                            @foreach($priceLevels as $levelKey => $levelLabel)
+                                <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                                    <!-- Header Price Level -->
+                                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                        <h4 class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-tag text-gray-500 mr-2"></i>{{ $levelLabel }}
+                                        </h4>
+                                        <button 
+                                            type="button" 
+                                            class="text-xs text-blue-600 hover:text-blue-700 font-medium toggle-outlet-selection"
+                                            data-level="{{ $levelKey }}"
+                                        >
+                                            <i class="fas fa-store mr-1"></i>Pilih Outlet
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="p-4 space-y-4">
+                                        <!-- Harga Default -->
+                                        <div>
+                                            <label class="form-label text-xs font-semibold mb-2">
+                                                Harga Default 
+                                                @if($levelKey === 'regular')
+                                                    <span class="text-red-500">*</span>
+                                                    <span class="text-gray-400 font-normal">(wajib diisi)</span>
+                                                @endif
+                                            </label>
+                                            <div class="flex items-center gap-2 max-w-md">
+                                                <div class="flex flex-1">
+                                                    <span class="inline-flex items-center px-3 text-xs text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
+                                                    <input
+                                                        type="number"
+                                                        name="price_levels[{{ $levelKey }}][default]"
+                                                        value="{{ old('price_levels.' . $levelKey . '.default', $levelKey === 'regular' ? old('selling_price', 0) : '') }}"
+                                                        min="0"
+                                                        step="0.01"
+                                                        @if($levelKey === 'regular') required @endif
+                                                        class="form-input rounded-l-none flex-1 text-sm @if($levelKey === 'regular') bg-blue-50/30 border-blue-200 font-semibold @endif price-default-input"
+                                                        data-level="{{ $levelKey }}"
+                                                        placeholder="0"
+                                                    >
+                                                </div>
+                                                <button 
+                                                    type="button" 
+                                                    class="btn btn-secondary btn-sm copy-to-all-outlets-btn"
+                                                    data-level="{{ $levelKey }}"
+                                                    title="Salin harga default ke semua outlet yang dipilih"
+                                                >
+                                                    <i class="fas fa-copy mr-1"></i>Copy ke Semua
+                                                </button>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1.5">
+                                                <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+                                                Digunakan untuk outlet yang tidak punya harga khusus
+                                            </p>
+                                        </div>
+
+                                        <!-- Outlet Selection Accordion -->
+                                        <div class="outlet-selection-section hidden" data-level="{{ $levelKey }}">
+                                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                                <!-- Outlet Selection Header -->
+                                                <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fas fa-store text-gray-500 text-xs"></i>
+                                                        <span class="text-xs font-semibold text-gray-700">Harga Khusus Per Outlet</span>
+                                                        <span class="outlet-selected-count badge badge-sm bg-gray-100 text-gray-500" data-level="{{ $levelKey }}">0 dipilih</span>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <button 
+                                                            type="button" 
+                                                            class="text-xs text-blue-600 hover:text-blue-700 select-all-outlets"
+                                                            data-level="{{ $levelKey }}"
+                                                        >
+                                                            Pilih Semua
+                                                        </button>
+                                                        <span class="text-gray-300">|</span>
+                                                        <button 
+                                                            type="button" 
+                                                            class="text-xs text-gray-600 hover:text-gray-700 deselect-all-outlets"
+                                                            data-level="{{ $levelKey }}"
+                                                        >
+                                                            Batal Semua
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Outlet List with Checkboxes -->
+                                                <div class="max-h-64 overflow-y-auto">
+                                                    @foreach($outlets as $outlet)
+                                                        <div class="outlet-price-row border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors" data-outlet-id="{{ $outlet->id }}" data-level="{{ $levelKey }}">
+                                                            <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    class="outlet-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                                    data-level="{{ $levelKey }}"
+                                                                    data-outlet-id="{{ $outlet->id }}"
+                                                                >
+                                                                <div class="flex-1 flex items-center justify-between gap-3">
+                                                                    <span class="text-sm text-gray-700 font-medium">{{ $outlet->name }}</span>
+                                                                    <div class="flex items-center gap-2 outlet-price-input-wrapper hidden">
+                                                                        <div class="flex items-center">
+                                                                            <span class="inline-flex items-center px-2 text-xs text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
+                                                                            <input
+                                                                                type="number"
+                                                                                name="price_levels[{{ $levelKey }}][outlets][{{ $outlet->id }}]"
+                                                                                value="{{ old('price_levels.' . $levelKey . '.outlets.' . $outlet->id, '') }}"
+                                                                                min="0"
+                                                                                step="0.01"
+                                                                                placeholder="0"
+                                                                                class="form-input rounded-l-none text-sm w-32 outlet-price-input"
+                                                                                data-level="{{ $levelKey }}"
+                                                                                data-outlet-id="{{ $outlet->id }}"
+                                                                                disabled
+                                                                            >
+                                                                        </div>
+                                                                        <button 
+                                                                            type="button" 
+                                                                            class="text-xs text-gray-400 hover:text-blue-600 copy-from-default-btn"
+                                                                            data-level="{{ $levelKey }}"
+                                                                            data-outlet-id="{{ $outlet->id }}"
+                                                                            title="Salin dari harga default"
+                                                                        >
+                                                                            <i class="fas fa-arrow-left"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                                    @endforeach
+                                                </div>
+                                            </div>
+
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
+                                                Centang outlet untuk mengatur harga khusus. Kosongkan input untuk menggunakan harga default.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
 
                         <div id="tab-extra" class="bundle-tab-panel hidden">
@@ -612,18 +728,18 @@
         refreshSelectionTexts();
         refreshAvailabilitySections();
 
-        // Price Sync
+        // Price Sync between selling_price and price_levels[regular][default]
         const sellingPriceInput = document.getElementById('selling_price');
-        const regularPriceInput = document.getElementById('price_level_regular');
+        const regularPriceDefaultInput = document.querySelector('input[name="price_levels[regular][default]"]');
 
         function syncPrice(from, to) {
             if (!from || !to) return;
             to.value = from.value;
         }
 
-        if (sellingPriceInput && regularPriceInput) {
-            sellingPriceInput.addEventListener('input', () => syncPrice(sellingPriceInput, regularPriceInput));
-            regularPriceInput.addEventListener('input', () => syncPrice(regularPriceInput, sellingPriceInput));
+        if (sellingPriceInput && regularPriceDefaultInput) {
+            sellingPriceInput.addEventListener('input', () => syncPrice(sellingPriceInput, regularPriceDefaultInput));
+            regularPriceDefaultInput.addEventListener('input', () => syncPrice(regularPriceDefaultInput, sellingPriceInput));
         }
 
         // Dynamic Component Rows
@@ -739,6 +855,197 @@
             removeBtn.closest('.component-row').remove();
             recalculateComponentCosts();
         });
+
+        // ============================================
+        // OUTLET-SPECIFIC PRICING LOGIC
+        // ============================================
+        
+        // Toggle outlet selection section
+        document.querySelectorAll('.toggle-outlet-selection').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const level = this.dataset.level;
+                const section = document.querySelector(`.outlet-selection-section[data-level="${level}"]`);
+                
+                if (section) {
+                    section.classList.toggle('hidden');
+                    const icon = this.querySelector('i');
+                    if (section.classList.contains('hidden')) {
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-store');
+                        this.innerHTML = '<i class="fas fa-store mr-1"></i>Pilih Outlet';
+                    } else {
+                        icon.classList.remove('fa-store');
+                        icon.classList.add('fa-chevron-up');
+                        this.innerHTML = '<i class="fas fa-chevron-up mr-1"></i>Sembunyikan';
+                    }
+                }
+            });
+        });
+
+        // Handle outlet checkbox change
+        document.querySelectorAll('.outlet-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const level = this.dataset.level;
+                const outletId = this.dataset.outletId;
+                const row = this.closest('.outlet-price-row');
+                const inputWrapper = row.querySelector('.outlet-price-input-wrapper');
+                const priceInput = row.querySelector('.outlet-price-input');
+
+                if (this.checked) {
+                    // Show input when checked
+                    inputWrapper.classList.remove('hidden');
+                    priceInput.disabled = false;
+                    priceInput.focus();
+                } else {
+                    // Hide input and clear value when unchecked
+                    inputWrapper.classList.add('hidden');
+                    priceInput.disabled = true;
+                    priceInput.value = '';
+                }
+
+                updateOutletSelectedCount(level);
+            });
+        });
+
+        // Select all outlets for a price level
+        document.querySelectorAll('.select-all-outlets').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const level = this.dataset.level;
+                document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        });
+
+        // Deselect all outlets for a price level
+        document.querySelectorAll('.deselect-all-outlets').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const level = this.dataset.level;
+                document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
+                    if (checkbox.checked) {
+                        checkbox.checked = false;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        });
+
+        // Copy default price to all selected outlets
+        document.querySelectorAll('.copy-to-all-outlets-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const level = this.dataset.level;
+                const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
+                const defaultPrice = defaultInput ? defaultInput.value : '';
+
+                if (!defaultPrice || parseFloat(defaultPrice) <= 0) {
+                    alert('Harap isi harga default terlebih dahulu.');
+                    return;
+                }
+
+                let copiedCount = 0;
+                document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]:checked`).forEach(checkbox => {
+                    const outletId = checkbox.dataset.outletId;
+                    const priceInput = document.querySelector(`.outlet-price-input[data-level="${level}"][data-outlet-id="${outletId}"]`);
+                    if (priceInput) {
+                        priceInput.value = defaultPrice;
+                        copiedCount++;
+                    }
+                });
+
+                if (copiedCount > 0) {
+                    showToast(`Harga berhasil disalin ke ${copiedCount} outlet`, 'success');
+                } else {
+                    alert('Tidak ada outlet yang dipilih. Centang outlet terlebih dahulu.');
+                }
+            });
+        });
+
+        // Copy from default price (individual outlet)
+        document.querySelectorAll('.copy-from-default-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const level = this.dataset.level;
+                const outletId = this.dataset.outletId;
+                const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
+                const priceInput = document.querySelector(`.outlet-price-input[data-level="${level}"][data-outlet-id="${outletId}"]`);
+
+                if (defaultInput && priceInput) {
+                    const defaultPrice = defaultInput.value;
+                    if (defaultPrice && parseFloat(defaultPrice) > 0) {
+                        priceInput.value = defaultPrice;
+                        showToast('Harga disalin dari default', 'success');
+                    } else {
+                        alert('Harga default belum diisi.');
+                    }
+                }
+            });
+        });
+
+        // Update selected outlet count
+        function updateOutletSelectedCount(level) {
+            const count = document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]:checked`).length;
+            const badge = document.querySelector(`.outlet-selected-count[data-level="${level}"]`);
+            if (badge) {
+                badge.textContent = `${count} dipilih`;
+                badge.classList.toggle('bg-blue-100', count > 0);
+                badge.classList.toggle('text-blue-700', count > 0);
+                badge.classList.toggle('bg-gray-100', count === 0);
+                badge.classList.toggle('text-gray-500', count === 0);
+            }
+        }
+
+        // Initialize counts
+        document.querySelectorAll('.outlet-selected-count').forEach(badge => {
+            const level = badge.dataset.level;
+            updateOutletSelectedCount(level);
+        });
+
+        // Toast notification helper
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white text-sm font-medium`;
+            toast.style.animation = 'slideInRight 0.3s ease';
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Restore checked state from old values on page load (if there's validation error)
+        @if(old('price_levels'))
+            @foreach($priceLevels as $levelKey => $levelLabel)
+                @php
+                    $oldOutletPrices = old('price_levels.' . $levelKey . '.outlets', []);
+                @endphp
+                @if(!empty($oldOutletPrices) && is_array($oldOutletPrices))
+                    @foreach($oldOutletPrices as $outletId => $price)
+                        @if($price)
+                            (() => {
+                                const checkbox = document.querySelector(`.outlet-checkbox[data-level="{{ $levelKey }}"][data-outlet-id="{{ $outletId }}"]`);
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    checkbox.dispatchEvent(new Event('change'));
+                                }
+                            })();
+                        @endif
+                    @endforeach
+                @endif
+            @endforeach
+        @endif
 
         const form = document.getElementById('bundleForm');
         form.addEventListener('submit', function (event) {

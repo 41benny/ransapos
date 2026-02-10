@@ -213,7 +213,9 @@ class ProductController extends Controller
             $data['pos_user_ids'] = null;
         }
 
-        $data['selling_price'] = $data['price_levels']['regular'];
+        // Extract selling_price from regular level (could be number or array with 'default')
+        $regularPrice = $data['price_levels']['regular'];
+        $data['selling_price'] = is_array($regularPrice) ? $regularPrice['default'] : $regularPrice;
         $components = collect();
 
         if ($isBundleMode) {
@@ -349,7 +351,9 @@ class ProductController extends Controller
             $data['pos_user_ids'] = null;
         }
 
-        $data['selling_price'] = $data['price_levels']['regular'];
+        // Extract selling_price from regular level (could be number or array with 'default')
+        $regularPrice = $data['price_levels']['regular'];
+        $data['selling_price'] = is_array($regularPrice) ? $regularPrice['default'] : $regularPrice;
 
         if ($request->hasFile('image')) {
             $newImagePath = $request->file('image')->store('products', 'public');
@@ -419,9 +423,11 @@ class ProductController extends Controller
 
     /**
      * Bentuk map harga berdasarkan level.
+     * Mendukung format lama (numeric) dan format baru (dengan default + outlets)
      *
      * @param array<string, mixed> $priceLevels
-     * @return array<string, float>
+     * @param float $fallbackRegularPrice
+     * @return array<string, float|array>
      */
     private function normalizePriceLevels(array $priceLevels, float $fallbackRegularPrice): array
     {
@@ -430,15 +436,59 @@ class ProductController extends Controller
 
         foreach ($definedLevels as $level) {
             $rawValue = $priceLevels[$level] ?? null;
+
             if ($rawValue === '' || $rawValue === null) {
                 continue;
             }
 
-            $normalized[$level] = (float) $rawValue;
+            // Case 1: Simple numeric input (backward compatible - dari form lama)
+            if (is_numeric($rawValue)) {
+                $normalized[$level] = (float) $rawValue;
+                continue;
+            }
+
+            // Case 2: Array dengan 'default' dan possibly 'outlets'
+            if (is_array($rawValue)) {
+                $defaultPrice = isset($rawValue['default']) && is_numeric($rawValue['default'])
+                    ? (float) $rawValue['default']
+                    : 0;
+
+                // Kumpulkan outlet-specific prices
+                $outletPrices = [];
+                if (isset($rawValue['outlets']) && is_array($rawValue['outlets'])) {
+                    foreach ($rawValue['outlets'] as $outletId => $price) {
+                        // Hanya simpan jika price ada dan > 0
+                        if (is_numeric($price) && (float) $price > 0) {
+                            $outletPrices[(string) $outletId] = (float) $price;
+                        }
+                    }
+                }
+
+                // Jika tidak ada outlet-specific prices, simpan sebagai number saja (backward compatible)
+                if (empty($outletPrices)) {
+                    $normalized[$level] = $defaultPrice;
+                } else {
+                    // Simpan dengan struktur lengkap
+                    $normalized[$level] = [
+                        'default' => $defaultPrice,
+                        'outlets' => $outletPrices,
+                    ];
+                }
+                continue;
+            }
         }
 
-        $regularPrice = $normalized['regular'] ?? $fallbackRegularPrice;
-        $normalized['regular'] = max(0, (float) $regularPrice);
+        // Pastikan 'regular' selalu ada
+        if (!isset($normalized['regular'])) {
+            $normalized['regular'] = $fallbackRegularPrice;
+        } elseif (is_array($normalized['regular'])) {
+            // Jika regular berbentuk array, pastikan default tidak 0
+            if (!isset($normalized['regular']['default']) || $normalized['regular']['default'] <= 0) {
+                $normalized['regular']['default'] = $fallbackRegularPrice;
+            }
+        } elseif ((float) $normalized['regular'] <= 0) {
+            $normalized['regular'] = $fallbackRegularPrice;
+        }
 
         return $normalized;
     }

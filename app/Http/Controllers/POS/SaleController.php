@@ -34,7 +34,7 @@ class SaleController extends Controller
         $currentUserId = auth()->id();
 
         $categories = ProductCategory::where('is_active', true)
-            ->with(['products' => function($query) {
+            ->with(['products' => function ($query) {
                 $query->where('is_active', true)
                     ->where('is_sellable', true)
                     ->where('is_pos_available', true)
@@ -44,20 +44,25 @@ class SaleController extends Controller
             ->get()
             ->map(function (ProductCategory $category) use ($currentOutletId, $currentUserId, $priceLevels) {
                 $products = $category->products
-                    ->filter(fn (Product $product) => $product->isAvailableForOutlet($currentOutletId) && $product->isAvailableForUser($currentUserId))
-                    ->map(function (Product $product) use ($priceLevels) {
-                        $rawPriceLevels = $product->price_levels ?? [];
+                    ->filter(fn(Product $product) => $product->isAvailableForOutlet($currentOutletId) && $product->isAvailableForUser($currentUserId))
+                    ->map(function (Product $product) use ($priceLevels, $currentOutletId) {
                         $normalizedPriceLevels = [];
 
                         foreach (array_keys($priceLevels) as $levelKey) {
-                            if (!array_key_exists($levelKey, $rawPriceLevels) || $rawPriceLevels[$levelKey] === null || $rawPriceLevels[$levelKey] === '') {
-                                continue;
-                            }
+                            // Use getPriceByLevelAndOutlet to get outlet-specific price
+                            $price = $product->getPriceByLevelAndOutlet($levelKey, $currentOutletId);
 
-                            $normalizedPriceLevels[$levelKey] = (float) $rawPriceLevels[$levelKey];
+                            // Only include if price is valid
+                            if ($price > 0) {
+                                $normalizedPriceLevels[$levelKey] = $price;
+                            }
                         }
 
-                        $normalizedPriceLevels['regular'] = (float) ($normalizedPriceLevels['regular'] ?? $product->selling_price);
+                        // Ensure 'regular' always exists
+                        if (!isset($normalizedPriceLevels['regular'])) {
+                            $normalizedPriceLevels['regular'] = (float) $product->selling_price;
+                        }
+
                         $product->setAttribute('price_levels', $normalizedPriceLevels);
                         $product->setAttribute('selling_price', $normalizedPriceLevels['regular']);
 
@@ -69,7 +74,7 @@ class SaleController extends Controller
 
                 return $category;
             })
-            ->filter(fn (ProductCategory $category) => $category->products->isNotEmpty())
+            ->filter(fn(ProductCategory $category) => $category->products->isNotEmpty())
             ->values();
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
@@ -88,7 +93,7 @@ class SaleController extends Controller
                     'member_tier' => $c->member_tier,
                 ];
             });
-        
+
         // Ambil cash session aktif untuk user yang login
         $activeSession = CashSession::where('status', 'open')
             ->where('user_id', auth()->id())
@@ -126,7 +131,6 @@ class SaleController extends Controller
                     'total_amount' => $sale->total_amount,
                 ],
             ], 201);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
