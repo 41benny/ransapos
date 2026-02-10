@@ -26,7 +26,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Akun</label>
                         <select name="cash_account_id"
-                            class="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                             <option value="">Semua Akun</option>
                             @foreach($accounts as $account)
                                 <option value="{{ $account->id }}" {{ request('cash_account_id') == $account->id ? 'selected' : '' }}>
@@ -39,7 +39,7 @@
                     <!-- Jenis -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Jenis</label>
-                        <select name="type" class="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                        <select name="type" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                             <option value="">Semua</option>
                             <option value="in" {{ request('type') == 'in' ? 'selected' : '' }}>Masuk</option>
                             <option value="out" {{ request('type') == 'out' ? 'selected' : '' }}>Keluar</option>

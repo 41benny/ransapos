@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\POS\OpenCashSessionRequest;
 use App\Http\Requests\POS\CloseCashSessionRequest;
 use App\Models\CashSession;
-use App\Models\Outlet;
 use App\Services\CashSessionService;
 use Exception;
 
@@ -110,27 +109,12 @@ class CashSessionController extends Controller
         }
 
         $session->load(['outlet', 'user', 'sales' => function($q) {
-            $q->where('status', 'completed')->with('payments.paymentMethod');
+            $q->where('status', 'completed')->with(['payments.paymentMethod', 'items.product.category']);
         }]);
 
-        // Calculate Stats (Sama logicnya)
-        $paymentStats = [];
-        foreach ($session->sales as $sale) {
-            foreach ($sale->payments as $payment) {
-                $methodName = $payment->paymentMethod->name ?? 'Unknown';
-                if (!isset($paymentStats[$methodName])) {
-                    $paymentStats[$methodName] = [
-                        'name' => $methodName,
-                        'count' => 0,
-                        'total' => 0
-                    ];
-                }
-                $paymentStats[$methodName]['count']++;
-                $paymentStats[$methodName]['total'] += $payment->amount;
-            }
-        }
+        $stats = $this->buildSessionReportStats($session);
 
-        return view('pos.sessions.print', compact('session', 'paymentStats'));
+        return view('pos.sessions.print', array_merge(['session' => $session], $stats));
     }
 
     /**
@@ -162,5 +146,94 @@ class CashSessionController extends Controller
                 ->withInput()
                 ->with('error', 'Gagal menutup shift: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Bangun data ringkasan laporan shift untuk print thermal.
+     *
+     * @return array{
+     *   paymentStats: array<int, array{name: string, count: int, total: float}>,
+     *   salesTypeStats: array<int, array{name: string, count: int, total: float}>,
+     *   categoryStats: array<int, array{name: string, qty: float, total: float}>,
+     *   productStats: array<int, array{name: string, qty: float, total: float}>
+     * }
+     */
+    protected function buildSessionReportStats(CashSession $session): array
+    {
+        $salesTypeLabels = config('sales.price_levels', []);
+
+        $paymentStats = [];
+        $salesTypeStats = [];
+        $categoryStats = [];
+        $productStats = [];
+
+        foreach ($session->sales as $sale) {
+            $rawSalesType = strtolower(trim((string) ($sale->sales_type ?? '')));
+            $salesTypeKey = $rawSalesType !== '' ? $rawSalesType : 'regular';
+            $salesTypeName = $salesTypeLabels[$salesTypeKey] ?? ucfirst(str_replace('_', ' ', $salesTypeKey));
+
+            if (!isset($salesTypeStats[$salesTypeKey])) {
+                $salesTypeStats[$salesTypeKey] = [
+                    'name' => $salesTypeName,
+                    'count' => 0,
+                    'total' => 0,
+                ];
+            }
+            $salesTypeStats[$salesTypeKey]['count']++;
+            $salesTypeStats[$salesTypeKey]['total'] += (float) $sale->total_amount;
+
+            foreach ($sale->payments as $payment) {
+                $methodName = $payment->paymentMethod->name ?? 'Unknown';
+
+                if (!isset($paymentStats[$methodName])) {
+                    $paymentStats[$methodName] = [
+                        'name' => $methodName,
+                        'count' => 0,
+                        'total' => 0,
+                    ];
+                }
+
+                $paymentStats[$methodName]['count']++;
+                $paymentStats[$methodName]['total'] += (float) $payment->amount;
+            }
+
+            foreach ($sale->items as $item) {
+                $categoryName = $item->product?->category?->name ?? 'Tanpa Kategori';
+
+                if (!isset($categoryStats[$categoryName])) {
+                    $categoryStats[$categoryName] = [
+                        'name' => $categoryName,
+                        'qty' => 0,
+                        'total' => 0,
+                    ];
+                }
+                $categoryStats[$categoryName]['qty'] += (float) $item->quantity;
+                $categoryStats[$categoryName]['total'] += (float) $item->subtotal;
+
+                $productKey = (string) ($item->product_id ?? strtolower((string) $item->product_name));
+                $productName = (string) ($item->product_name ?? $item->product?->name ?? 'Item');
+
+                if (!isset($productStats[$productKey])) {
+                    $productStats[$productKey] = [
+                        'name' => $productName,
+                        'qty' => 0,
+                        'total' => 0,
+                    ];
+                }
+                $productStats[$productKey]['qty'] += (float) $item->quantity;
+                $productStats[$productKey]['total'] += (float) $item->subtotal;
+            }
+        }
+
+        $sortByTotalDesc = static function (array $stats): array {
+            return collect($stats)->sortByDesc('total')->values()->all();
+        };
+
+        $paymentStats = $sortByTotalDesc($paymentStats);
+        $salesTypeStats = $sortByTotalDesc($salesTypeStats);
+        $categoryStats = $sortByTotalDesc($categoryStats);
+        $productStats = collect($sortByTotalDesc($productStats))->take(10)->values()->all();
+
+        return compact('paymentStats', 'salesTypeStats', 'categoryStats', 'productStats');
     }
 }

@@ -49,7 +49,7 @@
                 <!-- Filter Form -->
                 <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <select name="outlet_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="outlet_id" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <option value="">Semua Outlet</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
                         </select>
                     </div>
                     <div>
-                        <select name="supplier_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="supplier_id" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <option value="">Semua Supplier</option>
                             @foreach($suppliers as $supplier)
                                 <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
@@ -69,7 +69,7 @@
                         </select>
                     </div>
                     <div>
-                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <select name="status" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <option value="">Semua Status</option>
                             <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Diterima</option>
@@ -79,9 +79,9 @@
                     </div>
                     <div class="flex space-x-2">
                         <button type="submit"
-                            class="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg text-sm shadow-md hover:shadow-lg">Filter</button>
+                            class="flex-1 btn btn-primary h-9 justify-center">Filter</button>
                         <a href="{{ route('admin.purchases.index') }}"
-                            class="px-4 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg text-sm hover:bg-amber-50">Reset</a>
+                            class="btn btn-secondary h-9 justify-center">Reset</a>
                     </div>
                 </form>
             </div>
