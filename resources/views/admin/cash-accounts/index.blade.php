@@ -184,30 +184,35 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
+                                                {{-- Detail --}}
                                                 <a href="{{ route('admin.cash-accounts.show', $account) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900 border border-indigo-200 hover:bg-indigo-50 rounded-md p-2 transition-colors"
+                                                    class="group flex items-center justify-center w-8 h-8 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
                                                     title="Detail">
-                                                    <i class="fas fa-eye text-lg"></i>
+                                                    <i class="fas fa-eye text-sm"></i>
                                                 </a>
+                                                {{-- Mutasi --}}
                                                 <a href="{{ route('admin.cash-accounts.mutation-report', $account) }}"
-                                                    class="text-teal-600 hover:text-teal-900 border border-teal-200 hover:bg-teal-50 rounded-md p-2 transition-colors"
+                                                    class="group flex items-center justify-center w-8 h-8 text-teal-500 bg-teal-50 hover:bg-teal-100 hover:text-teal-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
                                                     title="Laporan Mutasi">
-                                                    <i class="fas fa-list-ul text-lg"></i>
+                                                    <i class="fas fa-list-ul text-sm"></i>
                                                 </a>
+                                                {{-- Edit --}}
                                                 <a href="{{ route('admin.cash-accounts.edit', $account) }}"
-                                                    class="text-amber-600 hover:text-amber-900 border border-amber-200 hover:bg-amber-50 rounded-md p-2 transition-colors"
+                                                    class="group flex items-center justify-center w-8 h-8 text-amber-500 bg-amber-50 hover:bg-amber-100 hover:text-amber-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
                                                     title="Edit">
-                                                    <i class="fas fa-edit text-lg"></i>
+                                                    <i class="fas fa-edit text-sm"></i>
                                                 </a>
 
+                                                {{-- Hapus --}}
                                                 <form action="{{ route('admin.cash-accounts.destroy', $account) }}" method="POST"
                                                     class="inline-block"
                                                     onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini? Tindakan ini tidak bisa dibatalkan.');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 border border-red-200 hover:bg-red-50 rounded-md p-2 transition-colors"
+                                                    <button type="submit" 
+                                                        class="group flex items-center justify-center w-8 h-8 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
                                                         title="Hapus Akun">
-                                                        <i class="fas fa-trash-alt text-lg"></i>
+                                                        <i class="fas fa-trash-alt text-sm"></i>
                                                     </button>
                                                 </form>
                                             </div>
