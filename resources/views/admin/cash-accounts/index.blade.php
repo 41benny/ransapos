@@ -185,20 +185,29 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
                                                 <a href="{{ route('admin.cash-accounts.show', $account) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900">Detail</a>
+                                                    class="text-indigo-600 hover:text-indigo-900 border border-indigo-200 hover:bg-indigo-50 rounded-md p-2 transition-colors"
+                                                    title="Detail">
+                                                    <i class="fas fa-eye text-lg"></i>
+                                                </a>
                                                 <a href="{{ route('admin.cash-accounts.mutation-report', $account) }}"
-                                                    class="text-blue-600 hover:text-blue-900">Mutasi</a>
+                                                    class="text-teal-600 hover:text-teal-900 border border-teal-200 hover:bg-teal-50 rounded-md p-2 transition-colors"
+                                                    title="Laporan Mutasi">
+                                                    <i class="fas fa-list-ul text-lg"></i>
+                                                </a>
                                                 <a href="{{ route('admin.cash-accounts.edit', $account) }}"
-                                                    class="text-yellow-600 hover:text-yellow-900">Edit</a>
+                                                    class="text-amber-600 hover:text-amber-900 border border-amber-200 hover:bg-amber-50 rounded-md p-2 transition-colors"
+                                                    title="Edit">
+                                                    <i class="fas fa-edit text-lg"></i>
+                                                </a>
 
                                                 <form action="{{ route('admin.cash-accounts.destroy', $account) }}" method="POST"
                                                     class="inline-block"
                                                     onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini? Tindakan ini tidak bisa dibatalkan.');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900"
+                                                    <button type="submit" class="text-red-600 hover:text-red-900 border border-red-200 hover:bg-red-50 rounded-md p-2 transition-colors"
                                                         title="Hapus Akun">
-                                                        Hapus
+                                                        <i class="fas fa-trash-alt text-lg"></i>
                                                     </button>
                                                 </form>
                                             </div>
