@@ -140,16 +140,32 @@ class UserController extends Controller
      */
     public function setAttendancePin(Request $request, User $user)
     {
-        $request->validate([
-            'pin' => 'required|numeric|digits:6'
+        $validated = $request->validateWithBag('setPin', [
+            'pin' => ['required', 'digits:6', 'regex:/^[0-9]{6}$/'],
         ], [
             'pin.required' => 'PIN wajib diisi',
-            'pin.numeric' => 'PIN harus berupa angka',
-            'pin.digits' => 'PIN harus 6 digit'
+            'pin.digits' => 'PIN harus 6 digit',
+            'pin.regex' => 'PIN harus 6 digit angka',
         ]);
 
+        $pin = $validated['pin'];
+
+        $duplicateUser = User::query()
+            ->whereKeyNot($user->id)
+            ->whereNotNull('attendance_pin')
+            ->get(['id', 'name', 'attendance_pin'])
+            ->first(function (User $otherUser) use ($pin) {
+                return Hash::check($pin, $otherUser->attendance_pin);
+            });
+
+        if ($duplicateUser) {
+            return back()->withErrors([
+                'pin' => "PIN sudah dipakai oleh {$duplicateUser->name}. Gunakan PIN lain.",
+            ], 'setPin');
+        }
+
         $user->update([
-            'attendance_pin' => Hash::make($request->pin)
+            'attendance_pin' => Hash::make($pin),
         ]);
 
         return back()->with('success', "PIN absensi berhasil diset untuk {$user->name}");

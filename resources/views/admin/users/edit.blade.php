@@ -152,5 +152,128 @@
             </div>
         </div>
     </form>
+
+    @if(session('success'))
+        <div class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <form action="{{ route('admin.users.set-pin', $user) }}" method="POST" class="mt-6">
+        @csrf
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">PIN Absensi</h3>
+                        <p class="text-sm text-gray-500 mt-1">Set PIN 6 digit unik untuk absensi karyawan.</p>
+                    </div>
+                    <span class="text-xs px-2.5 py-1 rounded-full {{ $user->attendance_pin ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                        {{ $user->attendance_pin ? 'PIN sudah diset' : 'PIN belum diset' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="attendance_pin" class="block text-sm font-medium text-gray-700 mb-2">
+                        PIN 6 Digit <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input
+                            type="text"
+                            name="pin"
+                            id="attendance_pin"
+                            inputmode="numeric"
+                            pattern="[0-9]{6}"
+                            maxlength="6"
+                            autocomplete="off"
+                            value="{{ old('pin') }}"
+                            class="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('pin', 'setPin') border-red-500 @enderror"
+                            placeholder="Contoh: 482913"
+                            required
+                        >
+                        <button
+                            type="button"
+                            id="generateAttendancePin"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium"
+                        >
+                            Generate PIN
+                        </button>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">
+                        PIN tidak ditampilkan lagi setelah disimpan. Salin manual dari kolom ini sebelum klik Simpan PIN.
+                    </p>
+                    @error('pin', 'setPin')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 flex items-center justify-end">
+                <button
+                    type="submit"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                >
+                    Simpan PIN
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const pinInput = document.getElementById('attendance_pin');
+        const generateButton = document.getElementById('generateAttendancePin');
+
+        if (!pinInput || !generateButton) {
+            return;
+        }
+
+        const blockedPins = new Set([
+            '000000', '111111', '222222', '333333', '444444',
+            '555555', '666666', '777777', '888888', '999999',
+            '123456', '654321'
+        ]);
+
+        function isSequential(pin) {
+            let asc = true;
+            let desc = true;
+
+            for (let i = 1; i < pin.length; i++) {
+                const prev = Number(pin[i - 1]);
+                const current = Number(pin[i]);
+                if (current !== prev + 1) {
+                    asc = false;
+                }
+                if (current !== prev - 1) {
+                    desc = false;
+                }
+            }
+
+            return asc || desc;
+        }
+
+        function generatePin() {
+            for (let i = 0; i < 200; i++) {
+                const candidate = String(Math.floor(100000 + Math.random() * 900000));
+                if (!blockedPins.has(candidate) && !isSequential(candidate)) {
+                    return candidate;
+                }
+            }
+
+            return String(Math.floor(100000 + Math.random() * 900000));
+        }
+
+        generateButton.addEventListener('click', function () {
+            pinInput.value = generatePin();
+            pinInput.focus();
+            pinInput.select();
+        });
+    });
+</script>
+@endpush
