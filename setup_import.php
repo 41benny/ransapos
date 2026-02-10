@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use App\Models\Product;
 
 // 1. EXECUTE RESET SQL (Driver Aware + Robust)
@@ -104,14 +105,26 @@ try {
     }
 
     // Add Instructions / Comments
-    $sheet->getComment('A1')->getText()->createTextRun("Wajib diisi\nContoh: Kopi Susu");
-    $sheet->getComment('B1')->getText()->createTextRun("Opsional\nJika kosong, akan auto-generate.\nKhusus baris BOM: SKU wajib diisi.");
-    $sheet->getComment('C1')->getText()->createTextRun("Contoh: Minuman, Makanan, Bahan Baku");
-    $sheet->getComment('D1')->getText()->createTextRun("PENTING! Isi dengan:\n- 'bahan' (untuk bahan baku)\n- 'produk' (untuk dijual)\n- 'bundle' (untuk menu/bundle)\n- 'jasa' (untuk layanan)\nJika kosong = produk");
-    $sheet->getComment('J1')->getText()->createTextRun("Opsional.\nIsi SKU bahan untuk resep bundle.\nBahan harus sudah ada (baris sebelumnya atau sudah ada di database).");
-    $sheet->getComment('K1')->getText()->createTextRun("Opsional.\nNama bahan untuk resep bundle (dipakai jika SKU kosong).\nNama harus unik.");
-    $sheet->getComment('L1')->getText()->createTextRun("Opsional.\nQty bahan per 1 produk bundle.\nJika isi BOM, nilai wajib > 0.");
-    $sheet->getComment('M1')->getText()->createTextRun("Opsional.\nSatuan resep. Contoh: gram, ml, pcs.");
+    $addComment = function (string $cell, string $message) use ($sheet): void {
+        $comment = $sheet->getComment($cell);
+        $comment->getText()->createTextRun($message);
+        $comment->setWidth('280pt');
+        $comment->setHeight('140pt');
+    };
+
+    $addComment('A1', "nama_produk\n- WAJIB untuk produk baru.\n- Resep-only: boleh dipakai sebagai identitas bundle jika SKU tidak tahu.\n- Jika pakai nama, nama bundle harus unik di master produk.");
+    $addComment('B1', "sku\n- Opsional.\n- Disarankan isi jika tahu (lebih aman).\n- Jika kosong: sistem cari produk dari nama_produk.\n- Jika nama duplikat, import ditolak.\nContoh: BND-MIE-JAWA / RAW-KOPI-01");
+    $addComment('C1', "kategori\n- WAJIB untuk produk baru.\n- Update existing: opsional (boleh kosong).\nContoh: Maincourse, Minuman, Bahan Baku.");
+    $addComment('D1', "jenis_produk\n- WAJIB untuk produk baru (disarankan).\n- Nilai valid: bahan | produk | bundle | jasa.\n- Jika kosong: default = produk (finished_good).");
+    $addComment('E1', "satuan\n- WAJIB untuk produk baru.\n- Update existing: opsional (boleh kosong, pakai satuan lama).\nContoh: gram, ml, pcs, porsi, cup.");
+    $addComment('F1', "harga_beli\n- Opsional.\n- Jika kosong saat update produk existing: harga beli lama dipertahankan.\n- Untuk bahan baru: isi harga dasar per satuan.");
+    $addComment('G1', "harga_jual\n- Opsional.\n- Jika kosong saat update produk existing: harga jual lama dipertahankan.\n- Untuk bundle baru: jika kosong maka 0.\n- Jika 1 produk punya banyak baris BOM: isi harga_jual di BARIS PERTAMA saja, baris berikutnya kosong.");
+    $addComment('H1', "stok\n- Opsional.\n- Saat ini tidak dipakai oleh importer produk.\n- Boleh isi 0.");
+    $addComment('I1', "deskripsi\n- Opsional.\n- Jika kosong saat update existing: deskripsi lama dipertahankan.");
+    $addComment('J1', "bom_komponen_sku\n- Opsional.\n- Untuk baris resep/BOM, isi J atau K.\n- Disarankan pakai J jika tahu SKU.\n- Komponen harus sudah ada di database/file.");
+    $addComment('K1', "bom_komponen_nama\n- Alternatif jika SKU komponen tidak tahu.\n- Untuk baris resep/BOM, isi J atau K.\n- Jika pakai nama, nama komponen harus unik.\n- Jika nama duplikat, import ditolak.");
+    $addComment('L1', "bom_qty\n- WAJIB untuk baris resep/BOM.\n- Nilai harus > 0.\nContoh: 160, 80, 18.");
+    $addComment('M1', "bom_uom\n- Opsional.\n- Jika kosong, sistem pakai satuan komponen.\nContoh: gram, ml, pcs.");
 
     // Add Sample Data (Row 2-3: Bahan Baku)
     $sheet->setCellValue('A2', 'Biji Kopi Arabica');
@@ -155,9 +168,9 @@ try {
     $sheet->setCellValue('D5', 'bundle');
     $sheet->setCellValue('E5', 'cup');
     $sheet->setCellValue('F5', '0');
-    $sheet->setCellValue('G5', '18000');
+    $sheet->setCellValue('G5', '');
     $sheet->setCellValue('H5', '0');
-    $sheet->setCellValue('I5', 'Bundle minuman kopi susu');
+    $sheet->setCellValue('I5', 'Baris komponen lanjutan - harga_jual kosongkan');
     $sheet->setCellValue('J5', 'RAW-SUSU-01');
     $sheet->setCellValue('L5', '120');
     $sheet->setCellValue('M5', 'ml');
@@ -187,6 +200,59 @@ try {
     for ($i = 3; $i <= 200; $i++) {
         $sheet->getCell("D$i")->setDataValidation(clone $validation);
     }
+
+    $sheet->freezePane('A2');
+
+    // Sheet 2: Panduan wajib/opsional
+    $guide = $spreadsheet->createSheet();
+    $guide->setTitle('PETUNJUK_IMPORT');
+
+    $guide->setCellValue('A1', 'PANDUAN IMPORT PRODUK & RESEP');
+    $guide->mergeCells('A1:E1');
+    $guide->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+
+    $guide->setCellValue('A3', 'MODE');
+    $guide->setCellValue('B3', 'TUJUAN');
+    $guide->setCellValue('C3', 'KOLOM WAJIB');
+    $guide->setCellValue('D3', 'KOLOM OPSIONAL');
+    $guide->setCellValue('E3', 'CATATAN');
+    $guide->getStyle('A3:E3')->getFont()->setBold(true);
+
+    $guide->setCellValue('A4', 'MASTER_ONLY');
+    $guide->setCellValue('B4', 'Import produk tanpa resep/BOM');
+    $guide->setCellValue('C4', 'A,C,D,E (B disarankan)');
+    $guide->setCellValue('D4', 'F,G,H,I');
+    $guide->setCellValue('E4', 'J,K,L,M dikosongkan');
+
+    $guide->setCellValue('A5', 'MIXED');
+    $guide->setCellValue('B5', 'Import produk + resep bundle');
+    $guide->setCellValue('C5', 'A,B,C,D,E dan (J/K + L)');
+    $guide->setCellValue('D5', 'F,G,H,I,M');
+    $guide->setCellValue('E5', 'Baris bundle diulang per komponen');
+
+    $guide->setCellValue('A6', 'RESEP_ONLY');
+    $guide->setCellValue('B6', 'Upload resep untuk bundle existing');
+    $guide->setCellValue('C6', '(A atau B) dan (J atau K) + L');
+    $guide->setCellValue('D6', 'C,D,E,F,G,H,I,M');
+    $guide->setCellValue('E6', 'Harga kosong aman; master existing dipertahankan');
+
+    $guide->setCellValue('A8', 'RULE PENTING');
+    $guide->getStyle('A8')->getFont()->setBold(true);
+    $guide->setCellValue('A9', '1) Untuk baris resep: isi nama/SKU bundle (A/B) + SKU/Nama komponen (J/K) + qty (L).');
+    $guide->setCellValue('A10', '2) Jika pakai nama komponen (K), namanya harus unik.');
+    $guide->setCellValue('A11', '3) Qty resep harus lebih dari 0.');
+    $guide->setCellValue('A12', '4) Komponen tidak boleh sama dengan bundle itu sendiri.');
+    $guide->setCellValue('A13', '5) Satu bundle boleh punya banyak baris (1 baris = 1 komponen).');
+    $guide->setCellValue('A14', '6) Harga jual adalah harga final produk (bukan proporsional per komponen). Isi di baris pertama saja.');
+
+    foreach (['A', 'B', 'C', 'D', 'E'] as $col) {
+        $guide->getColumnDimension($col)->setAutoSize(true);
+    }
+    $guide->getStyle('A9:A14')->getAlignment()->setWrapText(true);
+    $guide->getStyle('A1:E14')->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+
+    // Keep first sheet as default active sheet.
+    $spreadsheet->setActiveSheetIndex(0);
 
     // Make directory if not exists
     $path = __DIR__ . '/public/templates';

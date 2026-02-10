@@ -35,79 +35,146 @@ class ProductImport implements OnEachRow, WithHeadingRow
      */
     private array $bundleProducts = [];
 
+    /**
+     * Track explicit selling price input per SKU inside current import file.
+     *
+     * @var array<string, float>
+     */
+    private array $explicitSellingPriceBySku = [];
+
     public function onRow(Row $excelRow): void
     {
         $row = $excelRow->toArray();
         $rowNumber = $excelRow->getIndex();
+        $hasBomComponent = $this->hasBomComponent($row);
+        $productNameInput = $this->normalizeText($row['nama_produk'] ?? null);
+        $skuInput = $this->normalizeText($row['sku'] ?? null);
 
-        // Skip if name is empty
-        if (!$this->hasValue($row['nama_produk'] ?? null)) {
+        // Skip completely empty rows.
+        if (!$productNameInput && !$skuInput && !$hasBomComponent) {
             return;
         }
 
-        DB::transaction(function () use ($row, $rowNumber) {
-            $productName = trim((string) ($row['nama_produk'] ?? ''));
-            $categoryName = trim((string) ($row['kategori'] ?? 'Uncategorized'));
-            if ($categoryName === '') {
-                $categoryName = 'Uncategorized';
+        if ($hasBomComponent && !$productNameInput && !$skuInput) {
+            throw new \InvalidArgumentException("Baris {$rowNumber}: Untuk import resep, isi SKU atau nama produk bundle.");
+        }
+
+        DB::transaction(function () use ($row, $rowNumber, $hasBomComponent, $productNameInput, $skuInput) {
+            $existingBySku = $skuInput ? Product::where('sku', $skuInput)->first() : null;
+            $sameNameProducts = $productNameInput
+                ? Product::where('name', $productNameInput)->get(['id', 'sku'])
+                : collect();
+
+            if (!$skuInput && $productNameInput && $sameNameProducts->count() > 1) {
+                throw new \InvalidArgumentException("Baris {$rowNumber}: Nama produk '{$productNameInput}' duplikat. Isi SKU agar tidak ambigu.");
             }
 
-            $category = ProductCategory::firstOrCreate(
-                ['name' => $categoryName],
-                [
-                    'code' => $this->generateCategoryCode($categoryName),
-                    'is_active' => true,
-                ]
-            );
+            $existingByName = (!$skuInput && $sameNameProducts->count() === 1)
+                ? Product::find($sameNameProducts->first()->id)
+                : null;
+            $existingProduct = $existingBySku ?: $existingByName;
 
-            $unit = $this->normalizeText($row['satuan'] ?? null) ?? 'pcs';
-            $purchasePrice = $this->parseDecimal($row['harga_beli'] ?? null);
-            $sellingPrice = $this->parseDecimal($row['harga_jual'] ?? null);
-            $productType = $this->guessProductType($row);
-            $isRawMaterial = $productType === 'raw_material';
-            $hasBomComponent = $this->hasBomComponent($row);
-            $skuInput = $this->normalizeText($row['sku'] ?? null);
-            if ($hasBomComponent && !$skuInput) {
-                throw new \InvalidArgumentException("Baris {$rowNumber}: SKU wajib diisi untuk baris yang memiliki BOM.");
+            if ($hasBomComponent && $skuInput && !$existingBySku && !$this->canCreateMasterProduct($row)) {
+                throw new \InvalidArgumentException("Baris {$rowNumber}: SKU bundle '{$skuInput}' tidak ditemukan. Untuk mode resep-only, gunakan SKU bundle yang sudah ada.");
             }
 
-            // Fix Duplication: If SKU is empty, check if product with same name exists
-            if ($skuInput) {
-                $sku = $skuInput;
+            if ($hasBomComponent && !$existingProduct && !$this->canCreateMasterProduct($row)) {
+                throw new \InvalidArgumentException("Baris {$rowNumber}: Produk bundle tidak ditemukan. Isi data master produk jika ingin sekalian membuat bundle baru.");
+            }
+
+            $productName = $productNameInput ?? $existingProduct?->name;
+            if (!$productName) {
+                throw new \InvalidArgumentException("Baris {$rowNumber}: nama_produk wajib diisi untuk produk baru.");
+            }
+
+            $categoryNameInput = $this->normalizeText($row['kategori'] ?? null);
+            if ($categoryNameInput) {
+                $category = ProductCategory::firstOrCreate(
+                    ['name' => $categoryNameInput],
+                    [
+                        'code' => $this->generateCategoryCode($categoryNameInput),
+                        'is_active' => true,
+                    ]
+                );
+                $categoryId = $category->id;
+            } elseif ($existingProduct?->category_id) {
+                $categoryId = (int) $existingProduct->category_id;
             } else {
-                $existingProduct = Product::where('name', $productName)->first();
-                if ($existingProduct) {
-                    $sku = $existingProduct->sku;
-                } else {
-                    $sku = $this->generateSku($productName);
+                $fallbackCategory = ProductCategory::firstOrCreate(
+                    ['name' => 'Uncategorized'],
+                    [
+                        'code' => $this->generateCategoryCode('Uncategorized'),
+                        'is_active' => true,
+                    ]
+                );
+                $categoryId = $fallbackCategory->id;
+            }
+
+            $sku = $skuInput
+                ?? ($existingProduct?->sku ? (string) $existingProduct->sku : $this->generateSku($productName));
+
+            $unit = $this->normalizeText($row['satuan'] ?? null) ?? ($existingProduct?->unit ?? 'pcs');
+            $hasPurchasePriceInput = $this->hasValue($row['harga_beli'] ?? null);
+            $hasSellingPriceInput = $this->hasValue($row['harga_jual'] ?? null);
+            $hasProductTypeInput = $this->hasProductTypeInput($row);
+            $productType = $hasProductTypeInput
+                ? $this->guessProductType($row)
+                : ($existingProduct?->product_type ?? 'finished_good');
+            $isRawMaterial = $productType === 'raw_material';
+
+            $defaultCreatedBy = auth()->id() ?: User::query()->value('id');
+            $existingPriceLevels = is_array($existingProduct?->price_levels) ? $existingProduct->price_levels : [];
+
+            $inputSellingPrice = $hasSellingPriceInput
+                ? $this->parseDecimal($row['harga_jual'] ?? null)
+                : null;
+
+            if ($inputSellingPrice !== null && isset($this->explicitSellingPriceBySku[$sku])) {
+                $prev = $this->explicitSellingPriceBySku[$sku];
+                if (abs($prev - $inputSellingPrice) > 0.00001) {
+                    throw new \InvalidArgumentException("Baris {$rowNumber}: harga_jual untuk SKU '{$sku}' tidak konsisten antar baris. Isi di baris pertama saja atau samakan nilainya.");
                 }
             }
 
-            $defaultCreatedBy = auth()->id() ?: User::query()->value('id');
+            if ($inputSellingPrice !== null) {
+                $this->explicitSellingPriceBySku[$sku] = $inputSellingPrice;
+            }
+
+            $sellingPrice = $inputSellingPrice
+                ?? ($this->explicitSellingPriceBySku[$sku]
+                    ?? (float) ($existingPriceLevels['regular'] ?? $existingProduct?->selling_price ?? 0));
+            $purchasePrice = $hasPurchasePriceInput
+                ? $this->parseDecimal($row['harga_beli'] ?? null)
+                : (float) ($existingProduct?->purchase_price ?? 0);
+
+            $priceLevels = $existingPriceLevels;
+            $priceLevels['regular'] = $sellingPrice;
+
+            $description = $this->hasValue($row['deskripsi'] ?? null)
+                ? (string) $row['deskripsi']
+                : $existingProduct?->description;
 
             $product = Product::updateOrCreate(
                 ['sku' => $sku],
                 [
                     'name' => $productName,
-                    'category_id' => $category->id,
+                    'category_id' => $categoryId,
                     'product_type' => $productType,
-                    'is_sellable' => !$isRawMaterial,
-                    'is_pos_available' => !$isRawMaterial,
-                    'is_online_order_available' => false,
-                    'is_available_all_outlets' => true,
-                    'is_available_all_users' => true,
-                    'pos_outlet_ids' => null,
-                    'pos_user_ids' => null,
-                    'price_levels' => [
-                        'regular' => $sellingPrice,
-                    ],
+                    'is_sellable' => $existingProduct ? (bool) $existingProduct->is_sellable : !$isRawMaterial,
+                    'is_pos_available' => $existingProduct ? (bool) $existingProduct->is_pos_available : !$isRawMaterial,
+                    'is_online_order_available' => $existingProduct ? (bool) $existingProduct->is_online_order_available : false,
+                    'is_available_all_outlets' => $existingProduct ? (bool) $existingProduct->is_available_all_outlets : true,
+                    'is_available_all_users' => $existingProduct ? (bool) $existingProduct->is_available_all_users : true,
+                    'pos_outlet_ids' => $existingProduct?->pos_outlet_ids,
+                    'pos_user_ids' => $existingProduct?->pos_user_ids,
+                    'price_levels' => $priceLevels,
                     'purchase_price' => $purchasePrice,
                     'selling_price' => $sellingPrice,
                     'unit' => $unit,
-                    'description' => $row['deskripsi'] ?? null,
-                    'min_stock' => 5,
-                    'is_active' => true,
-                    'created_by' => $defaultCreatedBy,
+                    'description' => $description,
+                    'min_stock' => $existingProduct?->min_stock ?? 5,
+                    'is_active' => $existingProduct ? (bool) $existingProduct->is_active : true,
+                    'created_by' => $existingProduct?->created_by ?? $defaultCreatedBy,
                 ]
             );
 
@@ -230,6 +297,28 @@ class ProductImport implements OnEachRow, WithHeadingRow
         }
 
         return 'finished_good';
+    }
+
+    private function hasProductTypeInput(array $row): bool
+    {
+        return $this->hasValue($row['product_type'] ?? null)
+            || $this->hasValue($row['jenis_produk'] ?? null)
+            || $this->hasValue($row['jenis'] ?? null)
+            || $this->hasValue($row['tipe'] ?? null);
+    }
+
+    private function canCreateMasterProduct(array $row): bool
+    {
+        if (!$this->hasValue($row['nama_produk'] ?? null)) {
+            return false;
+        }
+
+        return $this->hasValue($row['kategori'] ?? null)
+            || $this->hasValue($row['satuan'] ?? null)
+            || $this->hasProductTypeInput($row)
+            || $this->hasValue($row['harga_beli'] ?? null)
+            || $this->hasValue($row['harga_jual'] ?? null)
+            || $this->hasValue($row['deskripsi'] ?? null);
     }
 
     private function hasBomComponent(array $row): bool
