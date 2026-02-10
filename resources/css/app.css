@@ -372,7 +372,11 @@ body {
   font-size: 0.8125rem;
   font-weight: 600;
   border-radius: var(--radius-xl);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--radius-xl);
   transition: all 0.15s;
+  justify-content: center;
   background: linear-gradient(135deg, #ec4913 0%, #ea580c 50%, #c2410c 100%);
   color: white;
   border: none;
