@@ -164,7 +164,7 @@
 
                     @foreach ($mainNav as $index => $item)
                         @php
-                            $isActive = $item['match'] ? request()->routeIs($item['match']) : false;
+                            $isActive = $item['match'] ? request()->routeIs(explode('|', $item['match'])) : false;
                             $hasChildren = isset($item['children']) && count($item['children']) > 0;
                             $menuId = 'submenu-' . $index;
 
@@ -188,7 +188,7 @@
                                     style="{{ $isActive ? 'max-height: 1000px;' : 'max-height: 0px;' }}">
                                     @foreach($item['children'] as $child)
                                         @php
-                                            $isChildActive = $child['match'] ? request()->routeIs($child['match']) : false;
+                                            $isChildActive = $child['match'] ? request()->routeIs(explode('|', $child['match'])) : false;
                                             $childClass = $isChildActive
                                                 ? 'block pl-11 pr-3 py-2 text-sm font-medium text-primary'
                                                 : 'block pl-11 pr-3 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors';
