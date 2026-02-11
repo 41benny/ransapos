@@ -127,6 +127,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
 
     // Employee PIN Management
     Route::post('/users/{user}/set-pin', [\App\Http\Controllers\Admin\UserController::class, 'setAttendancePin'])->name('users.set-pin');
+
+    // Void Tokens (One-Time PIN)
+    Route::resource('void-tokens', \App\Http\Controllers\Admin\VoidTokenController::class)->only(['index', 'store']);
 });
 
 // POS Device Registration (Kasir/Admin/Kitchen)
@@ -177,6 +180,14 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(fu
 
     Route::get('/sales/{sale}/print', [SaleController::class, 'print'])
         ->name('sales.print')
+        ->middleware('role:kasir,admin');
+
+    // History and Void
+    Route::get('/sales/history', [SaleController::class, 'history'])
+        ->name('sales.history')
+        ->middleware('role:kasir,admin');
+    Route::post('/sales/{sale}/void', [SaleController::class, 'void'])
+        ->name('sales.void')
         ->middleware('role:kasir,admin');
 
     // Simple Kitchen Display (Admin/Kasir/Kitchen)

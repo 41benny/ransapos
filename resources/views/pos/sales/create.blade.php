@@ -81,8 +81,7 @@
                                 class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 transition"
                                 title="Buka Shift">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v16m8-8H4" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>
                             </a>
                         @endif
@@ -151,12 +150,20 @@
                         <a href="{{ route('pos.sessions.open') }}"
                             class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold transition shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
                             Buka Shift
                         </a>
                     @endif
+
+                    <button @click="openHistory"
+                        class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold transition shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Riwayat
+                    </button>
 
                     <a href="{{ route('pos.attendance.index') }}"
                         class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold transition shrink-0">
@@ -186,16 +193,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category->id }}"
                         :class="Number(selectedCategory) === {{ $category->id }} 
-                                                                                                            ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                            : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category->name }}
                     </button>
@@ -232,8 +239,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                            Best Seller
-                                                                        </span> -->
+                                                                                                Best Seller
+                                                                                            </span> -->
                             </div>
 
                             <!-- Content -->
@@ -445,8 +452,8 @@
                         <button @click="processPayment"
                             :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                             :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                             class="py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
                             <span v-if="!isProcessing">Pay Now</span>
                             <span v-else class="flex items-center gap-2">
@@ -503,226 +510,506 @@
             </div>
         </div>
 
-    </div>
+        <!-- History Modal -->
+        <div v-if="showHistoryModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showHistoryModal ? 'flex' : 'none' }">
+            <div class="bg-surface-light rounded-2xl shadow-2xl w-full max-w-5xl h-[80vh] flex overflow-hidden">
 
-    <!-- VUE JS 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script>
-        const { createApp } = Vue;
+                <!-- Left: Transaction List -->
+                <div class="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                        <h3 class="font-bold text-gray-800">Riwayat Transaksi</h3>
+                        <button @click="fetchHistory" :disabled="isLoadingHistory" class="text-primary hover:text-red-700">
+                            <svg :class="{'animate-spin': isLoadingHistory}" class="w-5 h-5" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        <div v-if="isLoadingHistory" class="p-8 text-center text-gray-400">Loading...</div>
+                        <div v-else-if="historySales.length === 0" class="p-8 text-center text-gray-400">Belum ada transaksi
+                            di sesi ini.</div>
+                        <template v-else>
+                            <div v-for="sale in historySales" :key="sale.id" @click="selectSale(sale)"
+                                :class="{'bg-white border-l-4 border-primary shadow-sm': selectedSale && selectedSale.id === sale.id, 'hover:bg-gray-100 border-l-4 border-transparent': !selectedSale || selectedSale.id !== sale.id}"
+                                class="p-4 cursor-pointer border-b border-gray-100 transition-all">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="font-bold text-gray-800 text-sm">@{{ sale.invoice_number }}</span>
+                                    <span class="text-xs font-mono text-gray-400">@{{ formatTime(sale.created_at) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-primary font-bold">Rp @{{ formatNumber(sale.total_amount) }}</span>
+                                    <span v-if="sale.status === 'cancelled'"
+                                        class="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700 font-bold uppercase">VOID</span>
+                                    <span v-else
+                                        class="px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-700 font-bold uppercase">OK</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 bg-white">
+                        <button @click="closeHistory"
+                            class="w-full py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-bold">Tutup</button>
+                    </div>
+                </div>
 
-        createApp({
-            data() {
-                return {
-                    categories: @json($categories),
-                    // Adding dummy products for categories if needed, relying on server data
-                    products: @json($categories->flatMap->products),
-                    priceLevels: @json($priceLevels),
-                    customers: @json($customers),
-                    paymentMethods: @json($paymentMethods),
+                <!-- Right: Transaction Detail -->
+                <div class="w-2/3 flex flex-col bg-white">
+                    <div v-if="selectedSale" class="flex-1 flex flex-col h-full">
+                        <!-- Header -->
+                        <div class="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-1">@{{ selectedSale.invoice_number }}</h2>
+                                <div class="flex gap-4 text-sm text-gray-500">
+                                    <span>@{{ formatDate(selectedSale.created_at) }}</span>
+                                    <span>•</span>
+                                    <span>@{{ selectedSale.customer ? selectedSale.customer.name : 'Guest' }}</span>
+                                    <span>•</span>
+                                    <span class="font-medium text-gray-700">@{{
+                                        selectedSale.payments[0]?.payment_method?.name || 'Tunai' }}</span>
+                                </div>
+                            </div>
+                            <div v-if="selectedSale.status === 'cancelled'" class="text-right">
+                                <div
+                                    class="text-red-600 font-bold text-xl uppercase tracking-widest border-2 border-red-600 px-4 py-1 rounded mb-1 transform -rotate-6">
+                                    VOID</div>
+                                <p class="text-xs text-red-500 max-w-[200px]">@{{ selectedSale.notes }}</p>
+                            </div>
+                        </div>
 
-                    cart: [],
-                    searchQuery: '',
-                    selectedCategory: null,
-                    filteredProducts: [],
+                        <!-- Items -->
+                        <div class="flex-1 overflow-y-auto p-6">
+                            <table class="w-full">
+                                <thead>
+                                    <tr
+                                        class="text-left text-xs font-bold text-gray-400 uppercase border-b border-gray-100">
+                                        <th class="pb-3 pl-2">Item</th>
+                                        <th class="pb-3 text-right">Qty</th>
+                                        <th class="pb-3 text-right">Price</th>
+                                        <th class="pb-3 text-right pr-2">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm">
+                                    <tr v-for="item in selectedSale.items" :key="item.id"
+                                        class="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                                        <td class="py-3 pl-2">
+                                            <div class="font-medium text-gray-800">@{{ item.product_name }}</div>
+                                            <div v-if="item.notes" class="text-xs text-gray-400 italic">@{{ item.notes }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-right font-mono">@{{ item.quantity }}</td>
+                                        <td class="py-3 text-right text-gray-500">@{{ formatNumber(item.unit_price) }}</td>
+                                        <td class="py-3 text-right font-bold text-gray-700 pr-2">@{{
+                                            formatNumber(item.subtotal) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                    salesType: 'regular',
-                    selectedPaymentMethod: '',
-                    selectedCustomerId: '',
+                        <!-- Footer Actions -->
+                        <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                            <div class="text-right flex-1 mr-8">
+                                <p class="text-sm text-gray-500 mb-1">Total Amount</p>
+                                <p class="text-3xl font-bold text-primary">Rp @{{ formatNumber(selectedSale.total_amount) }}
+                                </p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button @click="printReceiptFromHistory(selectedSale)"
+                                    class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Print Struk
+                                </button>
+                                <button v-if="selectedSale.status !== 'cancelled'" @click="openVoidModal"
+                                    class="px-6 py-3 bg-red-100 text-red-700 border border-red-200 font-bold rounded-xl hover:bg-red-200 shadow-sm flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Void / Batal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="flex-1 flex flex-col items-center justify-center text-gray-300">
+                        <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p class="font-medium">Pilih transaksi untuk melihat detail</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    orderNotes: '',
+        <!-- Void Confirmation Modal -->
+        <div v-if="showVoidModal"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showVoidModal ? 'flex' : 'none' }">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[bounceIn_0.3s_ease-out]">
+                <h3 class="text-xl font-bold text-red-600 mb-1 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Konfirmasi Void
+                </h3>
+                <p class="text-sm text-gray-500 mb-6">Anda akan membatalkan transaksi <strong>@{{
+                        selectedSale?.invoice_number }}</strong>. Stok akan dikembalikan otomatis.</p>
 
-                    showSuccessModal: false,
-                    lastSale: null,
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Alasan Pembatalan</label>
+                        <input type="text" v-model="voidReason" placeholder="Contoh: Salah input, pelanggan batal..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Token Void (Dari Admin)</label>
+                            <input type="text" v-model="voidToken" placeholder="Masukkan 6 Digit Token..." maxlength="6"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none tracking-widest text-lg font-mono text-center">
+                            <p class="text-xs text-gray-400 mt-1">*Minta token ke Admin/Manager untuk membatalkan</p>
+                        </div>
+                    </div>
 
-                    discountType: 'none',
-                    discountValue: 0,
-                    isProcessing: false,
+                    <div class="flex gap-3 mt-8">
+                        <button @click="closeVoidModal"
+                            class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition">Batal</button>
+                        <button @click="confirmVoid" :disabled="isVoiding || !voidReason || !voidToken"
+                            :class="isVoiding || !voidReason || !voidToken ? 'bg-gray-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/30'"
+                            class="flex-1 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                            <span v-if="isVoiding">Processing...</span>
+                            <span v-else>Void Transaksi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    outletId: {{ $activeSession->outlet_id ?? 'null' }},
-                    cashSessionId: {{ $activeSession->id ?? 'null' }},
+        <!-- VUE JS 3 -->
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script>
+            const { createApp } = Vue;
 
-                    taxRate: {{ $outlet->tax_rate ?? 10 }},
-                    serviceChargeRate: {{ $outlet->service_charge_rate ?? 0 }},
-                }
-            },
-            computed: {
-                currentCategoryName() {
-                    if (!this.selectedCategory) return 'All Items';
-                    const category = this.categories.find(c => c.id == this.selectedCategory);
-                    return category ? category.name : 'Menu';
-                },
-                selectedCustomer() {
-                    if (!this.selectedCustomerId) return null;
-                    return this.customers.find(c => c.id === Number(this.selectedCustomerId));
-                },
-                subtotal() {
-                    return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
-                },
-                taxBase() {
-                    // Logic: Subtotal - Discount
-                    // Simple implementation for now
-                    return this.subtotal;
-                },
-                taxAmount() {
-                    return this.taxBase * (this.taxRate / 100);
-                },
-                totalAmount() {
-                    return this.taxBase + this.taxAmount;
-                }
-            },
-            mounted() {
-                this.filteredProducts = this.products;
-                // Pre-select first category if available? No, user might want 'All'
-            },
-            methods: {
-                filterProducts() {
-                    let filtered = this.products;
-                    if (this.selectedCategory !== null) {
-                        filtered = filtered.filter(p => Number(p.category_id) === Number(this.selectedCategory));
+            createApp({
+                data() {
+                    return {
+                        categories: @json($categories),
+                        // Adding dummy products for categories if needed, relying on server data
+                        products: @json($categories->flatMap->products),
+                        priceLevels: @json($priceLevels),
+                        customers: @json($customers),
+                        paymentMethods: @json($paymentMethods),
+
+                        cart: [],
+                        searchQuery: '',
+                        selectedCategory: null,
+                        filteredProducts: [],
+
+                        salesType: 'regular',
+                        selectedPaymentMethod: '',
+                        selectedCustomerId: '',
+
+                        orderNotes: '',
+
+                        showSuccessModal: false,
+                        lastSale: null,
+
+                        discountType: 'none',
+                        discountValue: 0,
+                        isProcessing: false,
+
+                        outletId: {{ $activeSession->outlet_id ?? 'null' }},
+                        cashSessionId: {{ $activeSession->id ?? 'null' }},
+
+                        taxRate: {{ $outlet->tax_rate ?? 10 }},
+                        serviceChargeRate: {{ $outlet->service_charge_rate ?? 0 }},
+
+                        // History & Void
+                        showHistoryModal: false,
+                        showVoidModal: false,
+                        historySales: [],
+                        selectedSale: null,
+                        isLoadingHistory: false,
+                        isVoiding: false,
+                        voidReason: '',
+                        voidToken: '',
                     }
-                    if (this.searchQuery) {
-                        const query = this.searchQuery.toLowerCase();
-                        filtered = filtered.filter(p => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
-                    }
-                    this.filteredProducts = filtered;
                 },
-                getProductPrice(product, forcedSalesType = null) {
-                    if (!product) return 0;
-
-                    const level = forcedSalesType || this.salesType || 'regular';
-                    // Ensure price_levels handles the object/array structure from PHP
-                    const priceMap = product.price_levels || {};
-
-                    // Priority: Specific Level -> Regular -> Default Selling Price
-                    if (priceMap[level] !== undefined && priceMap[level] !== null) {
-                        return Number(priceMap[level]);
-                    }
-                    if (priceMap['regular'] !== undefined && priceMap['regular'] !== null) {
-                        return Number(priceMap['regular']);
-                    }
-                    return Number(product.selling_price || 0);
-                },
-                updateCartPricesBySalesType() {
-                    this.cart = this.cart.map(item => {
-                        const product = this.products.find(p => p.id === item.product_id);
-                        if (!product) return item;
-
-                        const newPrice = this.getProductPrice(product);
-                        return {
-                            ...item,
-                            unit_price: newPrice,
-                            subtotal: item.quantity * newPrice
-                        };
-                    });
-                },
-                addToCart(product) {
-                    const existing = this.cart.find(i => i.product_id === product.id);
-                    const price = this.getProductPrice(product);
-
-                    if (existing) {
-                        existing.quantity++;
-                        existing.subtotal = existing.quantity * price;
-                    } else {
-                        this.cart.push({
-                            product_id: product.id,
-                            name: product.name,
-                            unit_price: price,
-                            quantity: 1,
-                            subtotal: price,
-                            notes: ''
-                        });
+                computed: {
+                    currentCategoryName() {
+                        if (!this.selectedCategory) return 'All Items';
+                        const category = this.categories.find(c => c.id == this.selectedCategory);
+                        return category ? category.name : 'Menu';
+                    },
+                    selectedCustomer() {
+                        if (!this.selectedCustomerId) return null;
+                        return this.customers.find(c => c.id === Number(this.selectedCustomerId));
+                    },
+                    subtotal() {
+                        return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
+                    },
+                    taxBase() {
+                        // Logic: Subtotal - Discount
+                        // Simple implementation for now
+                        return this.subtotal;
+                    },
+                    taxAmount() {
+                        return this.taxBase * (this.taxRate / 100);
+                    },
+                    totalAmount() {
+                        return this.taxBase + this.taxAmount;
                     }
                 },
-                getProductImage(productId) {
-                    const product = this.products.find(p => p.id === productId);
-                    return product ? (product.image_url || 'https://via.placeholder.com/150') : 'https://via.placeholder.com/150';
+                mounted() {
+                    this.filteredProducts = this.products;
+                    // Pre-select first category if available? No, user might want 'All'
                 },
-                increaseQty(index) {
-                    const item = this.cart[index];
-                    item.quantity++;
-                    item.subtotal = item.quantity * item.unit_price;
-                },
-                decreaseQty(index) {
-                    const item = this.cart[index];
-                    if (item.quantity > 1) {
-                        item.quantity--;
-                        item.subtotal = item.quantity * item.unit_price;
-                    } else {
-                        this.cart.splice(index, 1);
-                    }
-                },
-                editItemNotes(index) {
-                    const current = this.cart[index].notes || '';
-                    const updated = prompt('Add note:', current);
-                    if (updated !== null) {
-                        this.cart[index].notes = updated;
-                    }
-                },
-                formatNumber(num) {
-                    return new Intl.NumberFormat('id-ID').format(num);
-                },
-                async processPayment() {
-                    if (!this.outletId || !this.cashSessionId) {
-                        alert('No active cash session.');
-                        return;
-                    }
-
-                    this.isProcessing = true;
-
-                    // Simple Payload
-                    const data = {
-                        outlet_id: this.outletId,
-                        cash_session_id: this.cashSessionId,
-                        customer_id: this.selectedCustomerId,
-                        notes: this.orderNotes,
-                        sales_type: this.salesType,
-                        items: this.cart.map(i => ({
-                            product_id: i.product_id,
-                            quantity: i.quantity,
-                            unit_price: i.unit_price
-                        })),
-                        payment_method_id: this.selectedPaymentMethod,
-                        payment_amount: this.totalAmount
-                    };
-
-                    try {
-                        const response = await fetch('{{ route('pos.sales.store') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(data)
-                        });
-                        const result = await response.json();
-
-                        if (result.success) {
-                            this.lastSale = result.data;
-                            this.showSuccessModal = true;
-                            this.cart = [];
-                            this.selectedPaymentMethod = '';
-                        } else {
-                            alert('Error: ' + result.message);
+                methods: {
+                    // ... Existing Methods ...
+                    filterProducts() {
+                        let filtered = this.products;
+                        if (this.selectedCategory !== null) {
+                            filtered = filtered.filter(p => Number(p.category_id) === Number(this.selectedCategory));
                         }
-                    } catch (e) {
-                        alert('System Error: ' + e.message);
-                    } finally {
-                        this.isProcessing = false;
+                        if (this.searchQuery) {
+                            const query = this.searchQuery.toLowerCase();
+                            filtered = filtered.filter(p => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
+                        }
+                        this.filteredProducts = filtered;
+                    },
+                    getProductPrice(product, forcedSalesType = null) {
+                        if (!product) return 0;
+
+                        const level = forcedSalesType || this.salesType || 'regular';
+                        // Ensure price_levels handles the object/array structure from PHP
+                        const priceMap = product.price_levels || {};
+
+                        // Priority: Specific Level -> Regular -> Default Selling Price
+                        if (priceMap[level] !== undefined && priceMap[level] !== null) {
+                            return Number(priceMap[level]);
+                        }
+                        if (priceMap['regular'] !== undefined && priceMap['regular'] !== null) {
+                            return Number(priceMap['regular']);
+                        }
+                        return Number(product.selling_price || 0);
+                    },
+                    updateCartPricesBySalesType() {
+                        this.cart = this.cart.map(item => {
+                            const product = this.products.find(p => p.id === item.product_id);
+                            if (!product) return item;
+
+                            const newPrice = this.getProductPrice(product);
+                            return {
+                                ...item,
+                                unit_price: newPrice,
+                                subtotal: item.quantity * newPrice
+                            };
+                        });
+                    },
+                    addToCart(product) {
+                        const existing = this.cart.find(i => i.product_id === product.id);
+                        const price = this.getProductPrice(product);
+
+                        if (existing) {
+                            existing.quantity++;
+                            existing.subtotal = existing.quantity * price;
+                        } else {
+                            this.cart.push({
+                                product_id: product.id,
+                                name: product.name,
+                                unit_price: price,
+                                quantity: 1,
+                                subtotal: price,
+                                notes: ''
+                            });
+                        }
+                    },
+                    getProductImage(productId) {
+                        const product = this.products.find(p => p.id === productId);
+                        return product ? (product.image_url || 'https://via.placeholder.com/150') : 'https://via.placeholder.com/150';
+                    },
+                    increaseQty(index) {
+                        const item = this.cart[index];
+                        item.quantity++;
+                        item.subtotal = item.quantity * item.unit_price;
+                    },
+                    decreaseQty(index) {
+                        const item = this.cart[index];
+                        if (item.quantity > 1) {
+                            item.quantity--;
+                            item.subtotal = item.quantity * item.unit_price;
+                        } else {
+                            this.cart.splice(index, 1);
+                        }
+                    },
+                    editItemNotes(index) {
+                        const current = this.cart[index].notes || '';
+                        const updated = prompt('Add note:', current);
+                        if (updated !== null) {
+                            this.cart[index].notes = updated;
+                        }
+                    },
+                    formatNumber(num) {
+                        return new Intl.NumberFormat('id-ID').format(num);
+                    },
+                    formatDate(dateString) {
+                        const date = new Date(dateString);
+                        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    },
+                    formatTime(dateString) {
+                        const date = new Date(dateString);
+                        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    },
+                    async processPayment() {
+                        if (!this.outletId || !this.cashSessionId) {
+                            alert('No active cash session.');
+                            return;
+                        }
+
+                        this.isProcessing = true;
+
+                        // Simple Payload
+                        const data = {
+                            outlet_id: this.outletId,
+                            cash_session_id: this.cashSessionId,
+                            customer_id: this.selectedCustomerId,
+                            notes: this.orderNotes,
+                            sales_type: this.salesType,
+                            items: this.cart.map(i => ({
+                                product_id: i.product_id,
+                                quantity: i.quantity,
+                                unit_price: i.unit_price
+                            })),
+                            payment_method_id: this.selectedPaymentMethod,
+                            payment_amount: this.totalAmount
+                        };
+
+                        try {
+                            const response = await fetch('{{ route('pos.sales.store') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify(data)
+                            });
+                            const result = await response.json();
+
+                            if (result.success) {
+                                this.lastSale = result.data;
+                                this.showSuccessModal = true;
+                                this.cart = [];
+                                this.selectedPaymentMethod = '';
+                            } else {
+                                alert('Error: ' + result.message);
+                            }
+                        } catch (e) {
+                            alert('System Error: ' + e.message);
+                        } finally {
+                            this.isProcessing = false;
+                        }
+                    },
+                    printReceipt() {
+                        if (this.lastSale) {
+                            window.open(`/pos/sales/${this.lastSale.sale_id}/print`, '_blank', 'width=400,height=600');
+                        }
+                    },
+                    closeSuccessModal() {
+                        this.showSuccessModal = false;
+                    },
+
+                    // --- History Methods ---
+                    openHistory() {
+                        this.showHistoryModal = true;
+                        this.fetchHistory();
+                    },
+                    closeHistory() {
+                        this.showHistoryModal = false;
+                        this.selectedSale = null;
+                    },
+                    async fetchHistory() {
+                        this.isLoadingHistory = true;
+                        try {
+                            const response = await fetch('{{ route('pos.sales.history') }}');
+                            const result = await response.json();
+                            if (result.success) {
+                                this.historySales = result.data;
+                                if (this.historySales.length > 0 && !this.selectedSale) {
+                                    this.selectedSale = this.historySales[0];
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            alert('Gagal mengambil history transaksi');
+                        } finally {
+                            this.isLoadingHistory = false;
+                        }
+                    },
+                    selectSale(sale) {
+                        this.selectedSale = sale;
+                    },
+                    printReceiptFromHistory(sale) {
+                        window.open(`/pos/sales/${sale.id}/print`, '_blank', 'width=400,height=600');
+                    },
+
+                    // --- Void Methods ---
+                    openVoidModal() {
+                        this.voidReason = '';
+                        this.voidToken = '';
+                        this.showVoidModal = true;
+                    },
+                    closeVoidModal() {
+                        this.showVoidModal = false;
+                    },
+                    async confirmVoid() {
+                        if (!this.selectedSale) return;
+                        if (!this.voidReason || !this.voidToken) {
+                            alert('Mohon lengkapi alasan dan Token!');
+                            return;
+                        }
+
+                        this.isVoiding = true;
+                        try {
+                            const response = await fetch(`/pos/sales/${this.selectedSale.id}/void`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    reason: this.voidReason,
+                                    token: this.voidToken
+                                })
+                            });
+                            const result = await response.json();
+
+                            if (result.success) {
+                                alert('Transaksi BERHASIL dibatalkan.');
+                                this.closeVoidModal();
+                                // Update local data
+                                this.selectedSale.status = 'cancelled';
+                                this.selectedSale.notes = result.data.notes;
+                                // Refresh history
+                                this.fetchHistory();
+                            } else {
+                                alert('GAGAL: ' + result.message);
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            alert('Terjadi kesalahan sistem.');
+                        } finally {
+                            this.isVoiding = false;
+                        }
                     }
                 },
-                printReceipt() {
-                    if (this.lastSale) {
-                        window.open(`/pos/sales/${this.lastSale.sale_id}/print`, '_blank', 'width=400,height=600');
-                    }
-                },
-                closeSuccessModal() {
-                    this.showSuccessModal = false;
+                watch: {
+                    selectedCategory() { this.filterProducts(); },
+                    salesType() { this.updateCartPricesBySalesType(); }
                 }
-            },
-            watch: {
-                selectedCategory() { this.filterProducts(); },
-                salesType() { this.updateCartPricesBySalesType(); }
-            }
-        }).mount('#posApp');
-    </script>
+            }).mount('#posApp');
+        </script>
 @endsection

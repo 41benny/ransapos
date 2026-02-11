@@ -14,6 +14,8 @@ use App\Services\SaleService;
 use App\Models\Sale;
 use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SaleController extends Controller
 {
@@ -185,5 +187,102 @@ class SaleController extends Controller
         $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
 
         return view('pos.sales.print', compact('sale'));
+    }
+
+    /**
+     * Get transaction history for current session
+     */
+    public function history(Request $request)
+    {
+        $user = auth()->user();
+        $outletId = $user->outlet_id;
+
+        // Ambil cash session aktif
+        $activeSession = CashSession::where('status', 'open')
+            ->where('user_id', $user->id)
+            ->where('outlet_id', $outletId)
+            ->first();
+
+        if (!$activeSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada sesi kasir yang aktif',
+                'data' => []
+            ]);
+        }
+
+        // Ambil penjualan dalam sesi ini
+        $sales = Sale::where('cash_session_id', $activeSession->id)
+            ->with(['items', 'customer', 'payments.paymentMethod'])
+            ->orderBy('created_at', 'desc')
+            ->limit(50) // Batasi 50 transaksi terakhir
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $sales
+        ]);
+    }
+
+    /**
+     * Void / Batalkan Transaksi
+     */
+    public function void(Request $request, Sale $sale)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:3',
+            'token' => 'required|string|size:6',
+        ]);
+
+        $user = auth()->user();
+
+        // 1. Validasi Token Void
+        $voidToken = \App\Models\VoidToken::where('token', $request->token)
+            ->where('is_used', false)
+            ->where('outlet_id', $sale->outlet_id) // Validasi Outlet
+            ->first();
+
+        if (!$voidToken) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token Void tidak valid, sudah terpakai, atau tidak berlaku untuk outlet ini.'
+            ], 403);
+        }
+
+        // 2. Proses Void
+        DB::beginTransaction();
+        try {
+            // Pastikan sale milik outlet user ini
+            if ($sale->outlet_id !== $user->outlet_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan di outlet ini'
+                ], 404);
+            }
+
+            // Panggil service
+            $cancelledSale = $this->saleService->cancelSale($sale->id, $request->reason);
+
+            // Tandai token sudah terpakai
+            $voidToken->update([
+                'is_used' => true,
+                'used_by' => $user->id,
+                'used_for_sale_id' => $sale->id,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dibatalkan (Void)',
+                'data' => $cancelledSale
+            ]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan transaksi: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

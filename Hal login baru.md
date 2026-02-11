@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Moresto POS Login</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<title>Moresto POS Login - Variant 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
@@ -17,105 +15,92 @@
                         "primary": "#ec4913",
                         "background-light": "#f8f6f6",
                         "background-dark": "#221510",
+                        "surface-dark": "#2f1f1a",
+                        "surface-light": "#ffffff"
                     },
                     fontFamily: {
                         "display": ["Plus Jakarta Sans", "sans-serif"]
                     },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
                 },
             },
         }
     </script>
-<style>
-        /* Custom scrollbar for better aesthetic if needed */
-        ::-webkit-scrollbar {
-            width: 8px;
+<style>.no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        ::-webkit-scrollbar-track {
-            background: #2d1b16; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a2c23; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5e382d; 
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased overflow-hidden">
-<div class="relative flex h-screen w-full flex-col overflow-hidden">
-<!-- Background Image with Overlay -->
-<div class="absolute inset-0 z-0 h-full w-full bg-cover bg-center bg-no-repeat" data-alt="Steaming bamboo baskets of dim sum dumplings" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDMvHRQKWFJc_pTa1cOzVOi-yYGJOrzAIMrw9O7wzwm2R-4iEr5uXfdgO1jE-xMP1DXiQfNLQAyUpTt5_ZQU6kZfJcau2nNQVA4U8rm5lQUuAPQ6lSv5rQKhvOUf86FBdI76w1GpIbd7uKnWw0mBt9xihjM-iOBzPw9ljuRwOHRVlp7_7dYq1XzRS-JBBWKnCjdQeTqFxtzPzOsw5v8uuJBLkaXX6ufZfAl7BFH-nKbQOANrEMl8mcedGdItwojsXwyfmQY1LXVMoeg');">
-<!-- Gradient Overlay for readability -->
-<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 backdrop-blur-[2px]"></div>
-</div>
-<!-- Top Bar: Clock & Terminal Info -->
-<div class="relative z-10 flex w-full justify-between px-6 py-4 text-white/90">
-<div class="flex items-center gap-2 rounded-full bg-black/30 px-4 py-2 backdrop-blur-md border border-white/10">
-<span class="material-symbols-outlined text-primary text-sm">dns</span>
-<span class="text-sm font-medium tracking-wide">Terminal ID: POS-001</span>
-</div>
-<div class="flex items-center gap-2 rounded-full bg-black/30 px-4 py-2 backdrop-blur-md border border-white/10">
-<span class="material-symbols-outlined text-primary text-sm">schedule</span>
-<span class="text-sm font-medium tracking-wide">12:45 PM | Oct 24, 2023</span>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-white transition-colors duration-200">
+<div class="flex h-screen w-full overflow-hidden">
+<div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat" data-alt="Minimalist top-down view of dimsum baskets on a dark textured table" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCiV8Uevc18SbYATNTDNjD5z4I0io1u0xesdc4NNoGfoNPePpH2gkJE-Sj93fWAsOjC9KNIBwpGki8LurNxELRUgdBZQMGl_NQX5XU5JkAJ5tvdX5-Fx-TRkQ5S9IyN4IZVOX2NFwWNpkKmI76llOiG4MDzJppQaRHJNS0UtafNu9S3VrIfLl0ssIdBR2LsnAyqJXBRVn3c4Tszw29wIdly_7K6SeNC8ZBg7xRndhmQzuP3Je-zitbtBb6IhgPkd2adWCja3czj5lAl');">
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/40 to-background-dark/20 mix-blend-multiply"></div>
+<div class="absolute inset-0 bg-primary/10"></div>
+<div class="relative z-10">
+<div class="inline-flex items-center gap-2 bg-background-dark/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+<span class="material-symbols-outlined text-primary">restaurant_menu</span>
+<span class="text-white font-semibold tracking-wide text-sm">Moresto POS</span>
 </div>
 </div>
-<!-- Main Content Area: Centered Login Card -->
-<div class="relative z-10 flex flex-1 items-center justify-center p-4">
-<div class="w-full max-w-[440px] rounded-2xl bg-[#1e1411]/95 dark:bg-[#1e1411]/95 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10 backdrop-blur-sm">
-<!-- Logo Area -->
-<div class="mb-8 flex flex-col items-center text-center">
-<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-orange-600 shadow-lg shadow-orange-900/50">
-<span class="material-symbols-outlined text-white text-3xl">restaurant</span>
+<div class="relative z-10 max-w-md">
+<h1 class="text-5xl font-bold text-white mb-4 leading-tight">Authentic Dimsum,<br/>Modern Service.</h1>
+<p class="text-lg text-white/80 font-medium">Streamlining your restaurant operations with precision and taste.</p>
 </div>
-<h1 class="text-3xl font-black tracking-tight text-white">Moresto</h1>
-<p class="mt-1 text-sm font-medium text-white/50">Dimsum &amp; Tea House POS</p>
 </div>
-<!-- Login Form -->
-<div class="flex flex-col gap-5">
-<!-- Staff ID Input -->
-<label class="flex flex-col gap-2">
-<span class="text-xs font-bold uppercase tracking-wider text-white/70 ml-1">Staff ID / Username</span>
-<div class="relative flex items-center">
-<span class="absolute left-4 text-white/40 material-symbols-outlined">badge</span>
-<input class="h-14 w-full rounded-xl border border-white/10 bg-white/5 pl-12 pr-4 text-white placeholder-white/30 focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200" placeholder="Enter your Staff ID" type="text"/>
+<div class="w-full lg:w-1/2 flex flex-col h-full bg-surface-light dark:bg-background-dark relative">
+<div class="lg:hidden p-6 flex justify-center">
+<h2 class="text-2xl font-bold text-gray-900 dark:text-white">Moresto</h2>
 </div>
-</label>
-<!-- Password Input -->
-<label class="flex flex-col gap-2">
-<span class="text-xs font-bold uppercase tracking-wider text-white/70 ml-1">Password</span>
-<div class="relative flex items-center">
-<span class="absolute left-4 text-white/40 material-symbols-outlined">lock</span>
-<input class="h-14 w-full rounded-xl border border-white/10 bg-white/5 pl-12 pr-12 text-white placeholder-white/30 focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200" placeholder="••••••••" type="password"/>
-<button class="absolute right-4 flex items-center justify-center text-white/40 hover:text-white transition-colors" type="button">
-<span class="material-symbols-outlined">visibility_off</span>
+<div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
+<div class="w-full mb-10 text-center">
+<h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h2>
+<p class="text-gray-500 dark:text-gray-400">Please enter your credentials to access the POS.</p>
+</div>
+<form class="w-full space-y-6" onsubmit="event.preventDefault();">
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300" for="username">Username</label>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">person</span>
+</div>
+<input class="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-surface-dark border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm" id="username" placeholder="Enter your username" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300" for="password">Password</label>
+<a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors" href="#">Forgot Password?</a>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">lock</span>
+</div>
+<input class="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-surface-dark border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm" id="password" placeholder="Enter your password" type="password"/>
+</div>
+</div>
+<div class="pt-2">
+<button class="w-full h-14 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary/20 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 group" type="submit">
+<span>Login</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
 </button>
 </div>
-</label>
-<!-- Forgot Password Link -->
-<div class="flex justify-end">
-<a class="text-sm font-medium text-primary hover:text-orange-400 transition-colors" href="#">Forgot Password?</a>
-</div>
-<!-- Login Button -->
-<button class="mt-2 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-white shadow-lg shadow-orange-900/40 hover:bg-orange-600 hover:shadow-orange-900/60 active:scale-[0.98] transition-all duration-200">
-<span class="font-bold tracking-wide">Login to POS</span>
-<span class="material-symbols-outlined text-lg">arrow_forward</span>
-</button>
-</div>
-<!-- Footer Help -->
+</form>
 <div class="mt-8 text-center">
-<p class="text-xs text-white/30">Having trouble signing in?</p>
-<a class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-white/50 hover:text-white transition-colors" href="#">
-<span class="material-symbols-outlined text-[16px]">support_agent</span>
-                        Contact Manager
-                    </a>
+<p class="text-sm text-gray-400 dark:text-gray-500">Need help? Contact support</p>
+</div>
+</div>
+<div class="p-6 flex justify-between items-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-white/5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></span>
+<span>System Online</span>
+</div>
+<span>v2.5.0 Standard</span>
 </div>
 </div>
 </div>
-<!-- Bottom Branding/Copyright -->
-<div class="relative z-10 w-full px-6 py-4 text-center">
-<p class="text-xs font-medium text-white/20">© 2023 Moresto Restaurant Group. All rights reserved.</p>
-</div>
-</div>
+
 </body></html>
