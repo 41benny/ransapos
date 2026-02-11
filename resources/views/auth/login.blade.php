@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
         rel="stylesheet" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
         rel="stylesheet" />
 
     <style>
@@ -71,7 +71,8 @@
                         class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-orange-600 shadow-lg shadow-orange-900/50">
                         <span class="material-symbols-outlined text-white text-2xl">restaurant</span>
                     </div>
-                    <h1 class="text-2xl font-black tracking-tight text-white">Moresto</h1>
+                    <h1 class="text-3xl font-black tracking-tight text-white/90"
+                        style="font-family: 'Outfit', sans-serif;">Moresto</h1>
                     <p class="mt-1 text-xs font-medium text-white/50">Dimsum &amp; Tea House POS</p>
                 </div>
 
