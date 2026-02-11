@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\Outlet;
 use App\Models\User;
 use App\Models\PaymentMethod;
@@ -21,6 +20,9 @@ class SalesReportController extends Controller
         // Default date range: hari ini
         $dateFrom = $request->input('date_from', now()->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
+        $viewMode = in_array($request->input('view_mode'), ['ringkas', 'detail'], true)
+            ? $request->input('view_mode')
+            : 'ringkas';
         
         // Build query
         $query = Sale::with(['outlet', 'user', 'payments.paymentMethod'])
@@ -66,6 +68,71 @@ class SalesReportController extends Controller
             }
         }
 
+        $detailRows = collect();
+        if ($viewMode === 'detail') {
+            $paymentAggSub = DB::table('payments')
+                ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+                ->select('payments.sale_id')
+                ->selectRaw('COALESCE(SUM(payments.amount), 0) as paid_amount')
+                ->selectRaw("GROUP_CONCAT(DISTINCT payment_methods.name ORDER BY payment_methods.name SEPARATOR ', ') as payment_methods")
+                ->groupBy('payments.sale_id');
+
+            $detailQuery = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
+                    $join->on('sales.id', '=', 'pay_agg.sale_id');
+                })
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if ($request->filled('outlet_id')) {
+                $detailQuery->where('sales.outlet_id', $request->outlet_id);
+            }
+
+            if ($request->filled('user_id')) {
+                $detailQuery->where('sales.user_id', $request->user_id);
+            }
+
+            if ($request->filled('payment_method_id')) {
+                $paymentMethodId = $request->payment_method_id;
+                $detailQuery->whereExists(function ($subQuery) use ($paymentMethodId) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('payments as payment_filter')
+                        ->whereColumn('payment_filter.sale_id', 'sales.id')
+                        ->where('payment_filter.payment_method_id', $paymentMethodId);
+                });
+            }
+
+            $detailRows = $detailQuery
+                ->select(
+                    'sales.invoice_number as transaction_number',
+                    'sales.sale_date',
+                    'outlets.name as outlet_name',
+                    'sales.customer_name',
+                    'sale_items.product_name',
+                    'sale_items.quantity as qty',
+                    'sale_items.unit_price as price',
+                    'sale_items.discount_amount as item_discount',
+                    'sale_items.subtotal as item_subtotal',
+                    'sales.tax_amount',
+                    'sales.service_charge_amount',
+                    'sales.total_amount',
+                    DB::raw("COALESCE(pay_agg.payment_methods, '-') as payment_methods")
+                )
+                ->selectRaw(
+                    "CASE
+                        WHEN COALESCE(pay_agg.paid_amount, 0) >= sales.total_amount AND sales.total_amount > 0 THEN 'Lunas'
+                        WHEN COALESCE(pay_agg.paid_amount, 0) > 0 THEN 'Parsial'
+                        ELSE 'Belum Bayar'
+                    END as payment_status"
+                )
+                ->orderByDesc('sales.sale_date')
+                ->orderByDesc('sales.created_at')
+                ->orderBy('sale_items.id')
+                ->get();
+        }
+
         // Data untuk filter
         $outlets = Outlet::where('is_active', true)->get();
         $users = User::whereHas('role', function($query) {
@@ -73,15 +140,17 @@ class SalesReportController extends Controller
         })->get();
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
-        $filters = $request->only(['date_from', 'date_to', 'outlet_id', 'user_id', 'payment_method_id']);
+        $filters = $request->only(['date_from', 'date_to', 'outlet_id', 'user_id', 'payment_method_id', 'view_mode']);
 
         return view('admin.reports.sales.index', compact(
             'sales', 
+            'detailRows',
             'summary', 
             'outlets', 
             'users', 
             'paymentMethods', 
             'filters',
+            'viewMode',
             'dateFrom',
             'dateTo'
         ));
