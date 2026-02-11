@@ -104,7 +104,7 @@ class CatalogReportController extends Controller
             'ledger-detail' => ['title' => 'Detil Ledger', 'implemented' => true],
             'cash-flow' => ['title' => 'Arus Kas', 'implemented' => true],
             'sales-summary' => ['title' => 'Ringkasan Penjualan', 'implemented' => true],
-            'sales' => ['title' => 'Penjualan', 'implemented' => false],
+            'sales' => ['title' => 'Penjualan', 'implemented' => true, 'existing_route' => 'admin.reports.sales.index'],
             'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => false],
             'sales-order' => ['title' => 'Order Penjualan', 'implemented' => false],
             'sales-by-customer' => ['title' => 'Penjualan per Pelanggan', 'implemented' => false],
@@ -156,6 +156,15 @@ class CatalogReportController extends Controller
     {
         $reports = $this->reports();
         abort_unless(isset($reports[$slug]), 404);
+
+        if ($slug === 'sales') {
+            return redirect()->route('admin.reports.sales.index', array_filter([
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'view_mode' => $request->input('view_mode'),
+            ]));
+        }
 
         $report = $reports[$slug];
         $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary'];
