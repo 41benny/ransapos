@@ -42,6 +42,18 @@ class AuthController extends Controller
         if (Auth::attempt(array_merge($credentials, ['is_active' => true]), $remember)) {
             $request->session()->regenerate();
 
+            // Cek status outlet (jika user terikat dengan outlet)
+            $user = Auth::user();
+            if ($user->outlet_id && $user->outlet && !$user->outlet->is_active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                throw ValidationException::withMessages([
+                    'email' => 'Outlet Anda sedang dinonaktifkan. Silakan hubungi admin.',
+                ]);
+            }
+
             if (Auth::user()?->hasRole('karyawan_outlet')) {
                 Auth::logout();
                 $request->session()->invalidate();
