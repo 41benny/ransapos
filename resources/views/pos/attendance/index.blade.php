@@ -31,10 +31,7 @@
         <div class="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">
             <div class="flex items-start gap-3">
                 <div class="rounded-full bg-amber-100 p-2 text-amber-700">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <span class="material-symbols-outlined text-[20px]">warning</span>
                 </div>
                 <div>
                     <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-amber-800">Peringatan Penting</h3>
@@ -118,17 +115,17 @@
                                     <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500" for="pin-{{ $employee->id }}">
                                         Enter Security PIN
                                     </label>
-                                    <input id="pin-{{ $employee->id }}" type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
-                                        placeholder="PIN 6 Digit" required
-                                        class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-sm tracking-[0.25em] text-slate-800 placeholder:text-slate-300 focus:border-[var(--moresto-red)] focus:outline-none focus:ring-2 focus:ring-[var(--moresto-red)]/20">
+                                    <div class="relative">
+                                        <span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">lock</span>
+                                        <input id="pin-{{ $employee->id }}" type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                                            placeholder="PIN 6 Digit" required
+                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-center text-sm tracking-[0.25em] text-slate-800 placeholder:text-slate-300 focus:border-[var(--moresto-red)] focus:outline-none focus:ring-2 focus:ring-[var(--moresto-red)]/20">
+                                    </div>
                                 </div>
 
                                 <button type="submit"
                                     class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-[var(--moresto-charcoal)] hover:bg-slate-800' : 'bg-[var(--moresto-red)] hover:bg-red-800' }}">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="{{ $hasClockIn ? 'M17 16l4-4m0 0l-4-4m4 4H7' : 'M12 4v16m8-8H4' }}" />
-                                    </svg>
+                                    <span class="material-symbols-outlined text-[18px]">{{ $hasClockIn ? 'logout' : 'schedule' }}</span>
                                     {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
                                 </button>
                             </form>
