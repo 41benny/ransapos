@@ -5,163 +5,183 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Moresto POS Login</title>
-
-    {{-- Tailwind & Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap"
-        rel="stylesheet" />
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
         rel="stylesheet" />
-
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
     <style>
-        /* Custom scrollbar for better aesthetic if needed */
-        ::-webkit-scrollbar {
-            width: 8px;
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
 
-        ::-webkit-scrollbar-track {
-            background: #2d1b16;
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: #4a2c23;
-            border-radius: 4px;
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5e382d;
+        .animate-fade-up {
+            animation: fadeUp 0.8s ease-out forwards;
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
         }
     </style>
 </head>
 
 <body
-    class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased overflow-hidden">
-    <div class="relative flex h-screen w-full flex-col overflow-hidden">
-        <!-- Background Image with Overlay -->
-        <div class="absolute inset-0 z-0 h-full w-full bg-cover bg-center bg-no-repeat"
+    class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-white transition-colors duration-200">
+    <div class="flex h-screen w-full overflow-hidden">
+        <!-- Left Side: Image & Jargon -->
+        <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat"
             style="background-image: url('{{ asset('images/login-bg.jpg') }}');">
-            <!-- Gradient Overlay for readability -->
-            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 backdrop-blur-[2px]">
+
+            <!-- Overlays -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 mix-blend-multiply">
+            </div>
+            <div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+
+            <!-- Badge -->
+            <div class="relative z-10 animate-fade-up">
+                <div
+                    class="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-lg">
+                    <span class="material-symbols-outlined text-primary">restaurant_menu</span>
+                    <span class="text-white font-semibold tracking-wide text-sm font-['Outfit']">Moresto POS</span>
+                </div>
+            </div>
+
+            <!-- Jargon -->
+            <div class="relative z-10 max-w-lg mb-12">
+                <h1 class="text-5xl font-bold text-white mb-4 leading-tight font-['Outfit'] animate-fade-up delay-100">
+                    Authentic Dimsum,<br />Modern Service.
+                </h1>
+                <p class="text-lg text-white/90 font-medium animate-fade-up delay-200 leading-relaxed">
+                    Streamlining your restaurant operations with precision and taste.
+                    <br><span class="text-white/60 text-base mt-2 block">Experience the future of dining
+                        management.</span>
+                </p>
             </div>
         </div>
 
-        <!-- Top Bar: Clock & Terminal Info -->
-        <div class="relative z-10 flex w-full justify-between px-6 py-4 text-white/90">
-            <div
-                class="flex items-center gap-2 rounded-full bg-black/30 px-4 py-2 backdrop-blur-md border border-white/10">
-                <span class="material-symbols-outlined text-primary text-sm">dns</span>
-                <span class="text-sm font-medium tracking-wide">Terminal ID: POS-001</span>
-            </div>
-            <div
-                class="flex items-center gap-2 rounded-full bg-black/30 px-4 py-2 backdrop-blur-md border border-white/10">
-                <span class="material-symbols-outlined text-primary text-sm">schedule</span>
-                <span class="text-sm font-medium tracking-wide">{{ now()->format('H:i A | M d, Y') }}</span>
-            </div>
-        </div>
+        <!-- Right Side: Login Form -->
+        <div class="w-full lg:w-1/2 flex flex-col h-full bg-surface-light dark:bg-[#1e1411] relative">
 
-        <!-- Main Content Area: Centered Login Card -->
-        <div class="relative z-10 flex flex-1 items-center justify-center p-4 overflow-y-auto">
-            <div
-                class="w-full max-w-[400px] rounded-2xl bg-[#1e1411]/95 dark:bg-[#1e1411]/95 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-white/10 backdrop-blur-sm my-auto">
-                <!-- Logo Area -->
-                <div class="mb-6 flex flex-col items-center text-center">
+            <!-- Mobile Header -->
+            <div class="lg:hidden p-6 flex justify-center border-b border-white/5">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white font-['Outfit']">Moresto</h2>
+            </div>
+
+            <div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
+                <div class="w-full mb-10 text-center">
                     <div
-                        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-orange-600 shadow-lg shadow-orange-900/50">
-                        <span class="material-symbols-outlined text-white text-2xl">restaurant</span>
+                        class="w-16 h-16 bg-gradient-to-tr from-primary to-orange-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20">
+                        <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
                     </div>
-                    <h1 class="text-3xl font-black tracking-tight text-white/90"
-                        style="font-family: 'Outfit', sans-serif;">Moresto</h1>
-                    <p class="mt-1 text-xs font-medium text-white/50">Dimsum &amp; Tea House POS</p>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 font-['Outfit']">Welcome Back</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Please enter your credentials to access the POS.</p>
                 </div>
 
-                <!-- Login Form -->
-                <form action="{{ route('login.post') }}" method="POST" class="flex flex-col gap-4">
+                <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-5">
                     @csrf
-
                     @if(session('error'))
                         <div
-                            class="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs text-center">
+                            class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
                             {{ session('error') }}
                         </div>
                     @endif
 
-                    @error('email')
-                        <div
-                            class="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs text-center">
-                            {{ $message }}
-                        </div>
-                    @enderror
-
-                    <!-- Staff ID Input -->
-                    <label class="flex flex-col gap-1.5">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-white/70 ml-1">Email / Staff
-                            ID</span>
-                        <div class="relative flex items-center">
-                            <span
-                                class="absolute left-3 text-white/40 material-symbols-outlined text-[18px]">badge</span>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1"
+                            for="email">Email / Staff ID</label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <span
+                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">badge</span>
+                            </div>
                             <input name="email" value="{{ old('email') }}"
-                                class="h-10 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-3 text-sm text-white placeholder-white/30 focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200"
-                                placeholder="Enter your Email / Staff ID" type="text" required autofocus />
+                                class="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm shadow-sm"
+                                id="email" placeholder="Enter your Email / Staff ID" type="text" required autofocus />
                         </div>
-                    </label>
+                    </div>
 
-                    <!-- Password Input -->
-                    <label class="flex flex-col gap-1.5">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-white/70 ml-1">Password</span>
-                        <div class="relative flex items-center">
-                            <span
-                                class="absolute left-3 text-white/40 material-symbols-outlined text-[18px]">lock</span>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center ml-1">
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                for="password">Password</label>
+                            <a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                                href="#">Forgot Password?</a>
+                        </div>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <span
+                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">lock</span>
+                            </div>
                             <input name="password"
-                                class="h-10 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-10 text-sm text-white placeholder-white/30 focus:border-primary focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200"
-                                placeholder="••••••••" type="password" required />
-                            <button
-                                class="absolute right-3 flex items-center justify-center text-white/40 hover:text-white transition-colors"
-                                type="button" onclick="togglePasswordVisibility()">
-                                <span class="material-symbols-outlined text-[18px]"
+                                class="block w-full pl-11 pr-12 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm shadow-sm"
+                                id="password" placeholder="Enter your password" type="password" required />
+                            <button type="button" onclick="togglePasswordVisibility()"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors">
+                                <span class="material-symbols-outlined text-xl"
                                     id="password-toggle-icon">visibility_off</span>
                             </button>
                         </div>
-                    </label>
-
-                    <!-- Forgot Password Link -->
-                    <div class="flex justify-between items-center">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="remember"
-                                class="w-3.5 h-3.5 rounded border-white/10 bg-white/5 text-primary focus:ring-primary">
-                            <span class="text-xs font-medium text-white/50">Remember me</span>
-                        </label>
-                        <a class="text-xs font-medium text-primary hover:text-orange-400 transition-colors"
-                            href="#">Forgot Password?</a>
                     </div>
 
-                    <!-- Login Button -->
-                    <button type="submit"
-                        class="mt-1 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-white shadow-lg shadow-orange-900/40 hover:bg-orange-600 hover:shadow-orange-900/60 active:scale-[0.98] transition-all duration-200">
-                        <span class="text-sm font-bold tracking-wide">Login to POS</span>
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
+                    <div class="pt-2">
+                        <button
+                            class="w-full h-14 bg-primary hover:bg-orange-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                            type="submit">
+                            <span>Login to POS</span>
+                            <span
+                                class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                    </div>
                 </form>
 
-                <!-- Footer Help -->
-                <div class="mt-6 text-center">
-                    <p class="text-[10px] text-white/30">Having trouble signing in?</p>
-                    <a class="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-white/50 hover:text-white transition-colors"
-                        href="#">
-                        <span class="material-symbols-outlined text-[14px]">support_agent</span>
-                        Contact Manager
-                    </a>
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-400 dark:text-white/30">Need help? <a href="#"
+                            class="text-white/50 hover:text-white transition-colors underline decoration-dotted">Contact
+                            Support</a></p>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Bottom Branding/Copyright -->
-    <div class="relative z-10 w-full px-6 py-4 text-center">
-        <p class="text-xs font-medium text-white/20">© {{ date('Y') }} Moresto Restaurant Group. All rights
-            reserved.</p>
-    </div>
+            <!-- Footer -->
+            <div
+                class="p-6 flex justify-between items-center text-xs text-gray-400 dark:text-white/20 border-t border-gray-100 dark:border-white/5">
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span class="font-medium">System Online</span>
+                </div>
+                <span>v2.5.0 POS Edition</span>
+            </div>
+        </div>
     </div>
 
     <script>
