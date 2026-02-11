@@ -156,7 +156,7 @@
                             [
                                 'label' => 'Laporan',
                                 'icon' => 'fas fa-file-invoice-dollar',
-                                'route' => 'admin.reports.sales.index',
+                                'route' => 'admin.reports.index',
                                 'match' => 'admin.reports.*',
                             ],
                         ];
