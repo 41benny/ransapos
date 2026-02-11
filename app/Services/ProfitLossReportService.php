@@ -97,6 +97,7 @@ class ProfitLossReportService
 
             $amount = (float) $expense->total;
             $expensesByGroup[$group]['accounts'][] = [
+                'id' => $expense->coa_account_id,
                 'code' => $expense->code,
                 'name' => $expense->name,
                 'amount' => $amount,

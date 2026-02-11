@@ -252,23 +252,21 @@
             <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Pendapatan</div>
-                    <div class="mt-2 text-2xl font-bold text-slate-900">Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}</div>
-                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                    <a class="mt-2 inline-flex text-2xl font-bold text-slate-900 hover:text-indigo-700"
                         href="{{ route('admin.reports.sales.index', array_filter($auditBase)) }}">
-                        Audit Penjualan
+                        Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}
                     </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">HPP</div>
-                    <div class="mt-2 text-2xl font-bold text-rose-700">Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}</div>
-                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                    <a class="mt-2 inline-flex text-2xl font-bold text-rose-700 hover:text-indigo-700"
                         href="{{ route('admin.stocks.mutations', array_filter([
                             'start_date' => $dateFrom,
                             'end_date' => $dateTo,
                             'outlet_id' => $outletId,
                             'reference_scope' => 'sales_cogs',
                         ])) }}">
-                        Audit Mutasi HPP
+                        Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}
                     </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -293,11 +291,22 @@
                     <div class="space-y-2 p-4 text-sm">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-700">Pendapatan</span>
-                            <span class="font-semibold text-slate-900">Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}</span>
+                            <a class="font-semibold text-slate-900 hover:text-indigo-700"
+                                href="{{ route('admin.reports.sales.index', array_filter($auditBase)) }}">
+                                Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}
+                            </a>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-700">HPP</span>
-                            <span class="font-semibold text-rose-700">Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}</span>
+                            <a class="font-semibold text-rose-700 hover:text-indigo-700"
+                                href="{{ route('admin.stocks.mutations', array_filter([
+                                    'start_date' => $dateFrom,
+                                    'end_date' => $dateTo,
+                                    'outlet_id' => $outletId,
+                                    'reference_scope' => 'sales_cogs',
+                                ])) }}">
+                                Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}
+                            </a>
                         </div>
                         <div class="border-t border-slate-200 pt-2">
                             <div class="flex items-center justify-between">
@@ -307,16 +316,13 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-700">Biaya Operasional</span>
-                            <span class="font-semibold text-rose-700">Rp {{ number_format($summary['total_expenses'] ?? 0, 0, ',', '.') }}</span>
-                        </div>
-                        <div>
-                            <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                            <a class="font-semibold text-rose-700 hover:text-indigo-700"
                                 href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, [
                                     'type' => 'out',
                                     'coa_type' => 'expense',
                                     'exclude_coa_group' => 'HPP',
                                 ]))) }}">
-                                Audit Biaya Operasional
+                                Rp {{ number_format($summary['total_expenses'] ?? 0, 0, ',', '.') }}
                             </a>
                         </div>
                         <div class="border-t border-slate-200 pt-2">
@@ -341,23 +347,26 @@
                                     <div class="rounded-lg border border-slate-200 p-3">
                                         <div class="mb-2 flex items-center justify-between">
                                             <div class="text-sm font-semibold text-slate-800">{{ $group['group_name'] }}</div>
-                                            <div class="text-sm font-bold text-slate-900">Rp {{ number_format($group['total'], 0, ',', '.') }}</div>
-                                        </div>
-                                        <div class="mb-2">
-                                            <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                            <a class="text-sm font-bold text-slate-900 hover:text-indigo-700"
                                                 href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, [
                                                     'type' => 'out',
                                                     'coa_type' => 'expense',
                                                     'coa_group' => $group['group_name'],
                                                 ]))) }}">
-                                                Audit Grup {{ $group['group_name'] }}
+                                                Rp {{ number_format($group['total'], 0, ',', '.') }}
                                             </a>
                                         </div>
                                         <div class="space-y-1">
                                             @foreach($group['accounts'] as $account)
                                                 <div class="flex items-center justify-between text-xs text-slate-600">
                                                     <span>{{ $account['code'] }} - {{ $account['name'] }}</span>
-                                                    <span>Rp {{ number_format($account['amount'], 0, ',', '.') }}</span>
+                                                    <a class="font-semibold text-slate-700 hover:text-indigo-700"
+                                                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, [
+                                                            'type' => 'out',
+                                                            'coa_account_id' => $account['id'] ?? null,
+                                                        ]))) }}">
+                                                        Rp {{ number_format($account['amount'], 0, ',', '.') }}
+                                                    </a>
                                                 </div>
                                             @endforeach
                                         </div>
