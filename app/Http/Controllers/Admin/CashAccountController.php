@@ -8,8 +8,10 @@ use App\Http\Requests\StoreCashTransactionRequest;
 use App\Http\Requests\UpdateCashAccountRequest;
 use App\Models\CashAccount;
 use App\Models\CashTransaction;
+use App\Models\CoaAccount;
 use App\Services\CashAccountService;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CashAccountController extends Controller
 {
@@ -97,7 +99,7 @@ class CashAccountController extends Controller
     {
         try {
             $data = $request->validated();
-            
+
             $account = $this->cashAccountService->updateAccount($cashAccount, $data);
 
             return redirect()
@@ -137,7 +139,7 @@ class CashAccountController extends Controller
     public function transactions(Request $request)
     {
         $filters = $request->only(['cash_account_id', 'type', 'date_from', 'date_to', 'reference_type']);
-        
+
         $transactions = $this->cashAccountService->getTransactions($filters);
         $accounts = CashAccount::active()->orderBy('name')->get();
 
@@ -182,6 +184,81 @@ class CashAccountController extends Controller
                 ->withInput()
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Show transaction details
+     */
+    public function showTransaction(CashTransaction $cashTransaction)
+    {
+        return view('admin.cash-accounts.show-transaction', compact('cashTransaction'));
+    }
+
+    /**
+     * Show edit form for transaction
+     */
+    public function editTransaction(CashTransaction $cashTransaction)
+    {
+        $accounts = CashAccount::active()->orderBy('name')->get();
+        // Determine if it's income or expense based on type
+        if ($cashTransaction->type === 'in') {
+            $coaAccounts = CoaAccount::active()->income()->orderBy('code')->get();
+        } else {
+            $coaAccounts = CoaAccount::active()->expense()->orderBy('code')->get();
+        }
+
+        return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts'));
+    }
+
+    /**
+     * Update transaction
+     */
+    public function updateTransaction(Request $request, CashTransaction $cashTransaction)
+    {
+        $request->validate([
+            'transaction_date' => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'description' => 'required|string|max:255',
+            'coa_account_id' => 'nullable|exists:coa_accounts,id',
+        ]);
+
+        try {
+            $this->cashAccountService->updateTransaction($cashTransaction, $request->only([
+                'transaction_date',
+                'amount',
+                'description',
+                'coa_account_id',
+                'notes'
+            ]));
+
+            return redirect()
+                ->route('admin.cash-transactions.index')
+                ->with('success', 'Transaksi berhasil diperbarui dan saldo telah dihitung ulang.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete transaction
+     */
+    public function destroyTransaction(CashTransaction $cashTransaction)
+    {
+        try {
+            $this->cashAccountService->deleteTransaction($cashTransaction);
+
+            return back()->with('success', 'Transaksi berhasil dihapus dan saldo telah dihitung ulang.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Print voucher
+     */
+    public function printVoucher(CashTransaction $cashTransaction)
+    {
+        return view('admin.cash-accounts.print-voucher', compact('cashTransaction'));
     }
 
     /**

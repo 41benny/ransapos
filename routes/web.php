@@ -52,6 +52,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::get('cash-transactions', [\App\Http\Controllers\Admin\CashAccountController::class, 'transactions'])->name('cash-transactions.index');
     Route::get('cash-transactions/create', [\App\Http\Controllers\Admin\CashAccountController::class, 'createTransaction'])->name('cash-transactions.create');
     Route::post('cash-transactions', [\App\Http\Controllers\Admin\CashAccountController::class, 'storeTransaction'])->name('cash-transactions.store');
+    Route::get('cash-transactions/{cashTransaction}/edit', [\App\Http\Controllers\Admin\CashAccountController::class, 'editTransaction'])->name('cash-transactions.edit');
+    Route::put('cash-transactions/{cashTransaction}', [\App\Http\Controllers\Admin\CashAccountController::class, 'updateTransaction'])->name('cash-transactions.update');
+    Route::delete('cash-transactions/{cashTransaction}', [\App\Http\Controllers\Admin\CashAccountController::class, 'destroyTransaction'])->name('cash-transactions.destroy');
+    Route::get('cash-transactions/{cashTransaction}/print', [\App\Http\Controllers\Admin\CashAccountController::class, 'printVoucher'])->name('cash-transactions.print');
+    Route::get('cash-transactions/{cashTransaction}', [\App\Http\Controllers\Admin\CashAccountController::class, 'showTransaction'])->name('cash-transactions.show');
     Route::get('cash-accounts/{cashAccount}/mutation-report', [\App\Http\Controllers\Admin\CashAccountController::class, 'mutationReport'])->name('cash-accounts.mutation-report');
 
     // Bank Transfers

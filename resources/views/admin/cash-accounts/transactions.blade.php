@@ -91,13 +91,16 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="">
                             @foreach($transactions as $transaction)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $transaction->transaction_number }}
+                                        <a href="{{ route('admin.cash-transactions.show', $transaction) }}" class="hover:text-indigo-600 hover:underline">
+                                            {{ $transaction->transaction_number }}
+                                        </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $transaction->transaction_date->format('d M Y') }}
@@ -140,6 +143,36 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                                         Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <a href="{{ route('admin.cash-transactions.show', $transaction) }}" 
+                                               class="text-indigo-600 hover:text-indigo-900" 
+                                               title="Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('admin.cash-transactions.print', $transaction) }}" 
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-gray-900" 
+                                               title="Cetak Voucher">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            <a href="{{ route('admin.cash-transactions.edit', $transaction) }}" 
+                                               class="text-amber-600 hover:text-amber-900" 
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('admin.cash-transactions.destroy', $transaction) }}" 
+                                                  method="POST" 
+                                                  class="inline-block"
+                                                  onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
