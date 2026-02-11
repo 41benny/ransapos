@@ -214,6 +214,99 @@
                 </div>
             </div>
         </div>
+    @elseif($viewType === 'profit-loss')
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Pendapatan</div>
+                    <div class="mt-2 text-2xl font-bold text-slate-900">Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">HPP</div>
+                    <div class="mt-2 text-2xl font-bold text-rose-700">Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Laba Kotor</div>
+                    <div class="mt-2 text-2xl font-bold text-emerald-700">Rp {{ number_format($summary['gross_profit'] ?? 0, 0, ',', '.') }}</div>
+                    <div class="mt-1 text-xs text-slate-500">Margin {{ number_format($summary['gross_profit_margin'] ?? 0, 2) }}%</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Laba Bersih</div>
+                    <div class="mt-2 text-2xl font-bold {{ ($summary['net_profit'] ?? 0) >= 0 ? 'text-indigo-700' : 'text-rose-700' }}">
+                        Rp {{ number_format($summary['net_profit'] ?? 0, 0, ',', '.') }}
+                    </div>
+                    <div class="mt-1 text-xs text-slate-500">Margin {{ number_format($summary['net_profit_margin'] ?? 0, 2) }}%</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border border-slate-200">
+                    <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                        Ringkasan Laba Rugi
+                    </div>
+                    <div class="space-y-2 p-4 text-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-700">Pendapatan</span>
+                            <span class="font-semibold text-slate-900">Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-700">HPP</span>
+                            <span class="font-semibold text-rose-700">Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="border-t border-slate-200 pt-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold text-slate-800">Laba Kotor</span>
+                                <span class="font-bold text-emerald-700">Rp {{ number_format($summary['gross_profit'] ?? 0, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-700">Biaya Operasional</span>
+                            <span class="font-semibold text-rose-700">Rp {{ number_format($summary['total_expenses'] ?? 0, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="border-t border-slate-200 pt-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold text-slate-800">Laba Bersih</span>
+                                <span class="font-bold {{ ($summary['net_profit'] ?? 0) >= 0 ? 'text-indigo-700' : 'text-rose-700' }}">
+                                    Rp {{ number_format($summary['net_profit'] ?? 0, 0, ',', '.') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200">
+                    <div class="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                        Biaya Operasional per Grup COA
+                    </div>
+                    <div class="p-4">
+                        @if(!empty($summary['expenses_by_group']) && count($summary['expenses_by_group']) > 0)
+                            <div class="space-y-4">
+                                @foreach($summary['expenses_by_group'] as $group)
+                                    <div class="rounded-lg border border-slate-200 p-3">
+                                        <div class="mb-2 flex items-center justify-between">
+                                            <div class="text-sm font-semibold text-slate-800">{{ $group['group_name'] }}</div>
+                                            <div class="text-sm font-bold text-slate-900">Rp {{ number_format($group['total'], 0, ',', '.') }}</div>
+                                        </div>
+                                        <div class="space-y-1">
+                                            @foreach($group['accounts'] as $account)
+                                                <div class="flex items-center justify-between text-xs text-slate-600">
+                                                    <span>{{ $account['code'] }} - {{ $account['name'] }}</span>
+                                                    <span>Rp {{ number_format($account['amount'], 0, ',', '.') }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
+                                Belum ada biaya operasional untuk periode ini.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     @elseif($viewType === 'cash-bank-summary')
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="grid grid-cols-1 gap-3 md:grid-cols-3">

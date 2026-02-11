@@ -40,8 +40,10 @@ File utama:
 
 #### 2) Laba & Rugi
 - [x] Versi lama aktif (route existing)
-- [ ] Integrasi ke tampilan katalog detail baru (UI seragam)
-- [ ] Validasi sinkron metode tanggal (`sale_date` vs `created_at`)
+- [x] Integrasi ke tampilan katalog detail baru (UI seragam)
+- [x] Validasi sinkron metode tanggal (`sale_date` untuk transaksi penjualan)
+- [x] Biaya operasional exclude grup HPP (hindari double-count COGS)
+- [x] COGS memperhitungkan reversal pembatalan penjualan
 
 File existing:
 - `app/Services/ProfitLossReportService.php`

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Sale;
 use App\Models\StockMutation;
 use App\Models\CashTransaction;
-use App\Models\CoaAccount;
 use Illuminate\Support\Facades\DB;
 
 class ProfitLossReportService
@@ -21,7 +20,9 @@ class ProfitLossReportService
     public function generate(string $dateFrom, string $dateTo, ?int $outletId = null): array
     {
         // 1. PENDAPATAN (Revenue from Sales)
-        $revenueQuery = Sale::whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+        $revenueQuery = Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
         
         if ($outletId) {
             $revenueQuery->where('outlet_id', $outletId);
@@ -30,27 +31,53 @@ class ProfitLossReportService
         $totalRevenue = $revenueQuery->sum('total_amount');
 
         // 2. HPP / COGS (Cost of Goods Sold from Stock Mutations)
-        $cogsQuery = StockMutation::where('mutation_type', 'out')
+        // out = HPP penjualan, in (sale_cancellation) = reversal HPP
+        $cogsQuery = StockMutation::query()
+            ->whereIn('reference_type', ['sale', 'sale_cancellation'])
             ->whereBetween('mutation_date', [$dateFrom, $dateTo]);
         
         if ($outletId) {
             $cogsQuery->where('outlet_id', $outletId);
         }
         
-        $totalCogs = $cogsQuery->sum('total_cost');
+        $totalCogs = (float) $cogsQuery
+            ->selectRaw("SUM(CASE WHEN mutation_type = 'out' THEN total_cost ELSE -total_cost END) as total_cogs")
+            ->value('total_cogs');
 
         // 3. LABA KOTOR (Gross Profit)
         $grossProfit = $totalRevenue - $totalCogs;
 
         // 4. BIAYA OPERASIONAL (Operating Expenses by COA)
-        $expenseQuery = CashTransaction::where('type', 'out')
-            ->whereNotNull('coa_account_id')
+        // Exclude HPP agar tidak double-count dengan totalCogs.
+        $expenseQuery = CashTransaction::query()
+            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+            ->where('cash_transactions.type', 'out')
+            ->whereNotNull('cash_transactions.coa_account_id')
+            ->where('coa_accounts.type', 'expense')
+            ->where('coa_accounts.group', '!=', 'HPP')
             ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
+
+        if ($outletId) {
+            $expenseQuery->where('cash_accounts.outlet_id', $outletId);
+        }
         
         $expensesByAccount = $expenseQuery
-            ->select('coa_account_id', DB::raw('SUM(amount) as total'))
-            ->groupBy('coa_account_id')
-            ->with('coaAccount')
+            ->select(
+                'cash_transactions.coa_account_id',
+                'coa_accounts.code',
+                'coa_accounts.name',
+                'coa_accounts.group',
+                DB::raw('SUM(cash_transactions.amount) as total')
+            )
+            ->groupBy(
+                'cash_transactions.coa_account_id',
+                'coa_accounts.code',
+                'coa_accounts.name',
+                'coa_accounts.group'
+            )
+            ->orderBy('coa_accounts.group')
+            ->orderBy('coa_accounts.code')
             ->get();
 
         // Group by COA group
@@ -58,26 +85,25 @@ class ProfitLossReportService
         $totalExpenses = 0;
 
         foreach ($expensesByAccount as $expense) {
-            if ($expense->coaAccount) {
-                $group = $expense->coaAccount->group;
-                
-                if (!isset($expensesByGroup[$group])) {
-                    $expensesByGroup[$group] = [
-                        'group_name' => $group,
-                        'accounts' => [],
-                        'total' => 0,
-                    ];
-                }
-
-                $expensesByGroup[$group]['accounts'][] = [
-                    'code' => $expense->coaAccount->code,
-                    'name' => $expense->coaAccount->name,
-                    'amount' => $expense->total,
+            $group = $expense->group ?? 'LAINNYA';
+            
+            if (!isset($expensesByGroup[$group])) {
+                $expensesByGroup[$group] = [
+                    'group_name' => $group,
+                    'accounts' => [],
+                    'total' => 0,
                 ];
-
-                $expensesByGroup[$group]['total'] += $expense->total;
-                $totalExpenses += $expense->total;
             }
+
+            $amount = (float) $expense->total;
+            $expensesByGroup[$group]['accounts'][] = [
+                'code' => $expense->code,
+                'name' => $expense->name,
+                'amount' => $amount,
+            ];
+
+            $expensesByGroup[$group]['total'] += $amount;
+            $totalExpenses += $amount;
         }
 
         // 5. LABA BERSIH (Net Profit)

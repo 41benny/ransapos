@@ -5,13 +5,15 @@ namespace App\Http\Controllers\Admin\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Services\BalanceSheetReportService;
+use App\Services\ProfitLossReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CatalogReportController extends Controller
 {
     public function __construct(
-        private readonly BalanceSheetReportService $balanceSheetReportService
+        private readonly BalanceSheetReportService $balanceSheetReportService,
+        private readonly ProfitLossReportService $profitLossReportService
     ) {
     }
 
@@ -95,7 +97,7 @@ class CatalogReportController extends Controller
     {
         return [
             'balance-sheet' => ['title' => 'Neraca', 'implemented' => true],
-            'profit-loss' => ['title' => 'Laba & Rugi', 'implemented' => false, 'existing_route' => 'admin.reports.profit-loss.index'],
+            'profit-loss' => ['title' => 'Laba & Rugi', 'implemented' => true, 'existing_route' => 'admin.reports.profit-loss.index'],
             'cash-bank' => ['title' => 'Kas dan Bank', 'implemented' => true],
             'cash-bank-detail' => ['title' => 'Kas dan Bank Detil', 'implemented' => true],
             'ledger-detail' => ['title' => 'Detil Ledger', 'implemented' => true],
@@ -155,8 +157,12 @@ class CatalogReportController extends Controller
         abort_unless(isset($reports[$slug]), 404);
 
         $report = $reports[$slug];
-        $dateFrom = $request->input('date_from', now()->toDateString());
-        $dateTo = $request->input('date_to', now()->toDateString());
+        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow'];
+        $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
+        $defaultDateTo = in_array($slug, $financeSlugs, true) ? now()->endOfMonth()->toDateString() : now()->toDateString();
+
+        $dateFrom = $request->input('date_from', $defaultDateFrom);
+        $dateTo = $request->input('date_to', $defaultDateTo);
         $outletId = $request->input('outlet_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
 
@@ -206,6 +212,11 @@ class CatalogReportController extends Controller
                     'Kontrol Kas & Bank dipakai sebagai pembanding untuk validasi mapping akun aset.',
                 ],
             ];
+        }
+
+        if ($slug === 'profit-loss') {
+            $viewType = 'profit-loss';
+            $summary = $this->profitLossReportService->generate($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
         }
 
         if ($slug === 'cash-bank') {
