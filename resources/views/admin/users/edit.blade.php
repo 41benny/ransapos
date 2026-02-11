@@ -37,7 +37,7 @@
 
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                            Email <span class="text-red-500">*</span>
+                            Email <span id="email-required-mark" class="text-red-500">*</span>
                         </label>
                         <input
                             type="email"
@@ -45,8 +45,8 @@
                             id="email"
                             value="{{ old('email', $user->email) }}"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror"
-                            required
                         >
+                        <p id="email-role-hint" class="mt-1 text-xs text-gray-500">Email dipakai untuk login akun.</p>
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -66,7 +66,7 @@
                         >
                             <option value="">Pilih Role</option>
                             @foreach($roles as $role)
-                                <option value="{{ $role->id }}" {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>
+                                <option value="{{ $role->id }}" data-role-name="{{ $role->name }}" {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>
                                     {{ $role->display_name ?? $role->name }}
                                 </option>
                             @endforeach
@@ -92,7 +92,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <p class="mt-1 text-xs text-gray-500">Wajib untuk kasir/kitchen.</p>
+                        <p class="mt-1 text-xs text-gray-500">Wajib untuk kasir/kitchen/karyawan outlet.</p>
                         @error('outlet_id')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -227,6 +227,46 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const roleSelect = document.getElementById('role_id');
+        const emailInput = document.getElementById('email');
+        const emailRequiredMark = document.getElementById('email-required-mark');
+        const emailHint = document.getElementById('email-role-hint');
+
+        function selectedRoleName() {
+            if (!roleSelect) {
+                return '';
+            }
+
+            const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+            return selectedOption ? (selectedOption.dataset.roleName || '') : '';
+        }
+
+        function applyRoleRules() {
+            if (!roleSelect || !emailInput) {
+                return;
+            }
+
+            const isOutletEmployee = selectedRoleName() === 'karyawan_outlet';
+            const emailRequired = !isOutletEmployee;
+
+            emailInput.required = emailRequired;
+
+            if (emailRequiredMark) {
+                emailRequiredMark.classList.toggle('hidden', !emailRequired);
+            }
+
+            if (emailHint) {
+                emailHint.textContent = isOutletEmployee
+                    ? 'Untuk role Karyawan Outlet, email tidak wajib. Jika dikosongkan, email internal akan tetap dipertahankan/dibuat otomatis.'
+                    : 'Email dipakai untuk login akun.';
+            }
+        }
+
+        if (roleSelect && emailInput) {
+            roleSelect.addEventListener('change', applyRoleRules);
+            applyRoleRules();
+        }
+
         const pinInput = document.getElementById('attendance_pin');
         const generateButton = document.getElementById('generateAttendancePin');
 

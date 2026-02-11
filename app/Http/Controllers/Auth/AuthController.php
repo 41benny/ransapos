@@ -42,6 +42,16 @@ class AuthController extends Controller
         if (Auth::attempt(array_merge($credentials, ['is_active' => true]), $remember)) {
             $request->session()->regenerate();
 
+            if (Auth::user()?->hasRole('karyawan_outlet')) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                throw ValidationException::withMessages([
+                    'email' => 'Akun karyawan outlet tidak memiliki akses login.',
+                ]);
+            }
+
             // Redirect berdasarkan role
             return $this->redirectByRole();
         }
@@ -86,8 +96,26 @@ class AuthController extends Controller
             return redirect()->intended(route('pos.kitchen.index'));
         }
 
-        // Default ke admin dashboard
-        return redirect()->route('admin.dashboard');
+        if ($user->hasRole('karyawan_outlet')) {
+            Auth::logout();
+            if (request()->hasSession()) {
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+            }
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun karyawan outlet tidak memiliki akses login.',
+            ]);
+        }
+
+        Auth::logout();
+        if (request()->hasSession()) {
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+
+        return redirect()->route('login')->withErrors([
+            'email' => 'Role akun tidak dikenali. Hubungi admin.',
+        ]);
     }
 }
-

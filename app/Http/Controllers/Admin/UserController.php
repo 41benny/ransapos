@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -40,26 +41,37 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $role = Role::find($request->input('role_id'));
+        $isOutletEmployee = $this->isOutletEmployeeRole($role);
+
         $data = $request->validate([
             'name' => 'required|string|max:150',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'email' => $isOutletEmployee ? 'nullable|email|unique:users,email' : 'required|email|unique:users,email',
+            'password' => $isOutletEmployee ? 'nullable|string|min:6|confirmed' : 'required|string|min:6|confirmed',
             'role_id' => 'required|exists:roles,id',
             'outlet_id' => 'nullable|exists:outlets,id',
             'is_active' => 'nullable|boolean',
         ]);
 
         $role = Role::find($data['role_id']);
-        if ($role && in_array($role->name, ['kasir', 'kitchen'], true) && empty($data['outlet_id'])) {
+        if ($role && in_array($role->name, ['kasir', 'kitchen', 'karyawan_outlet'], true) && empty($data['outlet_id'])) {
             return back()
                 ->withInput()
-                ->withErrors(['outlet_id' => 'Outlet wajib diisi untuk kasir/kitchen.']);
+                ->withErrors(['outlet_id' => 'Outlet wajib diisi untuk kasir/kitchen/karyawan outlet.']);
+        }
+
+        $email = $data['email'] ?? null;
+        $password = $data['password'] ?? null;
+
+        if ($this->isOutletEmployeeRole($role)) {
+            $email = $email ?: $this->generateInternalEmployeeEmail($data['name']);
+            $password = $password ?: $this->generateInternalEmployeePassword();
         }
 
         User::create([
             'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'email' => $email,
+            'password' => Hash::make($password),
             'role_id' => $data['role_id'],
             'outlet_id' => $data['outlet_id'] ?? null,
             'is_active' => $request->boolean('is_active'),
@@ -86,9 +98,14 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $role = Role::find($request->input('role_id'));
+        $isOutletEmployee = $this->isOutletEmployeeRole($role);
+
         $data = $request->validate([
             'name' => 'required|string|max:150',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'email' => $isOutletEmployee
+                ? ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)]
+                : ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => 'nullable|string|min:6|confirmed',
             'role_id' => 'required|exists:roles,id',
             'outlet_id' => 'nullable|exists:outlets,id',
@@ -96,22 +113,36 @@ class UserController extends Controller
         ]);
 
         $role = Role::find($data['role_id']);
-        if ($role && in_array($role->name, ['kasir', 'kitchen'], true) && empty($data['outlet_id'])) {
+        if ($role && in_array($role->name, ['kasir', 'kitchen', 'karyawan_outlet'], true) && empty($data['outlet_id'])) {
             return back()
                 ->withInput()
-                ->withErrors(['outlet_id' => 'Outlet wajib diisi untuk kasir/kitchen.']);
+                ->withErrors(['outlet_id' => 'Outlet wajib diisi untuk kasir/kitchen/karyawan outlet.']);
         }
 
         $payload = [
             'name' => $data['name'],
-            'email' => $data['email'],
             'role_id' => $data['role_id'],
             'outlet_id' => $data['outlet_id'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ];
 
+        $email = $data['email'] ?? null;
+        if ($this->isOutletEmployeeRole($role)) {
+            if (!empty($email)) {
+                $payload['email'] = $email;
+            } elseif (!empty($user->email)) {
+                $payload['email'] = $user->email;
+            } else {
+                $payload['email'] = $this->generateInternalEmployeeEmail($data['name']);
+            }
+        } else {
+            $payload['email'] = $data['email'];
+        }
+
         if (!empty($data['password'])) {
             $payload['password'] = Hash::make($data['password']);
+        } elseif ($this->isOutletEmployeeRole($role) && empty($user->password)) {
+            $payload['password'] = Hash::make($this->generateInternalEmployeePassword());
         }
 
         $user->update($payload);
@@ -133,6 +164,40 @@ class UserController extends Controller
         $user->update(['is_active' => false]);
 
         return back()->with('success', 'User berhasil dinonaktifkan.');
+    }
+
+    /**
+     * Cek role karyawan outlet
+     */
+    private function isOutletEmployeeRole(?Role $role): bool
+    {
+        return $role?->name === 'karyawan_outlet';
+    }
+
+    /**
+     * Generate email internal untuk karyawan outlet tanpa email login
+     */
+    private function generateInternalEmployeeEmail(string $name): string
+    {
+        $base = Str::slug($name, '.');
+        if ($base === '') {
+            $base = 'karyawan.outlet';
+        }
+
+        do {
+            $suffix = Str::lower(Str::random(6));
+            $email = "{$base}.{$suffix}@internal.morest.local";
+        } while (User::where('email', $email)->exists());
+
+        return $email;
+    }
+
+    /**
+     * Generate password internal acak untuk akun non-login
+     */
+    private function generateInternalEmployeePassword(): string
+    {
+        return Str::random(32);
     }
 
     /**
