@@ -103,6 +103,121 @@
                 </table>
             </div>
         </div>
+    @elseif($viewType === 'sales-summary')
+        @php
+            $fmt = fn($amount) => 'Rp. ' . number_format((float) $amount, 2, ',', '.');
+        @endphp
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="border-b border-slate-200 pb-4">
+                <h3 class="text-xl font-bold text-slate-900">Ringkasan Penjualan</h3>
+                <div class="mt-1 text-sm text-slate-600">
+                    {{ \Carbon\Carbon::parse($summary['date_from'] ?? $dateFrom)->format('d/m/Y') }}
+                    -
+                    {{ \Carbon\Carbon::parse($summary['date_to'] ?? $dateTo)->format('d/m/Y') }}
+                </div>
+                <div class="mt-1 text-sm font-semibold text-slate-700">
+                    {{ $summary['selected_outlet_name'] ?? 'Semua Outlet' }}
+                </div>
+            </div>
+
+            <div class="mt-4 rounded-xl border border-slate-200">
+                <div class="grid grid-cols-1 divide-y divide-slate-100 text-sm md:grid-cols-2 md:divide-x md:divide-y-0">
+                    <div class="space-y-2 p-4">
+                        <div class="flex items-center justify-between"><span>Total Sales</span><a class="font-semibold text-slate-900 hover:text-indigo-700" href="{{ route('admin.reports.sales.index', array_filter($auditBase)) }}">{{ $fmt($summary['total_sales'] ?? 0) }}</a></div>
+                        <div class="flex items-center justify-between"><span>Total Discount</span><span class="font-semibold text-slate-900">{{ $fmt($summary['total_discount'] ?? 0) }}</span></div>
+                        <div class="flex items-center justify-between"><span>Total Service Charge</span><span class="font-semibold text-slate-900">{{ $fmt($summary['total_service_charge'] ?? 0) }}</span></div>
+                        <div class="flex items-center justify-between"><span>Total Tax</span><span class="font-semibold text-slate-900">{{ $fmt($summary['total_tax'] ?? 0) }}</span></div>
+                        <div class="flex items-center justify-between"><span>Total Adjustment</span><span class="font-semibold text-slate-900">{{ $fmt($summary['total_adjustment'] ?? 0) }}</span></div>
+                        <div class="border-t border-slate-200 pt-2">
+                            <div class="flex items-center justify-between"><span class="font-bold">TOTAL</span><a class="font-bold text-slate-900 hover:text-indigo-700" href="{{ route('admin.reports.sales.index', array_filter($auditBase)) }}">{{ $fmt($summary['total_amount'] ?? 0) }}</a></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4 p-4">
+                        <div>
+                            <div class="mb-2 text-sm font-semibold text-slate-800">Invoices</div>
+                            <div class="flex items-center justify-between text-sm"><span>Number of Invoices</span><span class="font-semibold">{{ number_format($summary['total_transactions'] ?? 0) }}</span></div>
+                            <div class="flex items-center justify-between text-sm"><span>Average Bill per Invoice</span><span class="font-semibold">{{ $fmt($summary['avg_transaction'] ?? 0) }}</span></div>
+                        </div>
+                        <div class="border-t border-slate-200 pt-3">
+                            <div class="mb-2 text-sm font-semibold text-slate-800">Void Summary</div>
+                            <div class="flex items-center justify-between text-sm"><span>Number of Invoices</span><span class="font-semibold">{{ number_format($summary['void_invoices'] ?? 0) }}</span></div>
+                            <div class="flex items-center justify-between text-sm"><span>Number of Items</span><span class="font-semibold">{{ number_format($summary['void_items'] ?? 0, 0, ',', '.') }}</span></div>
+                            <div class="flex items-center justify-between text-sm"><span>TOTAL</span><span class="font-semibold">{{ $fmt($summary['void_total'] ?? 0) }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="mb-2 text-sm font-semibold text-slate-800">Summary By Sales Type</div>
+                    <div class="space-y-1 text-sm">
+                        @forelse($summary['sales_type_rows'] ?? [] as $typeRow)
+                            <div class="flex items-center justify-between">
+                                <span>{{ ucfirst($typeRow->sales_type) }}</span>
+                                <span class="font-semibold">{{ $fmt($typeRow->total_amount) }}</span>
+                            </div>
+                        @empty
+                            <div class="text-slate-500">Belum ada data.</div>
+                        @endforelse
+                        <div class="border-t border-slate-200 pt-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold">TOTAL</span>
+                                <span class="font-bold">{{ $fmt($summary['total_amount'] ?? 0) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="mb-2 text-sm font-semibold text-slate-800">Summary By Pax</div>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex items-center justify-between"><span>Total Pax</span><span class="font-semibold">{{ number_format($summary['total_pax'] ?? 0) }}</span></div>
+                        <div class="flex items-center justify-between"><span>Average Pax per Day</span><span class="font-semibold">{{ number_format($summary['avg_pax_per_day'] ?? 0, 2, ',', '.') }}</span></div>
+                        <div class="flex items-center justify-between"><span>Average Bill per Pax</span><span class="font-semibold">{{ $fmt($summary['avg_bill_per_pax'] ?? 0) }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="mb-2 text-sm font-semibold text-slate-800">Summary By Payment</div>
+                    <div class="space-y-1 text-sm">
+                        @forelse($summary['payment_rows'] ?? [] as $paymentRow)
+                            <div class="flex items-center justify-between">
+                                <span>{{ $paymentRow->payment_method_name }}</span>
+                                <span class="font-semibold">{{ $fmt($paymentRow->total_amount) }}</span>
+                            </div>
+                        @empty
+                            <div class="text-slate-500">Belum ada data pembayaran.</div>
+                        @endforelse
+                        <div class="border-t border-slate-200 pt-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold">TOTAL</span>
+                                <span class="font-bold">{{ $fmt($summary['total_amount'] ?? 0) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <div class="mb-2 text-sm font-semibold text-slate-800">Summary By Product</div>
+                    <div class="max-h-72 overflow-y-auto space-y-1 text-sm">
+                        @forelse($summary['product_rows'] ?? [] as $productRow)
+                            <div class="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 border-b border-slate-100 py-1">
+                                <span>{{ $productRow->product_name }}</span>
+                                <span class="text-xs text-slate-500">{{ ucfirst($productRow->sales_type ?? 'Normal') }}</span>
+                                <span class="text-xs font-semibold">x{{ number_format($productRow->total_qty, 0, ',', '.') }}</span>
+                                <a class="text-right font-semibold hover:text-indigo-700"
+                                    href="{{ route('admin.reports.sales.products', array_filter($auditBase)) }}">
+                                    {{ $fmt($productRow->total_amount) }}
+                                </a>
+                            </div>
+                        @empty
+                            <div class="text-slate-500">Belum ada data produk.</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
     @elseif($viewType === 'balance-sheet-final')
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="mb-4 flex items-center justify-between gap-3">

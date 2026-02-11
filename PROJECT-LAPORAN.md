@@ -1,6 +1,6 @@
 # Project Laporan - Master Tracker
 
-Update terakhir: 11 Februari 2026
+Update terakhir: 11 Februari 2026 (ringkasan penjualan ditambahkan)
 Owner: Tim Morest + Codex
 
 ## Tujuan
@@ -44,7 +44,7 @@ File utama:
 - [x] Validasi sinkron metode tanggal (`sale_date` untuk transaksi penjualan)
 - [x] Biaya operasional exclude grup HPP (hindari double-count COGS)
 - [x] COGS memperhitungkan reversal pembatalan penjualan
-- [x] Link audit langsung dari angka utama ke data sumber (penjualan, mutasi HPP, transaksi biaya)
+- [x] Link audit langsung dari nominal (klik angka) ke data sumber (penjualan, mutasi HPP, transaksi biaya)
 
 File existing:
 - `app/Services/ProfitLossReportService.php`
@@ -69,10 +69,23 @@ File existing:
 - [x] Total masuk/keluar/net
 - [x] Link audit per grup arus kas ke transaksi sumber
 
+### C. Tab Penjualan
+
+#### 1) Ringkasan Penjualan
+- [x] Menu `Ringkasan Penjualan` ditampilkan kembali pada tab `Penjualan`.
+- [x] Halaman `Ringkasan Penjualan` aktif di katalog laporan.
+- [x] Menyajikan ringkasan utama: total sales, discount, service charge, tax, adjustment, total.
+- [x] Menyajikan bagian `Invoices` dan `Void Summary`.
+- [x] Menyajikan bagian `Summary By Sales Type`.
+- [x] Menyajikan bagian `Summary By Pax`.
+- [x] Menyajikan bagian `Summary By Payment`.
+- [x] Menyajikan bagian `Summary By Product` (qty + nominal).
+- [x] Net penjualan bisa klik langsung ke detail laporan penjualan.
+
 ### D. Transparansi & Audit Trail
 - [x] Filter audit transaksi kas ditingkatkan: outlet, COA akun, tipe COA, grup COA, exclude grup.
 - [x] Neraca: audit per akun dan per tipe COA (aset/kewajiban/ekuitas).
-- [x] Laba Rugi: audit Pendapatan, HPP, dan biaya operasional per grup.
+- [x] Laba Rugi: nominal bisa diklik langsung (Pendapatan, HPP, biaya per grup/per akun).
 - [x] Arus Kas: audit per kelompok arus kas.
 - [x] Scope audit HPP di mutasi stok (`sales_cogs`) mencakup `sale` + `sale_cancellation`.
 
@@ -93,12 +106,12 @@ File utama:
 - [ ] Standarisasi filter global laporan (tanggal, outlet, export).
 
 ### Prioritas Menengah
-- [ ] Integrasi `Laba & Rugi` ke halaman detail katalog agar satu UI.
+- [x] Integrasi `Laba & Rugi` ke halaman detail katalog agar satu UI.
 - [ ] Tambah export CSV/Excel untuk laporan Ikhtisar.
 - [ ] Tambah pagination untuk `Detil Ledger` (saat ini limit 500 baris).
 
 ### Prioritas Lanjutan
-- [ ] Implementasi laporan tab Penjualan non-aktif (order, pelanggan, kategori, dst).
+- [ ] Implementasi laporan tab Penjualan non-aktif (order, pelanggan, kategori, dst). `Ringkasan Penjualan` sudah aktif.
 - [ ] Implementasi laporan tab Pembelian.
 - [ ] Implementasi laporan tab Produk.
 
@@ -116,8 +129,8 @@ File utama:
 - [ ] Cek `Arus Kas`: total net sesuai mutasi transaksi periode.
 
 ### QA Teknis
-- [ ] Pastikan tidak ada error di `php artisan view:cache`.
-- [ ] Pastikan route laporan terdaftar di `php artisan route:list`.
+- [x] Pastikan tidak ada error di `php artisan view:cache`.
+- [x] Pastikan route laporan terdaftar di `php artisan route:list`.
 - [ ] Tambah automated test untuk service laporan utama.
 
 ## Catatan Risiko

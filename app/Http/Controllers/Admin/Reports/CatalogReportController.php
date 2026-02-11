@@ -39,6 +39,7 @@ class CatalogReportController extends Controller
             'penjualan' => [
                 'label' => 'Penjualan',
                 'items' => [
+                    'sales-summary',
                     'sales',
                     'sales-order',
                     'sales-by-customer',
@@ -102,7 +103,7 @@ class CatalogReportController extends Controller
             'cash-bank-detail' => ['title' => 'Kas dan Bank Detil', 'implemented' => true],
             'ledger-detail' => ['title' => 'Detil Ledger', 'implemented' => true],
             'cash-flow' => ['title' => 'Arus Kas', 'implemented' => true],
-            'sales-summary' => ['title' => 'Ringkasan Penjualan', 'implemented' => false],
+            'sales-summary' => ['title' => 'Ringkasan Penjualan', 'implemented' => true],
             'sales' => ['title' => 'Penjualan', 'implemented' => false],
             'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => false],
             'sales-order' => ['title' => 'Order Penjualan', 'implemented' => false],
@@ -157,7 +158,7 @@ class CatalogReportController extends Controller
         abort_unless(isset($reports[$slug]), 404);
 
         $report = $reports[$slug];
-        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow'];
+        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary'];
         $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
         $defaultDateTo = in_array($slug, $financeSlugs, true) ? now()->endOfMonth()->toDateString() : now()->toDateString();
 
@@ -217,6 +218,147 @@ class CatalogReportController extends Controller
         if ($slug === 'profit-loss') {
             $viewType = 'profit-loss';
             $summary = $this->profitLossReportService->generate($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
+        }
+
+        if ($slug === 'sales-summary') {
+            $viewType = 'sales-summary';
+
+            $salesBaseQuery = DB::table('sales')
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $salesBaseQuery->where('sales.outlet_id', $outletId);
+            }
+
+            $totals = (clone $salesBaseQuery)
+                ->selectRaw('COUNT(*) as total_transactions')
+                ->selectRaw('COALESCE(SUM(sales.subtotal), 0) as subtotal')
+                ->selectRaw('COALESCE(SUM(sales.discount_amount), 0) as total_discount')
+                ->selectRaw('COALESCE(SUM(sales.tax_amount), 0) as total_tax')
+                ->selectRaw('COALESCE(SUM(sales.service_charge_amount), 0) as total_service_charge')
+                ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+                ->selectRaw('COALESCE(AVG(sales.total_amount), 0) as avg_transaction')
+                ->first();
+
+            $dailyRows = (clone $salesBaseQuery)
+                ->selectRaw('sales.sale_date')
+                ->selectRaw('COUNT(*) as total_transactions')
+                ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+                ->groupBy('sales.sale_date')
+                ->orderByDesc('sales.sale_date')
+                ->get();
+
+            $outletRows = (clone $salesBaseQuery)
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->select(
+                    'sales.outlet_id',
+                    'outlets.name as outlet_name'
+                )
+                ->selectRaw('COUNT(*) as total_transactions')
+                ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+                ->groupBy('sales.outlet_id', 'outlets.name')
+                ->orderByDesc('total_amount')
+                ->get();
+
+            $paymentRowsQuery = DB::table('payments')
+                ->join('sales', 'payments.sale_id', '=', 'sales.id')
+                ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $paymentRowsQuery->where('sales.outlet_id', $outletId);
+            }
+
+            $paymentRows = $paymentRowsQuery
+                ->select(
+                    'payment_methods.id as payment_method_id',
+                    'payment_methods.name as payment_method_name'
+                )
+                ->selectRaw('COUNT(DISTINCT sales.id) as total_transactions')
+                ->selectRaw('COALESCE(SUM(payments.amount), 0) as total_amount')
+                ->groupBy('payment_methods.id', 'payment_methods.name')
+                ->orderByDesc('total_amount')
+                ->get();
+
+            $productRows = (clone $salesBaseQuery)
+                ->join('sale_items', 'sales.id', '=', 'sale_items.sale_id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->select(
+                    'products.id as product_id',
+                    'products.name as product_name',
+                    DB::raw("COALESCE(sales.sales_type, 'Normal') as sales_type")
+                )
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_amount')
+                ->groupBy('products.id', 'products.name', 'sales.sales_type')
+                ->orderByDesc('total_qty')
+                ->limit(30)
+                ->get();
+
+            $voidBaseQuery = DB::table('sales')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereIn('sales.status', ['cancelled', 'void']);
+
+            if (!empty($outletId)) {
+                $voidBaseQuery->where('sales.outlet_id', $outletId);
+            }
+
+            $voidTotals = (clone $voidBaseQuery)
+                ->selectRaw('COUNT(*) as total_invoices')
+                ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+                ->first();
+
+            $voidItems = (clone $voidBaseQuery)
+                ->leftJoin('sale_items', 'sales.id', '=', 'sale_items.sale_id')
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_items')
+                ->value('total_items');
+
+            $salesTypeRows = (clone $salesBaseQuery)
+                ->selectRaw("COALESCE(sales.sales_type, 'Normal') as sales_type")
+                ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+                ->groupBy('sales.sales_type')
+                ->orderBy('sales_type')
+                ->get();
+
+            $totalDays = max(
+                1,
+                \Carbon\Carbon::parse($dateFrom)->diffInDays(\Carbon\Carbon::parse($dateTo)) + 1
+            );
+            $totalPax = (int) ($totals->total_transactions ?? 0);
+            $avgPaxPerDay = $totalPax / $totalDays;
+            $avgBillPerPax = $totalPax > 0 ? ((float) ($totals->total_amount ?? 0) / $totalPax) : 0;
+
+            $selectedOutletName = null;
+            if (!empty($outletId)) {
+                $selectedOutletName = Outlet::query()->where('id', $outletId)->value('name');
+            }
+
+            $summary = [
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'selected_outlet_name' => $selectedOutletName,
+                'total_transactions' => (int) ($totals->total_transactions ?? 0),
+                'total_sales' => (float) ($totals->subtotal ?? 0),
+                'total_discount' => (float) ($totals->total_discount ?? 0),
+                'total_tax' => (float) ($totals->total_tax ?? 0),
+                'total_service_charge' => (float) ($totals->total_service_charge ?? 0),
+                'total_adjustment' => 0.0,
+                'total_amount' => (float) ($totals->total_amount ?? 0),
+                'avg_transaction' => (float) ($totals->avg_transaction ?? 0),
+                'void_invoices' => (int) ($voidTotals->total_invoices ?? 0),
+                'void_items' => (float) ($voidItems ?? 0),
+                'void_total' => (float) ($voidTotals->total_amount ?? 0),
+                'total_pax' => $totalPax,
+                'avg_pax_per_day' => $avgPaxPerDay,
+                'avg_bill_per_pax' => $avgBillPerPax,
+                'daily_rows' => $dailyRows,
+                'outlet_rows' => $outletRows,
+                'payment_rows' => $paymentRows,
+                'sales_type_rows' => $salesTypeRows,
+                'product_rows' => $productRows,
+            ];
         }
 
         if ($slug === 'cash-bank') {
