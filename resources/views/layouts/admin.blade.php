@@ -225,6 +225,16 @@
                         <i class="fas fa-tablet-screen-button w-5 text-center mr-3"></i>
                         <span class="sidebar-text">Perangkat POS</span>
                     </a>
+                    @php
+                        $voidTokenActive = request()->routeIs('admin.void-tokens.*');
+                        $voidTokenClass = $voidTokenActive
+                            ? 'flex items-center px-3 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors mb-1'
+                            : 'flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-1';
+                    @endphp
+                    <a href="{{ route('admin.void-tokens.index') }}" class="{{ $voidTokenClass }}">
+                        <i class="fas fa-key w-5 text-center mr-3"></i>
+                        <span class="sidebar-text">Token Void</span>
+                    </a>
                 </div>
             </nav>
 
