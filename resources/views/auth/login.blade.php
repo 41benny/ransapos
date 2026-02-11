@@ -74,13 +74,15 @@
             </div>
 
             <!-- Jargon -->
-            <div class="relative z-10 max-w-lg mb-12">
-                <h1 class="text-5xl font-bold text-white mb-4 leading-tight font-['Outfit'] animate-fade-up delay-100">
+            <div class="relative z-10 max-w-2xl mb-12">
+                <h1
+                    class="text-7xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-100 drop-shadow-2xl">
                     Authentic Dimsum,<br />Modern Service.
                 </h1>
-                <p class="text-lg text-white/90 font-medium animate-fade-up delay-200 leading-relaxed">
+                <p
+                    class="text-xl text-white/90 font-medium animate-fade-up delay-200 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg">
                     Streamlining your restaurant operations with precision and taste.
-                    <br><span class="text-white/60 text-base mt-2 block">Experience the future of dining
+                    <br><span class="text-white/70 text-lg mt-3 block font-normal">Experience the future of dining
                         management.</span>
                 </p>
             </div>
