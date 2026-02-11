@@ -62,6 +62,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     // Bank Transfers
     Route::resource('bank-transfers', \App\Http\Controllers\Admin\BankTransferController::class)->only(['index', 'create', 'store', 'show']);
     // COA (Chart of Accounts)
+    Route::post('coa-accounts/generate-balance-template', [\App\Http\Controllers\Admin\CoaAccountController::class, 'generateBalanceTemplate'])
+        ->name('coa-accounts.generate-balance-template');
     Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class);
 
     // Bill of Materials (BOM) - sederhana

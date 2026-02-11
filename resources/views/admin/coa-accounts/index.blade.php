@@ -72,12 +72,22 @@
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">Daftar Akun</h2>
-                    <p class="text-sm text-gray-500">Kelola akun pendapatan dan biaya</p>
+                    <p class="text-sm text-gray-500">Kelola akun COA untuk laporan keuangan</p>
                 </div>
-                <a href="{{ route('admin.coa-accounts.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    <span>Tambah Akun Baru</span>
-                </a>
+                <div class="flex items-center gap-2">
+                    <form method="POST" action="{{ route('admin.coa-accounts.generate-balance-template') }}"
+                        onsubmit="return confirm('Generate template akun Neraca sekarang? Akun dengan kode yang sudah ada tidak akan diubah.')">
+                        @csrf
+                        <button type="submit" class="btn bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
+                            <i class="fas fa-layer-group"></i>
+                            <span>Generate Template Neraca</span>
+                        </button>
+                    </form>
+                    <a href="{{ route('admin.coa-accounts.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        <span>Tambah Akun Baru</span>
+                    </a>
+                </div>
             </div>
 
             <div class="table-container">

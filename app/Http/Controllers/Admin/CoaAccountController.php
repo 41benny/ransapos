@@ -10,6 +10,27 @@ use Illuminate\Http\Request;
 
 class CoaAccountController extends Controller
 {
+    /**
+     * Template akun dasar untuk laporan neraca.
+     *
+     * @return array<int, array<string, string|bool>>
+     */
+    private function balanceSheetTemplate(): array
+    {
+        return [
+            ['code' => '1-100', 'name' => 'Kas', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Kas tunai operasional'],
+            ['code' => '1-110', 'name' => 'Bank', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Saldo rekening bank'],
+            ['code' => '1-120', 'name' => 'Piutang Usaha', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Tagihan ke pelanggan'],
+            ['code' => '1-130', 'name' => 'Persediaan', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Nilai stok bahan/produk'],
+            ['code' => '1-200', 'name' => 'Aset Tetap', 'type' => 'asset', 'group' => 'ASET TETAP', 'is_active' => true, 'notes' => 'Peralatan, mesin, inventaris'],
+            ['code' => '2-100', 'name' => 'Utang Usaha', 'type' => 'liability', 'group' => 'KEWAJIBAN LANCAR', 'is_active' => true, 'notes' => 'Tagihan ke supplier'],
+            ['code' => '2-110', 'name' => 'Utang Pajak', 'type' => 'liability', 'group' => 'KEWAJIBAN LANCAR', 'is_active' => true, 'notes' => 'Kewajiban pajak berjalan'],
+            ['code' => '2-200', 'name' => 'Utang Jangka Panjang', 'type' => 'liability', 'group' => 'KEWAJIBAN JANGKA PANJANG', 'is_active' => true, 'notes' => 'Pinjaman > 1 tahun'],
+            ['code' => '3-100', 'name' => 'Modal Disetor', 'type' => 'equity', 'group' => 'EKUITAS', 'is_active' => true, 'notes' => 'Setoran modal pemilik'],
+            ['code' => '3-200', 'name' => 'Laba Ditahan', 'type' => 'equity', 'group' => 'EKUITAS', 'is_active' => true, 'notes' => 'Akumulasi laba bersih'],
+        ];
+    }
+
     public function index(Request $request)
     {
         $query = CoaAccount::query();
@@ -111,6 +132,34 @@ class CoaAccountController extends Controller
                 ->with('success', 'Akun COA berhasil dihapus!');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menghapus akun: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate template akun neraca (idempotent).
+     */
+    public function generateBalanceTemplate()
+    {
+        try {
+            $created = 0;
+
+            foreach ($this->balanceSheetTemplate() as $account) {
+                $exists = CoaAccount::where('code', $account['code'])->exists();
+                if ($exists) {
+                    continue;
+                }
+
+                CoaAccount::create($account);
+                $created++;
+            }
+
+            return redirect()
+                ->route('admin.coa-accounts.index')
+                ->with('success', $created > 0
+                    ? "Template neraca berhasil dibuat ({$created} akun baru)."
+                    : 'Template neraca sudah tersedia, tidak ada akun baru yang ditambahkan.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat template neraca: ' . $e->getMessage());
         }
     }
 }

@@ -4,11 +4,17 @@ namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
+use App\Services\BalanceSheetReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CatalogReportController extends Controller
 {
+    public function __construct(
+        private readonly BalanceSheetReportService $balanceSheetReportService
+    ) {
+    }
+
     /**
      * Konfigurasi daftar laporan per kategori.
      *
@@ -20,9 +26,12 @@ class CatalogReportController extends Controller
             'ikhtisar' => [
                 'label' => 'Ikhtisar Bisnis',
                 'items' => [
-                    'sales-summary',
-                    'sales-daily-summary',
-                    'daily-outlet-summary',
+                    'balance-sheet',
+                    'profit-loss',
+                    'cash-bank',
+                    'cash-bank-detail',
+                    'ledger-detail',
+                    'cash-flow',
                 ],
             ],
             'penjualan' => [
@@ -85,6 +94,12 @@ class CatalogReportController extends Controller
     private function reports(): array
     {
         return [
+            'balance-sheet' => ['title' => 'Neraca', 'implemented' => true],
+            'profit-loss' => ['title' => 'Laba & Rugi', 'implemented' => false, 'existing_route' => 'admin.reports.profit-loss.index'],
+            'cash-bank' => ['title' => 'Kas dan Bank', 'implemented' => true],
+            'cash-bank-detail' => ['title' => 'Kas dan Bank Detil', 'implemented' => true],
+            'ledger-detail' => ['title' => 'Detil Ledger', 'implemented' => true],
+            'cash-flow' => ['title' => 'Arus Kas', 'implemented' => true],
             'sales-summary' => ['title' => 'Ringkasan Penjualan', 'implemented' => false],
             'sales' => ['title' => 'Penjualan', 'implemented' => false],
             'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => false],
@@ -147,9 +162,12 @@ class CatalogReportController extends Controller
 
         $rows = collect();
         $summary = [];
+        $meta = [];
+        $viewType = 'placeholder';
 
-        // Implementasi awal: Penjualan per Metode Pembayaran
+        // Implementasi: Penjualan per Metode Pembayaran
         if ($slug === 'sales-by-payment-method') {
+            $viewType = 'payment-method';
             $query = DB::table('payments')
                 ->join('sales', 'payments.sale_id', '=', 'sales.id')
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
@@ -177,6 +195,113 @@ class CatalogReportController extends Controller
             ];
         }
 
+        // Implementasi: Neraca (Balance Sheet) v1
+        if ($slug === 'balance-sheet') {
+            $viewType = 'balance-sheet-final';
+            $summary = $this->balanceSheetReportService->generate($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
+            $meta = [
+                'notes' => [
+                    'Sumber data neraca saat ini menggunakan mutasi cash transaction yang terhubung ke COA tipe aset/kewajiban/ekuitas.',
+                    'Jika akun neraca masih nol, pastikan transaksi sudah diposting ke COA neraca yang sesuai.',
+                    'Kontrol Kas & Bank dipakai sebagai pembanding untuk validasi mapping akun aset.',
+                ],
+            ];
+        }
+
+        if ($slug === 'cash-bank') {
+            $viewType = 'cash-bank-summary';
+            $rows = $this->cashAccountSnapshots($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
+            $summary = [
+                'total_cash' => (float) $rows->where('type', 'cash')->sum('ending_balance'),
+                'total_bank' => (float) $rows->where('type', 'bank')->sum('ending_balance'),
+                'total_balance' => (float) $rows->sum('ending_balance'),
+                'as_of' => $dateTo,
+            ];
+        }
+
+        if ($slug === 'cash-bank-detail') {
+            $viewType = 'cash-bank-detail';
+            $rows = $this->cashAccountSnapshots($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
+            $summary = [
+                'beginning_balance' => (float) $rows->sum('beginning_balance'),
+                'total_in' => (float) $rows->sum('total_in'),
+                'total_out' => (float) $rows->sum('total_out'),
+                'ending_balance' => (float) $rows->sum('ending_balance'),
+            ];
+        }
+
+        if ($slug === 'ledger-detail') {
+            $viewType = 'ledger-detail';
+
+            $ledgerQuery = DB::table('cash_transactions')
+                ->leftJoin('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+                ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+                ->leftJoin('outlets', 'cash_accounts.outlet_id', '=', 'outlets.id')
+                ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $ledgerQuery->where('cash_accounts.outlet_id', $outletId);
+            }
+
+            $totals = (clone $ledgerQuery)
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE 0 END) as total_in")
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'out' THEN cash_transactions.amount ELSE 0 END) as total_out")
+                ->first();
+
+            $rows = $ledgerQuery
+                ->select(
+                    'cash_transactions.transaction_date',
+                    'cash_transactions.transaction_number',
+                    'cash_transactions.type',
+                    'cash_transactions.amount',
+                    'cash_transactions.description',
+                    'cash_transactions.reference_type',
+                    'coa_accounts.code as coa_code',
+                    'coa_accounts.name as coa_name',
+                    'cash_accounts.name as cash_account_name',
+                    'outlets.name as outlet_name'
+                )
+                ->orderByDesc('cash_transactions.transaction_date')
+                ->orderByDesc('cash_transactions.created_at')
+                ->limit(500)
+                ->get();
+
+            $summary = [
+                'total_in' => (float) ($totals->total_in ?? 0),
+                'total_out' => (float) ($totals->total_out ?? 0),
+                'net' => (float) (($totals->total_in ?? 0) - ($totals->total_out ?? 0)),
+                'row_count' => $rows->count(),
+            ];
+        }
+
+        if ($slug === 'cash-flow') {
+            $viewType = 'cash-flow';
+
+            $flowQuery = DB::table('cash_transactions')
+                ->leftJoin('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+                ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+                ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $flowQuery->where('cash_accounts.outlet_id', $outletId);
+            }
+
+            $rows = $flowQuery
+                ->selectRaw("COALESCE(coa_accounts.`group`, 'TANPA COA') as flow_group")
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE 0 END) as total_in")
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'out' THEN cash_transactions.amount ELSE 0 END) as total_out")
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END) as net_cash_flow")
+                ->groupBy('flow_group')
+                ->orderBy('flow_group')
+                ->get();
+
+            $summary = [
+                'total_in' => (float) $rows->sum('total_in'),
+                'total_out' => (float) $rows->sum('total_out'),
+                'net' => (float) $rows->sum('net_cash_flow'),
+            ];
+        }
+
         return view('admin.reports.catalog-show', [
             'slug' => $slug,
             'report' => $report,
@@ -187,6 +312,64 @@ class CatalogReportController extends Controller
             'outlets' => $outlets,
             'rows' => $rows,
             'summary' => $summary,
+            'meta' => $meta,
+            'viewType' => $viewType,
         ]);
+    }
+
+    private function cashAccountSnapshots(string $dateFrom, string $dateTo, ?int $outletId = null)
+    {
+        $beforeSub = DB::table('cash_transactions')
+            ->select(
+                'cash_account_id',
+                DB::raw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as movement_before")
+            )
+            ->whereDate('transaction_date', '<', $dateFrom)
+            ->groupBy('cash_account_id');
+
+        $inSub = DB::table('cash_transactions')
+            ->select('cash_account_id', DB::raw('SUM(amount) as total_in'))
+            ->where('type', 'in')
+            ->whereBetween('transaction_date', [$dateFrom, $dateTo])
+            ->groupBy('cash_account_id');
+
+        $outSub = DB::table('cash_transactions')
+            ->select('cash_account_id', DB::raw('SUM(amount) as total_out'))
+            ->where('type', 'out')
+            ->whereBetween('transaction_date', [$dateFrom, $dateTo])
+            ->groupBy('cash_account_id');
+
+        $query = DB::table('cash_accounts')
+            ->leftJoinSub($beforeSub, 'mov_before', function ($join) {
+                $join->on('cash_accounts.id', '=', 'mov_before.cash_account_id');
+            })
+            ->leftJoinSub($inSub, 'mov_in', function ($join) {
+                $join->on('cash_accounts.id', '=', 'mov_in.cash_account_id');
+            })
+            ->leftJoinSub($outSub, 'mov_out', function ($join) {
+                $join->on('cash_accounts.id', '=', 'mov_out.cash_account_id');
+            })
+            ->leftJoin('outlets', 'cash_accounts.outlet_id', '=', 'outlets.id')
+            ->where('cash_accounts.is_active', true);
+
+        if (!empty($outletId)) {
+            $query->where('cash_accounts.outlet_id', $outletId);
+        }
+
+        return $query
+            ->select(
+                'cash_accounts.id',
+                'cash_accounts.name',
+                'cash_accounts.code',
+                'cash_accounts.type',
+                'outlets.name as outlet_name',
+                DB::raw('cash_accounts.opening_balance + COALESCE(mov_before.movement_before, 0) as beginning_balance'),
+                DB::raw('COALESCE(mov_in.total_in, 0) as total_in'),
+                DB::raw('COALESCE(mov_out.total_out, 0) as total_out'),
+                DB::raw('(cash_accounts.opening_balance + COALESCE(mov_before.movement_before, 0) + COALESCE(mov_in.total_in, 0) - COALESCE(mov_out.total_out, 0)) as ending_balance')
+            )
+            ->orderBy('cash_accounts.type')
+            ->orderBy('cash_accounts.name')
+            ->get();
     }
 }
