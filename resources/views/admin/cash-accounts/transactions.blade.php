@@ -21,7 +21,21 @@
         <!-- Filter -->
         <div class="bg-white rounded-lg shadow p-4 mb-6">
             <form method="GET" action="{{ route('admin.cash-transactions.index') }}">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                    <!-- Outlet -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
+                        <select name="outlet_id"
+                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                            <option value="">Semua Outlet</option>
+                            @foreach($outlets as $outlet)
+                                <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                    {{ $outlet->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <!-- Akun -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Akun</label>
@@ -67,6 +81,61 @@
                         </button>
                     </div>
                 </div>
+
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">COA Akun</label>
+                        <select name="coa_account_id"
+                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                            <option value="">Semua COA</option>
+                            @foreach($coaAccounts as $coaAccount)
+                                <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>
+                                    {{ $coaAccount->code }} - {{ $coaAccount->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipe COA</label>
+                        <select name="coa_type"
+                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                            <option value="">Semua Tipe</option>
+                            <option value="income" {{ request('coa_type') === 'income' ? 'selected' : '' }}>Income</option>
+                            <option value="expense" {{ request('coa_type') === 'expense' ? 'selected' : '' }}>Expense</option>
+                            <option value="asset" {{ request('coa_type') === 'asset' ? 'selected' : '' }}>Asset</option>
+                            <option value="liability" {{ request('coa_type') === 'liability' ? 'selected' : '' }}>Liability</option>
+                            <option value="equity" {{ request('coa_type') === 'equity' ? 'selected' : '' }}>Equity</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Grup COA</label>
+                        <select name="coa_group"
+                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                            <option value="">Semua Grup</option>
+                            @foreach($coaGroups as $coaGroup)
+                                <option value="{{ $coaGroup }}" {{ request('coa_group') == $coaGroup ? 'selected' : '' }}>
+                                    {{ $coaGroup }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Exclude Grup COA</label>
+                        <input type="text" name="exclude_coa_group" value="{{ request('exclude_coa_group') }}"
+                            placeholder="Contoh: HPP"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="flex items-end">
+                        <a href="{{ route('admin.cash-transactions.index') }}"
+                            class="w-full text-center bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                            Reset
+                        </a>
+                    </div>
+                </div>
             </form>
         </div>
 
@@ -108,9 +177,16 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900">{{ $transaction->cashAccount->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $transaction->cashAccount->code }}</div>
+                                        <div class="text-xs text-gray-500">{{ $transaction->cashAccount->outlet->name ?? 'Outlet tidak diset' }}</div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
                                         <div>{{ $transaction->description }}</div>
+                                        @if($transaction->coaAccount)
+                                            <div class="text-xs text-indigo-700 mt-1">
+                                                COA: {{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}
+                                                ({{ $transaction->coaAccount->group }})
+                                            </div>
+                                        @endif
                                         @if($transaction->reference_type)
                                             <div class="text-xs text-gray-500 mt-1">Ref: {{ ucfirst($transaction->reference_type) }}
                                                 #{{ $transaction->reference_id }}</div>

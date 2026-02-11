@@ -138,12 +138,26 @@ class CashAccountController extends Controller
      */
     public function transactions(Request $request)
     {
-        $filters = $request->only(['cash_account_id', 'type', 'date_from', 'date_to', 'reference_type']);
+        $filters = $request->only([
+            'cash_account_id',
+            'outlet_id',
+            'type',
+            'date_from',
+            'date_to',
+            'reference_type',
+            'coa_account_id',
+            'coa_type',
+            'coa_group',
+            'exclude_coa_group',
+        ]);
 
         $transactions = $this->cashAccountService->getTransactions($filters);
         $accounts = CashAccount::active()->orderBy('name')->get();
+        $outlets = \App\Models\Outlet::active()->orderBy('name')->get();
+        $coaAccounts = CoaAccount::active()->orderBy('code')->get();
+        $coaGroups = CoaAccount::query()->where('is_active', true)->distinct()->orderBy('group')->pluck('group');
 
-        return view('admin.cash-accounts.transactions', compact('transactions', 'accounts', 'filters'));
+        return view('admin.cash-accounts.transactions', compact('transactions', 'accounts', 'outlets', 'coaAccounts', 'coaGroups', 'filters'));
     }
 
     /**

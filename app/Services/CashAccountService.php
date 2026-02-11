@@ -375,13 +375,20 @@ class CashAccountService
      */
     public function getTransactions(array $filters = [])
     {
-        $query = CashTransaction::with(['cashAccount', 'creator'])
+        $query = CashTransaction::with(['cashAccount.outlet', 'creator', 'coaAccount'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         // Filter by cash account
         if (! empty($filters['cash_account_id'])) {
             $query->where('cash_account_id', $filters['cash_account_id']);
+        }
+
+        // Filter by outlet (via cash account)
+        if (! empty($filters['outlet_id'])) {
+            $query->whereHas('cashAccount', function ($q) use ($filters) {
+                $q->where('outlet_id', $filters['outlet_id']);
+            });
         }
 
         // Filter by type
@@ -400,6 +407,32 @@ class CashAccountService
         // Filter by reference type
         if (! empty($filters['reference_type'])) {
             $query->where('reference_type', $filters['reference_type']);
+        }
+
+        // Filter by specific COA account
+        if (! empty($filters['coa_account_id'])) {
+            $query->where('coa_account_id', $filters['coa_account_id']);
+        }
+
+        // Filter by COA properties
+        if (
+            ! empty($filters['coa_type']) ||
+            ! empty($filters['coa_group']) ||
+            ! empty($filters['exclude_coa_group'])
+        ) {
+            $query->whereHas('coaAccount', function ($q) use ($filters) {
+                if (! empty($filters['coa_type'])) {
+                    $q->where('type', $filters['coa_type']);
+                }
+
+                if (! empty($filters['coa_group'])) {
+                    $q->where('group', $filters['coa_group']);
+                }
+
+                if (! empty($filters['exclude_coa_group'])) {
+                    $q->where('group', '!=', $filters['exclude_coa_group']);
+                }
+            });
         }
 
         return $query->paginate(20);

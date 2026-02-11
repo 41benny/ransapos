@@ -104,6 +104,11 @@ class StockController extends Controller
             $query->where('reference_type', $request->reference_type);
         }
 
+        // Scope audit khusus COGS penjualan (termasuk reversal pembatalan)
+        if ($request->input('reference_scope') === 'sales_cogs') {
+            $query->whereIn('reference_type', ['sale', 'sale_cancellation']);
+        }
+
         // Filter by date range
         if ($request->filled('start_date')) {
             $query->where('mutation_date', '>=', $request->start_date);

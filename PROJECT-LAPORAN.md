@@ -44,6 +44,7 @@ File utama:
 - [x] Validasi sinkron metode tanggal (`sale_date` untuk transaksi penjualan)
 - [x] Biaya operasional exclude grup HPP (hindari double-count COGS)
 - [x] COGS memperhitungkan reversal pembatalan penjualan
+- [x] Link audit langsung dari angka utama ke data sumber (penjualan, mutasi HPP, transaksi biaya)
 
 File existing:
 - `app/Services/ProfitLossReportService.php`
@@ -66,6 +67,14 @@ File existing:
 #### 6) Arus Kas
 - [x] Ringkasan arus kas per grup COA
 - [x] Total masuk/keluar/net
+- [x] Link audit per grup arus kas ke transaksi sumber
+
+### D. Transparansi & Audit Trail
+- [x] Filter audit transaksi kas ditingkatkan: outlet, COA akun, tipe COA, grup COA, exclude grup.
+- [x] Neraca: audit per akun dan per tipe COA (aset/kewajiban/ekuitas).
+- [x] Laba Rugi: audit Pendapatan, HPP, dan biaya operasional per grup.
+- [x] Arus Kas: audit per kelompok arus kas.
+- [x] Scope audit HPP di mutasi stok (`sales_cogs`) mencakup `sale` + `sale_cancellation`.
 
 ### C. Persiapan Master Akun (COA)
 - [x] Tombol generate template akun Neraca

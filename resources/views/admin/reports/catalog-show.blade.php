@@ -55,6 +55,16 @@
         </form>
     </div>
 
+    @php
+        $auditBase = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+        ];
+        if (!empty($outletId)) {
+            $auditBase['outlet_id'] = $outletId;
+        }
+    @endphp
+
     @if($viewType === 'payment-method')
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -108,14 +118,26 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Aset</div>
                     <div class="mt-1 text-xl font-bold text-slate-900">Rp {{ number_format($summary['totals']['asset'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_type' => 'asset']))) }}">
+                        Audit Aset
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Kewajiban</div>
                     <div class="mt-1 text-xl font-bold text-slate-900">Rp {{ number_format($summary['totals']['liability'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_type' => 'liability']))) }}">
+                        Audit Kewajiban
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Ekuitas</div>
                     <div class="mt-1 text-xl font-bold text-slate-900">Rp {{ number_format($summary['totals']['equity'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_type' => 'equity']))) }}">
+                        Audit Ekuitas
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Kewajiban + Ekuitas</div>
@@ -142,6 +164,7 @@
                                         <th class="px-4 py-2">Akun</th>
                                         <th class="px-4 py-2 text-right">Mutasi Periode</th>
                                         <th class="px-4 py-2 text-right">Saldo s/d {{ $dateTo }}</th>
+                                        <th class="px-4 py-2 text-right">Audit</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -157,16 +180,22 @@
                                             <td class="px-4 py-2 text-right font-semibold text-slate-900">
                                                 Rp {{ number_format($row['balance'], 0, ',', '.') }}
                                             </td>
+                                            <td class="px-4 py-2 text-right">
+                                                <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                                    href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_account_id' => $row['id']]))) }}">
+                                                    Lihat Transaksi
+                                                </a>
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="px-4 py-5 text-center text-slate-500">Belum ada akun aktif.</td>
+                                            <td colspan="4" class="px-4 py-5 text-center text-slate-500">Belum ada akun aktif.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                                 <tfoot class="bg-slate-50">
                                     <tr>
-                                        <td class="px-4 py-2 text-sm font-semibold text-slate-700" colspan="2">Total {{ $label }}</td>
+                                        <td class="px-4 py-2 text-sm font-semibold text-slate-700" colspan="3">Total {{ $label }}</td>
                                         <td class="px-4 py-2 text-right text-sm font-bold text-slate-900">
                                             Rp {{ number_format($summary['sections'][$type]['total'] ?? 0, 0, ',', '.') }}
                                         </td>
@@ -188,6 +217,10 @@
                         <div class="mt-1 text-lg font-bold text-slate-900">
                             Rp {{ number_format($summary['controls']['cash_bank_as_of'] ?? 0, 0, ',', '.') }}
                         </div>
+                        <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                            href="{{ route('admin.reports.catalog.show', array_merge(['slug' => 'cash-bank-detail'], $auditBase)) }}">
+                            Audit Kas & Bank Detil
+                        </a>
                     </div>
                     <div class="rounded-lg border border-slate-200 bg-white p-3">
                         <div class="text-xs font-semibold uppercase text-slate-500">Selisih Aset vs Kontrol Kas/Bank</div>
@@ -220,10 +253,23 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Pendapatan</div>
                     <div class="mt-2 text-2xl font-bold text-slate-900">Rp {{ number_format($summary['total_revenue'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.reports.sales.index', array_filter($auditBase)) }}">
+                        Audit Penjualan
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">HPP</div>
                     <div class="mt-2 text-2xl font-bold text-rose-700">Rp {{ number_format($summary['total_cogs'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.stocks.mutations', array_filter([
+                            'start_date' => $dateFrom,
+                            'end_date' => $dateTo,
+                            'outlet_id' => $outletId,
+                            'reference_scope' => 'sales_cogs',
+                        ])) }}">
+                        Audit Mutasi HPP
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Laba Kotor</div>
@@ -263,6 +309,16 @@
                             <span class="text-slate-700">Biaya Operasional</span>
                             <span class="font-semibold text-rose-700">Rp {{ number_format($summary['total_expenses'] ?? 0, 0, ',', '.') }}</span>
                         </div>
+                        <div>
+                            <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, [
+                                    'type' => 'out',
+                                    'coa_type' => 'expense',
+                                    'exclude_coa_group' => 'HPP',
+                                ]))) }}">
+                                Audit Biaya Operasional
+                            </a>
+                        </div>
                         <div class="border-t border-slate-200 pt-2">
                             <div class="flex items-center justify-between">
                                 <span class="font-semibold text-slate-800">Laba Bersih</span>
@@ -286,6 +342,16 @@
                                         <div class="mb-2 flex items-center justify-between">
                                             <div class="text-sm font-semibold text-slate-800">{{ $group['group_name'] }}</div>
                                             <div class="text-sm font-bold text-slate-900">Rp {{ number_format($group['total'], 0, ',', '.') }}</div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                                href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, [
+                                                    'type' => 'out',
+                                                    'coa_type' => 'expense',
+                                                    'coa_group' => $group['group_name'],
+                                                ]))) }}">
+                                                Audit Grup {{ $group['group_name'] }}
+                                            </a>
                                         </div>
                                         <div class="space-y-1">
                                             @foreach($group['accounts'] as $account)
@@ -313,10 +379,18 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Kas</div>
                     <div class="mt-1 text-2xl font-bold text-slate-900">Rp {{ number_format($summary['total_cash'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.reports.catalog.show', array_merge(['slug' => 'cash-bank-detail'], $auditBase)) }}">
+                        Audit Akun Kas
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Bank</div>
                     <div class="mt-1 text-2xl font-bold text-slate-900">Rp {{ number_format($summary['total_bank'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.reports.catalog.show', array_merge(['slug' => 'cash-bank-detail'], $auditBase)) }}">
+                        Audit Per Akun
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Kas + Bank</div>
@@ -332,6 +406,7 @@
                             <th class="px-4 py-3">Outlet</th>
                             <th class="px-4 py-3">Tipe</th>
                             <th class="px-4 py-3 text-right">Saldo s/d {{ $summary['as_of'] ?? $dateTo }}</th>
+                            <th class="px-4 py-3 text-right">Audit</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -348,10 +423,16 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right font-semibold text-slate-900">Rp {{ number_format($row->ending_balance, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['cash_account_id' => $row->id]))) }}">
+                                        Lihat Transaksi
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada akun kas/bank aktif.</td>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada akun kas/bank aktif.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -389,6 +470,7 @@
                             <th class="px-4 py-3 text-right">Masuk</th>
                             <th class="px-4 py-3 text-right">Keluar</th>
                             <th class="px-4 py-3 text-right">Saldo Akhir</th>
+                            <th class="px-4 py-3 text-right">Audit</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -396,17 +478,23 @@
                             <tr>
                                 <td class="px-4 py-3">
                                     <div class="font-medium text-slate-800">{{ $row->name }}</div>
-                                    <div class="text-xs text-slate-500">{{ $row->code }} · {{ strtoupper($row->type) }}</div>
+                                    <div class="text-xs text-slate-500">{{ $row->code }} - {{ strtoupper($row->type) }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name ?? '-' }}</td>
                                 <td class="px-4 py-3 text-right text-slate-700">Rp {{ number_format($row->beginning_balance, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right text-emerald-700">Rp {{ number_format($row->total_in, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right text-rose-700">Rp {{ number_format($row->total_out, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right font-semibold text-slate-900">Rp {{ number_format($row->ending_balance, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['cash_account_id' => $row->id]))) }}">
+                                        Lihat Transaksi
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-slate-500">Belum ada data mutasi kas/bank.</td>
+                                <td colspan="7" class="px-4 py-8 text-center text-slate-500">Belum ada data mutasi kas/bank.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -488,10 +576,18 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Arus Masuk</div>
                     <div class="mt-1 text-2xl font-bold text-emerald-700">Rp {{ number_format($summary['total_in'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['type' => 'in']))) }}">
+                        Audit Arus Masuk
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Total Arus Keluar</div>
                     <div class="mt-1 text-2xl font-bold text-rose-700">Rp {{ number_format($summary['total_out'] ?? 0, 0, ',', '.') }}</div>
+                    <a class="mt-2 inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['type' => 'out']))) }}">
+                        Audit Arus Keluar
+                    </a>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-semibold uppercase text-slate-500">Net Arus Kas</div>
@@ -509,6 +605,7 @@
                             <th class="px-4 py-3 text-right">Masuk</th>
                             <th class="px-4 py-3 text-right">Keluar</th>
                             <th class="px-4 py-3 text-right">Net</th>
+                            <th class="px-4 py-3 text-right">Audit</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -520,10 +617,16 @@
                                 <td class="px-4 py-3 text-right font-semibold {{ $row->net_cash_flow >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
                                     Rp {{ number_format($row->net_cash_flow, 0, ',', '.') }}
                                 </td>
+                                <td class="px-4 py-3 text-right">
+                                    <a class="inline-flex text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                                        href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_group' => $row->flow_group]))) }}">
+                                        Lihat Transaksi
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada data arus kas pada periode ini.</td>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada data arus kas pada periode ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
