@@ -52,8 +52,7 @@
     </style>
 </head>
 
-<body
-    class="bg-background-light dark:bg-background-dark font-display antialiased text-gray-900 dark:text-white transition-colors duration-200">
+<body class="bg-[#221510] font-display antialiased text-white transition-colors duration-200">
     <div class="flex h-screen w-full overflow-hidden">
         <!-- Left Side: Image & Jargon -->
         <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat"
@@ -68,7 +67,7 @@
             <div class="relative z-10 animate-fade-up">
                 <div
                     class="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-lg">
-                    <span class="material-symbols-outlined text-primary">restaurant_menu</span>
+                    <span class="material-symbols-outlined text-[#ec4913]">restaurant_menu</span>
                     <span class="text-white font-semibold tracking-wide text-sm font-['Outfit']">Moresto POS</span>
                 </div>
             </div>
@@ -89,21 +88,21 @@
         </div>
 
         <!-- Right Side: Login Form -->
-        <div class="w-full lg:w-1/2 flex flex-col h-full bg-surface-light dark:bg-[#1e1411] relative">
+        <div class="w-full lg:w-1/2 flex flex-col h-full bg-[#1e1411] relative border-l border-white/5">
 
             <!-- Mobile Header -->
             <div class="lg:hidden p-6 flex justify-center border-b border-white/5">
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white font-['Outfit']">Moresto</h2>
+                <h2 class="text-2xl font-bold text-white font-['Outfit']">Moresto</h2>
             </div>
 
             <div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
                 <div class="w-full mb-10 text-center">
                     <div
-                        class="w-16 h-16 bg-gradient-to-tr from-primary to-orange-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20">
+                        class="w-16 h-16 bg-gradient-to-tr from-[#ec4913] to-orange-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20">
                         <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
                     </div>
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 font-['Outfit']">Welcome Back</h2>
-                    <p class="text-gray-500 dark:text-gray-400">Please enter your credentials to access the POS.</p>
+                    <h2 class="text-3xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
+                    <p class="text-gray-400">Please enter your credentials to access the POS.</p>
                 </div>
 
                 <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-5">
@@ -116,33 +115,32 @@
                     @endif
 
                     <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1"
-                            for="email">Email / Staff ID</label>
+                        <label class="block text-sm font-semibold text-gray-300 ml-1" for="email">Email / Staff
+                            ID</label>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span
-                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">badge</span>
+                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-[#ec4913] transition-colors">badge</span>
                             </div>
                             <input name="email" value="{{ old('email') }}"
-                                class="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm shadow-sm"
+                                class="block w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#ec4913]/50 focus:border-[#ec4913] transition-all duration-200 sm:text-sm shadow-sm"
                                 id="email" placeholder="Enter your Email / Staff ID" type="text" required autofocus />
                         </div>
                     </div>
 
                     <div class="space-y-2">
                         <div class="flex justify-between items-center ml-1">
-                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                                for="password">Password</label>
-                            <a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                            <label class="block text-sm font-semibold text-gray-300" for="password">Password</label>
+                            <a class="text-sm font-medium text-[#ec4913] hover:text-[#ec4913]/80 transition-colors"
                                 href="#">Forgot Password?</a>
                         </div>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span
-                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">lock</span>
+                                    class="material-symbols-outlined text-gray-400 group-focus-within:text-[#ec4913] transition-colors">lock</span>
                             </div>
                             <input name="password"
-                                class="block w-full pl-11 pr-12 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm shadow-sm"
+                                class="block w-full pl-11 pr-12 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#ec4913]/50 focus:border-[#ec4913] transition-all duration-200 sm:text-sm shadow-sm"
                                 id="password" placeholder="Enter your password" type="password" required />
                             <button type="button" onclick="togglePasswordVisibility()"
                                 class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors">
@@ -154,7 +152,7 @@
 
                     <div class="pt-2">
                         <button
-                            class="w-full h-14 bg-primary hover:bg-orange-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
+                            class="w-full h-14 bg-[#ec4913] hover:bg-orange-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
                             type="submit">
                             <span>Login to POS</span>
                             <span
@@ -164,15 +162,14 @@
                 </form>
 
                 <div class="mt-8 text-center">
-                    <p class="text-sm text-gray-400 dark:text-white/30">Need help? <a href="#"
+                    <p class="text-sm text-white/30">Need help? <a href="#"
                             class="text-white/50 hover:text-white transition-colors underline decoration-dotted">Contact
                             Support</a></p>
                 </div>
             </div>
 
             <!-- Footer -->
-            <div
-                class="p-6 flex justify-between items-center text-xs text-gray-400 dark:text-white/20 border-t border-gray-100 dark:border-white/5">
+            <div class="p-6 flex justify-between items-center text-xs text-white/20 border-t border-white/5">
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
                         <span
