@@ -6,7 +6,7 @@
     <title>Moresto POS Login</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
         rel="stylesheet" />
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
@@ -24,30 +24,40 @@
         @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
+        
+        @keyframes smoke-rise {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            20% { opacity: 0.4; }
+            50% { opacity: 0.6; transform: translateY(-40px) scale(1.5); }
+            80% { opacity: 0.2; }
+            100% { transform: translateY(-100px) scale(2); opacity: 0; }
+        }
 
         .animate-fade-up {
-            animation: fadeUp 0.8s ease-out forwards;
+            animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; /* Identify start state */
+        }
+        
+        .smoke-particle {
+            position: absolute;
+            bottom: -20px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            animation: smoke-rise 6s infinite ease-in-out;
+            pointer-events: none;
         }
 
-        .delay-100 {
-            animation-delay: 0.1s;
-        }
-
-        .delay-200 {
-            animation-delay: 0.2s;
-        }
-
-        .delay-300 {
-            animation-delay: 0.3s;
-        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .delay-700 { animation-delay: 0.7s; }
         
         /* Fallback for bg colors to ensure visibility if tailwind build fails */
         .force-bg-dark { background-color: #221510 !important; }
@@ -62,12 +72,22 @@
     class="font-display antialiased text-white transition-colors duration-200" style="background-color: #221510;">
     <div class="flex h-screen w-full overflow-hidden">
         <!-- Left Side: Image & Jargon -->
-        <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat"
+        <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat overflow-hidden"
             style="background-image: url('{{ asset('images/login-bg.jpg') }}');">
 
             <!-- Overlays -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 mix-blend-multiply"></div>
             <div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+            
+            <!-- Smoke Effect Container -->
+            <div class="absolute inset-x-0 bottom-0 h-96 overflow-hidden pointer-events-none z-0">
+                <div class="smoke-particle w-32 h-32 left-10 delay-100 duration-[5s]"></div>
+                <div class="smoke-particle w-40 h-40 left-1/4 delay-500 duration-[7s]"></div>
+                <div class="smoke-particle w-24 h-24 left-1/3 delay-300 duration-[4s]"></div>
+                <div class="smoke-particle w-48 h-48 left-1/2 delay-[0s] duration-[8s]"></div>
+                <div class="smoke-particle w-36 h-36 right-1/4 delay-200 duration-[6s]"></div>
+                <div class="smoke-particle w-28 h-28 right-10 delay-700 duration-[5s]"></div>
+            </div>
 
             <!-- Badge -->
             <div class="relative z-10 animate-fade-up">
@@ -78,13 +98,15 @@
             </div>
 
             <!-- Jargon -->
-            <div class="relative z-10 max-w-2xl mb-12">
-                <h1 class="text-7xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-100 drop-shadow-2xl">
-                    Authentic Dimsum,<br/>Modern Service.
+            <div class="relative z-10 max-w-4xl mb-12">
+                <h1 class="text-8xl xl:text-9xl font-black text-white mb-6 leading-[0.85] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
+                    Authentic Dimsum,<br/>
+                    <span class="text-white/90">Modern Service.</span>
                 </h1>
-                <p class="text-xl text-white/90 font-medium animate-fade-up delay-200 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg">
+                <div class="w-24 h-1 bg-[#ec4913] mb-6 rounded-full animate-fade-up delay-500"></div>
+                <p class="text-2xl text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
                     Streamlining your restaurant operations with precision and taste.
-                    <br><span class="text-white/70 text-lg mt-3 block font-normal">Experience the future of dining management.</span>
+                    <br><span class="text-white/60 text-lg mt-3 block font-normal">Experience the future of dining management.</span>
                 </p>
             </div>
         </div>
@@ -98,7 +120,7 @@
             </div>
 
             <div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
-                <div class="w-full mb-10 text-center">
+                <div class="w-full mb-10 text-center animate-fade-up delay-100">
                     <div class="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20" style="background: linear-gradient(to top right, #ec4913, #ea580c);">
                         <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
                     </div>
@@ -106,7 +128,7 @@
                     <p class="text-gray-400">Please enter your credentials to access the POS.</p>
                 </div>
 
-                <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-5">
+                <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-5 animate-fade-up delay-200">
                     @csrf
                     @if(session('error'))
                     <div class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
@@ -161,7 +183,7 @@
                     </div>
                 </form>
 
-                <div class="mt-8 text-center">
+                <div class="mt-8 text-center animate-fade-up delay-300">
                     <p class="text-sm text-white/30">Need help? <a href="#"
                             class="text-white/50 hover:text-white transition-colors underline decoration-dotted">Contact
                             Support</a></p>
