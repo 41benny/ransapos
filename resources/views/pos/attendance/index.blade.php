@@ -16,6 +16,27 @@
 
 <div class="h-full overflow-auto bg-[var(--bg-soft-grey)] p-6">
     <div class="mx-auto max-w-7xl space-y-6">
+        <div class="grid grid-cols-3 gap-2 sm:hidden">
+            <a href="{{ route('pos.sales.create') }}"
+                class="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">point_of_sale</span>
+                Kasir
+            </a>
+            <a href="{{ route('pos.sessions.close') }}"
+                class="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                Shift
+            </a>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit"
+                    class="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-700 shadow-sm">
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                    Logout
+                </button>
+            </form>
+        </div>
+
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Kasir Login</p>
@@ -124,7 +145,7 @@
                                 </div>
 
                                 <button type="submit"
-                                    class="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-[var(--moresto-charcoal)] hover:bg-slate-800' : 'bg-[var(--moresto-red)] hover:bg-red-800' }}">
+                                    class="flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-[var(--moresto-charcoal)] hover:bg-slate-800' : 'bg-[var(--moresto-red)] hover:bg-red-800' }}">
                                     <span class="material-symbols-outlined text-[18px]">{{ $hasClockIn ? 'logout' : 'schedule' }}</span>
                                     {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
                                 </button>
