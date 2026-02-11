@@ -40,7 +40,7 @@
     class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased overflow-hidden">
     <div class="relative flex h-screen w-full flex-col overflow-hidden">
         <!-- Background Image with Overlay -->
-        <div class="absolute inset-0 z-0 h-full w-full bg-[length:100%_100%] bg-center bg-no-repeat"
+        <div class="absolute inset-0 z-0 h-full w-full bg-cover bg-center bg-no-repeat"
             style="background-image: url('{{ asset('images/login-bg.jpg') }}');">
             <!-- Gradient Overlay for readability -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 backdrop-blur-[2px]">
