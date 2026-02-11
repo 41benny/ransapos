@@ -23,7 +23,7 @@ class UpdateProductRequest extends FormRequest
     {
         $productParam = $this->route('product');
         $productId = is_object($productParam) ? $productParam->id : $productParam;
-        
+
         return [
             'sku' => 'required|string|max:50|unique:products,sku,' . $productId,
             'name' => 'required|string|max:255',
@@ -35,7 +35,6 @@ class UpdateProductRequest extends FormRequest
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'price_levels' => 'nullable|array',
-            'price_levels.*' => 'nullable|numeric|min:0',
             'min_stock' => 'nullable|integer|min:0',
             'is_sellable' => 'boolean',
             'is_pos_available' => 'boolean',

@@ -32,7 +32,6 @@ class StoreProductRequest extends FormRequest
             'purchase_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'price_levels' => 'nullable|array',
-            'price_levels.*' => 'nullable|numeric|min:0',
             'bundle_mode' => 'nullable|boolean',
             'bundle_components' => 'nullable|array',
             'bundle_components.*.component_product_id' => 'nullable|exists:products,id',
