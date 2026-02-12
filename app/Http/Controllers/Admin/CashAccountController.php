@@ -89,7 +89,9 @@ class CashAccountController extends Controller
      */
     public function edit(CashAccount $cashAccount)
     {
-        return view('admin.cash-accounts.edit', compact('cashAccount'));
+        $outlets = \App\Models\Outlet::active()->orderBy('name')->get();
+
+        return view('admin.cash-accounts.edit', compact('cashAccount', 'outlets'));
     }
 
     /**

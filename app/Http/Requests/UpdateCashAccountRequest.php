@@ -34,6 +34,7 @@ class UpdateCashAccountRequest extends FormRequest
                 'max:50',
                 Rule::unique('cash_accounts', 'code')->ignore($accountId),
             ],
+            'outlet_id' => 'nullable|exists:outlets,id',
             'type' => 'required|in:cash,bank',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
@@ -48,6 +49,7 @@ class UpdateCashAccountRequest extends FormRequest
         return [
             'name' => 'nama akun',
             'code' => 'kode akun',
+            'outlet_id' => 'outlet',
             'type' => 'jenis akun',
             'is_active' => 'status aktif',
             'notes' => 'catatan',
