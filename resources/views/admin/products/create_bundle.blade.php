@@ -718,7 +718,7 @@
 
             // Close modal on cloud click
             [outletModal, userModal].forEach(modal => {
-                modal.addEventList ener('click', function(event ) {
+                modal.addEventListener('click', function(event) {
                     if(event.target === modal) closeModal(modal);
                 });
             });
