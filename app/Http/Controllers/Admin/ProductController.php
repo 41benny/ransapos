@@ -298,6 +298,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        // Load dependencies standard
         $categories = ProductCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -312,6 +313,15 @@ class ProductController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'role_id', 'outlet_id']);
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
+
+        // Pengecekan Bundle
+        $isBundle = $product->bomHeader()->where('source_type', 'bundle')->exists();
+
+        if ($isBundle) {
+            // Jika Bundle, load material untuk pemilihan komponen
+            $rawMaterials = $this->loadRawMaterialsForBundle();
+            return view('admin.products.edit_bundle', compact('product', 'categories', 'outlets', 'posUsers', 'priceLevels', 'rawMaterials'));
+        }
 
         return view('admin.products.edit', compact('product', 'categories', 'outlets', 'posUsers', 'priceLevels'));
     }
