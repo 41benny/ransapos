@@ -12,7 +12,7 @@
 
 @section('content')
 <div class="max-w-6xl">
-    <form action="{{ route('admin.products.store') }}" method="POST">
+    <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -22,41 +22,67 @@
             </div>
 
             <div class="p-6 space-y-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Image Upload Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                     <div>
-                        <label for="sku" class="block text-sm font-medium text-gray-700 mb-2">
-                            SKU <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="sku"
-                            id="sku"
-                            value="{{ old('sku') }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sku') border-red-500 @enderror"
-                            placeholder="Contoh: MENU-001"
-                            required
-                        >
-                        @error('sku')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gambar Produk</label>
+                        <div class="border border-gray-200 rounded-lg p-3 bg-white">
+                            <div class="aspect-square rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center relative">
+                                <img id="imagePreview" src="" alt="Preview" class="hidden w-full h-full object-cover">
+                                <div id="imagePlaceholder" class="text-gray-400 text-center">
+                                    <i class="fas fa-image text-3xl"></i>
+                                    <p class="text-[10px] mt-1">No Image</p>
+                                </div>
+                            </div>
+                            <label for="image" class="mt-3 inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 w-full cursor-pointer">
+                                <i class="fas fa-upload mr-1"></i> Upload
+                            </label>
+                            <input type="file" id="image" name="image" accept="image/*" class="hidden">
+                            <p class="text-[10px] text-gray-400 mt-2 text-center">Maks 2MB.</p>
+                            @error('image')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
+                    
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="sku" class="block text-sm font-medium text-gray-700 mb-2">
+                                    SKU <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="sku"
+                                    id="sku"
+                                    value="{{ old('sku') }}"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sku') border-red-500 @enderror"
+                                    placeholder="Contoh: MENU-001"
+                                    required
+                                >
+                                @error('sku')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                            Nama Produk <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="name"
-                            id="name"
-                            value="{{ old('name') }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
-                            placeholder="Contoh: Nasi Goreng Spesial"
-                            required
-                        >
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nama Produk <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    id="name"
+                                    value="{{ old('name') }}"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                                    placeholder="Contoh: Nasi Goreng Spesial"
+                                    required
+                                >
+                                @error('name')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -517,6 +543,30 @@
         const sellableInput = document.getElementById('is_sellable');
         const posAvailableInput = document.getElementById('is_pos_available');
         const onlineOrderInput = document.getElementById('is_online_order_available');
+
+        // Image Preview logic
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+
+        if (imageInput) {
+            imageInput.addEventListener('change', function (event) {
+                const file = event.target.files && event.target.files[0];
+                if (!file) {
+                    imagePreview.src = '';
+                    imagePreview.classList.add('hidden');
+                    imagePlaceholder.classList.remove('hidden');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (loadEvent) {
+                    imagePreview.src = loadEvent.target.result;
+                    imagePreview.classList.remove('hidden');
+                    imagePlaceholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         function toggleOutletSelector() {
             const useAllOutlets = allOutletsCheckbox.checked;
