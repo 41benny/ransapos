@@ -408,23 +408,33 @@
 
                 <!-- Action Buttons -->
                 <div class="space-y-3">
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Metode Pembayaran</p>
-                        <div class="grid grid-cols-2 xl:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
-                            <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
-                                @click="selectedPaymentMethod = method.id"
-                                :class="Number(selectedPaymentMethod) === Number(method.id)
-                                    ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
-                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
-                                class="min-h-[44px] px-2.5 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
-                                @{{ method.name }}
-                            </button>
-                        </div>
-                    </div>
+                    <div class="rounded-xl border border-primary/20 bg-white overflow-hidden">
+                        <button type="button" @click="showPaymentMethodPicker = !showPaymentMethodPicker"
+                            class="w-full px-3 py-2.5 flex items-center justify-between gap-3 text-left">
+                            <div class="min-w-0">
+                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Metode Pembayaran</p>
+                                <p class="text-sm font-bold text-primary truncate mt-0.5">@{{ selectedPaymentMethodName || 'Belum dipilih' }}</p>
+                            </div>
+                            <svg :class="showPaymentMethodPicker ? 'rotate-180' : ''"
+                                class="w-4 h-4 text-gray-400 transition-transform shrink-0" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
 
-                    <div class="rounded-xl border border-primary/20 bg-white px-3 py-2.5 flex items-center justify-between gap-3">
-                        <span class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Terpilih</span>
-                        <span class="text-sm font-bold text-primary truncate">@{{ selectedPaymentMethodName || 'Belum dipilih' }}</span>
+                        <div v-show="showPaymentMethodPicker" class="px-3 pb-3 border-t border-gray-100">
+                            <div class="pt-2 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
+                                    @click="selectPaymentMethod(method.id)"
+                                    :class="Number(selectedPaymentMethod) === Number(method.id)
+                                        ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                    class="min-h-[40px] px-2 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
+                                    @{{ method.name }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <button @click="processPayment"
@@ -689,6 +699,7 @@
                         salesType: 'regular',
                         selectedPaymentMethod: '',
                         selectedCustomerId: '',
+                        showPaymentMethodPicker: false,
 
                         orderNotes: '',
 
@@ -752,6 +763,10 @@
                 },
                 methods: {
                     // ... Existing Methods ...
+                    selectPaymentMethod(methodId) {
+                        this.selectedPaymentMethod = methodId;
+                        this.showPaymentMethodPicker = false;
+                    },
                     filterProducts() {
                         let filtered = this.products;
                         if (this.selectedCategory !== null) {
@@ -886,6 +901,7 @@
                                 this.showSuccessModal = true;
                                 this.cart = [];
                                 this.selectedPaymentMethod = '';
+                                this.showPaymentMethodPicker = false;
                             } else {
                                 alert('Error: ' + result.message);
                             }
