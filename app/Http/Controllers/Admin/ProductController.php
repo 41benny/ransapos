@@ -314,6 +314,14 @@ class ProductController extends Controller
             ->get(['id', 'name', 'role_id', 'outlet_id']);
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
 
+        // Bundle tetap memakai halaman edit_bundle agar form komponen BOM tersedia.
+        $isBundle = $product->bomHeader()->where('source_type', 'bundle')->exists();
+        if ($isBundle) {
+            $rawMaterials = $this->loadRawMaterialsForBundle();
+
+            return view('admin.products.edit_bundle', compact('product', 'categories', 'outlets', 'posUsers', 'priceLevels', 'rawMaterials'));
+        }
+
         return view('admin.products.edit', compact('product', 'categories', 'outlets', 'posUsers', 'priceLevels'));
     }
 
