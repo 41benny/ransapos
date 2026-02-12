@@ -471,7 +471,7 @@
                 <button type="button" class="close-modal btn btn-secondary btn-sm"
                     onclick="document.getElementById('outletModal').classList.add('hidden')">Tutup</button>
                 <button type="button" class="close-modal btn btn-primary btn-sm"
-                    onclick="document.getElementById('outletModal').classList.add('hidden')">Simpan</button>
+                    onclick="saveOutletSelection()">Simpan</button>
             </div>
         </div>
     </div>
@@ -508,7 +508,7 @@
                 <button type="button" class="close-modal btn btn-secondary btn-sm"
                     onclick="document.getElementById('userModal').classList.add('hidden')">Tutup</button>
                 <button type="button" class="close-modal btn btn-primary btn-sm"
-                    onclick="document.getElementById('userModal').classList.add('hidden')">Simpan</button>
+                    onclick="saveUserSelection()">Simpan</button>
             </div>
         </div>
     </div>
@@ -517,220 +517,209 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // ============================================
+            // 1. VARIABLE INITIALIZATION
+            // ============================================
+            // Checkboxes for 'All'
             const allOutletsCheckbox = document.getElementById('is_available_all_outlets');
+            const allUsersCheckbox = document.getElementById('is_available_all_users');
+
+            // Wrappers for explicit selection
             const outletWrap = document.getElementById('outlet-selector-wrap');
-            const outletSelect = document.getElementById('pos_outlet_ids');
-            const sellingPriceInput = document.getElementById('selling_price');
-            const regularPriceDefaultInput = document.querySelector('input[name="price_levels[regular][default]"]');
+            const userWrap = document.getElementById('user-selector-wrap');
+
+            // Hidden inputs that store CSV
+            const outletHiddenInput = document.getElementById('pos_outlet_ids_input');
+            const userHiddenInput = document.getElementById('pos_user_ids_input');
+
+            // Display counters
+            const outletCountText = document.getElementById('outlet-count');
+            const userCountText = document.getElementById('user-count');
+
+            // Initialize Sets from hidden input values (server populated)
+            let selectedOutletIds = new Set(
+                outletHiddenInput && outletHiddenInput.value ? outletHiddenInput.value.split(',').filter(x => x).map(Number) : []
+            );
+            let selectedUserIds = new Set(
+                userHiddenInput && userHiddenInput.value ? userHiddenInput.value.split(',').filter(x => x).map(Number) : []
+            );
+
+            // ============================================
+            // 2. POS AVAILABILITY LOGIC (Modals)
+            // ============================================
+
+            // A. Toggle Visibility based on "All" checkboxes
+            function refreshAvailabilitySections() {
+                if (allOutletsCheckbox && outletWrap) {
+                    const isAllOutlets = allOutletsCheckbox.checked;
+                    // If checked (All), hide specific selector. If unchecked, show it.
+                    if (isAllOutlets) {
+                        outletWrap.classList.add('hidden');
+                    } else {
+                        outletWrap.classList.remove('hidden');
+                    }
+                }
+                if (allUsersCheckbox && userWrap) {
+                    const isAllUsers = allUsersCheckbox.checked;
+                    if (isAllUsers) {
+                        userWrap.classList.add('hidden');
+                    } else {
+                        userWrap.classList.remove('hidden');
+                    }
+                }
+            }
+
+            if (allOutletsCheckbox) allOutletsCheckbox.addEventListener('change', refreshAvailabilitySections);
+            if (allUsersCheckbox) allUsersCheckbox.addEventListener('change', refreshAvailabilitySections);
+            refreshAvailabilitySections(); // Init on load
+
+            // B. Populate Modals based on current selection
+            function syncModalChecks() {
+                // Outlets
+                document.querySelectorAll('.outlet-option').forEach(opt => {
+                    opt.checked = selectedOutletIds.has(Number(opt.value));
+                });
+                // Users
+                document.querySelectorAll('.user-option').forEach(opt => {
+                    opt.checked = selectedUserIds.has(Number(opt.value));
+                });
+            }
+            syncModalChecks(); // Init logic
+
+            // C. Save Functions (Triggered by 'Simpan' button in Modal)
+            // Make them global so onclick HTML attribute can find them
+            window.saveOutletSelection = function() {
+                const checkedBoxes = document.querySelectorAll('.outlet-option:checked');
+                selectedOutletIds.clear();
+                checkedBoxes.forEach(cb => selectedOutletIds.add(Number(cb.value)));
+
+                // Update hidden input
+                if(outletHiddenInput) outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
+                // Update counter text
+                if(outletCountText) outletCountText.textContent = selectedOutletIds.size;
+
+                document.getElementById('outletModal').classList.add('hidden');
+            }
+
+            window.saveUserSelection = function() {
+                const checkedBoxes = document.querySelectorAll('.user-option:checked');
+                selectedUserIds.clear();
+                checkedBoxes.forEach(cb => selectedUserIds.add(Number(cb.value)));
+
+                // Update hidden input
+                if(userHiddenInput) userHiddenInput.value = Array.from(selectedUserIds).join(',');
+                // Update counter text
+                if(userCountText) userCountText.textContent = selectedUserIds.size;
+
+                document.getElementById('userModal').classList.add('hidden');
+            }
+
+
+            // ============================================
+            // 3. PRODUCT FORM LOGIC (Image, Type, Prices)
+            // ============================================
             const productTypeInput = document.getElementById('product_type');
             const sellableInput = document.getElementById('is_sellable');
             const posAvailableInput = document.getElementById('is_pos_available');
             const onlineOrderInput = document.getElementById('is_online_order_available');
 
-            // Image Preview logic
+            // Image Preview
             const imageInput = document.getElementById('image');
             const imagePreview = document.getElementById('imagePreview');
             const imagePlaceholder = document.getElementById('imagePlaceholder');
-
             if (imageInput) {
                 imageInput.addEventListener('change', function (event) {
                     const file = event.target.files && event.target.files[0];
-                    if (!file) {
-                        // If no file selected, revert to original image if exists (or placeholder)
-                        // But standard file input behavior handles this clear usually.
-                        // For preview, we leave it as is or reset if we want.
-                        return;
-                    }
+                    if (!file) return;
                     const reader = new FileReader();
                     reader.onload = function (loadEvent) {
                         imagePreview.src = loadEvent.target.result;
                         imagePreview.classList.remove('hidden');
-                        imagePlaceholder.classList.add('hidden');
+                        if(imagePlaceholder) imagePlaceholder.classList.add('hidden');
                     };
                     reader.readAsDataURL(file);
                 });
             }
 
-            function toggleOutletSelector() {
-                const useAllOutlets = allOutletsCheckbox.checked;
-                outletWrap.classList.toggle('hidden', useAllOutlets);
-                outletSelect.disabled = useAllOutlets;
-            }
-
-            function syncPrice(from, to) {
-                if (!from || !to) {
-                    return;
-                }
-                to.value = from.value;
-            }
-
+            // Product Type Rules
             function applyProductTypeRules() {
-                if (!productTypeInput) {
-                    return;
-                }
-
+                if (!productTypeInput) return;
                 if (productTypeInput.value === 'raw_material') {
-                    if (sellableInput) {
-                        sellableInput.checked = false;
-                    }
-                    if (posAvailableInput) {
-                        posAvailableInput.checked = false;
-                    }
-                    if (onlineOrderInput) {
-                        onlineOrderInput.checked = false;
-                    }
+                    if (sellableInput) sellableInput.checked = false;
+                    if (posAvailableInput) posAvailableInput.checked = false;
+                    if (onlineOrderInput) onlineOrderInput.checked = false;
                 }
             }
-
-            if (allOutletsCheckbox) {
-                toggleOutletSelector();
-                allOutletsCheckbox.addEventListener('change', toggleOutletSelector);
+            if (productTypeInput) {
+                productTypeInput.addEventListener('change', applyProductTypeRules);
+                applyProductTypeRules();
             }
+
+
+            // ============================================
+            // 4. PRICING SECTION LOGIC (Accordion & Copy)
+            // ============================================
+
+            // Pricing Sync (Reguler Default <-> Header Selling Price)
+            const sellingPriceInput = document.getElementById('selling_price');
+            const regularPriceDefaultInput = document.querySelector('input[name="price_levels[regular][default]"]');
 
             if (sellingPriceInput && regularPriceDefaultInput) {
                 sellingPriceInput.addEventListener('input', function () {
-                    syncPrice(sellingPriceInput, regularPriceDefaultInput);
+                    regularPriceDefaultInput.value = this.value;
                 });
                 regularPriceDefaultInput.addEventListener('input', function () {
-                    syncPrice(regularPriceDefaultInput, sellingPriceInput);
+                    sellingPriceInput.value = this.value;
                 });
             }
 
-            if (productTypeInput) {
-                applyProductTypeRules();
-                productTypeInput.addEventListener('change', applyProductTypeRules);
-            }
-
-            // ============================================
-            // OUTLET-SPECIFIC PRICING LOGIC
-            // ============================================
-
-            // Toggle outlet selection section
+            // A. Toggle Accordion
             document.querySelectorAll('.toggle-outlet-selection').forEach(btn => {
-                btn.addEventListener('click', function () {
+                btn.addEventListener('click', function() {
                     const level = this.dataset.level;
                     const section = document.querySelector(`.outlet-selection-section[data-level="${level}"]`);
-
-                    if (section) {
+                    if(section) {
                         section.classList.toggle('hidden');
+                        // Update Icon
                         const icon = this.querySelector('i');
                         if (section.classList.contains('hidden')) {
-                            icon.classList.remove('fa-chevron-up');
-                            icon.classList.add('fa-store');
+                            icon.className = 'fas fa-store mr-1';
                             this.innerHTML = '<i class="fas fa-store mr-1"></i>Pilih Outlet';
                         } else {
-                            icon.classList.remove('fa-store');
-                            icon.classList.add('fa-chevron-up');
+                            icon.className = 'fas fa-chevron-up mr-1';
                             this.innerHTML = '<i class="fas fa-chevron-up mr-1"></i>Sembunyikan';
                         }
                     }
                 });
             });
 
-            // Handle outlet checkbox change
-            document.querySelectorAll('.outlet-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
+            // B. Outlet Checkbox Logic (Enable/Disable Input)
+            document.querySelectorAll('.outlet-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
                     const level = this.dataset.level;
                     const outletId = this.dataset.outletId;
                     const row = this.closest('.outlet-price-row');
                     const inputWrapper = row.querySelector('.outlet-price-input-wrapper');
-                    const priceInput = row.querySelector('.outlet-price-input');
+                    const input = row.querySelector('.outlet-price-input');
 
-                    if (this.checked) {
+                    if(this.checked) {
                         inputWrapper.classList.remove('hidden');
-                        priceInput.disabled = false;
-                        priceInput.focus();
+                        input.disabled = false;
+                        input.focus();
                     } else {
                         inputWrapper.classList.add('hidden');
-                        priceInput.disabled = true;
-                        priceInput.value = '';
+                        input.disabled = true;
+                        input.value = ''; // Reset value
                     }
-
                     updateOutletSelectedCount(level);
                 });
             });
 
-            // Select all outlets
-            document.querySelectorAll('.select-all-outlets').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const level = this.dataset.level;
-                    document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
-                        if (!checkbox.checked) {
-                            checkbox.checked = true;
-                            checkbox.dispatchEvent(new Event('change'));
-                        }
-                    });
-                });
-            });
-
-            // Deselect all outlets
-            document.querySelectorAll('.deselect-all-outlets').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const level = this.dataset.level;
-                    document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
-                        if (checkbox.checked) {
-                            checkbox.checked = false;
-                            checkbox.dispatchEvent(new Event('change'));
-                        }
-                    });
-                });
-            });
-
-            // Copy default price to all selected outlets
-            document.querySelectorAll('.copy-to-all-outlets-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const level = this.dataset.level;
-                    const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
-                    const defaultPrice = defaultInput ? defaultInput.value : '';
-
-                    if (!defaultPrice || parseFloat(defaultPrice) <= 0) {
-                        alert('Harap isi harga default terlebih dahulu.');
-                        return;
-                    }
-
-                    let copiedCount = 0;
-                    document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]:checked`).forEach(checkbox => {
-                        const outletId = checkbox.dataset.outletId;
-                        const priceInput = document.querySelector(`.outlet-price-input[data-level="${level}"][data-outlet-id="${outletId}"]`);
-                        if (priceInput) {
-                            priceInput.value = defaultPrice;
-                            copiedCount++;
-                        }
-                    });
-
-                    if (copiedCount > 0) {
-                        showToast(`Harga berhasil disalin ke ${copiedCount} outlet`, 'success');
-                    } else {
-                        alert('Tidak ada outlet yang dipilih. Centang outlet terlebih dahulu.');
-                    }
-                });
-            });
-
-            // Copy from default price (individual)
-            document.querySelectorAll('.copy-from-default-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const level = this.dataset.level;
-                    const outletId = this.dataset.outletId;
-                    const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
-                    const priceInput = document.querySelector(`.outlet-price-input[data-level="${level}"][data-outlet-id="${outletId}"]`);
-
-                    if (defaultInput && priceInput) {
-                        const defaultPrice = defaultInput.value;
-                        if (defaultPrice && parseFloat(defaultPrice) > 0) {
-                            priceInput.value = defaultPrice;
-                            showToast('Harga disalin dari default', 'success');
-                        } else {
-                            alert('Harga default belum diisi.');
-                        }
-                    }
-                });
-            });
-
-            // Update selected outlet count
+            // C. Update "X dipilih" count
             function updateOutletSelectedCount(level) {
                 const count = document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]:checked`).length;
                 const badge = document.querySelector(`.outlet-selected-count[data-level="${level}"]`);
-                if (badge) {
+                if(badge) {
                     badge.textContent = `${count} dipilih`;
                     badge.classList.toggle('bg-blue-100', count > 0);
                     badge.classList.toggle('text-blue-700', count > 0);
@@ -738,27 +727,77 @@
                     badge.classList.toggle('text-gray-500', count === 0);
                 }
             }
-
-            // Initialize counts on page load
+            // Init counts per level
             document.querySelectorAll('.outlet-selected-count').forEach(badge => {
-                const level = badge.dataset.level;
-                updateOutletSelectedCount(level);
+                updateOutletSelectedCount(badge.dataset.level);
+            });
+
+            // D. Select All / Deselect All
+            document.querySelectorAll('.select-all-outlets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const level = this.dataset.level;
+                    document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(cb => {
+                        if(!cb.checked) {
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                });
+            });
+
+            document.querySelectorAll('.deselect-all-outlets').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const level = this.dataset.level;
+                    document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(cb => {
+                        if(cb.checked) {
+                            cb.checked = false;
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                });
+            });
+
+            // E. Copy To All / Copy From Default
+            document.querySelectorAll('.copy-to-all-outlets-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const level = this.dataset.level;
+                    const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
+                    if(!defaultInput || !defaultInput.value) {
+                        alert('Harap isi harga default terlebih dahulu.');
+                        return;
+                    }
+
+                    document.querySelectorAll(`.outlet-price-input[data-level="${level}"]:not(:disabled)`).forEach(input => {
+                        input.value = defaultInput.value;
+                    });
+                    showToast('Harga berhasil disalin ke outlet yang dipilih.');
+                });
+            });
+
+            document.querySelectorAll('.copy-from-default-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const level = this.dataset.level;
+                    const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
+                    const outletId = this.dataset.outletId;
+                    const targetInput = document.querySelector(`.outlet-price-input[data-level="${level}"][data-outlet-id="${outletId}"]`);
+
+                    if(defaultInput && targetInput) {
+                        if(!defaultInput.value) {
+                            alert('Harga default belum diisi.');
+                            return;
+                        }
+                        targetInput.value = defaultInput.value;
+                    }
+                });
             });
 
             // Toast notification helper
             function showToast(message, type = 'success') {
                 const toast = document.createElement('div');
-                toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                    } text-white text-sm font-medium`;
+                toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white text-sm font-medium`;
                 toast.style.animation = 'slideInRight 0.3s ease';
-                toast.innerHTML = `
-                                        <div class="flex items-center gap-2">
-                                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                                            <span>${message}</span>
-                                        </div>
-                                    `;
+                toast.innerHTML = `<div class="flex items-center gap-2"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i><span>${message}</span></div>`;
                 document.body.appendChild(toast);
-
                 setTimeout(() => {
                     toast.style.opacity = '0';
                     toast.style.transform = 'translateX(20px)';
@@ -766,101 +805,6 @@
                     setTimeout(() => toast.remove(), 300);
                 }, 3000);
             }
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Outlet & User Selection Logic
-            const selectedOutletIds = new Set(@json($oldOutletIds));
-            const selectedUserIds = new Set(@json($oldUserIds));
-
-            const allOutletsCheckbox = document.getElementById('is_available_all_outlets');
-            const allUsersCheckbox = document.getElementById('is_available_all_users');
-            const outletWrap = document.getElementById('outlet-selector-wrap');
-            const userWrap = document.getElementById('user-selector-wrap');
-            const outletCountText = document.getElementById('outlet-count');
-            const userCountText = document.getElementById('user-count');
-            const outletHiddenInput = document.getElementById('pos_outlet_ids_input');
-            const userHiddenInput = document.getElementById('pos_user_ids_input');
-
-            const outletOptions = document.querySelectorAll('.outlet-option');
-            const userOptions = document.querySelectorAll('.user-option');
-
-            function updateHiddenInputs() {
-                outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
-                userHiddenInput.value = Array.from(selectedUserIds).join(',');
-            }
-
-            function refreshSelectionTexts() {
-                outletCountText.textContent = `${selectedOutletIds.size}`;
-                userCountText.textContent = `${selectedUserIds.size}`;
-            }
-
-            function refreshAvailabilitySections() {
-                const allOutlets = allOutletsCheckbox.checked;
-                const allUsers = allUsersCheckbox.checked;
-
-                if (allOutlets) {
-                    outletWrap.classList.add('hidden');
-                } else {
-                    outletWrap.classList.remove('hidden');
-                }
-
-                if (allUsers) {
-                    userWrap.classList.add('hidden');
-                } else {
-                    userWrap.classList.remove('hidden');
-                }
-
-                updateHiddenInputs();
-            }
-
-            function syncModalChecks() {
-                outletOptions.forEach(option => {
-                    option.checked = selectedOutletIds.has(Number(option.value));
-                });
-                userOptions.forEach(option => {
-                    option.checked = selectedUserIds.has(Number(option.value));
-                });
-            }
-
-            outletOptions.forEach(option => {
-                option.addEventListener('change', function () {
-                    const value = Number(option.value);
-                    if (option.checked) selectedOutletIds.add(value);
-                    else selectedOutletIds.delete(value);
-                    refreshSelectionTexts();
-                    updateHiddenInputs();
-                });
-            });
-
-            userOptions.forEach(option => {
-                option.addEventListener('change', function () {
-                    const value = Number(option.value);
-                    if (option.checked) selectedUserIds.add(value);
-                    else selectedUserIds.delete(value);
-                    refreshSelectionTexts();
-                    updateHiddenInputs();
-                });
-            });
-
-            if (allOutletsCheckbox) allOutletsCheckbox.addEventListener('change', refreshAvailabilitySections);
-            if (allUsersCheckbox) allUsersCheckbox.addEventListener('change', refreshAvailabilitySections);
-
-            // Initial sync
-            syncModalChecks();
-            refreshSelectionTexts();
-            refreshAvailabilitySections();
-
-            // Close modal on cloud click
-            ['outletModal', 'userModal'].forEach(id => {
-                const modal = document.getElementById(id);
-                if (modal) {
-                    modal.addEventListener('click', function (event) {
-                        if (event.target === modal) modal.classList.add('hidden');
-                    });
-                }
-            });
         });
     </script>
 @endpush

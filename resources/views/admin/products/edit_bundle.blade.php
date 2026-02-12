@@ -504,48 +504,45 @@
     </div>
 
     <!-- Modal Pilih Raw Material -->
-    <div id="materialModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-        aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
-                onclick="document.getElementById('materialModal').classList.add('hidden')"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Pilih Bahan/Produk</h3>
-                    <div class="mb-4">
-                        <input type="text" id="searchMaterial" placeholder="Cari nama bahan..." class="form-input w-full">
-                    </div>
-                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
-                        <ul class="divide-y divide-gray-200" id="materialList">
-                            @foreach($rawMaterials as $mat)
-                                <li class="p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center material-item"
-                                    data-id="{{ $mat->id }}" data-name="{{ $mat->name }}" data-unit="{{ $mat->unit }}"
-                                    data-cost="{{ $mat->purchase_price }}" onclick="selectMaterial(this)">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ $mat->name }}</p>
-                                        <p class="text-xs text-gray-500">{{ $mat->sku }} • Stok:
-                                            {{ $mat->stocks_sum_quantity ?? 0 }} {{ $mat->unit }}
-                                        </p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-xs font-semibold text-gray-700">Rp
-                                            {{ number_format($mat->purchase_price, 0, ',', '.') }}
-                                        </p>
-                                        <p class="text-[10px] text-gray-400">/{{ $mat->unit }}</p>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" class="btn btn-secondary w-full sm:w-auto sm:text-sm"
-                        onclick="document.getElementById('materialModal').classList.add('hidden')">
-                        Tutup
-                    </button>
-                </div>
+    <div id="materialModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
+                <h3 class="text-sm font-bold text-gray-900" id="modal-title">Pilih Bahan/Produk</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('materialModal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-4 border-b border-gray-100">
+                <input type="text" id="searchMaterial" placeholder="Cari nama bahan..." class="form-input w-full text-sm">
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-0">
+                <ul class="divide-y divide-gray-100" id="materialList">
+                    @foreach($rawMaterials as $mat)
+                        <li class="p-3 hover:bg-gray-50 cursor-pointer flex justify-between items-center material-item transition-colors"
+                            data-id="{{ $mat->id }}" data-name="{{ $mat->name }}" data-unit="{{ $mat->unit }}"
+                            data-cost="{{ $mat->purchase_price }}" onclick="selectMaterial(this)">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $mat->name }}</p>
+                                <p class="text-xs text-gray-500">{{ $mat->sku }} • Stok:
+                                    {{ $mat->stocks_sum_quantity ?? 0 }} {{ $mat->unit }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-semibold text-gray-700">Rp
+                                    {{ number_format($mat->purchase_price, 0, ',', '.') }}
+                                </p>
+                                <p class="text-[10px] text-gray-400">/{{ $mat->unit }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            
+            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+                <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('materialModal').classList.add('hidden')">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>
