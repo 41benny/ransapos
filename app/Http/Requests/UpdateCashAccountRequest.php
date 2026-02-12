@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CashAccount;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCashAccountRequest extends FormRequest
 {
@@ -21,11 +23,17 @@ class UpdateCashAccountRequest extends FormRequest
      */
     public function rules(): array
     {
-        $accountId = $this->route('cash_account');
+        $accountRoute = $this->route('cash_account') ?? $this->route('cashAccount');
+        $accountId = $accountRoute instanceof CashAccount ? $accountRoute->getKey() : $accountRoute;
         
         return [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:cash_accounts,code,' . $accountId,
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('cash_accounts', 'code')->ignore($accountId),
+            ],
             'type' => 'required|in:cash,bank',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
