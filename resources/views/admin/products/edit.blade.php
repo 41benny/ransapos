@@ -72,6 +72,8 @@
                                     @enderror
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
@@ -182,7 +184,6 @@
                                     @enderror
                                 </div>
                             </div>
-                        </div>
 
                         <div
                             class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-gray-50/60">
