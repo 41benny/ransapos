@@ -507,7 +507,7 @@
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
-                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Batal</a>
+                <a href="{{ session('product_index_url', route('admin.products.index')) }}" class="btn btn-secondary">Batal</a>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save mr-1"></i> Simpan Bundle
                 </button>

@@ -485,7 +485,7 @@
 
             <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">
                 <a
-                    href="{{ route('admin.products.index') }}"
+                    href="{{ session('product_index_url', route('admin.products.index')) }}"
                     class="px-5 py-2.5 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
                 >
                     Batal
