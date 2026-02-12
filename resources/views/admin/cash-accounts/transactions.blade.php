@@ -31,7 +31,18 @@
 
         <div class="t6-card shadow overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="imperial-table min-w-full" id="cashTransactionsTable" style="table-layout: auto;">
+                <table class="imperial-table min-w-full" id="cashTransactionsTable" style="table-layout: fixed;">
+                    <colgroup id="cashTransactionsColgroup">
+                        <col class="resizable-col" style="width: 140px;">
+                        <col class="resizable-col" style="width: 140px;">
+                        <col class="resizable-col" style="width: 220px;">
+                        <col class="resizable-col" style="width: 260px;">
+                        <col class="resizable-col" style="width: 120px;">
+                        <col class="resizable-col" style="width: 150px;">
+                        <col class="resizable-col" style="width: 170px;">
+                        <col class="resizable-col" style="width: 220px;">
+                        <col style="width: 120px;">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -254,11 +265,12 @@
             position: absolute;
             top: 0;
             right: 0;
-            width: 5px;
+            width: 8px;
             height: 100%;
             cursor: col-resize;
             user-select: none;
             z-index: 10;
+            touch-action: none;
         }
 
         .resize-handle:hover {
@@ -277,6 +289,8 @@
 
     <script>
         const table = document.getElementById('cashTransactionsTable');
+        const colgroup = document.getElementById('cashTransactionsColgroup');
+        const resizableCols = colgroup ? colgroup.querySelectorAll('col.resizable-col') : [];
         const STORAGE_KEY = 'cash_transactions_table_column_widths';
         const filterInputs = document.querySelectorAll('#cashTransactionsTable .filter-input');
         const clearFiltersBtn = document.getElementById('clearFilters');
@@ -297,6 +311,9 @@
                 headers.forEach((th, index) => {
                     if (widths[index]) {
                         th.style.width = widths[index] + 'px';
+                        if (resizableCols[index]) {
+                            resizableCols[index].style.width = widths[index] + 'px';
+                        }
                     }
                 });
             } catch (e) {
@@ -310,7 +327,10 @@
             }
 
             const headers = table.querySelectorAll('th.resizable');
-            const widths = Array.from(headers).map(th => th.offsetWidth);
+            const widths = Array.from(headers).map((th, index) => {
+                const colWidth = resizableCols[index] ? parseFloat(resizableCols[index].style.width) : null;
+                return Number.isFinite(colWidth) ? colWidth : th.offsetWidth;
+            });
             localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
         }
 
@@ -339,6 +359,11 @@
                         const diff = moveEvent.pageX - startX;
                         const newWidth = Math.max(90, startWidth + diff);
                         th.style.width = newWidth + 'px';
+                        const headers = table.querySelectorAll('th.resizable');
+                        const headerIndex = Array.from(headers).indexOf(th);
+                        if (headerIndex >= 0 && resizableCols[headerIndex]) {
+                            resizableCols[headerIndex].style.width = newWidth + 'px';
+                        }
                     }
 
                     function onMouseUp() {
