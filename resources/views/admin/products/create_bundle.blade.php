@@ -135,48 +135,46 @@
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label for="purchase_price" class="form-label">
-                            Harga Modal <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="number"
-                            name="purchase_price"
-                            id="purchase_price"
-                            value="{{ old('purchase_price', 0) }}"
-                            class="form-input bg-gray-50 text-gray-500"
-                            placeholder="0"
-                            min="0"
-                            step="0.01"
-                            readonly
-                            required
-                        >
-                        <p class="mt-1 text-xs text-gray-400">Otomatis dari total komponen.</p>
-                        @error('purchase_price')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+                        <div>
+                            <label for="purchase_price" class="form-label">
+                                Harga Modal <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                name="purchase_price"
+                                id="purchase_price"
+                                value="{{ old('purchase_price', 0) }}"
+                                class="form-input bg-gray-50 text-gray-500"
+                                placeholder="0"
+                                min="0"
+                                step="0.01"
+                                readonly
+                                required
+                            >
+                            <p class="mt-1 text-xs text-gray-400">Otomatis dari total komponen.</p>
+                            @error('purchase_price')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    <div>
-                        <label for="min_stock" class="form-label">
-                            Stok Minimal
-                        </label>
-                        <input
-                            type="number"
-                            name="min_stock"
-                            id="min_stock"
-                            value="{{ old('min_stock', 0) }}"
-                            class="form-input"
-                            placeholder="0"
-                            min="0"
-                        >
-                        @error('min_stock')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div>
+                            <label for="min_stock" class="form-label">
+                                Stok Minimal
+                            </label>
+                            <input
+                                type="number"
+                                name="min_stock"
+                                id="min_stock"
+                                value="{{ old('min_stock', 0) }}"
+                                class="form-input"
+                                placeholder="0"
+                                min="0"
+                            >
+                            @error('min_stock')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 
