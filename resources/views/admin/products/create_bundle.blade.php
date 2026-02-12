@@ -799,7 +799,7 @@
                 return parseNumber(selectedOption.getAttribute('data-purchase-price'));
             }
 
-            function getComponentU            nit(selectElement) {
+            function getComponentUnit(selectElement) {
                  if (selectElement.tomselect) {
                     const value = selectElement.tomselect.getValue();
                     const option = selectElement.tomselect.getOption(value);
