@@ -139,9 +139,14 @@ class CashAccountController extends Controller
     public function transactions(Request $request)
     {
         $filters = $request->only([
+            'transaction_number',
+            'transaction_date',
             'cash_account_id',
             'outlet_id',
             'type',
+            'description',
+            'amount',
+            'balance_after',
             'date_from',
             'date_to',
             'reference_type',

@@ -422,6 +422,16 @@ class CashAccountService
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc');
 
+        // Filter by transaction number
+        if (! empty($filters['transaction_number'])) {
+            $query->where('transaction_number', 'like', '%' . $filters['transaction_number'] . '%');
+        }
+
+        // Filter by exact transaction date
+        if (! empty($filters['transaction_date'])) {
+            $query->whereDate('transaction_date', $filters['transaction_date']);
+        }
+
         // Filter by cash account
         if (! empty($filters['cash_account_id'])) {
             $query->where('cash_account_id', $filters['cash_account_id']);
@@ -437,6 +447,27 @@ class CashAccountService
         // Filter by type
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
+        }
+
+        // Filter by description keyword
+        if (! empty($filters['description'])) {
+            $query->where('description', 'like', '%' . $filters['description'] . '%');
+        }
+
+        // Filter by exact amount
+        if (! empty($filters['amount'])) {
+            $amount = $this->parseDecimalFilter($filters['amount']);
+            if ($amount !== null) {
+                $query->where('amount', $amount);
+            }
+        }
+
+        // Filter by exact ending balance
+        if (! empty($filters['balance_after'])) {
+            $balanceAfter = $this->parseDecimalFilter($filters['balance_after']);
+            if ($balanceAfter !== null) {
+                $query->where('balance_after', $balanceAfter);
+            }
         }
 
         // Filter by date range
@@ -478,7 +509,25 @@ class CashAccountService
             });
         }
 
-        return $query->paginate(20);
+        return $query->paginate(20)->withQueryString();
+    }
+
+    protected function parseDecimalFilter($value): ?float
+    {
+        $normalized = trim((string) $value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $normalized = str_ireplace('rp', '', $normalized);
+        $normalized = str_replace([' ', '.'], '', $normalized);
+        $normalized = str_replace(',', '.', $normalized);
+
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        return (float) $normalized;
     }
 
     /**
