@@ -284,7 +284,7 @@
 
         <!-- RIGHT PANEL: Current Order -->
         <div
-            class="w-full md:w-[400px] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full shadow-2xl z-20">
+            class="w-full md:w-[400px] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full min-h-0 shadow-2xl z-20">
             <!-- Order Header -->
             <div class="flex-none p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-1">
@@ -324,7 +324,7 @@
             </div>
 
             <!-- Cart Items -->
-            <div class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4">
+            <div class="flex-1 min-h-0 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4">
                 <template v-if="cart.length > 0">
                     <!-- Item Row -->
                     <div v-for="(item, index) in cart" :key="index" class="flex gap-4 group">
@@ -371,7 +371,7 @@
                         </div>
                     </div>
                 </template>
-                <div v-else class="h-full flex flex-col items-center justify-center text-gray-300">
+                <div v-else class="py-8 flex flex-col items-center justify-center text-gray-300">
                     <svg class="w-16 h-16 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -381,7 +381,7 @@
             </div>
 
             <!-- Checkout Section -->
-            <div class="flex-none p-6 border-t border-gray-100 bg-background-light/50">
+            <div class="flex-none p-6 border-t border-gray-100 bg-background-light/50 max-h-[42vh] overflow-y-auto custom-scrollbar">
                 <!-- Order Note Input -->
                 <div class="mb-4">
                     <input type="text" v-model="orderNotes" placeholder="Add order note..."
@@ -424,7 +424,7 @@
                         </button>
 
                         <div v-show="showPaymentMethodPicker" class="px-3 pb-3 border-t border-gray-100">
-                            <div class="pt-2 grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                            <div class="pt-2 grid grid-cols-2 gap-2 max-h-28 overflow-y-auto pr-1 custom-scrollbar">
                                 <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
                                     @click="selectPaymentMethod(method.id)"
                                     :class="Number(selectedPaymentMethod) === Number(method.id)
