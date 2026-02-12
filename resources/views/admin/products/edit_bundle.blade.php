@@ -550,66 +550,56 @@
         </div>
     </div>
 
-    <!-- Modal Pilih Outlet -->
-    <div id="outletModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-                onclick="document.getElementById('outletModal').classList.add('hidden')"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div
-                class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">Pilih Outlet Ketersediaan</h3>
-                    <p class="text-sm text-gray-500 mb-4">Pilih outlet mana saja yang menjual bundle ini.</p>
-                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-2">
-                        @foreach($outlets as $outlet)
-                            <label class="flex items-center p-2 rounded hover:bg-gray-50 gap-3 cursor-pointer">
-                                <input type="checkbox" class="outlet-checkbox w-4 h-4 text-blue-600 rounded border-gray-300"
-                                    value="{{ $outlet->id }}" {{ in_array($outlet->id, $oldOutletIds) ? 'checked' : '' }}>
-                                <span class="text-sm text-gray-700">{{ $outlet->name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
-                    <button type="button" class="btn btn-primary" onclick="saveOutletSelection()">Selesai</button>
-                </div>
+    <!-- Modal Templates (Outlet & User) -->
+    <div id="outletModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
+                <h3 class="text-sm font-bold text-gray-900">Pilih Outlet</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeOutletModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-2 max-h-[60vh] overflow-y-auto">
+                @foreach($outlets as $outlet)
+                    <label class="flex items-center gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
+                        <input type="checkbox" class="outlet-option w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" value="{{ $outlet->id }}" {{ in_array($outlet->id, $oldOutletIds) ? 'checked' : '' }}>
+                        <span class="text-sm text-gray-700">{{ $outlet->name }}</span>
+                    </label>
+                @endforeach
+            </div>
+            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeOutletModal()">Tutup</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveOutletSelection()">Simpan</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Pilih User -->
-    <div id="userModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-                onclick="document.getElementById('userModal').classList.add('hidden')"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div
-                class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">Pilih User Akses</h3>
-                    <p class="text-sm text-gray-500 mb-4">Pilih user POS mana saja yang bisa melihat bundle ini.</p>
-                    <div class="mb-2">
-                        <input type="text" id="searchUser" placeholder="Cari user..." class="form-input w-full text-sm">
-                    </div>
-                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2 space-y-2" id="userList">
-                        @foreach($posUsers as $user)
-                            <label class="flex items-center p-2 rounded hover:bg-gray-50 gap-3 cursor-pointer user-item">
-                                <input type="checkbox" class="user-checkbox w-4 h-4 text-blue-600 rounded border-gray-300"
-                                    value="{{ $user->id }}" {{ in_array($user->id, $oldUserIds) ? 'checked' : '' }}>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-700">{{ $user->name }}</p>
-                                    <p class="text-[10px] text-gray-500">{{ $user->role->name ?? '-' }} @
-                                        {{ $user->outlet->name ?? 'All' }}
-                                    </p>
-                                </div>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
-                    <button type="button" class="btn btn-primary" onclick="saveUserSelection()">Selesai</button>
-                </div>
+    <div id="userModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
+                <h3 class="text-sm font-bold text-gray-900">Pilih Pengguna</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeUserModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="mb-2 px-2 pt-2">
+                <input type="text" id="searchUser" placeholder="Cari user..." class="form-input w-full text-sm">
+            </div>
+            <div class="p-2 max-h-[60vh] overflow-y-auto" id="userList">
+                @foreach($posUsers as $user)
+                    <label class="flex items-start gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 user-item">
+                        <input type="checkbox" class="user-option w-4 h-4 mt-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500" value="{{ $user->id }}" {{ in_array($user->id, $oldUserIds) ? 'checked' : '' }}>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">{{ $user->name }}</p>
+                            <p class="text-[10px] text-gray-400">
+                                {{ optional($user->role)->name ?? '-' }}
+                                @if(optional($user->outlet)->name)
+                                    • {{ $user->outlet->name }}
+                                @endif
+                            </p>
+                        </div>
+                    </label>
+                @endforeach
+            </div>
+            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeUserModal()">Tutup</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveUserSelection()">Simpan</button>
             </div>
         </div>
     </div>
