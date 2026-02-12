@@ -168,13 +168,13 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $transaction->transaction_date->format('d M Y') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">{{ $transaction->cashAccount->name }}</div>
-                                    <div class="text-xs text-gray-500">{{ $transaction->cashAccount->code }}</div>
-                                    <div class="text-xs text-gray-500">{{ $transaction->cashAccount->outlet->name ?? 'Outlet tidak diset' }}</div>
+                                <td class="px-6 py-2 text-sm text-gray-900">
+                                    <div class="truncate w-full" title="{{ $transaction->cashAccount->name }}">
+                                        {{ $transaction->cashAccount->name }}
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    <div class="truncate max-w-[360px]" title="{{ $transaction->description }}">
+                                <td class="px-6 py-2 text-sm text-gray-900">
+                                    <div class="truncate w-full" title="{{ $transaction->description }}">
                                         {{ $transaction->description }}
                                     </div>
                                 </td>
