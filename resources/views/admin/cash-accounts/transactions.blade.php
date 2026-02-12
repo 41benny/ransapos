@@ -293,6 +293,14 @@
             color: #9a3412;
             border-bottom: 1px solid #fdba74;
         }
+
+        /* Uniform row height/padding without touching each cell class */
+        #cashTransactionsTable tbody td {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            line-height: 1.25rem;
+            vertical-align: middle;
+        }
     </style>
 
     <script>
