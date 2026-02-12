@@ -31,16 +31,49 @@
 
         <div class="t6-card shadow overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="imperial-table min-w-full" id="cashTransactionsTable">
+                <table class="imperial-table min-w-full" id="cashTransactionsTable" style="table-layout: auto;">
                     <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Akun</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo</th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 140px; position: relative;">
+                                Nomor
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 140px; position: relative;">
+                                Tanggal
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 220px; position: relative;">
+                                Akun
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 260px; position: relative;">
+                                Deskripsi
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 120px; position: relative;">
+                                Jenis
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 150px; position: relative;">
+                                Jumlah
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 170px; position: relative;">
+                                Saldo
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                style="min-width: 220px; position: relative;">
+                                COA
+                                <div class="resize-handle"></div>
+                            </th>
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
                         </tr>
                         <tr class="filter-row bg-gray-50">
@@ -93,6 +126,18 @@
                                     data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Filter saldo...">
                             </th>
                             <th class="px-3 py-1">
+                                <select
+                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    data-name="coa_account_id">
+                                    <option value="">Semua COA</option>
+                                    @foreach($coaAccounts as $coaAccount)
+                                        <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>
+                                            {{ $coaAccount->code }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </th>
+                            <th class="px-3 py-1">
                                 <button type="button" id="clearFilters"
                                     class="w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
                                     title="Clear all filters">
@@ -118,20 +163,9 @@
                                     <div class="text-xs text-gray-500">{{ $transaction->cashAccount->outlet->name ?? 'Outlet tidak diset' }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900">
-                                    <div>{{ $transaction->description }}</div>
-                                    @if($transaction->coaAccount)
-                                        <div class="text-xs text-indigo-700 mt-1">
-                                            COA: {{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}
-                                            ({{ $transaction->coaAccount->group }})
-                                        </div>
-                                    @endif
-                                    @if($transaction->reference_type)
-                                        <div class="text-xs text-gray-500 mt-1">Ref: {{ ucfirst($transaction->reference_type) }}
-                                            #{{ $transaction->reference_id }}</div>
-                                    @endif
-                                    @if($transaction->notes)
-                                        <div class="text-xs text-gray-500 mt-1">{{ Str::limit($transaction->notes, 50) }}</div>
-                                    @endif
+                                    <div class="truncate max-w-[360px]" title="{{ $transaction->description }}">
+                                        {{ $transaction->description }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($transaction->type === 'in')
@@ -157,6 +191,15 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    @if($transaction->coaAccount)
+                                        <span title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
+                                            {{ $transaction->coaAccount->code }} - {{ Str::limit($transaction->coaAccount->name, 28) }}
+                                        </span>
+                                    @else
+                                        -
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <div class="flex items-center justify-center space-x-2">
@@ -186,7 +229,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                     <div class="flex flex-col items-center justify-center">
                                         <i class="fas fa-file-invoice-dollar text-4xl text-gray-300 mb-3"></i>
                                         <p>Tidak ada transaksi</p>
@@ -206,9 +249,110 @@
 @endsection
 
 @push('scripts')
+    <style>
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .resize-handle:hover {
+            background-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+
+        .filter-row th {
+            border-bottom: 2px solid #e5e7eb;
+        }
+    </style>
+
     <script>
+        const table = document.getElementById('cashTransactionsTable');
+        const STORAGE_KEY = 'cash_transactions_table_column_widths';
         const filterInputs = document.querySelectorAll('#cashTransactionsTable .filter-input');
         const clearFiltersBtn = document.getElementById('clearFilters');
+
+        function loadColumnWidths() {
+            if (!table) {
+                return;
+            }
+
+            const savedWidths = localStorage.getItem(STORAGE_KEY);
+            if (!savedWidths) {
+                return;
+            }
+
+            try {
+                const widths = JSON.parse(savedWidths);
+                const headers = table.querySelectorAll('th.resizable');
+                headers.forEach((th, index) => {
+                    if (widths[index]) {
+                        th.style.width = widths[index] + 'px';
+                    }
+                });
+            } catch (e) {
+                console.error('Error loading cash table widths:', e);
+            }
+        }
+
+        function saveColumnWidths() {
+            if (!table) {
+                return;
+            }
+
+            const headers = table.querySelectorAll('th.resizable');
+            const widths = Array.from(headers).map(th => th.offsetWidth);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
+        }
+
+        function initResizableColumns() {
+            if (!table) {
+                return;
+            }
+
+            const headers = table.querySelectorAll('th.resizable');
+
+            headers.forEach(th => {
+                const handle = th.querySelector('.resize-handle');
+                if (!handle) {
+                    return;
+                }
+
+                handle.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+
+                    const startX = e.pageX;
+                    const startWidth = th.offsetWidth;
+
+                    document.body.classList.add('resizing');
+
+                    function onMouseMove(moveEvent) {
+                        const diff = moveEvent.pageX - startX;
+                        const newWidth = Math.max(90, startWidth + diff);
+                        th.style.width = newWidth + 'px';
+                    }
+
+                    function onMouseUp() {
+                        document.body.classList.remove('resizing');
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        saveColumnWidths();
+                    }
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+        }
 
         let debounceTimer;
         function updateFilter(name, value) {
@@ -266,5 +410,8 @@
                 window.location.href = url.toString();
             });
         }
+
+        loadColumnWidths();
+        initResizableColumns();
     </script>
 @endpush
