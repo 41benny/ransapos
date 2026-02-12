@@ -259,7 +259,7 @@
                                                     <td class="p-2">
                                                         <select name="bundle_components[{{ $index }}][component_product_id]"
                                                             class="component-product form-input text-sm">
-                                                            <option value="">Pilih bahan...</option>
+                                                            <option value="">Ketik nama bahan...</option>
                                                             @foreach($rawMaterials as $raw)
                                                                 <option value="{{ $raw->id }}" data-unit="{{ $raw->unit }}"
                                                                     data-purchase-price="{{ (float) ($raw->purchase_price ?? 0) }}"
@@ -846,8 +846,13 @@
                 if (purchasePriceInput) purchasePriceInput.value = totalCost.toFixed(2);
             }
 
-            function initTomSelect(selectElement) {
-                if (selectElement.tomselect) return;
+        function initTomSelect(selectElement) {
+            if (typeof TomSelect === 'undefined') {
+                console.error('TomSelect library not loaded!');
+                return;
+            }
+            if (selectElement.tomselect) return;
+            try {
                 new TomSelect(selectElement, {
                     create: false,
                     dropdownParent: 'body', // Append to body to fix overflow
@@ -869,7 +874,10 @@
                         }
                     }
                 });
+            } catch (e) {
+                console.error('TomSelect initialization failed:', e);
             }
+        }
 
             function bindComponentRowEvents(row) {
                 const select = row.querySelector('.component-product');
