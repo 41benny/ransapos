@@ -43,8 +43,8 @@
                         <col class="resizable-col" style="width: 220px;">
                         <col style="width: 120px;">
                     </colgroup>
-                    <thead>
-                        <tr>
+                    <thead class="cash-table-head">
+                        <tr class="cash-head-row">
                             <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                                 style="min-width: 140px; position: relative;">
                                 Nomor
@@ -87,7 +87,7 @@
                             </th>
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
                         </tr>
-                        <tr class="filter-row bg-gray-50">
+                        <tr class="filter-row bg-white/90">
                             <th class="px-3 py-1">
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -283,6 +283,15 @@
 
         .filter-row th {
             border-bottom: 2px solid #e5e7eb;
+        }
+
+        .cash-head-row {
+            background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 45%, #fde68a 100%);
+        }
+
+        .cash-head-row th {
+            color: #9a3412;
+            border-bottom: 1px solid #fdba74;
         }
     </style>
 
