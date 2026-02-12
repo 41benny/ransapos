@@ -6,6 +6,7 @@ use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use App\Models\Purchase;
 use Exception;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class CashAccountService
@@ -59,15 +60,22 @@ class CashAccountService
 
     /**
      * Generate transaction number
-     * Format: KAS-{account_code}-{date}-{seq}
-     * Contoh: KAS-BCA-20251108-001
+     * Format: {CC}{K|M}{YYMM}{SEQ4}
+     * Contoh kas keluar: BCK26020001
+     * Contoh kas masuk: BCM26020001
      */
-    public function generateTransactionNumber(string $accountCode): string
+    public function generateTransactionNumber(CashAccount $account, string $type, ?string $transactionDate = null): string
     {
-        $date = now()->format('Ymd');
-        $prefix = "KAS-{$accountCode}-{$date}-";
+        $normalizedType = strtolower($type);
+        if (! in_array($normalizedType, ['in', 'out'], true)) {
+            throw new Exception('Tipe transaksi tidak valid untuk generate nomor voucher.');
+        }
 
-        // Cari nomor terakhir hari ini untuk akun ini
+        $period = Carbon::parse($transactionDate ?? now())->format('ym');
+        $directionCode = $normalizedType === 'out' ? 'K' : 'M';
+        $prefix = $this->resolveAccountCodePrefix($account) . $directionCode . $period;
+
+        // Cari nomor terakhir untuk prefix (reset otomatis per bulan & per tipe)
         $lastTransaction = CashTransaction::where('transaction_number', 'like', $prefix . '%')
             ->lockForUpdate()
             ->orderBy('transaction_number', 'desc')
@@ -75,13 +83,44 @@ class CashAccountService
 
         if ($lastTransaction) {
             // Extract sequence number
-            $lastNumber = (int) substr($lastTransaction->transaction_number, -3);
+            $lastNumber = (int) substr($lastTransaction->transaction_number, -4);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        return $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $newNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    protected function resolveAccountCodePrefix(CashAccount $account): string
+    {
+        $lastCodeSegment = null;
+        if (! empty($account->code)) {
+            $segments = preg_split('/[-_\s]+/', (string) $account->code);
+            $lastCodeSegment = is_array($segments) && ! empty($segments)
+                ? end($segments)
+                : $account->code;
+        }
+
+        $candidates = [
+            $lastCodeSegment,
+            $account->bank_name,
+            $account->code,
+            $account->name,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $letters = preg_replace('/[^A-Z]/', '', strtoupper((string) $candidate));
+            if ($letters === '') {
+                continue;
+            }
+
+            return strlen($letters) >= 2
+                ? substr($letters, 0, 2)
+                : $letters . 'X';
+        }
+
+        return 'CA';
     }
 
     /**
@@ -215,7 +254,11 @@ class CashAccountService
         }
 
         // Generate transaction number
-        $data['transaction_number'] = $this->generateTransactionNumber($account->code);
+        $data['transaction_number'] = $this->generateTransactionNumber(
+            $account,
+            $data['type'],
+            $data['transaction_date'] ?? null
+        );
 
         // Set balance before
         $data['balance_before'] = $account->current_balance;

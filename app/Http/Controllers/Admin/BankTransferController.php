@@ -8,6 +8,7 @@ use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use App\Models\Outlet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -106,7 +107,7 @@ class BankTransferController extends Controller
 
             // Create OUT transaction for from account
             CashTransaction::create([
-                'transaction_number' => $this->generateTransactionNumber('OUT'),
+                'transaction_number' => $this->generateTransactionNumber($fromAccount, 'out', $request->transfer_date),
                 'cash_account_id' => $fromAccount->id,
                 'type' => 'out',
                 'transaction_date' => $request->transfer_date,
@@ -126,7 +127,7 @@ class BankTransferController extends Controller
 
             // Create IN transaction for to account
             CashTransaction::create([
-                'transaction_number' => $this->generateTransactionNumber('IN'),
+                'transaction_number' => $this->generateTransactionNumber($toAccount, 'in', $request->transfer_date),
                 'cash_account_id' => $toAccount->id,
                 'type' => 'in',
                 'transaction_date' => $request->transfer_date,
@@ -199,10 +200,12 @@ class BankTransferController extends Controller
     /**
      * Generate unique transaction number
      */
-    private function generateTransactionNumber(string $type): string
+    private function generateTransactionNumber(CashAccount $account, string $type, ?string $transactionDate = null): string
     {
-        $today = now()->format('Ymd');
-        $prefix = 'TX-' . $type . '-' . $today . '-';
+        $normalizedType = strtolower($type);
+        $period = Carbon::parse($transactionDate ?? now())->format('ym');
+        $directionCode = $normalizedType === 'out' ? 'K' : 'M';
+        $prefix = $this->resolveAccountCodePrefix($account) . $directionCode . $period;
 
         $lastTx = CashTransaction::where('transaction_number', 'like', $prefix . '%')
             ->orderBy('transaction_number', 'desc')
@@ -215,6 +218,37 @@ class BankTransferController extends Controller
             $newNumber = 1;
         }
 
-        return $prefix . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $newNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function resolveAccountCodePrefix(CashAccount $account): string
+    {
+        $lastCodeSegment = null;
+        if (! empty($account->code)) {
+            $segments = preg_split('/[-_\s]+/', (string) $account->code);
+            $lastCodeSegment = is_array($segments) && ! empty($segments)
+                ? end($segments)
+                : $account->code;
+        }
+
+        $candidates = [
+            $lastCodeSegment,
+            $account->bank_name,
+            $account->code,
+            $account->name,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $letters = preg_replace('/[^A-Z]/', '', strtoupper((string) $candidate));
+            if ($letters === '') {
+                continue;
+            }
+
+            return strlen($letters) >= 2
+                ? substr($letters, 0, 2)
+                : $letters . 'X';
+        }
+
+        return 'CA';
     }
 }
