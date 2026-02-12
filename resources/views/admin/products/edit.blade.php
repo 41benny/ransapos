@@ -5,10 +5,6 @@
 @section('page-subtitle', 'Perbarui informasi produk, POS, dan level harga')
 
 @section('content')
-    @php
-        $oldOutletIds = collect(old('pos_outlet_ids', $product->pos_outlet_ids ?? []))->map(fn($id) => (int) $id)->values()->all();
-        $oldUserIds = collect(old('pos_user_ids', $product->pos_user_ids ?? []))->map(fn($id) => (int) $id)->values()->all();
-    @endphp
     <div class="max-w-6xl">
         <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -235,41 +231,29 @@
                                     </label>
 
                                     <div id="outlet-selector-wrap"
-                                        class="{{ old('is_available_all_outlets', $product->is_available_all_outlets ?? true) ? 'hidden' : '' }} pt-1 pl-8">
-                                        <button type="button"
-                                            onclick="document.getElementById('outletModal').classList.remove('hidden')"
-                                            class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                                            <i class="fas fa-store"></i> Pilih Outlet Spesifik
-                                            <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]"
-                                                id="outlet-count">
-                                                {{ count($oldOutletIds) }}
-                                            </span>
-                                        </button>
-                                        <input type="hidden" name="pos_outlet_ids" id="pos_outlet_ids_input"
-                                            value="{{ implode(',', $oldOutletIds) }}">
+                                        class="{{ old('is_available_all_outlets', $product->is_available_all_outlets ?? true) ? 'hidden' : '' }} pt-1">
+                                        <label for="pos_outlet_ids" class="block text-sm font-medium text-gray-700 mb-1">
+                                            Pilih outlet
+                                        </label>
+                                        <select name="pos_outlet_ids[]" id="pos_outlet_ids" multiple
+                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-32">
+                                            @foreach($outlets as $outlet)
+                                                <option value="{{ $outlet->id }}" {{ in_array($outlet->id, old('pos_outlet_ids', $product->pos_outlet_ids ?? [])) ? 'selected' : '' }}>
+                                                    {{ $outlet->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Tekan Ctrl/Cmd untuk pilih lebih dari satu outlet</p>
+                                        @error('pos_outlet_ids')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
 
                                     <label class="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" name="is_available_all_users" id="is_available_all_users"
-                                            value="1" {{ old('is_available_all_users', $product->is_available_all_users ?? true) ? 'checked' : '' }}
+                                        <input type="checkbox" name="is_available_all_users" value="1" {{ old('is_available_all_users', $product->is_available_all_users ?? true) ? 'checked' : '' }}
                                             class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                                        <span class="text-sm text-gray-700">Tersedia untuk SEMUA Akun POS</span>
+                                        <span class="text-sm text-gray-700">Tersedia untuk semua pengguna POS</span>
                                     </label>
-
-                                    <div id="user-selector-wrap"
-                                        class="{{ old('is_available_all_users', $product->is_available_all_users ?? true) ? 'hidden' : '' }} pt-1 pl-8">
-                                        <button type="button"
-                                            onclick="document.getElementById('userModal').classList.remove('hidden')"
-                                            class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                                            <i class="fas fa-users"></i> Pilih User Spesifik
-                                            <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full text-[10px]"
-                                                id="user-count">
-                                                {{ count($oldUserIds) }}
-                                            </span>
-                                        </button>
-                                        <input type="hidden" name="pos_user_ids" id="pos_user_ids_input"
-                                            value="{{ implode(',', $oldUserIds) }}">
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -446,173 +430,14 @@
                 </div>
         </form>
     </div>
-    <!-- Modal Templates (Outlet & User) -->
-    <div id="outletModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
-            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
-                <h3 class="text-sm font-bold text-gray-900">Pilih Outlet</h3>
-                <button type="button" class="close-modal text-gray-400 hover:text-gray-600"
-                    onclick="document.getElementById('outletModal').classList.add('hidden')"><i
-                        class="fas fa-times"></i></button>
-            </div>
-            <div class="p-2 max-h-[60vh] overflow-y-auto">
-                @foreach($outlets as $outlet)
-                    <label
-                        class="flex items-center gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
-                        <input type="checkbox"
-                            class="outlet-option w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            value="{{ $outlet->id }}">
-                        <span class="text-sm text-gray-700">{{ $outlet->name }}</span>
-                    </label>
-                @endforeach
-            </div>
-            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-                <button type="button" class="close-modal btn btn-secondary btn-sm"
-                    onclick="document.getElementById('outletModal').classList.add('hidden')">Tutup</button>
-                <button type="button" class="close-modal btn btn-primary btn-sm"
-                    onclick="saveOutletSelection()">Simpan</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="userModal"
-        class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
-            <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
-                <h3 class="text-sm font-bold text-gray-900">Pilih Pengguna</h3>
-                <button type="button" class="close-modal text-gray-400 hover:text-gray-600"
-                    onclick="document.getElementById('userModal').classList.add('hidden')"><i
-                        class="fas fa-times"></i></button>
-            </div>
-            <div class="p-2 max-h-[60vh] overflow-y-auto">
-                @foreach($posUsers as $user)
-                    <label
-                        class="flex items-start gap-3 p-3 rounded hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
-                        <input type="checkbox"
-                            class="user-option w-4 h-4 mt-1 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            value="{{ $user->id }}">
-                        <div>
-                            <p class="text-sm font-medium text-gray-800">{{ $user->name }}</p>
-                            <p class="text-[10px] text-gray-400">
-                                {{ optional($user->role)->name ?? '-' }}
-                                @if(optional($user->outlet)->name)
-                                    • {{ $user->outlet->name }}
-                                @endif
-                            </p>
-                        </div>
-                    </label>
-                @endforeach
-            </div>
-            <div class="px-5 py-3 border-t border-gray-100 flex justify-end gap-2 bg-gray-50 rounded-b-lg">
-                <button type="button" class="close-modal btn btn-secondary btn-sm"
-                    onclick="document.getElementById('userModal').classList.add('hidden')">Tutup</button>
-                <button type="button" class="close-modal btn btn-primary btn-sm"
-                    onclick="saveUserSelection()">Simpan</button>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // ============================================
-            // 1. VARIABLE INITIALIZATION
-            // ============================================
-            // Checkboxes for 'All'
             const allOutletsCheckbox = document.getElementById('is_available_all_outlets');
-            const allUsersCheckbox = document.getElementById('is_available_all_users');
-
-            // Wrappers for explicit selection
             const outletWrap = document.getElementById('outlet-selector-wrap');
-            const userWrap = document.getElementById('user-selector-wrap');
-
-            // Hidden inputs that store CSV
-            const outletHiddenInput = document.getElementById('pos_outlet_ids_input');
-            const userHiddenInput = document.getElementById('pos_user_ids_input');
-
-            // Display counters
-            const outletCountText = document.getElementById('outlet-count');
-            const userCountText = document.getElementById('user-count');
-
-            // Initialize Sets from hidden input values (server populated)
-            let selectedOutletIds = new Set(
-                outletHiddenInput && outletHiddenInput.value ? outletHiddenInput.value.split(',').filter(x => x).map(Number) : []
-            );
-            let selectedUserIds = new Set(
-                userHiddenInput && userHiddenInput.value ? userHiddenInput.value.split(',').filter(x => x).map(Number) : []
-            );
-
-            // ============================================
-            // 2. POS AVAILABILITY LOGIC (Modals)
-            // ============================================
-
-            // A. Toggle Visibility based on "All" checkboxes
-            function refreshAvailabilitySections() {
-                if (allOutletsCheckbox && outletWrap) {
-                    const isAllOutlets = allOutletsCheckbox.checked;
-                    // If checked (All), hide specific selector. If unchecked, show it.
-                    if (isAllOutlets) {
-                        outletWrap.classList.add('hidden');
-                    } else {
-                        outletWrap.classList.remove('hidden');
-                    }
-                }
-                if (allUsersCheckbox && userWrap) {
-                    const isAllUsers = allUsersCheckbox.checked;
-                    if (isAllUsers) {
-                        userWrap.classList.add('hidden');
-                    } else {
-                        userWrap.classList.remove('hidden');
-                    }
-                }
-            }
-
-            if (allOutletsCheckbox) allOutletsCheckbox.addEventListener('change', refreshAvailabilitySections);
-            if (allUsersCheckbox) allUsersCheckbox.addEventListener('change', refreshAvailabilitySections);
-            refreshAvailabilitySections(); // Init on load
-
-            // B. Populate Modals based on current selection
-            function syncModalChecks() {
-                // Outlets
-                document.querySelectorAll('.outlet-option').forEach(opt => {
-                    opt.checked = selectedOutletIds.has(Number(opt.value));
-                });
-                // Users
-                document.querySelectorAll('.user-option').forEach(opt => {
-                    opt.checked = selectedUserIds.has(Number(opt.value));
-                });
-            }
-            syncModalChecks(); // Init logic
-
-            // C. Save Functions (Triggered by 'Simpan' button in Modal)
-            // Make them global so onclick HTML attribute can find them
-            window.saveOutletSelection = function() {
-                const checkedBoxes = document.querySelectorAll('.outlet-option:checked');
-                selectedOutletIds.clear();
-                checkedBoxes.forEach(cb => selectedOutletIds.add(Number(cb.value)));
-
-                // Update hidden input
-                if(outletHiddenInput) outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
-                // Update counter text
-                if(outletCountText) outletCountText.textContent = selectedOutletIds.size;
-
-                document.getElementById('outletModal').classList.add('hidden');
-            }
-
-            window.saveUserSelection = function() {
-                const checkedBoxes = document.querySelectorAll('.user-option:checked');
-                selectedUserIds.clear();
-                checkedBoxes.forEach(cb => selectedUserIds.add(Number(cb.value)));
-
-                // Update hidden input
-                if(userHiddenInput) userHiddenInput.value = Array.from(selectedUserIds).join(',');
-                // Update counter text
-                if(userCountText) userCountText.textContent = selectedUserIds.size;
-
-                document.getElementById('userModal').classList.add('hidden');
-            }
+            const outletSelect = document.getElementById('pos_outlet_ids');
 
 
             // ============================================
@@ -630,7 +455,9 @@
             if (imageInput) {
                 imageInput.addEventListener('change', function (event) {
                     const file = event.target.files && event.target.files[0];
-                    if (!file) return;
+                    if (!file) {
+                        return;
+                    }
                     const reader = new FileReader();
                     reader.onload = function (loadEvent) {
                         imagePreview.src = loadEvent.target.result;
@@ -639,6 +466,15 @@
                     };
                     reader.readAsDataURL(file);
                 });
+            }
+
+            function toggleOutletSelector() {
+                if (!allOutletsCheckbox || !outletWrap || !outletSelect) {
+                    return;
+                }
+                const useAllOutlets = allOutletsCheckbox.checked;
+                outletWrap.classList.toggle('hidden', useAllOutlets);
+                outletSelect.disabled = useAllOutlets;
             }
 
             // Product Type Rules
@@ -653,6 +489,10 @@
             if (productTypeInput) {
                 productTypeInput.addEventListener('change', applyProductTypeRules);
                 applyProductTypeRules();
+            }
+            if (allOutletsCheckbox) {
+                toggleOutletSelector();
+                allOutletsCheckbox.addEventListener('change', toggleOutletSelector);
             }
 
 
