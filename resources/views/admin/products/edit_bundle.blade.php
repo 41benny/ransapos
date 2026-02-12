@@ -341,7 +341,8 @@
                             <p class="text-sm text-gray-700">
                                 <i class="fas fa-info-circle text-blue-600 mr-1"></i>
                                 <strong>Pengaturan Harga Per Outlet:</strong><br>
-                                Pilih outlet yang ingin diatur harga khusus. Outlet yang tidak dipilih akan menggunakan harga default.
+                                Pilih outlet yang ingin diatur harga khusus. Outlet yang tidak dipilih akan menggunakan
+                                harga default.
                             </p>
                         </div>
 
@@ -353,24 +354,23 @@
                             @endphp
                             <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
                                 <!-- Header Price Level -->
-                                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                <div
+                                    class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                                     <h4 class="text-sm font-bold text-gray-900">
                                         <i class="fas fa-tag text-gray-500 mr-2"></i>{{ ucfirst($levelLabel) }}
                                     </h4>
-                                    <button 
-                                        type="button" 
+                                    <button type="button"
                                         class="text-xs text-blue-600 hover:text-blue-700 font-medium toggle-outlet-selection"
-                                        data-level="{{ $levelKey }}"
-                                    >
+                                        data-level="{{ $levelKey }}">
                                         <i class="fas fa-store mr-1"></i>Pilih Outlet
                                     </button>
                                 </div>
-                                
+
                                 <div class="p-4 space-y-4">
                                     <!-- Harga Default -->
                                     <div>
                                         <label class="form-label text-xs font-semibold mb-2">
-                                            Harga Default 
+                                            Harga Default
                                             @if($levelKey === 'regular')
                                                 <span class="text-red-500">*</span>
                                                 <span class="text-gray-400 font-normal">(wajib diisi)</span>
@@ -378,25 +378,17 @@
                                         </label>
                                         <div class="flex items-center gap-2 max-w-md">
                                             <div class="flex flex-1">
-                                                <span class="inline-flex items-center px-3 text-xs text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
-                                                <input
-                                                    type="number"
-                                                    name="price_levels[{{ $levelKey }}][default]"
+                                                <span
+                                                    class="inline-flex items-center px-3 text-xs text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
+                                                <input type="number" name="price_levels[{{ $levelKey }}][default]"
                                                     value="{{ old("price_levels.$levelKey.default", $defaultPrice == 0 ? '' : $defaultPrice) }}"
-                                                    min="0"
-                                                    step="0.01"
-                                                    @if($levelKey === 'regular') required @endif
+                                                    min="0" step="0.01" @if($levelKey === 'regular') required @endif
                                                     class="form-input rounded-l-none flex-1 text-sm @if($levelKey === 'regular') bg-blue-50/30 border-blue-200 font-semibold @endif price-default-input"
-                                                    data-level="{{ $levelKey }}"
-                                                    placeholder="0"
-                                                >
+                                                    data-level="{{ $levelKey }}" placeholder="0">
                                             </div>
-                                            <button 
-                                                type="button" 
-                                                class="btn btn-secondary btn-sm copy-to-all-outlets-btn"
+                                            <button type="button" class="btn btn-secondary btn-sm copy-to-all-outlets-btn"
                                                 data-level="{{ $levelKey }}"
-                                                title="Salin harga default ke semua outlet yang dipilih"
-                                            >
+                                                title="Salin harga default ke semua outlet yang dipilih">
                                                 <i class="fas fa-copy mr-1"></i>Copy ke Semua
                                             </button>
                                         </div>
@@ -410,26 +402,25 @@
                                     <div class="outlet-selection-section hidden" data-level="{{ $levelKey }}">
                                         <div class="border border-gray-200 rounded-lg overflow-hidden">
                                             <!-- Outlet Selection Header -->
-                                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                                            <div
+                                                class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
                                                 <div class="flex items-center gap-2">
                                                     <i class="fas fa-store text-gray-500 text-xs"></i>
-                                                    <span class="text-xs font-semibold text-gray-700">Harga Khusus Per Outlet</span>
-                                                    <span class="outlet-selected-count badge badge-sm bg-gray-100 text-gray-500" data-level="{{ $levelKey }}">0 dipilih</span>
+                                                    <span class="text-xs font-semibold text-gray-700">Harga Khusus Per
+                                                        Outlet</span>
+                                                    <span class="outlet-selected-count badge badge-sm bg-gray-100 text-gray-500"
+                                                        data-level="{{ $levelKey }}">0 dipilih</span>
                                                 </div>
                                                 <div class="flex items-center gap-2">
-                                                    <button 
-                                                        type="button" 
+                                                    <button type="button"
                                                         class="text-xs text-blue-600 hover:text-blue-700 select-all-outlets"
-                                                        data-level="{{ $levelKey }}"
-                                                    >
+                                                        data-level="{{ $levelKey }}">
                                                         Pilih Semua
                                                     </button>
                                                     <span class="text-gray-300">|</span>
-                                                    <button 
-                                                        type="button" 
+                                                    <button type="button"
                                                         class="text-xs text-gray-600 hover:text-gray-700 deselect-all-outlets"
-                                                        data-level="{{ $levelKey }}"
-                                                    >
+                                                        data-level="{{ $levelKey }}">
                                                         Batal Semua
                                                     </button>
                                                 </div>
@@ -443,40 +434,33 @@
                                                         $hasSpecificPrice = isset($outletPrices[$outlet->id]) && $outletPrices[$outlet->id] != 0;
                                                         $val = $hasSpecificPrice ? $outletPrices[$outlet->id] : '';
                                                     @endphp
-                                                    <div class="outlet-price-row border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors" data-outlet-id="{{ $outlet->id }}" data-level="{{ $levelKey }}">
+                                                    <div class="outlet-price-row border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
+                                                        data-outlet-id="{{ $outlet->id }}" data-level="{{ $levelKey }}">
                                                         <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
+                                                            <input type="checkbox"
                                                                 class="outlet-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                data-level="{{ $levelKey }}"
-                                                                data-outlet-id="{{ $outlet->id }}"
-                                                                {{ $hasSpecificPrice ? 'checked' : '' }}
-                                                            >
+                                                                data-level="{{ $levelKey }}" data-outlet-id="{{ $outlet->id }}" {{ $hasSpecificPrice ? 'checked' : '' }}>
                                                             <div class="flex-1 flex items-center justify-between gap-3">
-                                                                <span class="text-sm text-gray-700 font-medium">{{ $outlet->name }}</span>
-                                                                <div class="flex items-center gap-2 outlet-price-input-wrapper {{ $hasSpecificPrice ? '' : 'hidden' }}">
+                                                                <span
+                                                                    class="text-sm text-gray-700 font-medium">{{ $outlet->name }}</span>
+                                                                <div
+                                                                    class="flex items-center gap-2 outlet-price-input-wrapper {{ $hasSpecificPrice ? '' : 'hidden' }}">
                                                                     <div class="flex items-center">
-                                                                        <span class="inline-flex items-center px-2 text-xs text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
-                                                                        <input
-                                                                            type="number"
+                                                                        <span
+                                                                            class="inline-flex items-center px-2 text-xs text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">Rp</span>
+                                                                        <input type="number"
                                                                             name="price_levels[{{ $levelKey }}][outlets][{{ $outlet->id }}]"
                                                                             value="{{ old("price_levels.$levelKey.outlets.$outlet->id", $val) }}"
-                                                                            min="0"
-                                                                            step="0.01"
-                                                                            placeholder="0"
+                                                                            min="0" step="0.01" placeholder="0"
                                                                             class="form-input rounded-l-none text-sm w-32 outlet-price-input"
                                                                             data-level="{{ $levelKey }}"
-                                                                            data-outlet-id="{{ $outlet->id }}"
-                                                                            {{ $hasSpecificPrice ? '' : 'disabled' }}
-                                                                        >
+                                                                            data-outlet-id="{{ $outlet->id }}" {{ $hasSpecificPrice ? '' : 'disabled' }}>
                                                                     </div>
-                                                                    <button 
-                                                                        type="button" 
+                                                                    <button type="button"
                                                                         class="text-xs text-gray-400 hover:text-blue-600 copy-from-default-btn"
                                                                         data-level="{{ $levelKey }}"
                                                                         data-outlet-id="{{ $outlet->id }}"
-                                                                        title="Salin dari harga default"
-                                                                    >
+                                                                        title="Salin dari harga default">
                                                                         <i class="fas fa-arrow-left"></i>
                                                                     </button>
                                                                 </div>
@@ -489,7 +473,8 @@
 
                                         <p class="text-xs text-gray-500 mt-2">
                                             <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
-                                            Centang outlet untuk mengatur harga khusus. Kosongkan input untuk menggunakan harga default.
+                                            Centang outlet untuk mengatur harga khusus. Kosongkan input untuk menggunakan harga
+                                            default.
                                         </p>
                                     </div>
                                 </div>
@@ -500,8 +485,7 @@
                     <!-- Tab Extra Info -->
                     <div id="tab-panel-extra" class="bundle-tab-panel hidden space-y-6 pt-2">
                         <label for="description" class="form-label mb-2">Deskripsi Bundle</label>
-                        <textarea name="description" id="description" rows="5"
-                            class="form-input"
+                        <textarea name="description" id="description" rows="5" class="form-input"
                             placeholder="Catatan tambahan untuk bundle ini...">{{ old('description', $product->description) }}</textarea>
                         <p class="text-xs text-gray-400 mt-2">Catatan ini juga akan dipakai sebagai notes BOM awal.</p>
                     </div>
@@ -542,11 +526,13 @@
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">{{ $mat->name }}</p>
                                         <p class="text-xs text-gray-500">{{ $mat->sku }} • Stok:
-                                            {{ $mat->stocks_sum_quantity ?? 0 }} {{ $mat->unit }}</p>
+                                            {{ $mat->stocks_sum_quantity ?? 0 }} {{ $mat->unit }}
+                                        </p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs font-semibold text-gray-700">Rp
-                                            {{ number_format($mat->purchase_price, 0, ',', '.') }}</p>
+                                            {{ number_format($mat->purchase_price, 0, ',', '.') }}
+                                        </p>
                                         <p class="text-[10px] text-gray-400">/{{ $mat->unit }}</p>
                                     </div>
                                 </li>
@@ -569,6 +555,7 @@
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
                 onclick="document.getElementById('outletModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div
                 class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
@@ -596,6 +583,7 @@
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
                 onclick="document.getElementById('userModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div
                 class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                 <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
@@ -612,7 +600,8 @@
                                 <div>
                                     <p class="text-sm font-medium text-gray-700">{{ $user->name }}</p>
                                     <p class="text-[10px] text-gray-500">{{ $user->role->name ?? '-' }} @
-                                        {{ $user->outlet->name ?? 'All' }}</p>
+                                        {{ $user->outlet->name ?? 'All' }}
+                                    </p>
                                 </div>
                             </label>
                         @endforeach
@@ -637,7 +626,7 @@
                 panels.forEach(panel => panel.classList.toggle('hidden', panel.id !== targetId));
                 tabs.forEach(tab => {
                     const isActive = tab.dataset.target === targetId;
-                    if(isActive) {
+                    if (isActive) {
                         tab.classList.remove('text-gray-500', 'hover:text-gray-700', 'bg-transparent');
                         tab.classList.add('bg-white', 'text-blue-600', 'border-t', 'border-x', 'border-gray-200');
                         tab.classList.add('active'); // Ensure active class is present
@@ -676,13 +665,13 @@
             const userOptions = document.querySelectorAll('.user-option');
 
             function updateHiddenInputs() {
-                if(outletHiddenInput) outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
-                if(userHiddenInput) userHiddenInput.value = Array.from(selectedUserIds).join(',');
+                if (outletHiddenInput) outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
+                if (userHiddenInput) userHiddenInput.value = Array.from(selectedUserIds).join(',');
             }
 
             function refreshSelectionTexts() {
-                if(outletCountText) outletCountText.textContent = `${selectedOutletIds.size}`;
-                if(userCountText) userCountText.textContent = `${selectedUserIds.size}`;
+                if (outletCountText) outletCountText.textContent = `${selectedOutletIds.size}`;
+                if (userCountText) userCountText.textContent = `${selectedUserIds.size}`;
             }
 
             function refreshAvailabilitySections() {
@@ -742,16 +731,16 @@
             if (allUsersCheckbox) allUsersCheckbox.addEventListener('change', refreshAvailabilitySections);
 
             // Close modal functions
-            window.closeOutletModal = function() {
+            window.closeOutletModal = function () {
                 document.getElementById('outletModal').classList.add('hidden');
             }
-            window.closeUserModal = function() {
+            window.closeUserModal = function () {
                 document.getElementById('userModal').classList.add('hidden');
             }
-            window.saveOutletSelection = function() {
+            window.saveOutletSelection = function () {
                 closeOutletModal();
             }
-            window.saveUserSelection = function() {
+            window.saveUserSelection = function () {
                 closeUserModal();
             }
 
@@ -763,13 +752,13 @@
             // ============================================
             // PRICING LOGIC (Expanded Cards)
             // ============================================
-            
+
             // Toggle outlet selection section
             document.querySelectorAll('.toggle-outlet-selection').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const level = this.dataset.level;
                     const section = document.querySelector(`.outlet-selection-section[data-level="${level}"]`);
-                    
+
                     if (section) {
                         section.classList.toggle('hidden');
                         const icon = this.querySelector('i');
@@ -784,7 +773,7 @@
 
             // Handle outlet checkbox change (Enable/Disable input)
             document.querySelectorAll('.outlet-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
+                checkbox.addEventListener('change', function () {
                     const level = this.dataset.level;
                     const outletId = this.dataset.outletId;
                     const row = this.closest('.outlet-price-row');
@@ -807,7 +796,7 @@
 
             // Select all outlets for a price level
             document.querySelectorAll('.select-all-outlets').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const level = this.dataset.level;
                     document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
                         if (!checkbox.checked) {
@@ -820,7 +809,7 @@
 
             // Deselect all outlets for a price level
             document.querySelectorAll('.deselect-all-outlets').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const level = this.dataset.level;
                     document.querySelectorAll(`.outlet-checkbox[data-level="${level}"]`).forEach(checkbox => {
                         if (checkbox.checked) {
@@ -833,7 +822,7 @@
 
             // Copy default price to all selected outlets
             document.querySelectorAll('.copy-to-all-outlets-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const level = this.dataset.level;
                     const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
                     const defaultPrice = defaultInput ? defaultInput.value : '';
@@ -864,7 +853,7 @@
 
             // Copy from default price (individual outlet)
             document.querySelectorAll('.copy-from-default-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     const level = this.dataset.level;
                     const outletId = this.dataset.outletId;
                     const defaultInput = document.querySelector(`.price-default-input[data-level="${level}"]`);
@@ -918,31 +907,31 @@
         // ============================================
         // COMPONENTS LOGIC
         // ============================================
-        let components = @json($componentData ?? []); 
-        
+        let components = @json($componentData ?? []);
+
         function renderComponents() {
             const tbody = document.getElementById('components-list');
             const emptyRow = document.getElementById('empty-row');
             const inputsContainer = document.getElementById('hidden-inputs-container');
 
-            if(!tbody || !inputsContainer) return;
+            if (!tbody || !inputsContainer) return;
 
             // Clear current list (except empty row template)
             Array.from(tbody.children).forEach(child => {
-                if (child.id !== 'empty-row') child.remove(); 
+                if (child.id !== 'empty-row') child.remove();
             });
             inputsContainer.innerHTML = '';
 
             if (components.length === 0) {
-                if(emptyRow) emptyRow.classList.remove('hidden');
+                if (emptyRow) emptyRow.classList.remove('hidden');
                 const totalDisplay = document.getElementById('total-cost-display');
-                if(totalDisplay) totalDisplay.innerText = 'Rp 0';
+                if (totalDisplay) totalDisplay.innerText = 'Rp 0';
                 const purchaseInput = document.getElementById('purchase_price');
-                if(purchaseInput) purchaseInput.value = 0;
+                if (purchaseInput) purchaseInput.value = 0;
                 return;
             }
 
-            if(emptyRow) emptyRow.classList.add('hidden');
+            if (emptyRow) emptyRow.classList.add('hidden');
             let totalCost = 0;
 
             components.forEach((comp, index) => {
@@ -951,41 +940,41 @@
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="text-center text-gray-500 text-xs">${index + 1}</td>
-                    <td>
-                        <p class="text-sm font-medium text-gray-900">${comp.name}</p>
-                    </td>
-                    <td class="text-center text-xs text-gray-500">${comp.unit}</td>
-                    <td class="text-right text-xs text-gray-700">Rp ${new Intl.NumberFormat('id-ID').format(comp.cost)}</td>
-                    <td class="text-center">
-                        <input type="number" 
-                            class="form-input text-center text-sm py-1 px-2 w-20" 
-                            value="${comp.quantity}" 
-                            min="0.01" step="0.01"
-                            onchange="updateQuantity(${index}, this.value)">
-                    </td>
-                    <td class="text-right text-sm font-semibold text-gray-900">Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}</td>
-                    <td class="text-center">
-                        <button type="button" onclick="removeComponent(${index})" class="text-red-500 hover:text-red-700 transition">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                `;
+                        <td class="text-center text-gray-500 text-xs">${index + 1}</td>
+                        <td>
+                            <p class="text-sm font-medium text-gray-900">${comp.name}</p>
+                        </td>
+                        <td class="text-center text-xs text-gray-500">${comp.unit}</td>
+                        <td class="text-right text-xs text-gray-700">Rp ${new Intl.NumberFormat('id-ID').format(comp.cost)}</td>
+                        <td class="text-center">
+                            <input type="number" 
+                                class="form-input text-center text-sm py-1 px-2 w-20" 
+                                value="${comp.quantity}" 
+                                min="0.01" step="0.01"
+                                onchange="updateQuantity(${index}, this.value)">
+                        </td>
+                        <td class="text-right text-sm font-semibold text-gray-900">Rp ${new Intl.NumberFormat('id-ID').format(subtotal)}</td>
+                        <td class="text-center">
+                            <button type="button" onclick="removeComponent(${index})" class="text-red-500 hover:text-red-700 transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
                 tbody.appendChild(tr);
 
                 // Hidden inputs
                 inputsContainer.innerHTML += `
-                    <input type="hidden" name="components[${index}][id]" value="${comp.id}">
-                    <input type="hidden" name="components[${index}][quantity]" value="${comp.quantity}">
-                    <input type="hidden" name="components[${index}][unit]" value="${comp.unit}">
-                    <input type="hidden" name="components[${index}][cost]" value="${comp.cost}">
-                `;
+                        <input type="hidden" name="components[${index}][id]" value="${comp.id}">
+                        <input type="hidden" name="components[${index}][quantity]" value="${comp.quantity}">
+                        <input type="hidden" name="components[${index}][unit]" value="${comp.unit}">
+                        <input type="hidden" name="components[${index}][cost]" value="${comp.cost}">
+                    `;
             });
 
             const totalDisplay = document.getElementById('total-cost-display');
-            if(totalDisplay) totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(totalCost);
+            if (totalDisplay) totalDisplay.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(totalCost);
             const purchaseInput = document.getElementById('purchase_price');
-            if(purchaseInput) purchaseInput.value = totalCost;
+            if (purchaseInput) purchaseInput.value = totalCost;
         }
 
         function updateQuantity(index, newQty) {
@@ -998,9 +987,9 @@
             components.splice(index, 1);
             renderComponents();
         }
-        
+
         // Window level functions for modal (onclick attributes)
-        window.selectMaterial = function(el) {
+        window.selectMaterial = function (el) {
             const id = el.dataset.id;
             const name = el.dataset.name;
             const unit = el.dataset.unit;
@@ -1026,20 +1015,20 @@
         }
 
         // Initialize Components and Image Preview
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             renderComponents();
-            
+
             // Image Preview
             const imageInput = document.getElementById('image');
             const imagePreview = document.getElementById('imagePreview');
             const imagePlaceholder = document.getElementById('imagePlaceholder');
 
-            if(imageInput){
-                imageInput.addEventListener('change', function(event) {
+            if (imageInput) {
+                imageInput.addEventListener('change', function (event) {
                     const file = event.target.files && event.target.files[0];
                     if (!file) return;
                     const reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         imagePreview.src = e.target.result;
                         imagePreview.classList.remove('hidden');
                         imagePlaceholder.classList.add('hidden');
