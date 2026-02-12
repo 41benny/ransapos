@@ -407,72 +407,49 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="grid grid-cols-2 gap-3">
-                    <!-- Payment Method -->
-                    <button class="col-span-2 relative hidden">
-                        <!-- Hidden select wrapper if needed for functionality -->
-                        <select v-model="selectedPaymentMethod" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                            <option value="">Select Payment</option>
-                            @foreach($paymentMethods as $method)
-                                <option value="{{ $method->id }}">{{ $method->name }}</option>
-                            @endforeach
-                        </select>
-                        <div
-                            class="w-full py-3 border border-primary/20 text-primary rounded-xl font-bold hover:bg-red-50 transition flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
-                                </path>
-                            </svg>
-                            <span
-                                v-text="selectedPaymentMethod ? (paymentMethods.find(m => m.id == selectedPaymentMethod)?.name || 'Pilih Pembayaran') : 'Pilih Pembayaran'"></span>
-                        </div>
-                    </button>
-
-                    <div class="col-span-2 grid grid-cols-[1fr_2fr] gap-3">
-                        <div class="relative">
-                            <select v-model="selectedPaymentMethod"
-                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                <option value="">Method...</option>
-                                @foreach($paymentMethods as $method)
-                                    <option value="{{ $method->id }}">{{ $method->name }}</option>
-                                @endforeach
-                            </select>
-                            <button
-                                class="w-full h-full border border-primary/20 text-primary rounded-xl font-bold text-sm hover:bg-red-50 transition flex flex-col items-center justify-center p-1">
-                                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                                <span class="text-[10px] leading-none uppercase tracking-wide truncate max-w-full px-1"
-                                    v-text="selectedPaymentMethod ? (paymentMethods.find(m => m.id == selectedPaymentMethod)?.name || 'Bayar') : 'Metode'"></span>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Metode Pembayaran</p>
+                        <div class="grid grid-cols-2 xl:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
+                            <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
+                                @click="selectedPaymentMethod = method.id"
+                                :class="Number(selectedPaymentMethod) === Number(method.id)
+                                    ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                class="min-h-[44px] px-2.5 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
+                                @{{ method.name }}
                             </button>
                         </div>
-
-                        <button @click="processPayment"
-                            :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
-                            :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
-                            class="py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
-                            <span v-if="!isProcessing">Pay Now</span>
-                            <span v-else class="flex items-center gap-2">
-                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
-                                Processing
-                            </span>
-                            <svg v-if="!isProcessing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
-                        </button>
                     </div>
+
+                    <div class="rounded-xl border border-primary/20 bg-white px-3 py-2.5 flex items-center justify-between gap-3">
+                        <span class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Terpilih</span>
+                        <span class="text-sm font-bold text-primary truncate">@{{ selectedPaymentMethodName || 'Belum dipilih' }}</span>
+                    </div>
+
+                    <button @click="processPayment"
+                        :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
+                        :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                        class="w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
+                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu' }}</span>
+                        <span v-else class="flex items-center gap-2">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            Processing
+                        </span>
+                        <svg v-if="!isProcessing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -748,6 +725,11 @@
                     selectedCustomer() {
                         if (!this.selectedCustomerId) return null;
                         return this.customers.find(c => c.id === Number(this.selectedCustomerId));
+                    },
+                    selectedPaymentMethodName() {
+                        if (!this.selectedPaymentMethod) return '';
+                        const method = this.paymentMethods.find(m => Number(m.id) === Number(this.selectedPaymentMethod));
+                        return method ? method.name : '';
                     },
                     subtotal() {
                         return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
