@@ -573,6 +573,13 @@
         }
         .ts-dropdown .option { padding: 0.5rem 0.75rem; }
         .ts-dropdown .active { background-color: #eff6ff; color: #1e40af; }
+
+        /* Ensure typed search text in TomSelect is always visible */
+        .ts-control > input {
+            color: #111827 !important;
+            -webkit-text-fill-color: #111827 !important;
+            opacity: 1 !important;
+        }
         
         /* Hide dropdown if no query (extra safeguard) */
         .ts-wrapper.no-search .ts-dropdown { display: none !important; }
@@ -844,17 +851,6 @@
                     placeholder: 'Ketik nama bahan...',
                     openOnFocus: false,
                     maxOptions: 50,
-                    shouldOpen: function(query) {
-                        return query.trim().length > 1; // Strict: only if > 1 char
-                    },
-                    onFocus: function() {
-                        this.close(); // Force close on focus to prevent auto-opening
-                    },
-                    onType: function(str) {
-                         if(str.trim().length <= 1) {
-                             this.close();
-                         }
-                    },
                     onChange: function(value) {
                         const row = selectElement.closest('.component-row');
                         if(row) {
