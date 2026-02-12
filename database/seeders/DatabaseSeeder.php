@@ -7,7 +7,6 @@ use App\Models\Role;
 use App\Models\Outlet;
 use App\Models\ProductCategory;
 use App\Models\Product;
-use App\Models\PaymentMethod;
 use App\Models\Supplier;
 use App\Models\Stock;
 use App\Models\CashSession;
@@ -240,35 +239,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // 7. Payment Methods
-        PaymentMethod::create([
-            'code' => 'CASH',
-            'name' => 'Cash / Tunai',
-            'is_active' => true,
-        ]);
-
-        PaymentMethod::create([
-            'code' => 'QRIS',
-            'name' => 'QRIS',
-            'is_active' => true,
-        ]);
-
-        PaymentMethod::create([
-            'code' => 'TRANSFER',
-            'name' => 'Transfer Bank',
-            'is_active' => true,
-        ]);
-
-        PaymentMethod::create([
-            'code' => 'DEBIT',
-            'name' => 'Kartu Debit',
-            'is_active' => true,
-        ]);
-
-        PaymentMethod::create([
-            'code' => 'CREDIT',
-            'name' => 'Kartu Kredit',
-            'is_active' => true,
-        ]);
+        $this->call(PaymentMethodSeeder::class);
 
         // 8. Cash Accounts (Akun Kas & Bank)
         CashAccount::create([
