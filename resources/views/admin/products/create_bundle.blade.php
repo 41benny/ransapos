@@ -567,6 +567,42 @@
 @endsection
 
 @push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<style>
+    .ts-control {
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-color: #e5e7eb;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        min-height: 42px;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6;
+    }
+    .ts-dropdown {
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        border-color: #e5e7eb;
+        z-index: 50;
+    }
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem;
+    }
+    .ts-dropdown .active {
+        background-color: #eff6ff;
+        color: #1e40af;
+    }
+</style>
+<select id="product-options-source" class="hidden">
+    <option value="">Pilih bahan...</option>
+    @foreach($rawMaterials as $raw)
+        <option value="{{ $raw->id }}" data-unit="{{ $raw->unit }}" data-purchase-price="{{ (float) ($raw->purchase_price ?? 0) }}">
+            {{ $raw->name }} ({{ $raw->sku }})
+        </option>
+    @endforeach
+</select>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const tabs = document.querySelectorAll('.bundle-tab-btn');
@@ -747,9 +783,9 @@
         const componentsTotalCostLabel = document.getElementById('components-total-cost');
         let componentIndex = componentBody.querySelectorAll('.component-row').length;
 
+        const optionsSource = document.getElementById('product-options-source');
         function makeOptionsHtml() {
-            const firstRowSelect = componentBody.querySelector('select[name*="[component_product_id]"]');
-            return firstRowSelect ? firstRowSelect.innerHTML : '<option value="">Pilih bahan...</option>';
+            return optionsSource.innerHTML;
         }
 
         function parseNumber(value) {
@@ -767,10 +803,30 @@
         }
 
         function getComponentPurchasePrice(selectElement) {
+            if (selectElement.tomselect) {
+                const value = selectElement.tomselect.getValue();
+                const option = selectElement.tomselect.getOption(value);
+                if (option) {
+                    return parseNumber(option.getAttribute('data-purchase-price'));
+                }
+            } 
             if (!selectElement || selectElement.selectedIndex < 0) return 0;
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             if (!selectedOption) return 0;
             return parseNumber(selectedOption.getAttribute('data-purchase-price'));
+        }
+
+        function getComponentUnit(selectElement) {
+             if (selectElement.tomselect) {
+                const value = selectElement.tomselect.getValue();
+                const option = selectElement.tomselect.getOption(value);
+                if (option) {
+                    return option.getAttribute('data-unit') || '';
+                }
+            }
+            if (!selectElement || selectElement.selectedIndex < 0) return '';
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            return selectedOption ? (selectedOption.getAttribute('data-unit') || '') : '';
         }
 
         function recalculateComponentCosts() {
@@ -791,16 +847,39 @@
             if (purchasePriceInput) purchasePriceInput.value = totalCost.toFixed(2);
         }
 
+        function initTomSelect(selectElement) {
+            if (selectElement.tomselect) return;
+            new TomSelect(selectElement, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: 'Cari bahan...',
+                onChange: function(value) {
+                    const row = selectElement.closest('.component-row');
+                    if(row) {
+                        const unitInput = row.querySelector('.component-uom');
+                        const unit = getComponentUnit(selectElement);
+                        if(unitInput && !unitInput.value && unit) {
+                            unitInput.value = unit;
+                        }
+                        recalculateComponentCosts();
+                    }
+                }
+            });
+        }
+
         function bindComponentRowEvents(row) {
             const select = row.querySelector('.component-product');
             const unitInput = row.querySelector('.component-uom');
             const quantityInput = row.querySelector('.component-quantity');
-            if (!select || !unitInput) return;
+            
+            if (!select) return;
 
+            initTomSelect(select);
+
+            // Fallback event for standard select (if needed)
             select.addEventListener('change', function () {
-                const selected = select.options[select.selectedIndex];
-                const unit = selected ? selected.getAttribute('data-unit') : '';
-                if (!unitInput.value && unit) unitInput.value = unit;
+                const unit = getComponentUnit(select);
+                if (unitInput && !unitInput.value && unit) unitInput.value = unit;
                 recalculateComponentCosts();
             });
 
@@ -850,8 +929,13 @@
                 alert('Minimal harus ada 1 komponen bahan.');
                 return;
             }
-            removeBtn.closest('.component-row').remove();
-            recalculateComponentCosts();
+            if(confirm('Hapus baris ini?')) {
+                 const row = removeBtn.closest('.component-row');
+                 const select = row.querySelector('.component-product');
+                 if(select && select.tomselect) select.tomselect.destroy();
+                 row.remove();
+                 recalculateComponentCosts();
+            }
         });
 
         // ============================================
