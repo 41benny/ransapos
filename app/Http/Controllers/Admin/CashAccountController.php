@@ -159,12 +159,13 @@ class CashAccountController extends Controller
         ]);
 
         $transactions = $this->cashAccountService->getTransactions($filters);
+        $totals = $this->cashAccountService->getTransactionTotals($filters);
         $accounts = CashAccount::active()->orderBy('name')->get();
         $outlets = \App\Models\Outlet::active()->orderBy('name')->get();
         $coaAccounts = CoaAccount::active()->orderBy('code')->get();
         $coaGroups = CoaAccount::query()->where('is_active', true)->distinct()->orderBy('group')->pluck('group');
 
-        return view('admin.cash-accounts.transactions', compact('transactions', 'accounts', 'outlets', 'coaAccounts', 'coaGroups', 'filters'));
+        return view('admin.cash-accounts.transactions', compact('transactions', 'accounts', 'outlets', 'coaAccounts', 'coaGroups', 'filters', 'totals'));
     }
 
     /**

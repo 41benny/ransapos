@@ -3,7 +3,7 @@
 @section('title', 'Transaksi Kas & Bank')
 
 @section('content')
-    <div class="container mx-auto px-4 py-6">
+    <div class="w-full px-3 py-4">
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Transaksi Kas & Bank</h1>
@@ -65,14 +65,14 @@
                                 Deskripsi
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
                                 style="min-width: 120px; position: relative;">
-                                Jenis
+                                Debit
                                 <div class="resize-handle"></div>
                             </th>
                             <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
                                 style="min-width: 150px; position: relative;">
-                                Jumlah
+                                Kredit
                                 <div class="resize-handle"></div>
                             </th>
                             <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
@@ -118,18 +118,10 @@
                                     placeholder="Filter deskripsi...">
                             </th>
                             <th class="px-3 py-1">
-                                <select
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="type">
-                                    <option value="">Semua</option>
-                                    <option value="in" {{ request('type') === 'in' ? 'selected' : '' }}>Masuk</option>
-                                    <option value="out" {{ request('type') === 'out' ? 'selected' : '' }}>Keluar</option>
-                                </select>
+                                <div class="text-[11px] text-gray-400 text-right">Auto</div>
                             </th>
                             <th class="px-3 py-1">
-                                <input type="text"
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="amount" value="{{ request('amount') }}" placeholder="Filter jumlah...">
+                                <div class="text-[11px] text-gray-400 text-right">Auto</div>
                             </th>
                             <th class="px-3 py-1">
                                 <input type="text"
@@ -178,26 +170,22 @@
                                         {{ $transaction->description }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($transaction->type === 'in')
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                            Masuk
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                            Keluar
-                                        </span>
-                                    @endif
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     @if($transaction->type === 'in')
                                         <span class="text-sm font-semibold text-green-600">
-                                            + Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                                            Rp {{ number_format($transaction->amount, 0, ',', '.') }}
                                         </span>
                                     @else
+                                        <span class="text-sm text-gray-300">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($transaction->type === 'out')
                                         <span class="text-sm font-semibold text-red-600">
-                                            - Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                                            Rp {{ number_format($transaction->amount, 0, ',', '.') }}
                                         </span>
+                                    @else
+                                        <span class="text-sm text-gray-300">-</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
@@ -250,6 +238,17 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <div class="px-6 py-3 border-t border-gray-200 bg-gray-50">
+                <div class="flex flex-wrap items-center justify-end gap-6 text-sm">
+                    <div class="font-semibold text-green-700">
+                        Total Debit: Rp {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}
+                    </div>
+                    <div class="font-semibold text-red-700">
+                        Total Kredit: Rp {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}
+                    </div>
+                </div>
             </div>
 
             <div class="px-6 py-4 border-t border-gray-200">

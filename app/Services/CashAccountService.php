@@ -6,6 +6,7 @@ use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use App\Models\Purchase;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -422,6 +423,27 @@ class CashAccountService
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc');
 
+        $this->applyTransactionFilters($query, $filters);
+
+        return $query->paginate(20)->withQueryString();
+    }
+
+    public function getTransactionTotals(array $filters = []): array
+    {
+        $query = CashTransaction::query();
+        $this->applyTransactionFilters($query, $filters);
+
+        $totalDebit = (clone $query)->where('type', 'in')->sum('amount');
+        $totalCredit = (clone $query)->where('type', 'out')->sum('amount');
+
+        return [
+            'debit' => (float) $totalDebit,
+            'credit' => (float) $totalCredit,
+        ];
+    }
+
+    protected function applyTransactionFilters(Builder $query, array $filters): void
+    {
         // Filter by transaction number
         if (! empty($filters['transaction_number'])) {
             $query->where('transaction_number', 'like', '%' . $filters['transaction_number'] . '%');
@@ -508,8 +530,6 @@ class CashAccountService
                 }
             });
         }
-
-        return $query->paginate(20)->withQueryString();
     }
 
     protected function parseDecimalFilter($value): ?float
