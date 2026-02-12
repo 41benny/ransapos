@@ -542,56 +542,40 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <style>
-        /* Custom styling for "Autocomplete" feel */
+        /* Aggressive Reset for Autocomplete Look */
         .ts-control {
             border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
+            padding: 0.5rem 0.75rem !important;
             border-color: #e5e7eb;
             box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             min-height: 42px;
             background-image: none !important;
-            /* Remove any background image */
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 16px 12px !important;
             padding-right: 0.75rem !important;
-            /* Reset padding since no arrow */
         }
-
+        /* Hide all arrows/carets */
+        .ts-wrapper.single .ts-control::after { display: none !important; content: none !important; }
+        .ts-wrapper.single .ts-control .item { padding-right: 0 !important; }
+        
         .ts-wrapper.focus .ts-control {
             border-color: #3b82f6;
             box-shadow: 0 0 0 1px #3b82f6;
         }
-
-        /* Hide the dropdown arrow */
-        .ts-wrapper .item {
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .ts-control>input {
-            margin: 0 !important;
-            /* Adjust input margin */
-        }
-
-        /* Hide the default arrow container if it exists */
-        .ts-wrapper.single .ts-control::after {
-            display: none !important;
-        }
-
+        
         .ts-dropdown {
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             border-color: #e5e7eb;
-            z-index: 9999;
-            /* Higher z-index to avoid clipping */
+            z-index: 99999; /* Max Z-Index */
+            margin-top: 4px;
         }
-
-        .ts-dropdown .option {
-            padding: 0.5rem 0.75rem;
-        }
-
-        .ts-dropdown .active {
-            background-color: #eff6ff;
-            color: #1e40af;
-        }
+        .ts-dropdown .option { padding: 0.5rem 0.75rem; }
+        .ts-dropdown .active { background-color: #eff6ff; color: #1e40af; }
+        
+        /* Hide dropdown if no query (extra safeguard) */
+        .ts-wrapper.no-search .ts-dropdown { display: none !important; }
     </style>
     <select id="product-options-source" class="hidden">
         <option value="">Ketik nama bahan...</option>
@@ -855,12 +839,21 @@
             try {
                 new TomSelect(selectElement, {
                     create: false,
-                    dropdownParent: 'body', // Append to body to fix overflow
+                    dropdownParent: 'body', 
                     sortField: { field: "text", direction: "asc" },
                     placeholder: 'Ketik nama bahan...',
-                    openOnFocus: false, // Only open when user types
+                    openOnFocus: false,
+                    maxOptions: 50,
                     shouldOpen: function(query) {
-                        return query.length > 1; // Only open if query length > 1
+                        return query.trim().length > 1; // Strict: only if > 1 char
+                    },
+                    onFocus: function() {
+                        this.close(); // Force close on focus to prevent auto-opening
+                    },
+                    onType: function(str) {
+                         if(str.trim().length <= 1) {
+                             this.close();
+                         }
                     },
                     onChange: function(value) {
                         const row = selectElement.closest('.component-row');
