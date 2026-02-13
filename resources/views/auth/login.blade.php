@@ -69,12 +69,33 @@
         .rotating-term {
             display: inline-block;
             min-height: 1.1em;
-            transition: opacity 0.35s ease, transform 0.35s ease;
+            min-width: 23ch;
+            transition: opacity 0.9s ease, transform 0.9s ease;
+            will-change: opacity, transform;
         }
 
         .rotating-term.is-changing {
             opacity: 0;
-            transform: translateY(8px);
+            transform: translateY(14px);
+        }
+
+        @keyframes luxury-glow {
+            0%, 100% {
+                opacity: 0.7;
+                transform: translateY(0) scale(1);
+                filter: drop-shadow(0 0 4px rgba(246, 197, 106, 0.25));
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-2px) scale(1.08);
+                filter: drop-shadow(0 0 10px rgba(246, 197, 106, 0.45));
+            }
+        }
+
+        .luxury-symbol {
+            color: #f6c56a;
+            font-size: 0.72em;
+            animation: luxury-glow 5.2s ease-in-out infinite;
         }
     </style>
 </head>
@@ -112,7 +133,10 @@
             <div class="relative z-10 max-w-4xl mb-12">
                 <h1 class="text-5xl xl:text-6xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
                     Authentic Dimsum,<br/>
-                    <span class="text-white/90 rotating-term" id="hero-rotating-term">Modern Service.</span>
+                    <span class="text-white/90 inline-flex items-center gap-2.5">
+                        <span class="material-symbols-outlined luxury-symbol" aria-hidden="true">workspace_premium</span>
+                        <span class="rotating-term" id="hero-rotating-term">Modern Service.</span>
+                    </span>
                 </h1>
                 <div class="w-24 h-1 bg-[#ec4913] mb-6 rounded-full animate-fade-up delay-500"></div>
                 <p class="text-lg text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
@@ -241,6 +265,8 @@
                 'Smart Operations.',
                 'Professional Standards.'
             ];
+            const rotateIntervalMs = 5600;
+            const transitionDurationMs = 900;
 
             let termIndex = 0;
             setInterval(() => {
@@ -249,8 +275,8 @@
                     termIndex = (termIndex + 1) % rotatingTerms.length;
                     heroRotatingTerm.textContent = rotatingTerms[termIndex];
                     heroRotatingTerm.classList.remove('is-changing');
-                }, 350);
-            }, 2600);
+                }, transitionDurationMs);
+            }, rotateIntervalMs);
         });
     </script>
 </body>
