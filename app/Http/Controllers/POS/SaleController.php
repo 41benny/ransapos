@@ -35,18 +35,36 @@ class SaleController extends Controller
         $currentOutletId = auth()->user()->outlet_id;
         $currentUserId = auth()->id();
 
-        $categories = ProductCategory::where('is_active', true)
-            ->with(['products' => function ($query) {
+        $posData = ProductCategory::where('is_active', true)
+            ->select(['id', 'name'])
+            ->with(['products' => function ($query) use ($currentOutletId, $currentUserId) {
+                $query->select([
+                    'id',
+                    'sku',
+                    'name',
+                    'category_id',
+                    'description',
+                    'image_path',
+                    'selling_price',
+                    'price_levels',
+                ]);
                 $query->where('is_active', true)
                     ->where('is_sellable', true)
                     ->where('is_pos_available', true)
-                    ->whereIn('product_type', ['finished_good', 'service']);
+                    ->whereIn('product_type', ['finished_good', 'service'])
+                    ->where(function ($outletQuery) use ($currentOutletId) {
+                        $outletQuery->where('is_available_all_outlets', true)
+                            ->orWhereJsonContains('pos_outlet_ids', $currentOutletId);
+                    })
+                    ->where(function ($userQuery) use ($currentUserId) {
+                        $userQuery->where('is_available_all_users', true)
+                            ->orWhereJsonContains('pos_user_ids', $currentUserId);
+                    });
             }])
             ->orderBy('name')
             ->get()
             ->map(function (ProductCategory $category) use ($currentOutletId, $currentUserId, $priceLevels) {
                 $products = $category->products
-                    ->filter(fn(Product $product) => $product->isAvailableForOutlet($currentOutletId) && $product->isAvailableForUser($currentUserId))
                     ->map(function (Product $product) use ($priceLevels, $currentOutletId) {
                         $normalizedPriceLevels = [];
 
@@ -65,20 +83,35 @@ class SaleController extends Controller
                             $normalizedPriceLevels['regular'] = (float) $product->selling_price;
                         }
 
-                        $product->setAttribute('price_levels', $normalizedPriceLevels);
-                        $product->setAttribute('selling_price', $normalizedPriceLevels['regular']);
-
-                        return $product;
+                        return [
+                            'id' => $product->id,
+                            'sku' => $product->sku,
+                            'name' => $product->name,
+                            'category_id' => $product->category_id,
+                            'description' => $product->description,
+                            'selling_price' => $normalizedPriceLevels['regular'],
+                            'price_levels' => $normalizedPriceLevels,
+                            'image_url' => $product->image_url,
+                        ];
                     })
                     ->values();
 
-                $category->setRelation('products', $products);
-
-                return $category;
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'products' => $products,
+                ];
             })
-            ->filter(fn(ProductCategory $category) => $category->products->isNotEmpty())
+            ->filter(fn(array $category) => $category['products']->isNotEmpty())
             ->values();
-        $paymentMethods = PaymentMethod::where('is_active', true)->get();
+        $categories = $posData->map(fn(array $category) => [
+            'id' => $category['id'],
+            'name' => $category['name'],
+        ])->values();
+        $products = $posData->flatMap(fn(array $category) => $category['products'])->values();
+        $paymentMethods = PaymentMethod::where('is_active', true)
+            ->select(['id', 'name'])
+            ->get();
 
         // Ambil beberapa customer aktif untuk pilihan di POS (loyalty)
         $customers = Customer::active()
@@ -103,9 +136,10 @@ class SaleController extends Controller
             ->orderBy('opened_at', 'desc')
             ->first();
 
-        $outlet = Outlet::find(auth()->user()->outlet_id);
+        $outlet = Outlet::select(['id', 'tax_rate', 'service_charge_rate'])
+            ->find(auth()->user()->outlet_id);
 
-        return view('pos.sales.create', compact('categories', 'paymentMethods', 'activeSession', 'customers', 'outlet', 'priceLevels'));
+        return view('pos.sales.create', compact('categories', 'products', 'paymentMethods', 'activeSession', 'customers', 'outlet', 'priceLevels'));
     }
 
     /**

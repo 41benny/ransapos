@@ -199,12 +199,12 @@
                     All Items
                 </button>
                 @foreach($categories as $category)
-                    <button @click="selectedCategory = {{ $category->id }}"
-                        :class="Number(selectedCategory) === {{ $category->id }} 
-                                                                                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                    <button @click="selectedCategory = {{ $category['id'] }}"
+                        :class="Number(selectedCategory) === {{ $category['id'] }} 
+                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
-                        {{ $category->name }}
+                        {{ $category['name'] }}
                     </button>
                 @endforeach
             </div>
@@ -227,7 +227,8 @@
 
                             <!-- Image -->
                             <div class="aspect-[4/3] rounded-xl overflow-hidden mb-4 relative bg-gray-50">
-                                <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
+                                <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="lazy"
+                                    decoding="async" fetchpriority="low"
                                     class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
                                 <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,7 +332,8 @@
                         <!-- Thumb -->
                         <div class="w-16 h-16 rounded-xl bg-gray-100 flex-none overflow-hidden relative">
                             <!-- We need product image here, so we find it from products list -->
-                            <img :src="getProductImage(item.product_id)" class="w-full h-full object-cover">
+                            <img :src="getProductImage(item.product_id)" loading="lazy" decoding="async"
+                                class="w-full h-full object-cover">
                         </div>
 
                         <!-- Details -->
@@ -686,11 +688,12 @@
                 data() {
                     return {
                         categories: @json($categories),
-                        // Adding dummy products for categories if needed, relying on server data
-                        products: @json($categories->flatMap->products),
+                        products: @json($products),
                         priceLevels: @json($priceLevels),
                         customers: @json($customers),
                         paymentMethods: @json($paymentMethods),
+                        productById: {},
+                        productImageById: {},
 
                         cart: [],
                         searchQuery: '',
@@ -759,11 +762,18 @@
                     }
                 },
                 mounted() {
+                    this.productById = Object.fromEntries(this.products.map(product => [Number(product.id), product]));
+                    this.productImageById = Object.fromEntries(this.products.map(product => [
+                        Number(product.id),
+                        product.image_url || 'https://via.placeholder.com/150'
+                    ]));
                     this.filteredProducts = this.products;
-                    // Pre-select first category if available? No, user might want 'All'
                 },
                 methods: {
                     // ... Existing Methods ...
+                    getProductById(productId) {
+                        return this.productById[Number(productId)] || null;
+                    },
                     selectPaymentMethod(methodId) {
                         this.selectedPaymentMethod = methodId;
                         this.showPaymentMethodPicker = false;
@@ -797,7 +807,7 @@
                     },
                     updateCartPricesBySalesType() {
                         this.cart = this.cart.map(item => {
-                            const product = this.products.find(p => p.id === item.product_id);
+                            const product = this.getProductById(item.product_id);
                             if (!product) return item;
 
                             const newPrice = this.getProductPrice(product);
@@ -827,8 +837,7 @@
                         }
                     },
                     getProductImage(productId) {
-                        const product = this.products.find(p => p.id === productId);
-                        return product ? (product.image_url || 'https://via.placeholder.com/150') : 'https://via.placeholder.com/150';
+                        return this.productImageById[Number(productId)] || 'https://via.placeholder.com/150';
                     },
                     increaseQty(index) {
                         const item = this.cart[index];
