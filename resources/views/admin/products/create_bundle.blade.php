@@ -8,6 +8,14 @@
     @php
         $oldOutletIds = collect(old('pos_outlet_ids', []))->map(fn($id) => (int) $id)->values()->all();
         $oldUserIds = collect(old('pos_user_ids', []))->map(fn($id) => (int) $id)->values()->all();
+        $componentMetaById = collect($rawMaterials ?? [])->mapWithKeys(function ($raw) {
+            return [
+                (string) $raw->id => [
+                    'unit' => (string) ($raw->unit ?? ''),
+                    'purchase_price' => (float) ($raw->purchase_price ?? 0),
+                ],
+            ];
+        })->all();
     @endphp
 
     <div class="max-w-6xl mx-auto w-full">
@@ -595,16 +603,7 @@
     </select>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const componentMetaById = @json(
-                collect($rawMaterials)->mapWithKeys(function ($raw) {
-                    return [
-                        (string) $raw->id => [
-                            'unit' => (string) ($raw->unit ?? ''),
-                            'purchase_price' => (float) ($raw->purchase_price ?? 0),
-                        ],
-                    ];
-                })
-            );
+            const componentMetaById = @json($componentMetaById);
 
             const tabs = document.querySelectorAll('.bundle-tab-btn');
             const panels = document.querySelectorAll('.bundle-tab-panel');
