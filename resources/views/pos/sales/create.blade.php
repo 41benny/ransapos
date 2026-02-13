@@ -412,7 +412,7 @@
                 <div class="space-y-3">
                     <div class="relative">
                         <div v-show="showPaymentMethodPicker"
-                            class="absolute bottom-full left-0 right-0 mb-2 z-30 rounded-xl border border-primary/20 bg-white p-3 shadow-2xl shadow-black/10">
+                            class="mt-2 rounded-xl border border-primary/20 bg-white p-3 shadow-2xl shadow-black/10 xl:absolute xl:bottom-full xl:left-0 xl:right-0 xl:mb-2 xl:mt-0 xl:z-30">
                             <div class="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
                                 <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
                                     @click="selectPaymentMethod(method.id)"
