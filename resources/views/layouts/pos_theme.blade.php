@@ -68,7 +68,8 @@
     <nav class="bg-surface-light border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
+                <a href="{{ route('pos.dashboard') }}"
+                    class="flex items-center gap-3 hover:opacity-80 transition-opacity">
                     <div class="bg-primary/10 p-2 rounded-lg">
                         <span class="material-icons-round text-primary text-2xl">point_of_sale</span>
                     </div>
@@ -76,7 +77,7 @@
                         <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">POS Latte</h1>
                         <p class="text-xs text-text-muted-light font-medium">Moresto Dimsum</p>
                     </div>
-                </div>
+                </a>
                 <div class="flex items-center gap-3">
                     <div class="hidden md:flex flex-col items-end mr-3">
                         <span class="text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</span>
@@ -84,19 +85,25 @@
                             - {{ now()->format('d M, H:i') }}</span>
                     </div>
 
+                    @if(!request()->routeIs('pos.dashboard'))
+                        <a href="{{ route('pos.dashboard') }}"
+                            class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                            <span class="material-icons-round text-base">dashboard</span>
+                            <span class="hidden sm:inline">Dashboard</span>
+                        </a>
+                    @endif
+
                     <a href="{{ route('pos.attendance.index') }}"
                         class="flex items-center gap-2 bg-secondary/10 hover:bg-secondary/20 text-secondary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
                         <span class="material-icons-round text-base">people</span>
                         <span class="hidden sm:inline">Absensi</span>
                     </a>
 
-                    @if(request()->routeIs('pos.dashboard'))
-                        <a href="{{ route('pos.sessions.close') }}"
-                            class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
-                            <span class="material-icons-round text-base">logout</span>
-                            <span class="hidden sm:inline">Tutup Shift</span>
-                        </a>
-                    @endif
+                    <a href="{{ route('pos.sessions.close') }}"
+                        class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                        <span class="material-icons-round text-base">logout</span>
+                        <span class="hidden sm:inline">Tutup Shift</span>
+                    </a>
 
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
