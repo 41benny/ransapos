@@ -252,7 +252,7 @@
                                         </thead>
                                         <tbody id="bundle-components-body">
                                             @php
-                                                $oldComponents = old('bundle_components', [['component_product_id' => '', 'quantity' => '', 'uom' => '']]);
+                                                $oldComponents = old('bundle_components', [['component_product_id' => '', 'quantity' => '1', 'uom' => '']]);
                                             @endphp
                                             @foreach($oldComponents as $index => $component)
                                                 <tr class="component-row">
@@ -595,6 +595,17 @@
     </select>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const componentMetaById = @json(
+                collect($rawMaterials)->mapWithKeys(function ($raw) {
+                    return [
+                        (string) $raw->id => [
+                            'unit' => (string) ($raw->unit ?? ''),
+                            'purchase_price' => (float) ($raw->purchase_price ?? 0),
+                        ],
+                    ];
+                })
+            );
+
             const tabs = document.querySelectorAll('.bundle-tab-btn');
             const panels = document.querySelectorAll('.bundle-tab-panel');
 
@@ -812,16 +823,48 @@
                 return Array.from(selectElement.options).find(option => String(option.value) === selectedValue) || null;
             }
 
+            function getSelectedComponentValue(selectElement) {
+                if (!selectElement) return '';
+                if (selectElement.tomselect) {
+                    return String(selectElement.tomselect.getValue() || '');
+                }
+                return String(selectElement.value || '');
+            }
+
             function getComponentPurchasePrice(selectElement) {
                 const selectedOption = getSelectedComponentOption(selectElement);
-                if (!selectedOption) return 0;
-                return parseNumber(selectedOption.dataset.purchasePrice ?? selectedOption.getAttribute('data-purchase-price'));
+                let price = 0;
+
+                if (selectedOption) {
+                    price = parseNumber(selectedOption.dataset.purchasePrice ?? selectedOption.getAttribute('data-purchase-price'));
+                }
+
+                if (price <= 0) {
+                    const selectedValue = getSelectedComponentValue(selectElement);
+                    if (selectedValue && componentMetaById[selectedValue]) {
+                        price = parseNumber(componentMetaById[selectedValue].purchase_price);
+                    }
+                }
+
+                return price;
             }
 
             function getComponentUnit(selectElement) {
                 const selectedOption = getSelectedComponentOption(selectElement);
-                if (!selectedOption) return '';
-                return selectedOption.dataset.unit ?? selectedOption.getAttribute('data-unit') ?? '';
+                let unit = '';
+
+                if (selectedOption) {
+                    unit = selectedOption.dataset.unit ?? selectedOption.getAttribute('data-unit') ?? '';
+                }
+
+                if (!unit) {
+                    const selectedValue = getSelectedComponentValue(selectElement);
+                    if (selectedValue && componentMetaById[selectedValue]) {
+                        unit = componentMetaById[selectedValue].unit || '';
+                    }
+                }
+
+                return unit;
             }
 
             function recalculateComponentCosts() {
@@ -860,9 +903,13 @@
                         const row = selectElement.closest('.component-row');
                         if(row) {
                             const unitInput = row.querySelector('.component-uom');
+                            const quantityInput = row.querySelector('.component-quantity');
                             const unit = getComponentUnit(selectElement);
                             if(unitInput && !unitInput.value && unit) {
                                 unitInput.value = unit;
+                            }
+                            if (quantityInput && parseNumber(quantityInput.value) <= 0) {
+                                quantityInput.value = '1';
                             }
                             recalculateComponentCosts();
                         }
@@ -884,7 +931,9 @@
 
                 select.addEventListener('change', function () {
                     const unit = getComponentUnit(select);
+                    const quantityValue = parseNumber(quantityInput ? quantityInput.value : 0);
                     if (unitInput && !unitInput.value && unit) unitInput.value = unit;
+                    if (quantityInput && quantityValue <= 0) quantityInput.value = '1';
                     recalculateComponentCosts();
                 });
 
@@ -904,7 +953,7 @@
                     </td>
                     <td class="p-2">
                         <input type="number" name="bundle_components[${componentIndex}][quantity]" min="0.0001" step="0.0001"
-                            class="component-quantity form-input text-sm" placeholder="0">
+                            class="component-quantity form-input text-sm" placeholder="0" value="1">
                     </td>
                     <td class="p-2">
                         <input type="text" name="bundle_components[${componentIndex}][uom]"
