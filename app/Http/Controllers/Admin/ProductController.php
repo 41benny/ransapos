@@ -338,7 +338,7 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product)
     {
         $data = $request->validated();
-        unset($data['image']);
+        unset($data['image'], $data['bundle_components'], $data['bundle_mode']);
 
         $data['is_active'] = $request->has('is_active') ? 1 : 0;
         $data['is_sellable'] = $request->has('is_sellable') ? 1 : 0;
@@ -371,24 +371,100 @@ class ProductController extends Controller
         $regularPrice = $data['price_levels']['regular'];
         $data['selling_price'] = is_array($regularPrice) ? $regularPrice['default'] : $regularPrice;
 
-        if ($request->hasFile('image')) {
-            $newImagePath = $request->file('image')->store('products', 'public');
-            $newThumbnailPath = $this->generateThumbnail($newImagePath);
-            if (!empty($product->image_path)) {
-                Storage::disk('public')->delete($product->image_path);
+        $isBundleMode = $request->boolean('bundle_mode')
+            || $product->bomHeader()->where('source_type', 'bundle')->exists();
+        $components = collect();
+
+        if ($isBundleMode) {
+            $components = $this->sanitizeBundleComponents($request->input('bundle_components', []));
+
+            if ($components->isEmpty()) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'bundle_components' => 'Bundle harus memiliki minimal 1 komponen bahan.',
+                    ]);
             }
-            if (!empty($product->thumbnail_path)) {
-                Storage::disk('public')->delete($product->thumbnail_path);
-            }
-            $data['image_path'] = $newImagePath;
-            $data['thumbnail_path'] = $newThumbnailPath;
+
+            $data['purchase_price'] = $this->calculateBundlePurchasePrice($components);
         }
 
-        $product->update($data);
+        $newImagePath = null;
+        $newThumbnailPath = null;
+        $oldImagePath = $product->image_path;
+        $oldThumbnailPath = $product->thumbnail_path;
+
+        DB::beginTransaction();
+
+        try {
+            if ($request->hasFile('image')) {
+                $newImagePath = $request->file('image')->store('products', 'public');
+                $newThumbnailPath = $this->generateThumbnail($newImagePath);
+                $data['image_path'] = $newImagePath;
+                $data['thumbnail_path'] = $newThumbnailPath;
+            }
+
+            $product->update($data);
+
+            if ($isBundleMode) {
+                $bomHeader = $product->bomHeader()->first();
+                if (!$bomHeader) {
+                    $bomHeader = BomHeader::create([
+                        'product_id' => $product->id,
+                        'name' => $request->filled('name') ? ('Resep ' . $request->input('name')) : null,
+                        'source_type' => 'bundle',
+                        'is_active' => (bool) $data['is_active'],
+                        'notes' => $request->input('description'),
+                    ]);
+                } else {
+                    $bomHeader->update([
+                        'name' => $request->filled('name') ? ('Resep ' . $request->input('name')) : $bomHeader->name,
+                        'is_active' => (bool) $data['is_active'],
+                        'notes' => $request->input('description'),
+                    ]);
+                }
+
+                $bomHeader->details()->delete();
+
+                foreach ($components as $component) {
+                    if ((int) $component['component_product_id'] === (int) $product->id) {
+                        throw new \InvalidArgumentException('Komponen tidak boleh sama dengan produk bundle.');
+                    }
+
+                    BomDetail::create([
+                        'bom_id' => $bomHeader->id,
+                        'component_product_id' => (int) $component['component_product_id'],
+                        'quantity' => (float) $component['quantity'],
+                        'uom' => $component['uom'] ?? null,
+                    ]);
+                }
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            if ($newImagePath) {
+                Storage::disk('public')->delete($newImagePath);
+            }
+            if ($newThumbnailPath) {
+                Storage::disk('public')->delete($newThumbnailPath);
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+        }
+
+        if ($newImagePath && !empty($oldImagePath)) {
+            Storage::disk('public')->delete($oldImagePath);
+        }
+        if ($newThumbnailPath && !empty($oldThumbnailPath)) {
+            Storage::disk('public')->delete($oldThumbnailPath);
+        }
 
         // Redirect back to index with preserved filters
         return redirect(session('product_index_url', route('admin.products.index')))
-            ->with('success', 'Produk berhasil diperbarui!');
+            ->with('success', $isBundleMode ? 'Bundle dan BOM berhasil diperbarui!' : 'Produk berhasil diperbarui!');
     }
 
     /**
@@ -413,6 +489,10 @@ class ProductController extends Controller
      */
     private function sanitizeOutletIds(mixed $outletIds): array
     {
+        if (is_string($outletIds)) {
+            $outletIds = array_filter(array_map('trim', explode(',', $outletIds)));
+        }
+
         if (!is_array($outletIds)) {
             return [];
         }
@@ -430,6 +510,10 @@ class ProductController extends Controller
      */
     private function sanitizeUserIds(mixed $userIds): array
     {
+        if (is_string($userIds)) {
+            $userIds = array_filter(array_map('trim', explode(',', $userIds)));
+        }
+
         if (!is_array($userIds)) {
             return [];
         }

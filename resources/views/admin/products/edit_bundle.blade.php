@@ -9,28 +9,50 @@
         $oldOutletIds = collect(old('pos_outlet_ids', $product->pos_outlet_ids ?? []))->map(fn($id) => (int) $id)->values()->all();
         $oldUserIds = collect(old('pos_user_ids', $product->pos_user_ids ?? []))->map(fn($id) => (int) $id)->values()->all();
 
-        // Siapkan data komponen untuk JS jika ada error validasi atau dari DB
-        // Struktur yang diharapkan JS: { id: 1, name: 'Bahan A', unit: 'gr', cost: 500, quantity: 2 }
-        $existingComponents = [];
-        if (old('components')) {
-            // Jika ada input old (validasi error), gunakan itu
-            // Perlu mapping manual karena old('components') strukturnya array of inputs
-            // Ini agak kompleks parsingnya, simplified: kita abaikan old components detail kompleks saat error dulu 
-            // atau kita ambil dari session jika memungkinkan. 
-            // Untuk saat ini kita ambil dari database jika old kosong.
-        }
+        // Struktur komponen untuk JS:
+        // { component_product_id: 1, name: 'Bahan A', uom: 'gr', cost: 500, quantity: 2 }
+        $rawMaterialById = collect($rawMaterials ?? [])->keyBy('id');
+        $oldBundleComponents = collect(old('bundle_components', []))
+            ->map(function ($item) use ($rawMaterialById) {
+                if (!is_array($item)) {
+                    return null;
+                }
 
-        // Ambil dari DB BOM details
-        $bomDetails = $product->bomHeader->bomDetails ?? collect([]);
-        $componentData = $bomDetails->map(function ($detail) {
-            return [
-                'id' => $detail->product_id,
-                'name' => $detail->product->name ?? 'Unknown',
-                'unit' => $detail->product->unit ?? '-',
-                'cost' => $detail->product->purchase_price ?? 0,
-                'quantity' => (float) $detail->quantity
-            ];
-        });
+                $componentProductId = (int) ($item['component_product_id'] ?? 0);
+                $quantity = (float) ($item['quantity'] ?? 0);
+                if ($componentProductId <= 0 || $quantity <= 0) {
+                    return null;
+                }
+
+                $material = $rawMaterialById->get($componentProductId);
+
+                return [
+                    'component_product_id' => $componentProductId,
+                    'name' => $material->name ?? 'Unknown',
+                    'uom' => (string) ($item['uom'] ?? ($material->unit ?? '')),
+                    'cost' => (float) ($material->purchase_price ?? 0),
+                    'quantity' => $quantity,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        if ($oldBundleComponents->isNotEmpty()) {
+            $componentData = $oldBundleComponents;
+        } else {
+            $bomDetails = optional($product->bomHeader)->details ?? collect([]);
+            $componentData = $bomDetails->map(function ($detail) {
+                $component = $detail->component;
+
+                return [
+                    'component_product_id' => (int) $detail->component_product_id,
+                    'name' => $component->name ?? 'Unknown',
+                    'uom' => $detail->uom ?: ($component->unit ?? ''),
+                    'cost' => (float) ($component->purchase_price ?? 0),
+                    'quantity' => (float) $detail->quantity,
+                ];
+            })->values();
+        }
     @endphp
 
     <div class="max-w-6xl mx-auto w-full">
@@ -241,8 +263,7 @@
                                             {{ count($oldOutletIds) }}
                                         </span>
                                     </button>
-                                    <input type="hidden" name="pos_outlet_ids" id="pos_outlet_ids_input"
-                                        value="{{ implode(',', $oldOutletIds) }}">
+                                    <div id="posOutletHiddenInputs"></div>
                                 </div>
 
                                 <label class="flex items-center gap-3 cursor-pointer">
@@ -262,8 +283,7 @@
                                             {{ count($oldUserIds) }}
                                         </span>
                                     </button>
-                                    <input type="hidden" name="pos_user_ids" id="pos_user_ids_input"
-                                        value="{{ implode(',', $oldUserIds) }}">
+                                    <div id="posUserHiddenInputs"></div>
                                 </div>
                             </div>
                         </div>
@@ -645,15 +665,32 @@
             const userWrap = document.getElementById('user-selector-wrap');
             const outletCountText = document.getElementById('outlet-count');
             const userCountText = document.getElementById('user-count');
-            const outletHiddenInput = document.getElementById('pos_outlet_ids_input');
-            const userHiddenInput = document.getElementById('pos_user_ids_input');
+            const outletHiddenInputs = document.getElementById('posOutletHiddenInputs');
+            const userHiddenInputs = document.getElementById('posUserHiddenInputs');
 
             const outletOptions = document.querySelectorAll('.outlet-option');
             const userOptions = document.querySelectorAll('.user-option');
 
+            function renderHiddenInputs(container, name, values, includeInputs) {
+                if (!container) return;
+
+                container.innerHTML = '';
+                if (!includeInputs) return;
+
+                Array.from(values).forEach((value) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `${name}[]`;
+                    input.value = String(value);
+                    container.appendChild(input);
+                });
+            }
+
             function updateHiddenInputs() {
-                if (outletHiddenInput) outletHiddenInput.value = Array.from(selectedOutletIds).join(',');
-                if (userHiddenInput) userHiddenInput.value = Array.from(selectedUserIds).join(',');
+                const allOutlets = allOutletsCheckbox ? allOutletsCheckbox.checked : true;
+                const allUsers = allUsersCheckbox ? allUsersCheckbox.checked : true;
+                renderHiddenInputs(outletHiddenInputs, 'pos_outlet_ids', selectedOutletIds, !allOutlets);
+                renderHiddenInputs(userHiddenInputs, 'pos_user_ids', selectedUserIds, !allUsers);
             }
 
             function refreshSelectionTexts() {
@@ -931,7 +968,7 @@
                         <td>
                             <p class="text-sm font-medium text-gray-900">${comp.name}</p>
                         </td>
-                        <td class="text-center text-xs text-gray-500">${comp.unit}</td>
+                        <td class="text-center text-xs text-gray-500">${comp.uom || '-'}</td>
                         <td class="text-right text-xs text-gray-700">Rp ${new Intl.NumberFormat('id-ID').format(comp.cost)}</td>
                         <td class="text-center">
                             <input type="number" 
@@ -951,10 +988,9 @@
 
                 // Hidden inputs
                 inputsContainer.innerHTML += `
-                        <input type="hidden" name="components[${index}][id]" value="${comp.id}">
-                        <input type="hidden" name="components[${index}][quantity]" value="${comp.quantity}">
-                        <input type="hidden" name="components[${index}][unit]" value="${comp.unit}">
-                        <input type="hidden" name="components[${index}][cost]" value="${comp.cost}">
+                        <input type="hidden" name="bundle_components[${index}][component_product_id]" value="${comp.component_product_id}">
+                        <input type="hidden" name="bundle_components[${index}][quantity]" value="${comp.quantity}">
+                        <input type="hidden" name="bundle_components[${index}][uom]" value="${comp.uom || ''}">
                     `;
             });
 
@@ -965,8 +1001,8 @@
         }
 
         function updateQuantity(index, newQty) {
-            if (newQty <= 0) newQty = 1;
-            components[index].quantity = parseFloat(newQty);
+            const parsedQty = parseFloat(newQty);
+            components[index].quantity = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : 1;
             renderComponents();
         }
 
@@ -977,22 +1013,22 @@
 
         // Window level functions for modal (onclick attributes)
         window.selectMaterial = function (el) {
-            const id = el.dataset.id;
+            const id = Number(el.dataset.id);
             const name = el.dataset.name;
             const unit = el.dataset.unit;
             const cost = parseFloat(el.dataset.cost);
 
             // Cek duplikat
-            const exists = components.find(c => c.id == id);
+            const exists = components.find(c => Number(c.component_product_id) === id);
             if (exists) {
                 alert('Bahan ini sudah ada dalam list.');
                 return;
             }
 
             components.push({
-                id: id,
+                component_product_id: id,
                 name: name,
-                unit: unit,
+                uom: unit,
                 cost: cost,
                 quantity: 1 // Default qty
             });

@@ -29,6 +29,9 @@
                     <h2 class="text-xl font-bold text-gray-900">Semua Produk</h2>
                     <p class="text-sm text-gray-500">Total: <span class="font-semibold">{{ $products->total() }}</span>
                         produk</p>
+                    <p class="text-xs text-gray-400 mt-1">
+                        Produk tanpa resep pakai ikon <i class="fas fa-edit"></i>. Bundle yang sudah punya resep pakai ikon <i class="fas fa-book-open"></i>/<i class="fas fa-flask"></i>.
+                    </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
@@ -175,27 +178,20 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
 
-                                        <a href="{{ route('admin.products.edit', $product) }}"
-                                            class="text-amber-600 hover:text-amber-800" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-
-                                        @if($product->product_type === 'finished_good')
-                                            @if($product->bomHeader)
-                                                <a href="{{ route('admin.boms.show', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
-                                                    class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep Bundle">
-                                                    <i class="fas fa-book-open"></i>
-                                                </a>
-                                                <a href="{{ route('admin.boms.edit', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
-                                                    class="text-teal-600 hover:text-teal-800" title="Edit Resep Bundle">
-                                                    <i class="fas fa-flask"></i>
-                                                </a>
-                                            @else
-                                                <a href="{{ route('admin.boms.create', ['source_type' => 'bundle', 'product_id' => $product->id, 'return_to' => request()->fullUrl()]) }}" class="text-gray-500 hover:text-gray-700"
-                                                    title="Buat Resep Bundle">
-                                                    <i class="fas fa-receipt"></i>
-                                                </a>
-                                            @endif
+                                        @if($product->bomHeader)
+                                            <a href="{{ route('admin.boms.show', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
+                                                class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep Bundle (BOM)">
+                                                <i class="fas fa-book-open"></i>
+                                            </a>
+                                            <a href="{{ route('admin.boms.edit', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
+                                                class="text-teal-600 hover:text-teal-800" title="Edit Resep Bundle (BOM)">
+                                                <i class="fas fa-flask"></i>
+                                            </a>
+                                        @else
+                                            <a href="{{ route('admin.products.edit', $product) }}"
+                                                class="text-amber-600 hover:text-amber-800" title="Edit Master Produk/Bundle">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                         @endif
 
                                         <form action="{{ route('admin.products.destroy', $product) }}" method="POST"
