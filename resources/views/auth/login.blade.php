@@ -65,6 +65,17 @@
         .force-text-primary { color: #ec4913 !important; }
         .force-border-primary { border-color: #ec4913 !important; }
         .force-bg-primary { background-color: #ec4913 !important; }
+
+        .rotating-term {
+            display: inline-block;
+            min-height: 1.1em;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .rotating-term.is-changing {
+            opacity: 0;
+            transform: translateY(8px);
+        }
     </style>
 </head>
 
@@ -101,7 +112,7 @@
             <div class="relative z-10 max-w-4xl mb-12">
                 <h1 class="text-5xl xl:text-6xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
                     Authentic Dimsum,<br/>
-                    <span class="text-white/90">Modern Service.</span>
+                    <span class="text-white/90 rotating-term" id="hero-rotating-term">Modern Service.</span>
                 </h1>
                 <div class="w-24 h-1 bg-[#ec4913] mb-6 rounded-full animate-fade-up delay-500"></div>
                 <p class="text-lg text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
@@ -218,6 +229,29 @@
                 toggleIcon.textContent = 'visibility_off';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const heroRotatingTerm = document.getElementById('hero-rotating-term');
+            if (!heroRotatingTerm) {
+                return;
+            }
+
+            const rotatingTerms = [
+                'Modern Service.',
+                'Smart Operations.',
+                'Professional Standards.'
+            ];
+
+            let termIndex = 0;
+            setInterval(() => {
+                heroRotatingTerm.classList.add('is-changing');
+                setTimeout(() => {
+                    termIndex = (termIndex + 1) % rotatingTerms.length;
+                    heroRotatingTerm.textContent = rotatingTerms[termIndex];
+                    heroRotatingTerm.classList.remove('is-changing');
+                }, 350);
+            }, 2600);
+        });
     </script>
 </body>
 </html>
