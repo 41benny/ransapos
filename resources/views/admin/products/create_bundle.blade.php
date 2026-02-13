@@ -792,31 +792,36 @@
                 }).format(value);
             }
 
-            function getComponentPurchasePrice(selectElement) {
+            function getSelectedComponentOption(selectElement) {
+                if (!selectElement) return null;
+
+                let selectedValue = '';
                 if (selectElement.tomselect) {
-                    const value = selectElement.tomselect.getValue();
-                    const option = selectElement.tomselect.getOption(value);
-                    if (option) {
-                        return parseNumber(option.getAttribute('data-purchase-price'));
-                   }
+                    selectedValue = String(selectElement.tomselect.getValue() || '');
                 }
-                if (!selectElement || selectElement.selectedIndex < 0) return 0;
-                const selectedOption = selectElement.options[selectElement.selectedIndex];
+
+                if (!selectedValue) {
+                    selectedValue = String(selectElement.value || '');
+                }
+
+                if (!selectedValue) {
+                    if (selectElement.selectedIndex < 0) return null;
+                    return selectElement.options[selectElement.selectedIndex] || null;
+                }
+
+                return Array.from(selectElement.options).find(option => String(option.value) === selectedValue) || null;
+            }
+
+            function getComponentPurchasePrice(selectElement) {
+                const selectedOption = getSelectedComponentOption(selectElement);
                 if (!selectedOption) return 0;
-                return parseNumber(selectedOption.getAttribute('data-purchase-price'));
+                return parseNumber(selectedOption.dataset.purchasePrice ?? selectedOption.getAttribute('data-purchase-price'));
             }
 
             function getComponentUnit(selectElement) {
-                 if (selectElement.tomselect) {
-                    const value = selectElement.tomselect.getValue();
-                    const option = selectElement.tomselect.getOption(value);
-                    if (option) {
-                        return option.getAttribute('data-unit') || '';
-                    }
-                }
-                if (!selectElement || selectElement.selectedIndex < 0) return '';
-                const selectedOption = selectElement.options[selectElement.selectedIndex];
-                return selectedOption ? (selectedOption.getAttribute('data-unit') || '') : '';
+                const selectedOption = getSelectedComponentOption(selectElement);
+                if (!selectedOption) return '';
+                return selectedOption.dataset.unit ?? selectedOption.getAttribute('data-unit') ?? '';
             }
 
             function recalculateComponentCosts() {
