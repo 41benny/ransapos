@@ -99,14 +99,14 @@
 
             <!-- Jargon -->
             <div class="relative z-10 max-w-4xl mb-12">
-                <h1 class="text-8xl xl:text-9xl font-black text-white mb-6 leading-[0.85] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
+                <h1 class="text-5xl xl:text-6xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
                     Authentic Dimsum,<br/>
                     <span class="text-white/90">Modern Service.</span>
                 </h1>
                 <div class="w-24 h-1 bg-[#ec4913] mb-6 rounded-full animate-fade-up delay-500"></div>
-                <p class="text-2xl text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
+                <p class="text-lg text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
                     Streamlining your restaurant operations with precision and taste.
-                    <br><span class="text-white/60 text-lg mt-3 block font-normal">Experience the future of dining management.</span>
+                    <br><span class="text-white/60 text-sm mt-3 block font-normal">Experience the future of dining management.</span>
                 </p>
             </div>
         </div>
@@ -124,7 +124,7 @@
                     <div class="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20" style="background: linear-gradient(to top right, #ec4913, #ea580c);">
                         <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
                     </div>
-                    <h2 class="text-3xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
+                    <h2 class="text-2xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
                     <p class="text-gray-400">Please enter your credentials to access the POS.</p>
                 </div>
 
@@ -174,7 +174,7 @@
                     </div>
 
                     <div class="pt-2">
-                        <button class="w-full h-14 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group hover:opacity-90"
+                        <button class="w-full h-14 text-white rounded-xl font-bold text-base shadow-lg shadow-orange-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group hover:opacity-90"
                             style="background-color: #ec4913;"
                             type="submit">
                             <span>Login to POS</span>
