@@ -67,33 +67,33 @@
 
     <nav class="bg-surface-light border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-4">
-                    <div class="bg-primary/10 p-2.5 rounded-xl">
-                        <span class="material-icons-round text-primary text-3xl">point_of_sale</span>
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary/10 p-2 rounded-lg">
+                        <span class="material-icons-round text-primary text-2xl">point_of_sale</span>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900 leading-tight tracking-tight">POS Latte</h1>
-                        <p class="text-sm text-text-muted-light font-medium">Moresto Dimsum</p>
+                        <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">POS Latte</h1>
+                        <p class="text-xs text-text-muted-light font-medium">Moresto Dimsum</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="hidden md:flex flex-col items-end mr-4">
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex flex-col items-end mr-3">
                         <span class="text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</span>
                         <span class="text-xs text-text-muted-light">{{ auth()->user()->role?->display_name ?? 'Kasir' }}
                             - {{ now()->format('d M, H:i') }}</span>
                     </div>
 
                     <a href="{{ route('pos.attendance.index') }}"
-                        class="flex items-center gap-2 bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2.5 rounded-lg font-medium transition-all duration-200">
-                        <span class="material-icons-round text-lg">people</span>
+                        class="flex items-center gap-2 bg-secondary/10 hover:bg-secondary/20 text-secondary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                        <span class="material-icons-round text-base">people</span>
                         <span class="hidden sm:inline">Absensi</span>
                     </a>
 
                     @if(request()->routeIs('pos.dashboard'))
                         <a href="{{ route('pos.sessions.close') }}"
-                            class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2.5 rounded-lg font-medium transition-all duration-200">
-                            <span class="material-icons-round text-lg">logout</span>
+                            class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                            <span class="material-icons-round text-base">logout</span>
                             <span class="hidden sm:inline">Tutup Shift</span>
                         </a>
                     @endif
@@ -101,8 +101,8 @@
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" aria-label="Logout"
-                            class="flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 w-11 h-11 rounded-lg transition-all duration-200">
-                            <span class="material-icons-round">exit_to_app</span>
+                            class="flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 w-9 h-9 rounded-md transition-all duration-200">
+                            <span class="material-icons-round text-lg">exit_to_app</span>
                         </button>
                     </form>
                 </div>
@@ -110,7 +110,7 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
         @yield('content')
     </main>
 
