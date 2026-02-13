@@ -22,6 +22,7 @@ class Sale extends Model
         'discount_amount',
         'tax_amount',
         'service_charge_amount',
+        'rounding_amount',
         'total_amount',
         'customer_name',
         'loyalty_points_earned',
@@ -36,6 +37,8 @@ class Sale extends Model
         'subtotal' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'service_charge_amount' => 'decimal:2',
+        'rounding_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];

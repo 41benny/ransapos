@@ -33,6 +33,15 @@ class SaleService
         DB::beginTransaction();
 
         try {
+            $cashSession = CashSession::findOrFail($data['cash_session_id']);
+            if ((int) $cashSession->outlet_id !== (int) $data['outlet_id']) {
+                throw new Exception('Sesi kasir tidak sesuai dengan outlet transaksi.');
+            }
+
+            if ($cashSession->status !== 'open') {
+                throw new Exception('Sesi kasir sudah ditutup. Silakan buka sesi baru.');
+            }
+
             // 1. Generate invoice number
             $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
 
@@ -68,8 +77,12 @@ class SaleService
             $taxRate = $outlet->tax_rate ?? 10; // Default 10% jika null
             $taxAmount = $taxableAmount * ($taxRate / 100);
 
-            // Total: Tax Base + Service + Tax
-            $totalAmount = $taxBase + $serviceChargeAmount + $taxAmount;
+            // Total sebelum pembulatan
+            $rawTotalAmount = $taxBase + $serviceChargeAmount + $taxAmount;
+
+            // Pembulatan final ke rupiah utuh agar nilai charge dan laporan konsisten
+            $totalAmount = (float) round($rawTotalAmount, 0);
+            $roundingAmount = (float) round($totalAmount - $rawTotalAmount, 2);
 
             // 5. Buat record sale
             $sale = Sale::create([
@@ -86,6 +99,7 @@ class SaleService
                 'discount_value' => $data['discount_value'] ?? 0,
                 'discount_amount' => $discountAmount,
                 'service_charge_amount' => $serviceChargeAmount,
+                'rounding_amount' => $roundingAmount,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
                 'customer_name' => $data['customer_name'] ?? null,
@@ -172,7 +186,7 @@ class SaleService
             Payment::create([
                 'sale_id' => $sale->id,
                 'payment_method_id' => $data['payment_method_id'],
-                'amount' => $data['payment_amount'],
+                'amount' => $totalAmount,
                 'reference_number' => $data['payment_reference'] ?? null,
                 'notes' => $data['payment_notes'] ?? null,
             ]);
@@ -246,6 +260,9 @@ class SaleService
     protected function updateCashSession(int $sessionId, float $saleAmount, int $paymentMethodId): void
     {
         $session = CashSession::findOrFail($sessionId);
+        if ($session->status !== 'open') {
+            throw new Exception('Sesi kasir sudah ditutup. Silakan buka sesi baru.');
+        }
 
         // Update total sales
         $session->total_sales += $saleAmount;

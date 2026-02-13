@@ -396,9 +396,19 @@
                         <span>Subtotal</span>
                         <span class="font-medium text-gray-700">Rp @{{ formatNumber(subtotal) }}</span>
                     </div>
+                    <div v-if="serviceChargeRate > 0" class="flex justify-between text-sm text-gray-500">
+                        <span>Service (@{{ serviceChargeRate }}%)</span>
+                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(serviceChargeAmount, 2) }}</span>
+                    </div>
                     <div v-if="taxRate > 0" class="flex justify-between text-sm text-gray-500">
                         <span>Tax (@{{ taxRate }}%)</span>
-                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(taxAmount) }}</span>
+                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(taxAmount, 2) }}</span>
+                    </div>
+                    <div v-if="hasRounding" class="flex justify-between text-sm text-gray-500">
+                        <span>Pembulatan</span>
+                        <span class="font-medium text-gray-700">
+                            @{{ roundingAmount > 0 ? '+' : '-' }} Rp @{{ formatNumber(Math.abs(roundingAmount), 2) }}
+                        </span>
                     </div>
 
                     <div class="flex justify-between items-end pt-3 border-t border-dashed border-gray-200">
@@ -754,11 +764,29 @@
                         // Simple implementation for now
                         return this.subtotal;
                     },
+                    serviceChargeAmount() {
+                        return this.taxBase * (this.serviceChargeRate / 100);
+                    },
+                    taxableAmount() {
+                        return this.taxBase + this.serviceChargeAmount;
+                    },
                     taxAmount() {
-                        return this.taxBase * (this.taxRate / 100);
+                        return this.taxableAmount * (this.taxRate / 100);
+                    },
+                    rawTotalAmount() {
+                        return this.taxableAmount + this.taxAmount;
+                    },
+                    roundedTotalAmount() {
+                        return Math.round(this.rawTotalAmount);
+                    },
+                    roundingAmount() {
+                        return Number((this.roundedTotalAmount - this.rawTotalAmount).toFixed(2));
+                    },
+                    hasRounding() {
+                        return Math.abs(this.roundingAmount) >= 0.01;
                     },
                     totalAmount() {
-                        return this.taxBase + this.taxAmount;
+                        return this.roundedTotalAmount;
                     }
                 },
                 mounted() {
@@ -860,8 +888,11 @@
                             this.cart[index].notes = updated;
                         }
                     },
-                    formatNumber(num) {
-                        return new Intl.NumberFormat('id-ID').format(num);
+                    formatNumber(num, decimals = 0) {
+                        return new Intl.NumberFormat('id-ID', {
+                            minimumFractionDigits: decimals,
+                            maximumFractionDigits: decimals
+                        }).format(num ?? 0);
                     },
                     formatDate(dateString) {
                         const date = new Date(dateString);

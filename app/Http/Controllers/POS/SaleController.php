@@ -156,8 +156,36 @@ class SaleController extends Controller
      */
     public function store(StoreSaleRequest $request)
     {
+        $user = $request->user();
+        if (!$user || !$user->outlet_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda belum terhubung ke outlet aktif. Hubungi admin.',
+            ], 422);
+        }
+
         try {
-            $sale = $this->saleService->createSale($request->validated());
+            $payload = $request->validated();
+
+            // Enforce outlet & user from authenticated session, not from client payload.
+            $payload['outlet_id'] = (int) $user->outlet_id;
+            $payload['user_id'] = (int) $user->id;
+
+            $activeSession = CashSession::query()
+                ->whereKey($payload['cash_session_id'])
+                ->where('status', 'open')
+                ->where('user_id', $user->id)
+                ->where('outlet_id', $user->outlet_id)
+                ->first();
+
+            if (!$activeSession) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sesi kasir tidak aktif atau tidak sesuai dengan akun/outlet Anda.',
+                ], 422);
+            }
+
+            $sale = $this->saleService->createSale($payload);
 
             return response()->json([
                 'success' => true,

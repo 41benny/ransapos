@@ -148,11 +148,6 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(fu
         ->name('dashboard')
         ->middleware('role:kasir,admin');
 
-    // Demo Tema Latte
-    Route::get('/latte-demo', function () {
-        return view('pos.latte-demo');
-    })->name('latte-demo');
-
     // Cash Session Management (Kasir/Admin)
     Route::get('/sessions/open', [\App\Http\Controllers\POS\CashSessionController::class, 'open'])
         ->name('sessions.open')

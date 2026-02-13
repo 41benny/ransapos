@@ -23,11 +23,30 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         $salesTypeKeys = array_keys(config('sales.price_levels', ['regular' => 'Reguler']));
+        $user = $this->user();
+
+        $outletRule = ['required', 'exists:outlets,id'];
+        if ($user?->outlet_id) {
+            $outletRule = ['required', 'integer', Rule::in([(int) $user->outlet_id])];
+        }
+
+        $cashSessionRule = Rule::exists('cash_sessions', 'id')
+            ->where(function ($query) use ($user) {
+                $query->where('status', 'open');
+
+                if ($user) {
+                    $query->where('user_id', $user->id);
+
+                    if ($user->outlet_id) {
+                        $query->where('outlet_id', $user->outlet_id);
+                    }
+                }
+            });
 
         return [
             // Header transaksi
-            'outlet_id' => 'required|exists:outlets,id',
-            'cash_session_id' => 'required|exists:cash_sessions,id',
+            'outlet_id' => $outletRule,
+            'cash_session_id' => ['required', $cashSessionRule],
             'customer_id' => 'nullable|exists:customers,id',
             'customer_name' => 'nullable|string|max:200',
             'notes' => 'nullable|string',
@@ -59,9 +78,10 @@ class StoreSaleRequest extends FormRequest
     {
         return [
             'outlet_id.required' => 'Outlet harus dipilih',
+            'outlet_id.in' => 'Outlet transaksi harus sesuai outlet akun yang login',
             'outlet_id.exists' => 'Outlet tidak valid',
             'cash_session_id.required' => 'Sesi kasir harus aktif',
-            'cash_session_id.exists' => 'Sesi kasir tidak valid',
+            'cash_session_id.exists' => 'Sesi kasir tidak valid, tidak aktif, atau bukan milik akun Anda',
             'sales_type.in' => 'Tipe penjualan tidak valid',
             'items.required' => 'Minimal harus ada 1 produk',
             'items.min' => 'Minimal harus ada 1 produk',

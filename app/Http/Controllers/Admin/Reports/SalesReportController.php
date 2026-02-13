@@ -53,6 +53,8 @@ class SalesReportController extends Controller
         // Calculate summary
         $summary = [
             'total_transactions' => $sales->count(),
+            'total_before_rounding' => $sales->sum(fn ($sale) => (float) $sale->total_amount - (float) ($sale->rounding_amount ?? 0)),
+            'total_rounding' => $sales->sum('rounding_amount'),
             'total_amount' => $sales->sum('total_amount'),
             'avg_per_transaction' => $sales->count() > 0 ? $sales->avg('total_amount') : 0,
             'total_cash' => 0,
@@ -117,6 +119,7 @@ class SalesReportController extends Controller
                     'sale_items.subtotal as item_subtotal',
                     'sales.tax_amount',
                     'sales.service_charge_amount',
+                    'sales.rounding_amount',
                     'sales.total_amount',
                     DB::raw("COALESCE(pay_agg.payment_methods, '-') as payment_methods")
                 )

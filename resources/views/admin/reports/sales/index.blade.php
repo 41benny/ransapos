@@ -105,7 +105,7 @@
 
     <!-- Summary Cards -->
     <div class="p-6 border-b border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
 
             <!-- Total Transaksi -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -117,6 +117,17 @@
             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p class="text-sm text-green-600 font-medium mb-1">Total Omzet</p>
                 <p class="text-3xl font-bold text-green-900">Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}</p>
+            </div>
+
+            <!-- Total Pembulatan -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <p class="text-sm text-slate-600 font-medium mb-1">Total Pembulatan</p>
+                <p class="text-2xl font-bold text-slate-900">
+                    {{ $summary['total_rounding'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($summary['total_rounding']), 2, ',', '.') }}
+                </p>
+                <p class="text-xs text-slate-600 mt-1">
+                    Sebelum bulat: Rp {{ number_format($summary['total_before_rounding'], 2, ',', '.') }}
+                </p>
             </div>
 
             <!-- Rata-rata per Transaksi -->
@@ -155,6 +166,7 @@
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Subtotal</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pajak</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Service Charge</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pembulatan</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status Pembayaran</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Metode Pembayaran</th>
@@ -166,6 +178,7 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kasir</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pembayaran</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pembulatan</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                     </tr>
                 @endif
@@ -185,6 +198,9 @@
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->item_subtotal, 0, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->tax_amount, 0, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->service_charge_amount, 0, ',', '.') }}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
+                            {{ $row->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs($row->rounding_amount), 2, ',', '.') }}
+                        </td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->total_amount, 0, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm">
                             @if($row->payment_status === 'Lunas')
@@ -199,7 +215,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="14" class="px-6 py-12 text-center">
+                        <td colspan="15" class="px-6 py-12 text-center">
                             <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
@@ -225,13 +241,16 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
                             {{ $sale->payments->first()->paymentMethod->name ?? '-' }}
                         </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
+                            {{ (float) $sale->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs((float) $sale->rounding_amount), 2, ',', '.') }}
+                        </td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
                             Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
+                        <td colspan="7" class="px-6 py-12 text-center">
                             <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
@@ -244,7 +263,7 @@
             @if(($viewMode ?? 'ringkas') !== 'detail' && $sales->count() > 0)
             <tfoot>
                 <tr>
-                    <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                    <td colspan="6" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
                         TOTAL ({{ $summary['total_transactions'] }} transaksi):
                     </td>
                     <td class="px-6 py-4 text-right text-lg font-bold text-amber-700">

@@ -75,6 +75,16 @@
         </div>
         @endif
 
+        @if((float) ($sale->rounding_amount ?? 0) !== 0.0)
+        <div class="flex-between">
+            <span>Pembulatan</span>
+            <span>
+                {{ (float) $sale->rounding_amount > 0 ? '+' : '-' }}
+                {{ number_format(abs((float) $sale->rounding_amount), 2, ',', '.') }}
+            </span>
+        </div>
+        @endif
+
         <div class="divider">================================</div>
         
         <div class="flex-between total">

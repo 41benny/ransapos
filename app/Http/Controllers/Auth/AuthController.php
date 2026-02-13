@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private const MAX_LOGIN_ATTEMPTS = 5;
+    private const LOGIN_DECAY_SECONDS = 900; // 15 menit
+
     /**
      * Tampilkan halaman login
      */
@@ -27,6 +31,17 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        $throttleKey = $this->throttleKey($request);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_LOGIN_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $minutes = max(1, (int) ceil($seconds / 60));
+
+            throw ValidationException::withMessages([
+                'email' => "Terlalu banyak percobaan login. Coba lagi dalam {$minutes} menit.",
+            ]);
+        }
+
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -48,6 +63,7 @@ class AuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
 
                 throw ValidationException::withMessages([
                     'email' => 'Outlet Anda sedang dinonaktifkan. Silakan hubungi admin.',
@@ -58,15 +74,20 @@ class AuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
 
                 throw ValidationException::withMessages([
                     'email' => 'Akun karyawan outlet tidak memiliki akses login.',
                 ]);
             }
 
+            RateLimiter::clear($throttleKey);
+
             // Redirect berdasarkan role
             return $this->redirectByRole();
         }
+
+        RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
 
         throw ValidationException::withMessages([
             'email' => 'Email atau password salah, atau akun Anda tidak aktif.',
@@ -129,5 +150,15 @@ class AuthController extends Controller
         return redirect()->route('login')->withErrors([
             'email' => 'Role akun tidak dikenali. Hubungi admin.',
         ]);
+    }
+
+    /**
+     * Kunci rate limiter per kombinasi email + IP.
+     */
+    private function throttleKey(Request $request): string
+    {
+        $email = mb_strtolower((string) $request->input('email', ''));
+
+        return 'login:' . $email . '|' . $request->ip();
     }
 }
