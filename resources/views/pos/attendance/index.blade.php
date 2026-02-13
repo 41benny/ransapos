@@ -1,166 +1,118 @@
-@extends('layouts.pos')
-
-@section('title', 'Absensi Karyawan')
-@section('page-title', 'Absensi Karyawan')
+@extends('layouts.pos_theme')
 
 @section('content')
-<style>
-    :root {
-        --moresto-red: #D32F2F;
-        --moresto-charcoal: #1e293b;
-        --moresto-gold: #c5a065;
-        --bg-soft-grey: #f3f4f6;
-        --card-white: #ffffff;
-    }
-</style>
 
-<div class="h-full overflow-auto bg-[var(--bg-soft-grey)] p-6">
-    <div class="mx-auto max-w-7xl space-y-6">
-        <div class="grid grid-cols-3 gap-2 sm:hidden">
-            <a href="{{ route('pos.sales.create') }}"
-                class="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 shadow-sm">
-                <span class="material-symbols-outlined text-[18px]">point_of_sale</span>
-                Kasir
-            </a>
-            <a href="{{ route('pos.sessions.close') }}"
-                class="flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 shadow-sm">
-                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-                Shift
-            </a>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit"
-                    class="flex h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-semibold text-red-700 shadow-sm">
-                    <span class="material-symbols-outlined text-[18px]">logout</span>
-                    Logout
-                </button>
-            </form>
-        </div>
-
-        <div class="flex flex-wrap items-end justify-between gap-3">
+    {{-- Warning Block --}}
+    <div class="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm mb-6">
+        <div class="flex items-start gap-3">
+            <div class="rounded-full bg-amber-100 p-2 text-amber-700">
+                <span class="material-icons-round text-xl">warning</span>
+            </div>
             <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Kasir Login</p>
-                <p class="text-xl font-bold text-slate-800">{{ $loggedInUser->name }}</p>
-                <p class="mt-1 text-sm text-slate-500">{{ $loggedInUser->outlet->name }}</p>
+                <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-amber-800">Peringatan Penting</h3>
+                <p class="text-xs leading-relaxed text-amber-700">
+                    Titip absen adalah pelanggaran. Semua aktivitas absensi tercatat (waktu, IP address, kasir login)
+                    dan dimonitor admin. Pastikan setiap karyawan absen sendiri dengan PIN masing-masing.
+                </p>
             </div>
-            <div class="rounded-lg bg-white px-4 py-2 text-right shadow-sm ring-1 ring-slate-200">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Current Session</p>
-                <p class="text-sm font-medium text-slate-700">{{ now()->format('d M Y | H:i') }}</p>
-            </div>
-        </div>
-
-        <div class="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">
-            <div class="flex items-start gap-3">
-                <div class="rounded-full bg-amber-100 p-2 text-amber-700">
-                    <span class="material-symbols-outlined text-[20px]">warning</span>
-                </div>
-                <div>
-                    <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-amber-800">Peringatan Penting</h3>
-                    <p class="text-xs leading-relaxed text-amber-700">
-                        Titip absen adalah pelanggaran. Semua aktivitas absensi tercatat (waktu, IP address, kasir login)
-                        dan dimonitor admin. Pastikan setiap karyawan absen sendiri dengan PIN masing-masing.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        @if(session('success'))
-            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            @forelse($employees as $employee)
-                @php
-                    $todayAttendance = $employee->attendances->first();
-                    $hasClockIn = $todayAttendance && !$todayAttendance->isClockOut();
-                    $hasClockOut = $todayAttendance && $todayAttendance->isClockOut();
-                @endphp
-
-                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-[var(--card-white)] shadow-lg shadow-slate-300/30">
-                    <div class="h-1.5 w-full bg-gradient-to-r from-[var(--moresto-charcoal)] via-[var(--moresto-red)] to-[var(--moresto-charcoal)]"></div>
-                    <div class="p-5">
-                        <div class="mb-5 flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-14 w-14 items-center justify-center rounded-full border-4 border-[var(--moresto-gold)] bg-slate-100 text-lg font-bold text-slate-700">
-                                    {{ strtoupper(substr($employee->name, 0, 1)) }}
-                                </div>
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-800">{{ $employee->name }}</h3>
-                                    <p class="text-xs font-medium text-slate-500">{{ $employee->role?->display_name ?? 'Karyawan' }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            @if($hasClockOut)
-                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
-                                    Selesai
-                                </span>
-                                <p class="mt-2 text-xs text-slate-600">
-                                    {{ $todayAttendance->clock_in->format('H:i') }} - {{ $todayAttendance->clock_out->format('H:i') }}
-                                    ({{ $todayAttendance->getDurationFormatted() }})
-                                </p>
-                            @elseif($hasClockIn)
-                                <span class="inline-flex items-center rounded-full border {{ $todayAttendance->status === 'late' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700' }} px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide">
-                                    {{ $todayAttendance->status === 'late' ? 'Terlambat' : 'Hadir' }}
-                                </span>
-                                <p class="mt-2 text-xs text-slate-600">
-                                    Masuk: {{ $todayAttendance->clock_in->format('H:i') }}
-                                    <span class="font-semibold text-slate-700 duration-live"
-                                        data-clock-in="{{ $todayAttendance->clock_in->timestamp }}">
-                                        ({{ $todayAttendance->getCurrentDurationFormatted() }})
-                                    </span>
-                                </p>
-                            @else
-                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-                                    Belum Absen
-                                </span>
-                            @endif
-                        </div>
-
-                        @if(!$hasClockOut)
-                            <form action="{{ $hasClockIn ? route('pos.attendance.clock-out') : route('pos.attendance.clock-in') }}"
-                                method="POST" class="space-y-3">
-                                @csrf
-                                <input type="hidden" name="employee_id" value="{{ $employee->id }}">
-
-                                <div>
-                                    <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500" for="pin-{{ $employee->id }}">
-                                        Enter Security PIN
-                                    </label>
-                                    <div class="relative">
-                                        <span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">lock</span>
-                                        <input id="pin-{{ $employee->id }}" type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
-                                            placeholder="PIN 6 Digit" required
-                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-center text-sm tracking-[0.25em] text-slate-800 placeholder:text-slate-300 focus:border-[var(--moresto-red)] focus:outline-none focus:ring-2 focus:ring-[var(--moresto-red)]/20">
-                                    </div>
-                                </div>
-
-                                <button type="submit"
-                                    class="flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-[var(--moresto-charcoal)] hover:bg-slate-800' : 'bg-[var(--moresto-red)] hover:bg-red-800' }}">
-                                    <span class="material-symbols-outlined text-[18px]">{{ $hasClockIn ? 'logout' : 'schedule' }}</span>
-                                    {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div class="col-span-full rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
-                    Tidak ada karyawan di outlet ini.
-                </div>
-            @endforelse
         </div>
     </div>
-</div>
+
+    @if(session('success'))
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 mb-6">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 mb-6">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        @forelse($employees as $employee)
+            @php
+                $todayAttendance = $employee->attendances->first();
+                $hasClockIn = $todayAttendance && !$todayAttendance->isClockOut();
+                $hasClockOut = $todayAttendance && $todayAttendance->isClockOut();
+            @endphp
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-lg">
+                <div class="h-1.5 w-full bg-gradient-to-r from-gray-800 via-primary to-gray-800"></div>
+                <div class="p-5">
+                    <div class="mb-5 flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-yellow-500 bg-slate-50 text-lg font-bold text-slate-700">
+                                {{ strtoupper(substr($employee->name, 0, 1)) }}
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">{{ $employee->name }}</h3>
+                                <p class="text-xs font-medium text-slate-500">{{ $employee->role?->display_name ?? 'Karyawan' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        @if($hasClockOut)
+                            <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                Selesai
+                            </span>
+                            <p class="mt-2 text-xs text-slate-600">
+                                {{ $todayAttendance->clock_in->format('H:i') }} - {{ $todayAttendance->clock_out->format('H:i') }}
+                                ({{ $todayAttendance->getDurationFormatted() }})
+                            </p>
+                        @elseif($hasClockIn)
+                            <span class="inline-flex items-center rounded-full border {{ $todayAttendance->status === 'late' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700' }} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                                {{ $todayAttendance->status === 'late' ? 'Terlambat' : 'Hadir' }}
+                            </span>
+                            <p class="mt-2 text-xs text-slate-600">
+                                Masuk: {{ $todayAttendance->clock_in->format('H:i') }}
+                                <span class="font-semibold text-slate-700 duration-live"
+                                    data-clock-in="{{ $todayAttendance->clock_in->timestamp }}">
+                                    ({{ $todayAttendance->getCurrentDurationFormatted() }})
+                                </span>
+                            </p>
+                        @else
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                                Belum Absen
+                            </span>
+                        @endif
+                    </div>
+
+                    @if(!$hasClockOut)
+                        <form action="{{ $hasClockIn ? route('pos.attendance.clock-out') : route('pos.attendance.clock-in') }}"
+                            method="POST" class="space-y-3">
+                            @csrf
+                            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+
+                            <div>
+                                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="pin-{{ $employee->id }}">
+                                    Enter Security PIN
+                                </label>
+                                <div class="relative">
+                                    <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
+                                    <input id="pin-{{ $employee->id }}" type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                                        placeholder="PIN 6 Digit" required
+                                        class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-center text-sm tracking-[0.25em] text-slate-800 placeholder:text-slate-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-gray-800 hover:bg-gray-700' : 'bg-primary hover:bg-red-800' }}">
+                                <span class="material-icons-round text-lg">{{ $hasClockIn ? 'logout' : 'schedule' }}</span>
+                                {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+                Tidak ada karyawan di outlet ini.
+            </div>
+        @endforelse
+    </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -181,7 +133,7 @@
                 const diffMinutes = Math.floor((now - clockIn) / 60);
                 el.textContent = formatDuration(diffMinutes);
             });
-        }, 60000);
+        }, 60000); // Update every minute
     });
 </script>
 @endsection
