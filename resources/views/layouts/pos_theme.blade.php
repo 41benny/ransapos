@@ -74,7 +74,7 @@
                         <span class="material-icons-round text-primary text-2xl">point_of_sale</span>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">POS Latte</h1>
+                        <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">Moresto POS</h1>
                         <p class="text-xs text-text-muted-light font-medium">Moresto Dimsum</p>
                     </div>
                 </a>
