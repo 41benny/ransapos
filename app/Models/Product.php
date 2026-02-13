@@ -26,6 +26,7 @@ class Product extends Model
         'category_id',
         'description',
         'image_path',
+        'thumbnail_path',
         'unit',
         'purchase_price',
         'selling_price',
@@ -52,6 +53,7 @@ class Product extends Model
 
     protected $appends = [
         'image_url',
+        'thumbnail_url',
     ];
 
     /**
@@ -203,5 +205,14 @@ class Product extends Model
         }
 
         return Storage::url($this->image_path);
+    }
+
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->thumbnail_path) {
+            return null;
+        }
+
+        return Storage::url($this->thumbnail_path);
     }
 }

@@ -45,6 +45,7 @@ class SaleController extends Controller
                     'category_id',
                     'description',
                     'image_path',
+                    'thumbnail_path',
                     'selling_price',
                     'price_levels',
                 ]);
@@ -91,7 +92,7 @@ class SaleController extends Controller
                             'description' => $product->description,
                             'selling_price' => $normalizedPriceLevels['regular'],
                             'price_levels' => $normalizedPriceLevels,
-                            'image_url' => $product->image_url,
+                            'image_url' => $product->thumbnail_url ?? $product->image_url,
                         ];
                     })
                     ->values();

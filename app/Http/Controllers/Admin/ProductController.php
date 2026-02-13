@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -234,11 +235,14 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         $uploadedImagePath = null;
+        $uploadedThumbnailPath = null;
 
         try {
             if ($request->hasFile('image')) {
                 $uploadedImagePath = $request->file('image')->store('products', 'public');
                 $data['image_path'] = $uploadedImagePath;
+                $uploadedThumbnailPath = $this->generateThumbnail($uploadedImagePath);
+                $data['thumbnail_path'] = $uploadedThumbnailPath;
             }
 
             $product = Product::create($data);
@@ -271,6 +275,9 @@ class ProductController extends Controller
             DB::rollBack();
             if ($uploadedImagePath) {
                 Storage::disk('public')->delete($uploadedImagePath);
+            }
+            if ($uploadedThumbnailPath) {
+                Storage::disk('public')->delete($uploadedThumbnailPath);
             }
 
             return back()
@@ -366,10 +373,15 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $newImagePath = $request->file('image')->store('products', 'public');
+            $newThumbnailPath = $this->generateThumbnail($newImagePath);
             if (!empty($product->image_path)) {
                 Storage::disk('public')->delete($product->image_path);
             }
+            if (!empty($product->thumbnail_path)) {
+                Storage::disk('public')->delete($product->thumbnail_path);
+            }
             $data['image_path'] = $newImagePath;
+            $data['thumbnail_path'] = $newThumbnailPath;
         }
 
         $product->update($data);
@@ -428,6 +440,83 @@ class ProductController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function generateThumbnail(string $imagePath): ?string
+    {
+        if (!extension_loaded('gd')) {
+            return null;
+        }
+
+        $disk = Storage::disk('public');
+        $sourceAbsolutePath = $disk->path($imagePath);
+
+        if (!is_file($sourceAbsolutePath)) {
+            return null;
+        }
+
+        $imageData = @file_get_contents($sourceAbsolutePath);
+        if ($imageData === false) {
+            return null;
+        }
+
+        $sourceImage = @imagecreatefromstring($imageData);
+        if ($sourceImage === false) {
+            return null;
+        }
+
+        $sourceWidth = imagesx($sourceImage);
+        $sourceHeight = imagesy($sourceImage);
+        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+            imagedestroy($sourceImage);
+            return null;
+        }
+
+        $thumbSize = 360;
+        $cropSize = min($sourceWidth, $sourceHeight);
+        $cropX = (int) floor(($sourceWidth - $cropSize) / 2);
+        $cropY = (int) floor(($sourceHeight - $cropSize) / 2);
+
+        $thumbnailImage = imagecreatetruecolor($thumbSize, $thumbSize);
+        $background = imagecolorallocate($thumbnailImage, 255, 255, 255);
+        imagefill($thumbnailImage, 0, 0, $background);
+
+        imagecopyresampled(
+            $thumbnailImage,
+            $sourceImage,
+            0,
+            0,
+            $cropX,
+            $cropY,
+            $thumbSize,
+            $thumbSize,
+            $cropSize,
+            $cropSize
+        );
+
+        $filename = pathinfo($imagePath, PATHINFO_FILENAME);
+        $thumbnailPath = 'products/thumbnails/' . $filename . '_thumb.jpg';
+        $thumbnailAbsolutePath = $disk->path($thumbnailPath);
+        $thumbnailDir = dirname($thumbnailAbsolutePath);
+
+        if (!is_dir($thumbnailDir)) {
+            mkdir($thumbnailDir, 0755, true);
+        }
+
+        $written = @imagejpeg($thumbnailImage, $thumbnailAbsolutePath, 82);
+
+        imagedestroy($thumbnailImage);
+        imagedestroy($sourceImage);
+
+        if (!$written) {
+            Log::warning('Failed to write product thumbnail', [
+                'image_path' => $imagePath,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
+            return null;
+        }
+
+        return $thumbnailPath;
     }
 
     /**
