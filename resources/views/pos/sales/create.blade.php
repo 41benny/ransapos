@@ -696,14 +696,19 @@
                 }
 
                 .pos-left-panel {
+                    display: flex !important;
                     flex: 1 1 auto;
                     min-width: 0;
                     min-height: 0;
+                    width: auto !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
                 }
 
                 .pos-order-panel {
-                    flex: 0 0 46%;
-                    width: 46%;
+                    flex: 0 0 46% !important;
+                    width: 46% !important;
+                    max-width: 46% !important;
                     min-width: 340px;
                     height: 100%;
                     border-left: 1px solid #e5e7eb;
@@ -864,8 +869,9 @@
                 }
 
                 .pos-order-panel {
-                    flex: 1 1 46%;
-                    width: 100%;
+                    flex: 1 1 46% !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
                     height: auto;
                     border-left: 0;
                     border-top: 1px solid #e5e7eb;
@@ -891,8 +897,9 @@
                 }
 
                 .pos-order-panel {
-                    flex: 0 0 52%;
-                    width: 52%;
+                    flex: 0 0 52% !important;
+                    width: 52% !important;
+                    max-width: 52% !important;
                     height: 100%;
                     min-height: 0;
                     border-left: 1px solid #e5e7eb;
