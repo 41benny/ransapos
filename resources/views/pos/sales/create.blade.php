@@ -799,6 +799,27 @@
                 },
                 methods: {
                     // ... Existing Methods ...
+                    async parseApiResponse(response) {
+                        const contentType = response.headers.get('content-type') || '';
+
+                        if (contentType.includes('application/json')) {
+                            return await response.json();
+                        }
+
+                        const bodyText = await response.text();
+                        const redirectedToLogin = response.redirected && response.url.includes('/login');
+                        const looksLikeHtml = bodyText.trim().startsWith('<!DOCTYPE') || bodyText.trim().startsWith('<html');
+
+                        if (response.status === 401 || response.status === 419 || redirectedToLogin) {
+                            throw new Error('Sesi login habis. Silakan login ulang.');
+                        }
+
+                        if (looksLikeHtml) {
+                            throw new Error('Respon server tidak valid (bukan JSON).');
+                        }
+
+                        throw new Error('Terjadi kesalahan sistem.');
+                    },
                     getProductById(productId) {
                         return this.productById[Number(productId)] || null;
                     },
@@ -931,11 +952,23 @@
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                 },
                                 body: JSON.stringify(data)
                             });
-                            const result = await response.json();
+                            const result = await this.parseApiResponse(response);
+
+                            if (!response.ok) {
+                                if (response.status === 401 || response.status === 419) {
+                                    alert('Sesi login habis. Silakan login ulang.');
+                                    window.location.href = '{{ route('login') }}';
+                                    return;
+                                }
+                                alert('Error: ' + (result.message || 'Permintaan gagal diproses.'));
+                                return;
+                            }
 
                             if (result.success) {
                                 this.lastSale = result.data;
@@ -947,6 +980,11 @@
                                 alert('Error: ' + result.message);
                             }
                         } catch (e) {
+                            if (e.message === 'Sesi login habis. Silakan login ulang.') {
+                                alert(e.message);
+                                window.location.href = '{{ route('login') }}';
+                                return;
+                            }
                             alert('System Error: ' + e.message);
                         } finally {
                             this.isProcessing = false;
@@ -973,8 +1011,23 @@
                     async fetchHistory() {
                         this.isLoadingHistory = true;
                         try {
-                            const response = await fetch('{{ route('pos.sales.history') }}');
-                            const result = await response.json();
+                            const response = await fetch('{{ route('pos.sales.history') }}', {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            const result = await this.parseApiResponse(response);
+
+                            if (!response.ok) {
+                                if (response.status === 401 || response.status === 419) {
+                                    alert('Sesi login habis. Silakan login ulang.');
+                                    window.location.href = '{{ route('login') }}';
+                                    return;
+                                }
+                                throw new Error(result.message || 'Gagal mengambil history transaksi');
+                            }
+
                             if (result.success) {
                                 this.historySales = result.data;
                                 if (this.historySales.length > 0 && !this.selectedSale) {
@@ -983,6 +1036,11 @@
                             }
                         } catch (e) {
                             console.error(e);
+                            if (e.message === 'Sesi login habis. Silakan login ulang.') {
+                                alert(e.message);
+                                window.location.href = '{{ route('login') }}';
+                                return;
+                            }
                             alert('Gagal mengambil history transaksi');
                         } finally {
                             this.isLoadingHistory = false;
@@ -1017,6 +1075,8 @@
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                 },
                                 body: JSON.stringify({
@@ -1024,7 +1084,17 @@
                                     token: this.voidToken
                                 })
                             });
-                            const result = await response.json();
+                            const result = await this.parseApiResponse(response);
+
+                            if (!response.ok) {
+                                if (response.status === 401 || response.status === 419) {
+                                    alert('Sesi login habis. Silakan login ulang.');
+                                    window.location.href = '{{ route('login') }}';
+                                    return;
+                                }
+                                alert('GAGAL: ' + (result.message || 'Permintaan void gagal.'));
+                                return;
+                            }
 
                             if (result.success) {
                                 alert('Transaksi BERHASIL dibatalkan.');
@@ -1039,6 +1109,11 @@
                             }
                         } catch (e) {
                             console.error(e);
+                            if (e.message === 'Sesi login habis. Silakan login ulang.') {
+                                alert(e.message);
+                                window.location.href = '{{ route('login') }}';
+                                return;
+                            }
                             alert('Terjadi kesalahan sistem.');
                         } finally {
                             this.isVoiding = false;

@@ -35,7 +35,15 @@ class StoreLastVisitedPage
         }
 
         foreach ($route->gatherMiddleware() as $middleware) {
-            if ($middleware === 'auth' || str_starts_with($middleware, 'auth:')) {
+            if (!is_string($middleware)) {
+                continue;
+            }
+
+            if (
+                $middleware === 'auth'
+                || str_starts_with($middleware, 'auth:')
+                || str_contains($middleware, 'Authenticate')
+            ) {
                 return true;
             }
         }
@@ -43,4 +51,3 @@ class StoreLastVisitedPage
         return false;
     }
 }
-
