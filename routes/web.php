@@ -26,6 +26,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Back Office (Admin) Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/summary', [AdminDashboardController::class, 'summary'])->name('dashboard.summary');
 
     // Master Data
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import');

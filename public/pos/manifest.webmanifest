@@ -1,0 +1,17 @@
+{
+  "name": "MorestoPOS",
+  "short_name": "POS",
+  "start_url": "/pos/sales",
+  "scope": "/pos/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4444",
+  "icons": [
+    {
+      "src": "/image/logo%20border.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

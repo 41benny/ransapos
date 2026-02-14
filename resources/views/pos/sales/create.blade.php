@@ -22,6 +22,14 @@
                                 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
                     </a>
+
+                    <button id="posFullscreenBtn" type="button" title="Fullscreen"
+                        class="bg-surface-light text-gray-700 w-10 h-10 rounded-xl hover:bg-gray-100 transition shadow-sm border border-gray-200 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3M8 21H5a2 2 0 01-2-2v-3m18 0v3a2 2 0 01-2 2h-3" />
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- Search Bar (Centered) -->
@@ -1044,4 +1052,49 @@
                 }
             }).mount('#posApp');
         </script>
+
+        @push('scripts')
+            <script>
+                (function () {
+                    var button = document.getElementById('posFullscreenBtn');
+                    var root = document.getElementById('posApp');
+                    if (!button || !root) return;
+
+                    function getFullscreenElement() {
+                        return document.fullscreenElement || document.webkitFullscreenElement || null;
+                    }
+
+                    function setTitle() {
+                        var isFs = !!getFullscreenElement();
+                        button.title = isFs ? 'Keluar Fullscreen' : 'Fullscreen';
+                    }
+
+                    async function toggleFullscreen() {
+                        try {
+                            if (getFullscreenElement()) {
+                                var exit = document.exitFullscreen || document.webkitExitFullscreen;
+                                if (exit) await exit.call(document);
+                                return;
+                            }
+
+                            var request = root.requestFullscreen || root.webkitRequestFullscreen;
+                            if (!request) {
+                                alert('Browser ini tidak mendukung mode fullscreen. Coba pakai F11 (Windows) atau install sebagai aplikasi (PWA).');
+                                return;
+                            }
+                            await request.call(root);
+                        } catch (e) {
+                            console.error(e);
+                        } finally {
+                            setTitle();
+                        }
+                    }
+
+                    button.addEventListener('click', toggleFullscreen);
+                    document.addEventListener('fullscreenchange', setTitle);
+                    document.addEventListener('webkitfullscreenchange', setTitle);
+                    setTitle();
+                })();
+            </script>
+        @endpush
 @endsection
