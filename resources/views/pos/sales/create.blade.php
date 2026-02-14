@@ -8,7 +8,7 @@
         id="posApp">
 
         <!-- LEFT PANEL: Products & Header -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div class="pos-left-panel flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
             <!-- Top Bar -->
             <div
@@ -837,16 +837,49 @@
                     flex-direction: column;
                 }
 
+                .pos-left-panel {
+                    flex: 0 0 54%;
+                    min-height: 54%;
+                }
+
                 .pos-order-panel {
+                    flex: 1 1 46%;
                     width: 100%;
+                    height: auto;
                     border-left: 0;
                     border-top: 1px solid #e5e7eb;
-                    min-height: 46vh;
+                    min-height: 0;
                 }
 
                 .pos-topbar .w-10.h-10 {
                     width: 2rem;
                     height: 2rem;
+                }
+            }
+
+            /* Some tablets report narrow CSS width in landscape; force split view for cashier usability. */
+            @media (orientation: landscape) and (max-width: 1023px) {
+                #posApp {
+                    flex-direction: row !important;
+                }
+
+                .pos-left-panel {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    min-height: 0;
+                }
+
+                .pos-order-panel {
+                    flex: 0 0 52%;
+                    width: 52%;
+                    height: 100%;
+                    min-height: 0;
+                    border-left: 1px solid #e5e7eb;
+                    border-top: 0;
+                }
+
+                .pos-quick-actions {
+                    display: flex !important;
                 }
             }
         </style>
