@@ -13,17 +13,16 @@
             <!-- Top Bar -->
             <div
                 class="flex-none px-6 py-4 bg-surface-light border-b border-gray-200 dark:border-red-900/30 flex items-center justify-between z-10">
-                <!-- Brand / Logo Area -->
+                <!-- Dashboard Button -->
                 <div class="flex items-center gap-3">
-                    <div class="bg-primary text-white p-2 rounded-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{{ route('dashboard') }}"
+                        class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-red-700 transition shadow-lg shadow-red-500/30 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
-                    </div>
-                    <h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Moresto<span
-                            class="text-primary">POS</span>
-                    </h1>
+                        Dashboard
+                    </a>
                 </div>
 
                 <!-- Search Bar (Centered) -->
@@ -47,144 +46,11 @@
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Server</p>
                         <p class="text-sm font-semibold text-gray-700">{{ auth()->user()->name }}</p>
                     </div>
-                    <div class="hidden xl:flex items-center gap-2">
-                        @if($activeSession)
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                Shift Aktif #{{ $activeSession->id }}
-                            </span>
 
-                            <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-                                title="Cetak Rekap Shift">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                </svg>
-                            </a>
-
-                            <a href="{{ route('pos.sessions.close') }}"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 transition"
-                                title="Tutup Shift">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                            </a>
-                        @else
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                Shift Belum Dibuka
-                            </span>
-
-                            <a href="{{ route('pos.sessions.open') }}"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 transition"
-                                title="Buka Shift">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                            </a>
-                        @endif
-
-                        <a href="{{ route('pos.attendance.index') }}"
-                            class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 transition"
-                            title="Absensi">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
-                            </svg>
-                        </a>
-
-                        <form action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 transition"
-                                title="Logout">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
                     <div class="w-10 h-10 rounded-full bg-gray-200 p-0.5 border-2 border-white shadow-sm overflow-hidden">
                         <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=EF4444&color=fff"
                             alt="User" class="w-full h-full rounded-full object-cover">
                     </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions (Tablet) -->
-            <div
-                class="hidden md:flex xl:hidden flex-none px-6 py-3 bg-surface-light border-b border-gray-200 dark:border-red-900/30">
-                <div class="w-full flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                    @if($activeSession)
-                        <span
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                            Shift Aktif #{{ $activeSession->id }}
-                        </span>
-
-                        <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
-                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            Rekap
-                        </a>
-
-                        <a href="{{ route('pos.sessions.close') }}"
-                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold transition shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Tutup Shift
-                        </a>
-                    @else
-                        <span
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                            Shift Belum Dibuka
-                        </span>
-
-                        <a href="{{ route('pos.sessions.open') }}"
-                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold transition shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Buka Shift
-                        </a>
-                    @endif
-
-                    <button @click="openHistory"
-                        class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold transition shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Riwayat
-                    </button>
-
-                    <a href="{{ route('pos.attendance.index') }}"
-                        class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold transition shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
-                        </svg>
-                        Absensi
-                    </a>
-
-                    <form action="{{ route('logout') }}" method="POST" class="shrink-0">
-                        @csrf
-                        <button type="submit"
-                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Logout
-                        </button>
-                    </form>
                 </div>
             </div>
 
@@ -193,16 +59,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                                            ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                            : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -240,8 +106,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                                                        Best Seller
-                                                                                                                                    </span> -->
+                                                                                                                                            Best Seller
+                                                                                                                                        </span> -->
                             </div>
 
                             <!-- Content -->
@@ -460,8 +326,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                    : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="flex-1 py-3 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 h-full">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
                             }}</span>
@@ -504,8 +370,8 @@
                     <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
                         @click="selectPaymentMethod(method.id)"
                         :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                    ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                        ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                         class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
                         <span>@{{ method.name }}</span>
                         <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
