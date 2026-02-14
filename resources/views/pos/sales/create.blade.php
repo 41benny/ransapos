@@ -58,16 +58,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                                                        ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                        : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                            ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                            : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -105,8 +105,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                                                                    Best Seller
-                                                                                                                                                </span> -->
+                                                                                                                                                        Best Seller
+                                                                                                                                                    </span> -->
                             </div>
 
                             <!-- Content -->
@@ -165,11 +165,9 @@
                                 </path>
                             </svg>
                         </button>
-                        <h2 class="text-2xl font-bold text-slate-900 cursor-pointer" @click="isCartOpen = !isCartOpen">
+                        <h2 class="text-lg font-bold text-slate-900 cursor-pointer flex items-center gap-2"
+                            @click="isCartOpen = !isCartOpen">
                             Current Order
-                            <span v-if="!isCartOpen && cart.length > 0"
-                                class="text-xs align-top bg-primary text-white rounded-full px-2 py-0.5 ml-1">@{{
-                                cart.length }} Item</span>
                         </h2>
                     </div>
                     <button @click="cart = []" v-if="cart.length > 0"
@@ -182,10 +180,21 @@
                     </button>
                 </div>
                 <div class="flex items-center text-sm text-gray-400 gap-2 pl-9">
-                    <span
-                        class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs">#{{ $activeSession ? $activeSession->id : '---' }}</span>
-                    <span>•</span>
-                    <span>{{ date('d M Y, H:i') }}</span>
+                    <template v-if="isCartOpen">
+                        <span
+                            class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs">#{{ $activeSession ? $activeSession->id : '---' }}</span>
+                        <span>•</span>
+                        <span>{{ date('d M Y, H:i') }}</span>
+                    </template>
+                    <template v-else>
+                        <span class="font-medium text-gray-600">@{{ salesType.charAt(0).toUpperCase() + salesType.slice(1)
+                            }}</span>
+                        <span>•</span>
+                        <span class="font-medium text-gray-600">@{{ cart.length }} Items</span>
+                        <span>•</span>
+                        <span class="font-medium text-gray-600">@{{ cart.reduce((n, {quantity}) => n + quantity, 0) }}
+                            Qty</span>
+                    </template>
                 </div>
 
                 <!-- Customer & Type Selector -->
@@ -325,8 +334,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                                : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                                    : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="flex-1 py-3 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 h-full">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
                             }}</span>
@@ -369,8 +378,8 @@
                     <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
                         @click="selectPaymentMethod(method.id)"
                         :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                                ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
-                                                                : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                                    ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                         class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
                         <span>@{{ method.name }}</span>
                         <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
