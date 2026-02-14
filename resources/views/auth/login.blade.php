@@ -219,9 +219,12 @@
                 </form>
 
                 <div class="mt-8 text-center animate-fade-up delay-300">
-                    <p class="text-sm text-white/30">Need help? <a href="#"
-                            class="text-white/50 hover:text-white transition-colors underline decoration-dotted">Contact
-                            Support</a></p>
+                    <p class="text-sm text-white/30">Quick access:
+                        <a href="{{ route('pos.pin.show') }}"
+                            class="text-white/60 hover:text-white transition-colors underline decoration-dotted">
+                            Login dengan PIN
+                        </a>
+                    </p>
                 </div>
             </div>
 

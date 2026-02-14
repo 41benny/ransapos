@@ -25,10 +25,6 @@ class AuthController extends Controller
             return $this->redirectByRole();
         }
 
-        if (!$request->boolean('email') && $this->resolvePosDevice($request)) {
-            return redirect()->route('pos.pin.show');
-        }
-
         return view('auth.login');
     }
 
@@ -107,7 +103,9 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $redirectToPin = $this->resolvePosDevice($request) !== null;
+        $user = Auth::user();
+        $isPosRole = $user && $user->hasRole(['kasir', 'kitchen']);
+        $redirectToPin = $isPosRole && $this->resolvePosDevice($request) !== null;
 
         Auth::logout();
 
@@ -118,7 +116,7 @@ class AuthController extends Controller
             return redirect()->route('pos.pin.show')->with('success', 'Anda berhasil logout.');
         }
 
-        return redirect()->route('login')->with('success', 'Anda berhasil logout.');
+        return redirect()->route('login', ['email' => 1])->with('success', 'Anda berhasil logout.');
     }
 
     /**
