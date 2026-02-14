@@ -8,6 +8,17 @@ use Illuminate\Validation\Rule;
 class StoreSaleRequest extends FormRequest
 {
     /**
+     * Normalisasi input agar payload POS tetap valid walau field diskon tidak dikirim.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'discount_type' => $this->input('discount_type', 'none'),
+            'discount_value' => $this->input('discount_value', 0),
+        ]);
+    }
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool

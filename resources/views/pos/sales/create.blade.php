@@ -938,6 +938,8 @@
                             customer_id: this.selectedCustomerId,
                             notes: this.orderNotes,
                             sales_type: this.salesType,
+                            discount_type: 'none',
+                            discount_value: 0,
                             items: this.cart.map(i => ({
                                 product_id: i.product_id,
                                 quantity: i.quantity,
