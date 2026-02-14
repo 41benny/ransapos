@@ -91,8 +91,16 @@
                         class="w-full h-14 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         style="background-color: #ec4913;"
                         disabled>
-                        <span>Login</span>
-                        <span class="material-symbols-outlined">arrow_forward</span>
+                        <span id="submitPinSpinner" class="hidden items-center justify-center" aria-hidden="true">
+                            <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                        </span>
+                        <span id="submitPinText">Login</span>
+                        <span id="submitPinIcon" class="material-symbols-outlined">arrow_forward</span>
                     </button>
                 </form>
 
@@ -114,9 +122,14 @@
             const selectedUserLabel = document.getElementById('selectedUserLabel');
             const pinInput = document.getElementById('pinInput');
             const submitButton = document.getElementById('submitPinButton');
+            const form = document.getElementById('pinLoginForm');
+            const submitText = document.getElementById('submitPinText');
+            const submitIcon = document.getElementById('submitPinIcon');
+            const submitSpinner = document.getElementById('submitPinSpinner');
             const userButtons = document.querySelectorAll('.user-select-btn');
             const keyButtons = document.querySelectorAll('.pin-key');
             const dots = document.querySelectorAll('.pin-dot');
+            let isSubmitting = false;
 
             function updateUiState() {
                 const pinLength = pinInput.value.length;
@@ -130,7 +143,9 @@
                     }
                 });
 
-                submitButton.disabled = !selectedUserId.value || pinLength !== 6;
+                if (!isSubmitting) {
+                    submitButton.disabled = !selectedUserId.value || pinLength !== 6;
+                }
             }
 
             userButtons.forEach((button, index) => {
@@ -173,6 +188,38 @@
                 keyButtons.forEach((button) => {
                     button.disabled = true;
                     button.classList.add('opacity-40', 'cursor-not-allowed');
+                });
+            }
+
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (isSubmitting) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    // Only show loading if the form is actually submittable.
+                    if (!selectedUserId.value || pinInput.value.length !== 6) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    isSubmitting = true;
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-busy', 'true');
+                    if (submitText) submitText.textContent = 'Memproses...';
+                    if (submitIcon) submitIcon.classList.add('hidden');
+                    if (submitSpinner) submitSpinner.classList.remove('hidden');
+                    if (submitSpinner) submitSpinner.classList.add('inline-flex');
+
+                    userButtons.forEach((btn) => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-40', 'cursor-not-allowed');
+                    });
+                    keyButtons.forEach((btn) => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-40', 'cursor-not-allowed');
+                    });
                 });
             }
 
