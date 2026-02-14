@@ -193,16 +193,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -240,8 +240,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                Best Seller
-                                                                                            </span> -->
+                                                                                                            Best Seller
+                                                                                                        </span> -->
                             </div>
 
                             <!-- Content -->
@@ -289,9 +289,26 @@
             <!-- Order Header -->
             <div class="flex-none p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-1">
-                    <h2 class="text-2xl font-bold text-slate-900">Current Order</h2>
+                    <div class="flex items-center gap-2">
+                        <button @click="isCartOpen = !isCartOpen"
+                            class="p-1 rounded-lg transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            title="Toggle Cart View">
+                            <svg :class="isCartOpen ? 'rotate-0' : '-rotate-90'"
+                                class="w-6 h-6 text-gray-500 transition-transform duration-200" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                                </path>
+                            </svg>
+                        </button>
+                        <h2 class="text-2xl font-bold text-slate-900 cursor-pointer" @click="isCartOpen = !isCartOpen">
+                            Current Order
+                            <span v-if="!isCartOpen && cart.length > 0"
+                                class="text-xs align-top bg-primary text-white rounded-full px-2 py-0.5 ml-1">@{{
+                                cart.length }} Item</span>
+                        </h2>
+                    </div>
                     <button @click="cart = []" v-if="cart.length > 0"
-                        class="text-primary p-2 hover:bg-red-50 rounded-lg transition">
+                        class="text-primary p-2 hover:bg-red-50 rounded-lg transition" title="Clear All">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
@@ -299,7 +316,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="flex items-center text-sm text-gray-400 gap-2">
+                <div class="flex items-center text-sm text-gray-400 gap-2 pl-9">
                     <span
                         class="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono text-xs">#{{ $activeSession ? $activeSession->id : '---' }}</span>
                     <span>•</span>
@@ -307,7 +324,7 @@
                 </div>
 
                 <!-- Customer & Type Selector -->
-                <div class="grid grid-cols-2 gap-3 mt-4">
+                <div v-show="isCartOpen" class="grid grid-cols-2 gap-3 mt-4 transition-all">
                     <select v-model="selectedCustomerId"
                         class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5">
                         <option value="">Guest (Walk-in)</option>
@@ -325,7 +342,8 @@
             </div>
 
             <!-- Cart Items -->
-            <div class="flex-1 min-h-0 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4">
+            <div v-show="isCartOpen"
+                class="flex-1 min-h-0 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4 transition-all">
                 <template v-if="cart.length > 0">
                     <!-- Item Row -->
                     <div v-for="(item, index) in cart" :key="index" class="flex gap-4 group">
@@ -383,7 +401,8 @@
             </div>
 
             <!-- Checkout Section -->
-            <div class="flex-none p-6 border-t border-gray-100 bg-background-light/50 max-h-[42vh] overflow-y-auto custom-scrollbar">
+            <div :class="isCartOpen ? 'flex-none max-h-[42vh]' : 'flex-1'"
+                class="p-6 border-t border-gray-100 bg-background-light/50 overflow-y-auto custom-scrollbar transition-all">
                 <!-- Order Note Input -->
                 <div class="mb-4">
                     <input type="text" v-model="orderNotes" placeholder="Add order note..."
@@ -427,8 +446,8 @@
                                 <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
                                     @click="selectPaymentMethod(method.id)"
                                     :class="Number(selectedPaymentMethod) === Number(method.id)
-                                        ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
-                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                    ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
+                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                                     class="min-h-[40px] px-2 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
                                     @{{ method.name }}
                                 </button>
@@ -438,30 +457,32 @@
                         <button type="button" @click="showPaymentMethodPicker = !showPaymentMethodPicker"
                             class="w-full rounded-xl border border-primary/20 bg-white px-3 py-2.5 flex items-center justify-between gap-3 text-left">
                             <div class="min-w-0">
-                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Metode Pembayaran</p>
-                                <p class="text-sm font-bold text-primary truncate mt-0.5">@{{ selectedPaymentMethodName || 'Belum dipilih' }}</p>
+                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Metode Pembayaran
+                                </p>
+                                <p class="text-sm font-bold text-primary truncate mt-0.5">@{{ selectedPaymentMethodName ||
+                                    'Belum dipilih' }}</p>
                             </div>
                             <svg :class="showPaymentMethodPicker ? 'rotate-180' : ''"
                                 class="w-4 h-4 text-gray-400 transition-transform shrink-0" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                                </path>
                             </svg>
                         </button>
                     </div>
 
-                    <button @click="processPayment"
-                        :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
+                    <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
-                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu' }}</span>
+                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu'
+                            }}</span>
                         <span v-else class="flex items-center gap-2">
                             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                                </circle>
                                 <path class="opacity-75" fill="currentColor"
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
@@ -706,6 +727,7 @@
                         productImageById: {},
 
                         cart: [],
+                        isCartOpen: true, // Toggle Cart State
                         searchQuery: '',
                         selectedCategory: null,
                         filteredProducts: [],
