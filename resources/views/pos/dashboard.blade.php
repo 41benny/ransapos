@@ -48,7 +48,15 @@
         </div>
 
         {{-- Quick Actions Grid --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 my-4">
+            <a href="{{ route('pos.sales.create') }}"
+                class="bg-emerald-50 p-4 rounded-xl shadow-sm border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-white text-emerald-600 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
+                    <span class="material-icons-round">point_of_sale</span>
+                </div>
+                <span class="text-xs font-bold text-emerald-800 group-hover:text-emerald-900">Kasir / POS</span>
+            </a>
+
             <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
                 class="bg-white p-4 rounded-xl shadow-sm border border-rose-100 hover:border-rose-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
