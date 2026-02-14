@@ -832,7 +832,7 @@
                 }
             }
 
-            @media (max-width: 1023px) {
+            @media (max-width: 767px) {
                 #posApp {
                     flex-direction: column;
                 }
@@ -841,7 +841,7 @@
                     width: 100%;
                     border-left: 0;
                     border-top: 1px solid #e5e7eb;
-                    min-height: 42vh;
+                    min-height: 46vh;
                 }
 
                 .pos-topbar .w-10.h-10 {
