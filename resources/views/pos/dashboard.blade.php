@@ -47,6 +47,44 @@
             </div>
         </div>
 
+        {{-- Quick Actions Grid --}}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+            <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
+                class="bg-white p-4 rounded-xl shadow-sm border border-rose-100 hover:border-rose-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">print</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-rose-700">Rekap Shift</span>
+            </a>
+
+            <a href="{{ route('pos.sales.history') }}"
+                class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 hover:border-blue-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">history</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-blue-700">Riwayat</span>
+            </a>
+
+            <a href="{{ route('pos.attendance.index') }}"
+                class="bg-white p-4 rounded-xl shadow-sm border border-violet-100 hover:border-violet-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">badge</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-violet-700">Absensi</span>
+            </a>
+
+            <form action="{{ route('logout') }}" method="POST" class="contents">
+                @csrf
+                <button type="submit"
+                    class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:border-red-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24 w-full">
+                    <div class="w-10 h-10 rounded-full bg-gray-50 text-gray-500 group-hover:bg-red-50 group-hover:text-red-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <span class="material-icons-round">logout</span>
+                    </div>
+                    <span class="text-xs font-bold text-gray-700 group-hover:text-red-700">Logout</span>
+                </button>
+            </form>
+        </div>
+
         {{-- Transactions Card --}}
         <div class="bg-surface-light rounded-2xl shadow-soft flex flex-col relative overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
