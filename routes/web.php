@@ -12,6 +12,7 @@ use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
 use App\Http\Controllers\POS\CashSessionController;
 use App\Http\Controllers\POS\DeviceController as PosDeviceController;
+use App\Http\Controllers\POS\PinLoginController as PosPinLoginController;
 
 // Redirect root ke login
 Route::get('/', function () {
@@ -21,6 +22,8 @@ Route::get('/', function () {
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('guest');
+Route::get('/pos/pin', [PosPinLoginController::class, 'show'])->name('pos.pin.show')->middleware('guest');
+Route::post('/pos/pin', [PosPinLoginController::class, 'login'])->name('pos.pin.login')->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Back Office (Admin) Routes

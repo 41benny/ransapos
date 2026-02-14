@@ -33,11 +33,16 @@ class PosDeviceController extends Controller
 
         $code = $this->generatePairingCode();
 
+        $pairingTtlMinutes = (int) config('pos.pairing_ttl_minutes', 15);
+        if ($pairingTtlMinutes <= 0) {
+            $pairingTtlMinutes = 15;
+        }
+
         $device = PosDevice::create([
             'outlet_id' => $data['outlet_id'],
             'name' => $data['name'] ?: null,
             'pairing_code' => $code,
-            'pairing_expires_at' => now()->addMinutes(config('pos.pairing_ttl_minutes', 15)),
+            'pairing_expires_at' => now()->addMinutes($pairingTtlMinutes),
             'created_by' => $request->user()?->id,
             'is_active' => true,
         ]);

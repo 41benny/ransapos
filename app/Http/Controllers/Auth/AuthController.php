@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\PosDevice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
@@ -16,11 +18,15 @@ class AuthController extends Controller
     /**
      * Tampilkan halaman login
      */
-    public function showLogin()
+    public function showLogin(Request $request)
     {
         // Jika sudah login, redirect berdasarkan role
         if (Auth::check()) {
             return $this->redirectByRole();
+        }
+
+        if (!$request->boolean('email') && $this->resolvePosDevice($request)) {
+            return redirect()->route('pos.pin.show');
         }
 
         return view('auth.login');
@@ -81,6 +87,8 @@ class AuthController extends Controller
                 ]);
             }
 
+            $this->rememberDeviceUserLogin($request);
+
             RateLimiter::clear($throttleKey);
 
             // Redirect berdasarkan role
@@ -99,10 +107,16 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $redirectToPin = $this->resolvePosDevice($request) !== null;
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($redirectToPin) {
+            return redirect()->route('pos.pin.show')->with('success', 'Anda berhasil logout.');
+        }
 
         return redirect()->route('login')->with('success', 'Anda berhasil logout.');
     }
@@ -160,5 +174,43 @@ class AuthController extends Controller
         $email = mb_strtolower((string) $request->input('email', ''));
 
         return 'login:' . $email . '|' . $request->ip();
+    }
+
+    private function resolvePosDevice(Request $request): ?PosDevice
+    {
+        $token = $request->cookie(config('pos.device_cookie', 'pos_device_token'));
+        if (!$token) {
+            return null;
+        }
+
+        return PosDevice::query()
+            ->where('token_hash', hash('sha256', $token))
+            ->where('is_active', true)
+            ->whereNotNull('paired_at')
+            ->whereNull('revoked_at')
+            ->first();
+    }
+
+    private function rememberDeviceUserLogin(Request $request): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->hasRole(['kasir', 'admin', 'kitchen'])) {
+            return;
+        }
+
+        $device = $this->resolvePosDevice($request);
+        if (!$device || !$user->outlet_id || $device->outlet_id !== $user->outlet_id) {
+            return;
+        }
+
+        DB::table('pos_device_user_logins')->upsert([
+            [
+                'pos_device_id' => $device->id,
+                'user_id' => $user->id,
+                'last_login_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ], ['pos_device_id', 'user_id'], ['last_login_at', 'updated_at']);
     }
 }
