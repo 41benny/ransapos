@@ -267,11 +267,15 @@ class SaleController extends Controller
             ->first();
 
         if (!$activeSession) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ada sesi kasir yang aktif',
-                'data' => []
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada sesi kasir yang aktif',
+                    'data' => []
+                ]);
+            }
+            // Return view with empty sales if no session
+            return view('pos.sales.history', ['sales' => []]);
         }
 
         // Ambil penjualan dalam sesi ini
@@ -281,10 +285,14 @@ class SaleController extends Controller
             ->limit(50) // Batasi 50 transaksi terakhir
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $sales
-        ]);
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $sales
+            ]);
+        }
+
+        return view('pos.sales.history', compact('sales'));
     }
 
     /**
