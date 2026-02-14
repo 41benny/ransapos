@@ -8,11 +8,11 @@
         id="posApp">
 
         <!-- LEFT PANEL: Products & Header -->
-        <div class="pos-left-panel flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
             <!-- Top Bar -->
             <div
-                class="pos-topbar flex-none px-6 py-4 bg-surface-light border-b border-gray-200 dark:border-red-900/30 flex items-center justify-between z-10">
+                class="flex-none px-6 py-4 bg-surface-light border-b border-gray-200 dark:border-red-900/30 flex items-center justify-between z-10">
                 <!-- Brand / Logo Area -->
                 <div class="flex items-center gap-3">
                     <div class="bg-primary text-white p-2 rounded-lg">
@@ -27,7 +27,7 @@
                 </div>
 
                 <!-- Search Bar (Centered) -->
-                <div class="pos-search-wrap flex-1 max-w-xl mx-8">
+                <div class="flex-1 max-w-xl mx-8">
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400 group-focus-within:text-primary transition" fill="none"
@@ -43,7 +43,7 @@
 
                 <!-- User Profile / Server Info -->
                 <div class="flex items-center gap-3">
-                    <div class="pos-server-info text-right hidden sm:block">
+                    <div class="text-right hidden sm:block">
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Server</p>
                         <p class="text-sm font-semibold text-gray-700">{{ auth()->user()->name }}</p>
                     </div>
@@ -116,7 +116,7 @@
 
             <!-- Quick Actions (Tablet) -->
             <div
-                class="pos-quick-actions hidden md:flex xl:hidden flex-none px-6 py-3 bg-surface-light border-b border-gray-200 dark:border-red-900/30">
+                class="hidden md:flex xl:hidden flex-none px-6 py-3 bg-surface-light border-b border-gray-200 dark:border-red-900/30">
                 <div class="w-full flex items-center gap-2 overflow-x-auto scrollbar-hide">
                     @if($activeSession)
                         <span
@@ -125,7 +125,7 @@
                         </span>
 
                         <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
-                            class="pos-compact-hide inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition shrink-0">
+                            class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -166,7 +166,7 @@
                     </button>
 
                     <a href="{{ route('pos.attendance.index') }}"
-                        class="pos-compact-hide inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold transition shrink-0">
+                        class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 text-xs font-semibold transition shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
@@ -174,7 +174,7 @@
                         Absensi
                     </a>
 
-                    <form action="{{ route('logout') }}" method="POST" class="pos-compact-hide shrink-0">
+                    <form action="{{ route('logout') }}" method="POST" class="shrink-0">
                         @csrf
                         <button type="submit"
                             class="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold transition">
@@ -190,19 +190,19 @@
 
             <!-- Categories & Filters -->
             <div
-                class="pos-category-strip flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
+                class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -210,23 +210,23 @@
             </div>
 
             <!-- Product Grid -->
-            <div class="pos-product-scroll flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar">
+            <div class="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar">
 
                 <!-- Section Title -->
-                <div class="pos-section-head flex justify-between items-end mb-6">
+                <div class="flex justify-between items-end mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">
                         @{{ currentCategoryName }}
                     </h2>
                     <span class="text-sm text-gray-500 font-medium">showing @{{ filteredProducts.length }} items</span>
                 </div>
 
-                <div class="pos-product-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                     <template v-for="product in filteredProducts" :key="product.id">
-                        <div class="pos-product-card bg-surface-light rounded-2xl p-4 shadow-sm border border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col h-full cursor-pointer"
+                        <div class="bg-surface-light rounded-2xl p-4 shadow-sm border border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col h-full cursor-pointer"
                             @click="addToCart(product)">
 
                             <!-- Image -->
-                            <div class="pos-product-thumb aspect-[4/3] rounded-xl overflow-hidden mb-4 relative bg-gray-50">
+                            <div class="aspect-[4/3] rounded-xl overflow-hidden mb-4 relative bg-gray-50">
                                 <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="lazy"
                                     decoding="async" fetchpriority="low"
                                     class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
@@ -240,14 +240,14 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                            Best Seller
-                                                                                                        </span> -->
+                                                                                                Best Seller
+                                                                                            </span> -->
                             </div>
 
                             <!-- Content -->
                             <div class="flex-1 flex flex-col">
                                 <h3
-                                    class="pos-product-name text-base font-bold text-gray-800 group-hover:text-red-600 transition mb-1 leading-snug">
+                                    class="text-base font-bold text-gray-800 group-hover:text-red-600 transition mb-1 leading-snug">
                                     @{{ product.name }}</h3>
                                 <!-- SKU/Desc -->
                                 <p class="text-xs text-gray-400 mb-3 line-clamp-2">@{{ product.description || product.sku }}
@@ -285,9 +285,9 @@
 
         <!-- RIGHT PANEL: Current Order -->
         <div
-            class="pos-order-panel w-full md:w-[46%] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full min-h-0 shadow-2xl z-20">
+            class="w-full md:w-[400px] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full min-h-0 shadow-2xl z-20">
             <!-- Order Header -->
-            <div class="pos-order-header flex-none p-6 border-b border-gray-100">
+            <div class="flex-none p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-1">
                     <h2 class="text-2xl font-bold text-slate-900">Current Order</h2>
                     <button @click="cart = []" v-if="cart.length > 0"
@@ -325,12 +325,12 @@
             </div>
 
             <!-- Cart Items -->
-            <div class="pos-cart-list flex-1 min-h-0 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4">
+            <div class="flex-1 min-h-0 overflow-y-auto px-6 py-4 custom-scrollbar space-y-4">
                 <template v-if="cart.length > 0">
                     <!-- Item Row -->
-                    <div v-for="(item, index) in cart" :key="index" class="pos-cart-row flex gap-4 group">
+                    <div v-for="(item, index) in cart" :key="index" class="flex gap-4 group">
                         <!-- Thumb -->
-                        <div class="pos-cart-thumb w-16 h-16 rounded-xl bg-gray-100 flex-none overflow-hidden relative">
+                        <div class="w-16 h-16 rounded-xl bg-gray-100 flex-none overflow-hidden relative">
                             <!-- We need product image here, so we find it from products list -->
                             <img :src="getProductImage(item.product_id)" loading="lazy" decoding="async"
                                 class="w-full h-full object-cover">
@@ -383,16 +383,15 @@
             </div>
 
             <!-- Checkout Section -->
-            <div
-                class="pos-checkout flex-none p-6 border-t border-gray-100 bg-background-light/50 max-h-[42vh] overflow-y-auto custom-scrollbar">
+            <div class="flex-none p-6 border-t border-gray-100 bg-background-light/50 max-h-[42vh] overflow-y-auto custom-scrollbar">
                 <!-- Order Note Input -->
-                <div class="pos-order-note mb-4">
+                <div class="mb-4">
                     <input type="text" v-model="orderNotes" placeholder="Add order note..."
                         class="w-full bg-transparent border-b border-gray-300 focus:border-primary py-2 text-sm focus:outline-none placeholder-gray-400 transition">
                 </div>
 
                 <!-- Totals -->
-                <div class="pos-totals space-y-2 mb-6">
+                <div class="space-y-2 mb-6">
                     <div class="flex justify-between text-sm text-gray-500">
                         <span>Subtotal</span>
                         <span class="font-medium text-gray-700">Rp @{{ formatNumber(subtotal) }}</span>
@@ -423,13 +422,13 @@
                 <div class="space-y-3">
                     <div class="relative">
                         <div v-show="showPaymentMethodPicker"
-                            class="pos-payment-picker mt-2 rounded-xl border border-primary/20 bg-white p-3 shadow-2xl shadow-black/10 xl:absolute xl:bottom-full xl:left-0 xl:right-0 xl:mb-2 xl:mt-0 xl:z-30">
+                            class="mt-2 rounded-xl border border-primary/20 bg-white p-3 shadow-2xl shadow-black/10 xl:absolute xl:bottom-full xl:left-0 xl:right-0 xl:mb-2 xl:mt-0 xl:z-30">
                             <div class="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
                                 <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
                                     @click="selectPaymentMethod(method.id)"
                                     :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                    ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                        ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                                     class="min-h-[40px] px-2 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
                                     @{{ method.name }}
                                 </button>
@@ -437,34 +436,32 @@
                         </div>
 
                         <button type="button" @click="showPaymentMethodPicker = !showPaymentMethodPicker"
-                            class="pos-payment-toggle w-full rounded-xl border border-primary/20 bg-white px-3 py-2.5 flex items-center justify-between gap-3 text-left">
+                            class="w-full rounded-xl border border-primary/20 bg-white px-3 py-2.5 flex items-center justify-between gap-3 text-left">
                             <div class="min-w-0">
-                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Metode Pembayaran
-                                </p>
-                                <p class="text-sm font-bold text-primary truncate mt-0.5">@{{ selectedPaymentMethodName ||
-                                    'Belum dipilih' }}</p>
+                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Metode Pembayaran</p>
+                                <p class="text-sm font-bold text-primary truncate mt-0.5">@{{ selectedPaymentMethodName || 'Belum dipilih' }}</p>
                             </div>
                             <svg :class="showPaymentMethodPicker ? 'rotate-180' : ''"
                                 class="w-4 h-4 text-gray-400 transition-transform shrink-0" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
                     </div>
 
-                    <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
+                    <button @click="processPayment"
+                        :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
-                        class="pos-pay-button w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
-                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu'
-                            }}</span>
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                        class="w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
+                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu' }}</span>
                         <span v-else class="flex items-center gap-2">
                             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                                </circle>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor"
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
@@ -691,229 +688,6 @@
                 </div>
             </div>
         </div>
-
-        <style>
-            @media (min-width: 768px) {
-                #posApp {
-                    flex-direction: row !important;
-                }
-
-                .pos-left-panel {
-                    display: flex !important;
-                    flex: 1 1 auto !important;
-                    min-width: 0;
-                    min-height: 0;
-                    width: auto !important;
-                    visibility: visible !important;
-                    opacity: 1 !important;
-                }
-
-                .pos-order-panel {
-                    flex: 0 0 auto !important;
-                    width: 46%;
-                    max-width: 50%;
-                    height: 100%;
-                    border-left: 1px solid #e5e7eb;
-                    border-top: 0;
-                    min-width: 340px;
-                }
-            }
-
-            @media (max-width: 1279px) {
-                .pos-topbar {
-                    padding: 0.75rem 1rem;
-                    gap: 0.75rem;
-                }
-
-                .pos-search-wrap {
-                    margin-left: 0.75rem;
-                    margin-right: 0.75rem;
-                    max-width: none;
-                }
-
-                .pos-server-info {
-                    display: none;
-                }
-
-                .pos-quick-actions {
-                    padding: 0.45rem 0.75rem;
-                }
-
-                .pos-compact-hide {
-                    display: none;
-                }
-
-                .pos-category-strip {
-                    padding: 0.5rem 0.75rem;
-                    gap: 0.5rem;
-                }
-
-                .pos-category-strip button {
-                    padding: 0.45rem 0.95rem;
-                    font-size: 0.75rem;
-                }
-
-                .pos-product-scroll {
-                    padding-left: 0.75rem;
-                    padding-right: 0.75rem;
-                    padding-bottom: 1rem;
-                }
-
-                .pos-section-head {
-                    margin-bottom: 0.65rem;
-                }
-
-                .pos-section-head h2 {
-                    font-size: 1.35rem;
-                    line-height: 1.15;
-                }
-
-                .pos-section-head span {
-                    font-size: 0.75rem;
-                }
-
-                .pos-product-grid {
-                    gap: 0.7rem;
-                }
-
-                .pos-product-card {
-                    padding: 0.55rem;
-                    border-radius: 0.9rem;
-                }
-
-                .pos-product-thumb {
-                    margin-bottom: 0.45rem;
-                    border-radius: 0.7rem;
-                    aspect-ratio: 4 / 2.65;
-                }
-
-                .pos-product-name {
-                    font-size: 0.82rem;
-                    line-height: 1.2;
-                }
-
-                .pos-order-panel {
-                    width: 52%;
-                }
-
-                .pos-order-header {
-                    padding: 0.85rem;
-                }
-
-                .pos-order-header h2 {
-                    font-size: 1.25rem;
-                    line-height: 1.2;
-                }
-
-                .pos-order-header .grid {
-                    gap: 0.4rem;
-                    margin-top: 0.55rem;
-                }
-
-                .pos-order-header select {
-                    padding-top: 0.4rem;
-                    padding-bottom: 0.4rem;
-                    font-size: 0.76rem;
-                }
-
-                .pos-cart-list {
-                    padding: 0.65rem 0.85rem;
-                    gap: 0.55rem;
-                }
-
-                .pos-cart-row {
-                    gap: 0.55rem;
-                }
-
-                .pos-cart-thumb {
-                    width: 2.7rem;
-                    height: 2.7rem;
-                    border-radius: 0.55rem;
-                }
-
-                .pos-checkout {
-                    padding: 0.7rem 0.85rem 0.85rem;
-                    max-height: none;
-                }
-
-                .pos-order-note {
-                    display: none;
-                }
-
-                .pos-totals {
-                    margin-bottom: 0.55rem;
-                    gap: 0.2rem;
-                }
-
-                .pos-payment-picker {
-                    max-height: 9rem;
-                }
-
-                .pos-payment-toggle {
-                    padding-top: 0.5rem;
-                    padding-bottom: 0.5rem;
-                }
-
-                .pos-pay-button {
-                    padding-top: 0.75rem;
-                    padding-bottom: 0.75rem;
-                    font-size: 0.96rem;
-                }
-            }
-
-            @media (max-width: 767px) {
-                #posApp {
-                    flex-direction: column;
-                }
-
-                .pos-left-panel {
-                    flex: 0 0 54%;
-                    min-height: 54%;
-                }
-
-                .pos-order-panel {
-                    flex: 1 1 46% !important;
-                    width: 100% !important;
-                    max-width: 100% !important;
-                    height: auto;
-                    border-left: 0;
-                    border-top: 1px solid #e5e7eb;
-                    min-height: 0;
-                }
-
-                .pos-topbar .w-10.h-10 {
-                    width: 2rem;
-                    height: 2rem;
-                }
-            }
-
-            /* Some tablets report narrow CSS width in landscape; force split view for cashier usability. */
-            @media (orientation: landscape) and (max-width: 1023px) {
-                #posApp {
-                    flex-direction: row !important;
-                }
-
-                .pos-left-panel {
-                    flex: 1 1 auto;
-                    min-width: 0;
-                    min-height: 0;
-                }
-
-                .pos-order-panel {
-                    flex: 0 0 52% !important;
-                    width: 52% !important;
-                    max-width: 52% !important;
-                    height: 100%;
-                    min-height: 0;
-                    border-left: 1px solid #e5e7eb;
-                    border-top: 0;
-                }
-
-                .pos-quick-actions {
-                    display: flex !important;
-                }
-            }
-        </style>
 
         <!-- VUE JS 3 -->
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
