@@ -193,16 +193,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                        ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                        : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -240,8 +240,8 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                            Best Seller
-                                                                                                        </span> -->
+                                                                                                                    Best Seller
+                                                                                                                </span> -->
                             </div>
 
                             <!-- Content -->
@@ -446,8 +446,8 @@
                                 <button type="button" v-for="method in paymentMethods" :key="'pm-' + method.id"
                                     @click="selectPaymentMethod(method.id)"
                                     :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                    ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                            ? 'bg-primary text-white border-primary shadow-md shadow-red-500/20'
+                                                            : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                                     class="min-h-[40px] px-2 py-2 border rounded-lg text-xs md:text-[13px] font-semibold transition text-center leading-tight">
                                     @{{ method.name }}
                                 </button>
@@ -473,8 +473,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="w-full py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar Sekarang' : 'Pilih Metode Dulu'
                             }}</span>
@@ -498,7 +498,36 @@
             </div>
         </div>
 
-        <!-- Success Modal (Re-styled) -->
+        <!-- Payment Method Modal -->
+        <div v-show="showPaymentModal"
+            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showPaymentModal ? 'flex' : 'none' }">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-[bounceIn_0.1s_ease-out]">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Pilih Metode Pembayaran</h3>
+                    <button @click="showPaymentModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto p-1 custom-scrollbar">
+                    <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
+                        @click="selectPaymentMethod(method.id)" :class="Number(selectedPaymentMethod) === Number(method.id)
+                                ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                        class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
+                        <span>@{{ method.name }}</span>
+                        <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
+                            class="text-[10px] font-normal opacity-80">Terpilih</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
         <div v-if="showSuccessModal"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             style="display: none;" :style="{ display: showSuccessModal ? 'flex' : 'none' }">
@@ -736,6 +765,7 @@
                         selectedPaymentMethod: '',
                         selectedCustomerId: '',
                         showPaymentMethodPicker: false,
+                        showPaymentModal: false,
 
                         orderNotes: '',
 
@@ -848,6 +878,7 @@
                     selectPaymentMethod(methodId) {
                         this.selectedPaymentMethod = methodId;
                         this.showPaymentMethodPicker = false;
+                        this.showPaymentModal = false;
                     },
                     filterProducts() {
                         let filtered = this.products;
