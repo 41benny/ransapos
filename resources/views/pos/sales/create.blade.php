@@ -690,6 +690,27 @@
         </div>
 
         <style>
+            @media (min-width: 768px) {
+                #posApp {
+                    flex-direction: row !important;
+                }
+
+                .pos-left-panel {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    min-height: 0;
+                }
+
+                .pos-order-panel {
+                    flex: 0 0 46%;
+                    width: 46%;
+                    min-width: 340px;
+                    height: 100%;
+                    border-left: 1px solid #e5e7eb;
+                    border-top: 0;
+                }
+            }
+
             @media (max-width: 1279px) {
                 .pos-topbar {
                     padding: 0.75rem 1rem;
