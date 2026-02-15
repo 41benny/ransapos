@@ -46,6 +46,14 @@
                     class="inline-flex h-10 items-center rounded-lg bg-indigo-700 px-4 text-sm font-semibold text-white hover:bg-indigo-800">
                     Tampilkan
                 </button>
+                <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'xlsx'])) }}"
+                    class="inline-flex h-10 items-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">
+                    Export Excel
+                </a>
+                <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'pdf'])) }}"
+                    class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    Export PDF
+                </a>
                 @if(!empty($report['existing_route']) && Route::has($report['existing_route']))
                     <a href="{{ route($report['existing_route'], array_filter(['tab' => request('tab')])) }}"
                         class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">

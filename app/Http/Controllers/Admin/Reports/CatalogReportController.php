@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
+use App\Support\ReportExport;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Http\Request;
@@ -538,6 +539,19 @@ class CatalogReportController extends Controller
             ];
         }
 
+        $format = $request->input('format');
+        if (in_array($format, ['xlsx', 'pdf'], true)) {
+            [$exportColumns, $exportRows] = $this->buildExportPayload($viewType, $rows, $summary);
+            $safeSlug = str_replace('_', '-', $slug);
+            $filename = sprintf('%s-%s-sd-%s.%s', $safeSlug, str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
+
+            if ($format === 'pdf') {
+                return ReportExport::pdf($filename, $report['title'], $exportColumns, $exportRows);
+            }
+
+            return ReportExport::xlsx($filename, $report['title'], $exportColumns, $exportRows);
+        }
+
         return view('admin.reports.catalog-show', [
             'slug' => $slug,
             'report' => $report,
@@ -551,6 +565,49 @@ class CatalogReportController extends Controller
             'meta' => $meta,
             'viewType' => $viewType,
         ]);
+    }
+
+    private function buildExportPayload(string $viewType, $rows, array $summary): array
+    {
+        $rowsCollection = $rows instanceof \Illuminate\Support\Collection ? $rows : collect($rows);
+
+        if ($viewType === 'sales-vs-hpp') {
+            return [[
+                ['key' => 'transaction_number', 'label' => 'No_Transaksi', 'type' => 'text'],
+                ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_amount', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'hpp_amount', 'label' => 'Hpp', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'gross_profit', 'label' => 'Laba Kotor', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'margin_percent', 'label' => 'Margin', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn ($row) => (array) $row)->all()];
+        }
+
+        if ($rowsCollection->isNotEmpty()) {
+            $first = (array) $rowsCollection->first();
+            $columns = collect(array_keys($first))->map(function ($key) use ($first) {
+                $value = $first[$key] ?? null;
+                return [
+                    'key' => $key,
+                    'label' => ucwords(str_replace('_', ' ', (string) $key)),
+                    'type' => is_numeric($value) ? 'number' : 'text',
+                    'decimals' => is_numeric($value) && ((float) $value !== (float) ((int) $value)) ? 2 : 0,
+                ];
+            })->all();
+
+            return [$columns, $rowsCollection->map(fn ($row) => (array) $row)->all()];
+        }
+
+        $fallbackRows = collect($summary)->map(function ($value, $key) {
+            return ['metric' => (string) $key, 'value' => is_scalar($value) ? $value : json_encode($value)];
+        })->values()->all();
+
+        return [[
+            ['key' => 'metric', 'label' => 'Metric', 'type' => 'text'],
+            ['key' => 'value', 'label' => 'Value', 'type' => 'text'],
+        ], $fallbackRows];
     }
 
     private function cashAccountSnapshots(string $dateFrom, string $dateTo, ?int $outletId = null)

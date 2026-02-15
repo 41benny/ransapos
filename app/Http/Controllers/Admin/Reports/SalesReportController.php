@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\Outlet;
 use App\Models\User;
 use App\Models\PaymentMethod;
+use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -220,5 +221,176 @@ class SalesReportController extends Controller
             'dateFrom',
             'dateTo'
         ));
+    }
+
+    public function exportIndex(Request $request)
+    {
+        $dateFrom = $request->input('date_from', now()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
+        $viewMode = in_array($request->input('view_mode'), ['ringkas', 'detail'], true)
+            ? $request->input('view_mode')
+            : 'ringkas';
+
+        $query = Sale::with(['outlet', 'user', 'payments.paymentMethod'])
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
+        }
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->filled('payment_method_id')) {
+            $query->whereHas('payments', function ($q) use ($request) {
+                $q->where('payment_method_id', $request->payment_method_id);
+            });
+        }
+
+        $format = $request->input('format', 'xlsx');
+        $filename = sprintf('laporan-penjualan-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
+
+        if ($viewMode === 'detail') {
+            $paymentAggSub = DB::table('payments')
+                ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+                ->select('payments.sale_id')
+                ->selectRaw('COALESCE(SUM(payments.amount), 0) as paid_amount')
+                ->selectRaw("GROUP_CONCAT(DISTINCT payment_methods.name ORDER BY payment_methods.name SEPARATOR ', ') as payment_methods")
+                ->groupBy('payments.sale_id');
+
+            $detailQuery = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
+                    $join->on('sales.id', '=', 'pay_agg.sale_id');
+                })
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if ($request->filled('outlet_id')) {
+                $detailQuery->where('sales.outlet_id', $request->outlet_id);
+            }
+            if ($request->filled('user_id')) {
+                $detailQuery->where('sales.user_id', $request->user_id);
+            }
+            if ($request->filled('payment_method_id')) {
+                $paymentMethodId = $request->payment_method_id;
+                $detailQuery->whereExists(function ($subQuery) use ($paymentMethodId) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('payments as payment_filter')
+                        ->whereColumn('payment_filter.sale_id', 'sales.id')
+                        ->where('payment_filter.payment_method_id', $paymentMethodId);
+                });
+            }
+
+            $rows = $detailQuery
+                ->select(
+                    'sales.invoice_number as no_transaksi',
+                    'sales.sale_date as tanggal',
+                    'outlets.name as outlet',
+                    'sale_items.product_name as produk',
+                    'sale_items.quantity as qty',
+                    'sale_items.unit_price as harga',
+                    'sale_items.subtotal as subtotal',
+                    DB::raw("COALESCE(pay_agg.payment_methods, '-') as metode_bayar"),
+                    'sales.total_amount as total_invoice'
+                )
+                ->orderByDesc('sales.sale_date')
+                ->orderByDesc('sales.created_at')
+                ->orderBy('sale_items.id')
+                ->get()
+                ->map(fn ($row) => (array) $row)
+                ->all();
+
+            $columns = [
+                ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'harga', 'label' => 'Harga', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'subtotal', 'label' => 'Subtotal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'metode_bayar', 'label' => 'Metode Bayar', 'type' => 'text'],
+                ['key' => 'total_invoice', 'label' => 'Total Invoice', 'type' => 'number', 'decimals' => 2],
+            ];
+        } else {
+            $sales = $query->orderBy('sale_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $rows = $sales->map(function ($sale) {
+                $paymentMethods = $sale->payments->map(fn ($payment) => $payment->paymentMethod?->name)->filter()->unique()->implode(', ');
+                return [
+                    'no_transaksi' => $sale->invoice_number,
+                    'tanggal' => optional($sale->sale_date)->format('Y-m-d'),
+                    'outlet' => $sale->outlet?->name ?? '-',
+                    'kasir' => $sale->user?->name ?? '-',
+                    'total' => (float) $sale->total_amount,
+                    'metode_bayar' => $paymentMethods ?: '-',
+                ];
+            })->all();
+
+            $columns = [
+                ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'kasir', 'label' => 'Kasir', 'type' => 'text'],
+                ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'metode_bayar', 'label' => 'Metode Bayar', 'type' => 'text'],
+            ];
+        }
+
+        if ($format === 'pdf') {
+            return ReportExport::pdf($filename, 'Laporan Penjualan', $columns, $rows);
+        }
+
+        return ReportExport::xlsx($filename, 'Laporan Penjualan', $columns, $rows);
+    }
+
+    public function exportProducts(Request $request)
+    {
+        $dateFrom = $request->input('date_from', now()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
+
+        $query = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+        if ($request->filled('outlet_id')) {
+            $query->where('sales.outlet_id', $request->outlet_id);
+        }
+        if ($request->filled('user_id')) {
+            $query->where('sales.user_id', $request->user_id);
+        }
+
+        $products = $query->select(
+            'products.name as produk',
+            'products.sku as sku',
+            DB::raw('SUM(sale_items.quantity) as qty'),
+            DB::raw('SUM(sale_items.subtotal) as total')
+        )
+            ->groupBy('products.id', 'products.name', 'products.sku')
+            ->orderBy('total', 'desc')
+            ->get()
+            ->map(fn ($row) => (array) $row)
+            ->all();
+
+        $columns = [
+            ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
+            ['key' => 'sku', 'label' => 'SKU', 'type' => 'text'],
+            ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
+        ];
+
+        $format = $request->input('format', 'xlsx');
+        $filename = sprintf('laporan-penjualan-produk-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
+
+        if ($format === 'pdf') {
+            return ReportExport::pdf($filename, 'Laporan Penjualan per Produk', $columns, $products);
+        }
+
+        return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $products);
     }
 }

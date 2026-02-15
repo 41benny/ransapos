@@ -78,10 +78,15 @@
                         <i class="fas fa-rotate-right mr-2"></i>
                         Reset
                     </a>
-                    <a href="{{ route('admin.reports.attendance.export', array_merge(request()->query(), ['tab' => request('tab', 'sdm')])) }}"
+                    <a href="{{ route('admin.reports.attendance.export', array_merge(request()->query(), ['tab' => request('tab', 'sdm'), 'format' => 'xlsx'])) }}"
                         class="inline-flex h-10 items-center rounded-lg border border-orange-200 bg-orange-100 px-4 text-sm font-semibold text-orange-700 hover:bg-orange-200">
-                        <i class="fas fa-file-csv mr-2"></i>
-                        Export CSV
+                        <i class="fas fa-file-excel mr-2"></i>
+                        Export Excel
+                    </a>
+                    <a href="{{ route('admin.reports.attendance.export', array_merge(request()->query(), ['tab' => request('tab', 'sdm'), 'format' => 'pdf'])) }}"
+                        class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Export PDF
                     </a>
                 </div>
             </form>

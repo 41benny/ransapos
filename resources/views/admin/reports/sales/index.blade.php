@@ -91,6 +91,12 @@
                 <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
                     Reset
                 </a>
+                <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}" class="px-5 py-2.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-full transition">
+                    Export Excel
+                </a>
+                <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}" class="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full transition">
+                    Export PDF
+                </a>
                 <button type="button" onclick="window.print()" class="ml-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>

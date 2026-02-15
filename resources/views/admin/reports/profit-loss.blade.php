@@ -22,7 +22,7 @@
     <div class="bg-white rounded-lg shadow p-4 mb-6">
         <form method="GET">
             <input type="hidden" name="tab" value="{{ request('tab', 'ikhtisar') }}">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
                     <input type="date" 
@@ -49,10 +49,22 @@
                     </select>
                 </div>
                 <div class="flex items-end">
-                    <button type="submit" 
+                    <button type="submit"
                             class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
                         Tampilkan
                     </button>
+                </div>
+                <div class="flex items-end">
+                    <a href="{{ route('admin.reports.profit-loss.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+                        class="w-full text-center px-4 py-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-lg">
+                        Export Excel
+                    </a>
+                </div>
+                <div class="flex items-end">
+                    <a href="{{ route('admin.reports.profit-loss.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
+                        class="w-full text-center px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg">
+                        Export PDF
+                    </a>
                 </div>
             </div>
         </form>

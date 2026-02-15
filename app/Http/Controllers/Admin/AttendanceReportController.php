@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Outlet;
 use App\Models\User;
+use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceReportController extends Controller
 {
@@ -82,54 +82,44 @@ class AttendanceReportController extends Controller
         return $anomalies;
     }
 
-    /**
-     * Export laporan ke Excel
-     */
     public function exportReport(Request $request)
     {
         [$query, $dateFrom, $dateTo] = $this->buildFilteredAttendanceQuery($request);
         $attendances = $query->orderBy('clock_in', 'desc')->get();
+        $rows = $attendances->map(function ($attendance) {
+            return [
+                'tanggal' => optional($attendance->clock_in)->format('Y-m-d'),
+                'karyawan' => $attendance->user?->name ?? '-',
+                'outlet' => $attendance->outlet?->name ?? '-',
+                'jam_masuk' => optional($attendance->clock_in)->format('H:i:s'),
+                'jam_keluar' => optional($attendance->clock_out)->format('H:i:s') ?? '-',
+                'durasi_menit' => $attendance->isClockOut() ? (int) $attendance->getDuration() : 0,
+                'status' => $attendance->status,
+                'kasir_login' => $attendance->loggedInUser?->name ?? '-',
+                'ip_address' => $attendance->ip_address ?? '-',
+            ];
+        })->all();
 
-        $filename = sprintf(
-            'rekap-absensi-%s-sd-%s.csv',
-            $dateFrom->format('Ymd'),
-            $dateTo->format('Ymd')
-        );
+        $columns = [
+            ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+            ['key' => 'karyawan', 'label' => 'Karyawan', 'type' => 'text'],
+            ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+            ['key' => 'jam_masuk', 'label' => 'Jam Masuk', 'type' => 'text'],
+            ['key' => 'jam_keluar', 'label' => 'Jam Keluar', 'type' => 'text'],
+            ['key' => 'durasi_menit', 'label' => 'Durasi (menit)', 'type' => 'number'],
+            ['key' => 'status', 'label' => 'Status', 'type' => 'text'],
+            ['key' => 'kasir_login', 'label' => 'Kasir Login', 'type' => 'text'],
+            ['key' => 'ip_address', 'label' => 'IP Address', 'type' => 'text'],
+        ];
 
-        return new StreamedResponse(function () use ($attendances) {
-            $handle = fopen('php://output', 'w');
+        $format = $request->input('format', 'xlsx');
+        $baseFilename = sprintf('rekap-absensi-%s-sd-%s', $dateFrom->format('Ymd'), $dateTo->format('Ymd'));
 
-            fputcsv($handle, [
-                'Tanggal',
-                'Karyawan',
-                'Outlet',
-                'Jam Masuk',
-                'Jam Keluar',
-                'Durasi (menit)',
-                'Status',
-                'Kasir Login',
-                'IP Address',
-            ]);
+        if ($format === 'pdf') {
+            return ReportExport::pdf($baseFilename . '.pdf', 'Rekap Absensi Karyawan', $columns, $rows);
+        }
 
-            foreach ($attendances as $attendance) {
-                fputcsv($handle, [
-                    optional($attendance->clock_in)->format('Y-m-d'),
-                    $attendance->user?->name ?? '-',
-                    $attendance->outlet?->name ?? '-',
-                    optional($attendance->clock_in)->format('H:i:s'),
-                    optional($attendance->clock_out)->format('H:i:s') ?? '-',
-                    $attendance->isClockOut() ? $attendance->getDuration() : null,
-                    $attendance->status,
-                    $attendance->loggedInUser?->name ?? '-',
-                    $attendance->ip_address ?? '-',
-                ]);
-            }
-
-            fclose($handle);
-        }, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        return ReportExport::xlsx($baseFilename . '.xlsx', 'Rekap Absensi', $columns, $rows);
     }
 
     private function buildReportData(Request $request): array

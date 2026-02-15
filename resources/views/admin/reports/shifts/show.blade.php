@@ -171,12 +171,22 @@
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">Daftar Transaksi</h3>
-            <button type="button" onclick="window.print()" class="no-print px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
-                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                </svg>
-                Print
-            </button>
+            <div class="no-print flex items-center gap-2">
+                <a href="{{ route('admin.reports.shifts.show.export', ['cashSession' => $cashSession, 'format' => 'xlsx']) }}"
+                    class="px-4 py-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-lg transition">
+                    Export Excel
+                </a>
+                <a href="{{ route('admin.reports.shifts.show.export', ['cashSession' => $cashSession, 'format' => 'pdf']) }}"
+                    class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition">
+                    Export PDF
+                </a>
+                <button type="button" onclick="window.print()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    Print
+                </button>
+            </div>
         </div>
     </div>
 

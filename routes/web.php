@@ -112,10 +112,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
         Route::get('/', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'index'])->name('index');
         Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show');
         Route::get('/sales', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'index'])->name('sales.index');
+        Route::get('/sales/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportIndex'])->name('sales.export');
         Route::get('/sales-products', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'products'])->name('sales.products');
+        Route::get('/sales-products/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProducts'])->name('sales.products.export');
         Route::get('/shifts', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'index'])->name('shifts.index');
+        Route::get('/shifts/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportIndex'])->name('shifts.export');
         Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show');
+        Route::get('/shifts/{cashSession}/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportShow'])->name('shifts.show.export');
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index');
+        Route::get('/profit-loss/export', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'export'])->name('profit-loss.export');
         Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index');
         Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])->name('attendance.export');
     });
