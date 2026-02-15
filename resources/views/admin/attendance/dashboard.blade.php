@@ -7,6 +7,17 @@
 @section('content')
     <div class="w-full max-w-7xl mx-auto space-y-6">
         <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-white rounded-xl shadow-sm border border-orange-100 p-6">
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <div class="text-sm text-slate-500">Kode laporan: attendance-recap</div>
+                    <div class="mt-1 text-lg font-semibold text-slate-900">Rekap Absensi Karyawan</div>
+                </div>
+                <a href="{{ route('admin.reports.index') }}"
+                    class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Kembali ke Katalog
+                </a>
+            </div>
+
             <form method="GET" action="{{ route('admin.reports.attendance.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Periode</label>
@@ -57,17 +68,17 @@
                 </div>
                 <div class="md:col-span-6 flex flex-wrap gap-2">
                     <button type="submit"
-                        class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg text-sm inline-flex items-center shadow-sm">
+                        class="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 text-sm font-semibold text-white hover:from-orange-600 hover:to-orange-700 shadow-sm">
                         <i class="fas fa-filter mr-2"></i>
                         Terapkan Filter
                     </button>
                     <a href="{{ route('admin.reports.attendance.index') }}"
-                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm inline-flex items-center">
+                        class="inline-flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-200">
                         <i class="fas fa-rotate-right mr-2"></i>
                         Reset
                     </a>
                     <a href="{{ route('admin.reports.attendance.export', request()->query()) }}"
-                        class="px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 border border-orange-200 rounded-lg text-sm inline-flex items-center">
+                        class="inline-flex h-10 items-center rounded-lg border border-orange-200 bg-orange-100 px-4 text-sm font-semibold text-orange-700 hover:bg-orange-200">
                         <i class="fas fa-file-csv mr-2"></i>
                         Export CSV
                     </a>
