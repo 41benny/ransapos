@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="w-full max-w-7xl mx-auto space-y-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-white rounded-xl shadow-sm border border-orange-100 p-6">
             <form method="GET" action="{{ route('admin.reports.attendance.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Periode</label>
@@ -57,7 +57,7 @@
                 </div>
                 <div class="md:col-span-6 flex flex-wrap gap-2">
                     <button type="submit"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm inline-flex items-center">
+                        class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg text-sm inline-flex items-center shadow-sm">
                         <i class="fas fa-filter mr-2"></i>
                         Terapkan Filter
                     </button>
@@ -67,7 +67,7 @@
                         Reset
                     </a>
                     <a href="{{ route('admin.reports.attendance.export', request()->query()) }}"
-                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm inline-flex items-center">
+                        class="px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 border border-orange-200 rounded-lg text-sm inline-flex items-center">
                         <i class="fas fa-file-csv mr-2"></i>
                         Export CSV
                     </a>
@@ -76,19 +76,19 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl border border-gray-100 p-5">
+            <div class="bg-white rounded-xl border border-orange-100 p-5">
                 <p class="text-xs text-gray-500 uppercase">Total Hadir</p>
                 <p class="mt-2 text-3xl font-bold text-green-600">{{ $totalPresent }}</p>
             </div>
-            <div class="bg-white rounded-xl border border-gray-100 p-5">
+            <div class="bg-white rounded-xl border border-orange-100 p-5">
                 <p class="text-xs text-gray-500 uppercase">Total Terlambat</p>
                 <p class="mt-2 text-3xl font-bold text-amber-600">{{ $totalLate }}</p>
             </div>
-            <div class="bg-white rounded-xl border border-gray-100 p-5">
+            <div class="bg-white rounded-xl border border-orange-100 p-5">
                 <p class="text-xs text-gray-500 uppercase">Belum Absen</p>
                 <p class="mt-2 text-3xl font-bold text-gray-700">{{ $totalNotPresent }}</p>
             </div>
-            <div class="bg-white rounded-xl border border-gray-100 p-5">
+            <div class="bg-white rounded-xl border border-orange-100 p-5">
                 <p class="text-xs text-gray-500 uppercase">Anomali</p>
                 <p class="mt-2 text-3xl font-bold {{ $anomalyCount > 0 ? 'text-red-600' : 'text-green-600' }}">{{ $anomalyCount }}</p>
             </div>
@@ -109,14 +109,14 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-xl border border-gray-100">
-            <div class="p-5 border-b border-gray-100">
+        <div class="bg-white rounded-xl border border-orange-100">
+            <div class="p-5 border-b border-orange-100">
                 <h3 class="text-lg font-semibold text-gray-900">Tabel Rekap Detail Absensi</h3>
                 <p class="text-sm text-gray-500">Periode {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <thead class="bg-orange-50 text-orange-800 uppercase text-xs">
                         <tr>
                             <th class="px-4 py-3 text-left">Tanggal</th>
                             <th class="px-4 py-3 text-left">Karyawan</th>
@@ -140,7 +140,7 @@
                                 <td class="px-4 py-3">{{ $attendance->isClockOut() ? $attendance->getDurationFormatted() : 'Masih aktif' }}</td>
                                 <td class="px-4 py-3">
                                     <span
-                                        class="px-2 py-1 text-xs rounded-full {{ $attendance->status === 'late' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800' }}">
+                                        class="px-2 py-1 text-xs rounded-full {{ $attendance->status === 'late' ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800' }}">
                                         {{ $attendance->status === 'late' ? 'Terlambat' : 'Tepat Waktu' }}
                                     </span>
                                 </td>
@@ -158,13 +158,13 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl border border-gray-100">
-                <div class="p-5 border-b border-gray-100">
+            <div class="bg-white rounded-xl border border-orange-100">
+                <div class="p-5 border-b border-orange-100">
                     <h3 class="text-lg font-semibold text-gray-900">Rekap Per Outlet</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs">
                             <tr>
                                 <th class="px-4 py-3 text-left">Outlet</th>
                                 <th class="px-4 py-3 text-left">Record</th>
@@ -192,13 +192,13 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl border border-gray-100">
-                <div class="p-5 border-b border-gray-100">
+            <div class="bg-white rounded-xl border border-orange-100">
+                <div class="p-5 border-b border-orange-100">
                     <h3 class="text-lg font-semibold text-gray-900">Rekap Per Karyawan</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs">
                             <tr>
                                 <th class="px-4 py-3 text-left">Karyawan</th>
                                 <th class="px-4 py-3 text-left">Outlet</th>
