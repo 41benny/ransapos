@@ -80,7 +80,7 @@
             </div>
 
             <div class="p-6 border-b border-gray-100">
-                <form method="POST" action="{{ route('admin.pos-devices.pairing') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form method="POST" action="{{ route('admin.pos-devices.pairing') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     @csrf
                     <div>
                         <label for="outlet_id" class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
@@ -93,6 +93,16 @@
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nama Perangkat (opsional)</label>
                         <input id="name" name="name" type="text" class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500" placeholder="Kasir Tablet 1">
+                    </div>
+                    <div>
+                        <label for="device_type" class="block text-sm font-medium text-gray-700 mb-1">Jenis Perangkat</label>
+                        <select id="device_type" name="device_type" class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+                            @foreach($deviceTypes as $type)
+                                <option value="{{ $type }}" {{ $type === 'kasir' ? 'selected' : '' }}>
+                                    {{ ucfirst($type) }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="flex items-end">
                         <button type="submit"
@@ -110,6 +120,7 @@
                             <tr>
                                 <th class="py-3 pr-4">Perangkat</th>
                                 <th class="py-3 pr-4">Outlet</th>
+                                <th class="py-3 pr-4">Jenis</th>
                                 <th class="py-3 pr-4">Status</th>
                                 <th class="py-3 pr-4">Terakhir Aktif</th>
                                 <th class="py-3 pr-4">Dibuat Oleh</th>
@@ -130,8 +141,17 @@
                                     <td class="py-3 pr-4 font-medium text-gray-900">
                                         {{ $device->name ?: 'Tanpa nama' }}
                                         <div class="text-xs text-gray-500">#{{ $device->id }}</div>
+                                        @if(!empty($device->device_meta))
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                {{ $device->device_meta['browser'] ?? '-' }} · {{ $device->device_meta['platform'] ?? '-' }}
+                                            </div>
+                                            <div class="text-xs text-gray-400">
+                                                {{ $device->device_meta['screen'] ?? '-' }} · {{ $device->device_meta['timezone'] ?? '-' }}
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="py-3 pr-4 text-gray-700">{{ $device->outlet?->name ?? '-' }}</td>
+                                    <td class="py-3 pr-4 text-gray-700">{{ ucfirst($device->device_type ?? 'kasir') }}</td>
                                     <td class="py-3 pr-4">
                                         <span class="px-2 py-1 text-xs rounded-full {{ $statusClass }}">{{ $statusLabel }}</span>
                                     </td>
@@ -148,13 +168,17 @@
                                                 <button type="submit" class="px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Nonaktifkan</button>
                                             </form>
                                         @else
-                                            <span class="text-xs text-gray-400">-</span>
+                                            <form method="POST" action="{{ route('admin.pos-devices.destroy', $device) }}" onsubmit="return confirm('Hapus perangkat nonaktif ini? Aksi ini tidak dapat dibatalkan.')" class="inline-flex">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Hapus</button>
+                                            </form>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-10 text-center text-gray-500">Belum ada perangkat terdaftar.</td>
+                                    <td colspan="7" class="py-10 text-center text-gray-500">Belum ada perangkat terdaftar.</td>
                                 </tr>
                             @endforelse
                         </tbody>

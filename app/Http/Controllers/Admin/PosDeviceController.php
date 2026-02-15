@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\PosDevice;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PosDeviceController extends Controller
 {
+    private const DEVICE_TYPES = ['kasir', 'kitchen', 'lainnya'];
+
     public function index(): View
     {
         $outlets = Outlet::query()->active()->orderBy('name')->get();
@@ -20,8 +23,9 @@ class PosDeviceController extends Controller
             ->orderByDesc('created_at')
             ->get();
         $deviceEnforced = Setting::getBool('pos_device_enforce', config('pos.device_enforce', false));
+        $deviceTypes = self::DEVICE_TYPES;
 
-        return view('admin.pos-devices.index', compact('outlets', 'devices', 'deviceEnforced'));
+        return view('admin.pos-devices.index', compact('outlets', 'devices', 'deviceEnforced', 'deviceTypes'));
     }
 
     public function storePairing(Request $request): RedirectResponse
@@ -29,6 +33,7 @@ class PosDeviceController extends Controller
         $data = $request->validate([
             'outlet_id' => 'required|exists:outlets,id',
             'name' => 'nullable|string|max:100',
+            'device_type' => 'required|string|in:' . implode(',', self::DEVICE_TYPES),
         ]);
 
         $code = $this->generatePairingCode();
@@ -41,6 +46,7 @@ class PosDeviceController extends Controller
         $device = PosDevice::create([
             'outlet_id' => $data['outlet_id'],
             'name' => $data['name'] ?: null,
+            'device_type' => $data['device_type'],
             'pairing_code' => $code,
             'pairing_expires_at' => now()->addMinutes($pairingTtlMinutes),
             'created_by' => $request->user()?->id,
@@ -56,6 +62,10 @@ class PosDeviceController extends Controller
 
     public function revoke(PosDevice $posDevice): RedirectResponse
     {
+        User::query()
+            ->where('active_pos_device_id', $posDevice->id)
+            ->update(['active_pos_device_id' => null]);
+
         $posDevice->forceFill([
             'is_active' => false,
             'revoked_at' => now(),
@@ -66,6 +76,25 @@ class PosDeviceController extends Controller
         return redirect()
             ->route('admin.pos-devices.index')
             ->with('success', 'Perangkat berhasil dinonaktifkan.');
+    }
+
+    public function destroy(PosDevice $posDevice): RedirectResponse
+    {
+        if ($posDevice->is_active) {
+            return redirect()
+                ->route('admin.pos-devices.index')
+                ->with('error', 'Perangkat aktif tidak bisa dihapus. Nonaktifkan dulu perangkat ini.');
+        }
+
+        User::query()
+            ->where('active_pos_device_id', $posDevice->id)
+            ->update(['active_pos_device_id' => null]);
+
+        $posDevice->delete();
+
+        return redirect()
+            ->route('admin.pos-devices.index')
+            ->with('success', 'Perangkat nonaktif berhasil dihapus.');
     }
 
     public function updateEnforcement(Request $request): RedirectResponse

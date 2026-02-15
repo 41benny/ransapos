@@ -14,6 +14,7 @@ class AuthController extends Controller
 {
     private const MAX_LOGIN_ATTEMPTS = 5;
     private const LOGIN_DECAY_SECONDS = 900; // 15 menit
+    private const SINGLE_DEVICE_ROLES = ['kasir', 'kitchen'];
 
     /**
      * Tampilkan halaman login
@@ -83,6 +84,25 @@ class AuthController extends Controller
                 ]);
             }
 
+            $user = Auth::user();
+            $device = $this->resolvePosDevice($request);
+            if ($user && $device && $user->hasRole(self::SINGLE_DEVICE_ROLES)) {
+                if ($user->active_pos_device_id && (int) $user->active_pos_device_id !== (int) $device->id) {
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
+
+                    throw ValidationException::withMessages([
+                        'email' => 'Akun sedang aktif di perangkat lain. Logout dari perangkat sebelumnya atau hubungi admin.',
+                    ]);
+                }
+
+                if ((int) $user->active_pos_device_id !== (int) $device->id) {
+                    $user->forceFill(['active_pos_device_id' => $device->id])->save();
+                }
+            }
+
             $this->rememberDeviceUserLogin($request);
 
             RateLimiter::clear($throttleKey);
@@ -105,7 +125,12 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         $isPosRole = $user && $user->hasRole(['kasir', 'kitchen']);
-        $redirectToPin = $isPosRole && $this->resolvePosDevice($request) !== null;
+        $device = $this->resolvePosDevice($request);
+        $redirectToPin = $isPosRole && $device !== null;
+
+        if ($user && $device && $isPosRole && (int) $user->active_pos_device_id === (int) $device->id) {
+            $user->forceFill(['active_pos_device_id' => null])->save();
+        }
 
         Auth::logout();
 

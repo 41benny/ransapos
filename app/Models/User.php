@@ -27,6 +27,7 @@ class User extends Authenticatable
         'outlet_id',
         'is_active',
         'attendance_pin',
+        'active_pos_device_id',
     ];
 
     /**
@@ -67,6 +68,11 @@ class User extends Authenticatable
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
+    }
+
+    public function activePosDevice(): BelongsTo
+    {
+        return $this->belongsTo(PosDevice::class, 'active_pos_device_id');
     }
 
     /**

@@ -13,6 +13,9 @@ class PosDevice extends Model
     protected $fillable = [
         'outlet_id',
         'name',
+        'device_type',
+        'device_meta',
+        'fingerprint_hash',
         'token_hash',
         'pairing_code',
         'pairing_expires_at',
@@ -29,6 +32,7 @@ class PosDevice extends Model
         'last_seen_at' => 'datetime',
         'revoked_at' => 'datetime',
         'is_active' => 'boolean',
+        'device_meta' => 'array',
     ];
 
     public function outlet(): BelongsTo

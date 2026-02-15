@@ -43,6 +43,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::post('pos-devices/pairing', [AdminPosDeviceController::class, 'storePairing'])->name('pos-devices.pairing');
     Route::post('pos-devices/enforce', [AdminPosDeviceController::class, 'updateEnforcement'])->name('pos-devices.enforce');
     Route::post('pos-devices/{posDevice}/revoke', [AdminPosDeviceController::class, 'revoke'])->name('pos-devices.revoke');
+    Route::delete('pos-devices/{posDevice}', [AdminPosDeviceController::class, 'destroy'])->name('pos-devices.destroy');
 
     // Purchases
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class);
