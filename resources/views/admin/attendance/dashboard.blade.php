@@ -1,15 +1,13 @@
 @extends('layouts.admin')
 
 @section('title', 'Rekap Absensi Karyawan')
-@section('page-title', $isReportPage ? 'Laporan Rekap Absensi' : 'Dashboard Monitoring Absensi')
+@section('page-title', 'Laporan Rekap Absensi')
 @section('page-subtitle', 'Ringkasan kehadiran, kedisiplinan, dan anomali absensi karyawan')
 
 @section('content')
     <div class="w-full max-w-7xl mx-auto space-y-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <form method="GET"
-                action="{{ $isReportPage ? route('admin.reports.attendance.index') : route('admin.attendance.dashboard') }}"
-                class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <form method="GET" action="{{ route('admin.reports.attendance.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Periode</label>
                     <select name="period" class="w-full rounded-lg border-gray-300 text-sm">
@@ -63,12 +61,12 @@
                         <i class="fas fa-filter mr-2"></i>
                         Terapkan Filter
                     </button>
-                    <a href="{{ $isReportPage ? route('admin.reports.attendance.index') : route('admin.attendance.dashboard') }}"
+                    <a href="{{ route('admin.reports.attendance.index') }}"
                         class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm inline-flex items-center">
                         <i class="fas fa-rotate-right mr-2"></i>
                         Reset
                     </a>
-                    <a href="{{ route('admin.attendance.export', request()->query()) }}"
+                    <a href="{{ route('admin.reports.attendance.export', request()->query()) }}"
                         class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm inline-flex items-center">
                         <i class="fas fa-file-csv mr-2"></i>
                         Export CSV

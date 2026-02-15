@@ -156,12 +156,8 @@
                             [
                                 'label' => 'Laporan',
                                 'icon' => 'fas fa-file-invoice-dollar',
-                                'route' => null,
+                                'route' => 'admin.reports.index',
                                 'match' => 'admin.reports.*',
-                                'children' => [
-                                    ['label' => 'Katalog Laporan', 'route' => 'admin.reports.index', 'match' => 'admin.reports.index|admin.reports.catalog.*'],
-                                    ['label' => 'Rekap Absensi', 'route' => 'admin.reports.attendance.index', 'match' => 'admin.reports.attendance.*'],
-                                ]
                             ],
                         ];
                     @endphp

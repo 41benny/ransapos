@@ -14,25 +14,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AttendanceReportController extends Controller
 {
     /**
-     * Dashboard monitoring semua outlet
-     */
-    public function dashboard(Request $request)
-    {
-        $viewData = $this->buildReportData($request);
-        $viewData['isReportPage'] = false;
-
-        return view('admin.attendance.dashboard', $viewData);
-    }
-
-    /**
      * Halaman laporan absensi di modul Laporan.
      */
     public function reportIndex(Request $request)
     {
-        $viewData = $this->buildReportData($request);
-        $viewData['isReportPage'] = true;
-
-        return view('admin.attendance.dashboard', $viewData);
+        return view('admin.attendance.dashboard', $this->buildReportData($request));
     }
 
     /**
@@ -97,43 +83,6 @@ class AttendanceReportController extends Controller
     }
 
     /**
-     * Laporan per outlet
-     */
-    public function outletReport($outletId)
-    {
-        $outlet = Outlet::findOrFail($outletId);
-        $period = request('period', 'today'); // today, week, month
-
-        $query = Attendance::with(['user'])
-            ->where('outlet_id', $outletId);
-
-        switch ($period) {
-            case 'week':
-                $query->whereBetween('clock_in', [now()->startOfWeek(), now()->endOfWeek()]);
-                break;
-            case 'month':
-                $query->whereBetween('clock_in', [now()->startOfMonth(), now()->endOfMonth()]);
-                break;
-            default:
-                $query->whereDate('clock_in', today());
-        }
-
-        $attendances = $query->orderBy('clock_in', 'desc')->get();
-
-        // Statistik
-        $stats = [
-            'total' => $attendances->count(),
-            'present' => $attendances->where('status', 'present')->count(),
-            'late' => $attendances->where('status', 'late')->count(),
-            'on_time_rate' => $attendances->count() > 0
-                ? round(($attendances->where('status', 'present')->count() / $attendances->count()) * 100, 1)
-                : 0
-        ];
-
-        return view('admin.attendance.outlet-report', compact('outlet', 'attendances', 'stats', 'period'));
-    }
-
-    /**
      * Export laporan ke Excel
      */
     public function exportReport(Request $request)
@@ -181,15 +130,6 @@ class AttendanceReportController extends Controller
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
-    }
-
-    /**
-     * Dismiss anomali yang sudah ditindaklanjuti
-     */
-    public function dismissAnomaly($id)
-    {
-        // TODO: Implement anomaly dismissal (simpan di tabel terpisah)
-        return back()->with('success', 'Anomali telah ditandai sebagai sudah ditindaklanjuti');
     }
 
     private function buildReportData(Request $request): array

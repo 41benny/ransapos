@@ -117,14 +117,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
         Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show');
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index');
         Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index');
-    });
-
-    // Attendance Monitoring & Reports
-    Route::prefix('attendance')->name('attendance.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'dashboard'])->name('dashboard');
-        Route::get('/outlet/{outlet}', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'outletReport'])->name('outlet');
-        Route::get('/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])->name('export');
-        Route::post('/anomalies/{id}/dismiss', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'dismissAnomaly'])->name('anomalies.dismiss');
+        Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])->name('attendance.export');
     });
 
     // User Management
