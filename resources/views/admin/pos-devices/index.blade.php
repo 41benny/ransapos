@@ -121,6 +121,7 @@
                                 <th class="py-3 pr-4">Perangkat</th>
                                 <th class="py-3 pr-4">Outlet</th>
                                 <th class="py-3 pr-4">Jenis</th>
+                                <th class="py-3 pr-4">Terdeteksi</th>
                                 <th class="py-3 pr-4">Status</th>
                                 <th class="py-3 pr-4">Terakhir Aktif</th>
                                 <th class="py-3 pr-4">Dibuat Oleh</th>
@@ -141,17 +142,21 @@
                                     <td class="py-3 pr-4 font-medium text-gray-900">
                                         {{ $device->name ?: 'Tanpa nama' }}
                                         <div class="text-xs text-gray-500">#{{ $device->id }}</div>
-                                        @if(!empty($device->device_meta))
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                {{ $device->device_meta['browser'] ?? '-' }} · {{ $device->device_meta['platform'] ?? '-' }}
-                                            </div>
-                                            <div class="text-xs text-gray-400">
-                                                {{ $device->device_meta['screen'] ?? '-' }} · {{ $device->device_meta['timezone'] ?? '-' }}
-                                            </div>
-                                        @endif
                                     </td>
                                     <td class="py-3 pr-4 text-gray-700">{{ $device->outlet?->name ?? '-' }}</td>
                                     <td class="py-3 pr-4 text-gray-700">{{ ucfirst($device->device_type ?? 'kasir') }}</td>
+                                    <td class="py-3 pr-4 text-gray-700">
+                                        @if(!empty($device->device_meta))
+                                            <div class="text-xs text-gray-700">
+                                                {{ $device->device_meta['browser'] ?? '-' }} · {{ $device->device_meta['platform'] ?? '-' }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $device->device_meta['screen'] ?? '-' }} · {{ $device->device_meta['timezone'] ?? '-' }}
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
+                                    </td>
                                     <td class="py-3 pr-4">
                                         <span class="px-2 py-1 text-xs rounded-full {{ $statusClass }}">{{ $statusLabel }}</span>
                                     </td>
@@ -178,7 +183,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-10 text-center text-gray-500">Belum ada perangkat terdaftar.</td>
+                                    <td colspan="8" class="py-10 text-center text-gray-500">Belum ada perangkat terdaftar.</td>
                                 </tr>
                             @endforelse
                         </tbody>
