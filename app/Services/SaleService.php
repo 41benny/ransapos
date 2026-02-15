@@ -226,7 +226,8 @@ class SaleService
      */
     protected function generateInvoiceNumber(int $outletId): string
     {
-        $date = now()->format('Ymd');
+        $datePart = now()->format('ym'); // contoh: 2602
+        $dayPart = now()->format('d');   // contoh: 14
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
 
         // Cari invoice terakhir hari ini untuk outlet ini dengan locking supaya sequence aman
@@ -245,8 +246,10 @@ class SaleService
         }
 
         $sequence = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $dayBlock = str_pad($dayPart, 4, '0', STR_PAD_LEFT);
 
-        return "INV-{$outlet}-{$date}-{$sequence}";
+        // Format baru: INV-0012602-0014-0001
+        return "INV-{$outlet}{$datePart}-{$dayBlock}-{$sequence}";
     }
 
     /**
