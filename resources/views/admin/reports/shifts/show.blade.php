@@ -8,7 +8,7 @@
 
 <!-- Back Button -->
 <div class="mb-4 no-print">
-    <a href="{{ route('admin.reports.index') }}"
+    <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
        class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
         Kembali ke Katalog
     </a>

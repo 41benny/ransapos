@@ -12,7 +12,7 @@
             <h1 class="text-2xl font-bold text-gray-900">Laporan Laba Rugi</h1>
             <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
         </div>
-        <a href="{{ route('admin.reports.index') }}"
+        <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'ikhtisar')]) }}"
             class="no-print inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Kembali ke Katalog
         </a>
@@ -21,6 +21,7 @@
     <!-- Filter -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
         <form method="GET">
+            <input type="hidden" name="tab" value="{{ request('tab', 'ikhtisar') }}">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>

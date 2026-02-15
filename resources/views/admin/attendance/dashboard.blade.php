@@ -12,13 +12,14 @@
                     <div class="text-sm text-slate-500">Kode laporan: attendance-recap</div>
                     <div class="mt-1 text-lg font-semibold text-slate-900">Rekap Absensi Karyawan</div>
                 </div>
-                <a href="{{ route('admin.reports.index') }}"
+                <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'sdm')]) }}"
                     class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
                     Kembali ke Katalog
                 </a>
             </div>
 
             <form method="GET" action="{{ route('admin.reports.attendance.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <input type="hidden" name="tab" value="{{ request('tab', 'sdm') }}">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Periode</label>
                     <select name="period" class="w-full rounded-lg border-gray-300 text-sm">
@@ -72,12 +73,12 @@
                         <i class="fas fa-filter mr-2"></i>
                         Terapkan Filter
                     </button>
-                    <a href="{{ route('admin.reports.attendance.index') }}"
+                    <a href="{{ route('admin.reports.attendance.index', ['tab' => request('tab', 'sdm')]) }}"
                         class="inline-flex h-10 items-center rounded-lg bg-gray-100 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-200">
                         <i class="fas fa-rotate-right mr-2"></i>
                         Reset
                     </a>
-                    <a href="{{ route('admin.reports.attendance.export', request()->query()) }}"
+                    <a href="{{ route('admin.reports.attendance.export', array_merge(request()->query(), ['tab' => request('tab', 'sdm')])) }}"
                         class="inline-flex h-10 items-center rounded-lg border border-orange-200 bg-orange-100 px-4 text-sm font-semibold text-orange-700 hover:bg-orange-200">
                         <i class="fas fa-file-csv mr-2"></i>
                         Export CSV

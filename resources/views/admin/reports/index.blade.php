@@ -37,7 +37,7 @@
 
                             @continue(!$report)
 
-                            <a href="{{ route('admin.reports.catalog.show', $slug) }}"
+                            <a href="{{ route('admin.reports.catalog.show', ['slug' => $slug, 'tab' => $key]) }}"
                                 class="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700">
                                 <span>{{ $report['title'] }}</span>
                                 @if($report['implemented'] ?? false)
@@ -64,27 +64,40 @@
     document.addEventListener('DOMContentLoaded', function () {
         const buttons = document.querySelectorAll('.report-tab-btn');
         const panels = document.querySelectorAll('.report-tab-panel');
+        const initialTab = new URLSearchParams(window.location.search).get('tab');
+
+        const activateTab = function (target) {
+            if (!target) return;
+
+            buttons.forEach(function (btn) {
+                btn.classList.remove('bg-indigo-700', 'text-white');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+            });
+
+            panels.forEach(function (panel) {
+                panel.classList.add('hidden');
+            });
+
+            const activeButton = document.querySelector(`.report-tab-btn[data-target="${target}"]`);
+            const activePanel = document.querySelector(`.report-tab-panel[data-panel="${target}"]`);
+            if (!activeButton || !activePanel) return;
+
+            activeButton.classList.add('bg-indigo-700', 'text-white');
+            activeButton.classList.remove('text-slate-600', 'hover:bg-slate-100');
+            activePanel.classList.remove('hidden');
+        };
+
+        if (initialTab) {
+            activateTab(initialTab);
+        }
 
         buttons.forEach(function (button) {
             button.addEventListener('click', function () {
                 const target = button.dataset.target;
-
-                buttons.forEach(function (btn) {
-                    btn.classList.remove('bg-indigo-700', 'text-white');
-                    btn.classList.add('text-slate-600', 'hover:bg-slate-100');
-                });
-
-                panels.forEach(function (panel) {
-                    panel.classList.add('hidden');
-                });
-
-                button.classList.add('bg-indigo-700', 'text-white');
-                button.classList.remove('text-slate-600', 'hover:bg-slate-100');
-
-                const activePanel = document.querySelector(`[data-panel="${target}"]`);
-                if (activePanel) {
-                    activePanel.classList.remove('hidden');
-                }
+                activateTab(target);
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', target);
+                window.history.replaceState({}, '', url);
             });
         });
     });

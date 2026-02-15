@@ -12,13 +12,14 @@
                 <div class="text-sm text-slate-500">Kode laporan: {{ $slug }}</div>
                 <div class="mt-1 text-lg font-semibold text-slate-900">{{ $report['title'] }}</div>
             </div>
-            <a href="{{ route('admin.reports.index') }}"
+            <a href="{{ route('admin.reports.index', ['tab' => request('tab')]) }}"
                 class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Kembali ke Katalog
             </a>
         </div>
 
         <form method="GET" class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+            <input type="hidden" name="tab" value="{{ request('tab') }}">
             <div>
                 <label class="mb-1 block text-xs font-semibold text-slate-600">Tanggal Dari</label>
                 <input type="date" name="date_from" value="{{ $dateFrom }}"
@@ -46,7 +47,7 @@
                     Tampilkan
                 </button>
                 @if(!empty($report['existing_route']) && Route::has($report['existing_route']))
-                    <a href="{{ route($report['existing_route']) }}"
+                    <a href="{{ route($report['existing_route'], array_filter(['tab' => request('tab')])) }}"
                         class="inline-flex h-10 items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
                         Versi Lama
                     </a>

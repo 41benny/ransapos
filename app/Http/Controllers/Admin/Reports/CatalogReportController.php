@@ -170,6 +170,7 @@ class CatalogReportController extends Controller
                 'date_to' => $request->input('date_to'),
                 'outlet_id' => $request->input('outlet_id'),
                 'view_mode' => $request->input('view_mode'),
+                'tab' => $request->input('tab', 'penjualan'),
             ]));
         }
 
@@ -181,6 +182,7 @@ class CatalogReportController extends Controller
                 'outlet_id' => $request->input('outlet_id'),
                 'user_id' => $request->input('user_id'),
                 'status' => $request->input('status'),
+                'tab' => $request->input('tab', 'sdm'),
             ]));
         }
 

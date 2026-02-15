@@ -7,7 +7,7 @@
 @section('content')
 <div class="page-fullwidth">
 <div class="mb-4 no-print flex justify-end">
-    <a href="{{ route('admin.reports.index') }}"
+    <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
         class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
         Kembali ke Katalog
     </a>
@@ -17,6 +17,7 @@
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
         <form method="GET" action="{{ route('admin.reports.shifts.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <input type="hidden" name="tab" value="{{ request('tab', 'penjualan') }}">
 
             <!-- Date From -->
             <div>
@@ -76,7 +77,7 @@
                     </svg>
                     Filter
                 </button>
-                <a href="{{ route('admin.reports.shifts.index') }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
+                <a href="{{ route('admin.reports.shifts.index', ['tab' => request('tab', 'penjualan')]) }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
                     Reset
                 </a>
                 <button type="button" onclick="window.print()" class="ml-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
@@ -152,7 +153,7 @@
                 @forelse($sessions as $session)
                 <tr>
                     <td class="px-6 py-3 whitespace-nowrap">
-                        <a href="{{ route('admin.reports.shifts.show', $session) }}"
+                        <a href="{{ route('admin.reports.shifts.show', ['cashSession' => $session, 'tab' => request('tab', 'penjualan')]) }}"
                            class="text-sm font-mono text-amber-700 hover:text-amber-800 hover:underline">
                             {{ $session->session_number }}
                         </a>
@@ -189,7 +190,7 @@
                         @endif
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-center no-print">
-                        <a href="{{ route('admin.reports.shifts.show', $session) }}"
+                        <a href="{{ route('admin.reports.shifts.show', ['cashSession' => $session, 'tab' => request('tab', 'penjualan')]) }}"
                            class="text-amber-700 hover:text-amber-800 text-sm font-medium">
                             Detail →
                         </a>
@@ -233,3 +234,5 @@
 </div>
 </div>
 @endsection
+
+

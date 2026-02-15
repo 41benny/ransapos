@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="mb-4 no-print flex justify-end">
-    <a href="{{ route('admin.reports.index') }}"
+    <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
         class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
         Kembali ke Katalog
     </a>
@@ -16,6 +16,7 @@
     <!-- Filter Section -->
     <div class="p-6 border-b border-gray-100 no-print">
         <form method="GET" action="{{ route('admin.reports.sales.products') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <input type="hidden" name="tab" value="{{ request('tab', 'penjualan') }}">
 
             <!-- Date From -->
             <div>
@@ -65,7 +66,7 @@
                     </svg>
                     Filter
                 </button>
-                <a href="{{ route('admin.reports.sales.products') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                <a href="{{ route('admin.reports.sales.products', ['tab' => request('tab', 'penjualan')]) }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
                     Reset
                 </a>
                 <button type="button" onclick="window.print()" class="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
