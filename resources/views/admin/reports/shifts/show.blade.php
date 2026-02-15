@@ -8,12 +8,9 @@
 
 <!-- Back Button -->
 <div class="mb-4 no-print">
-    <a href="{{ route('admin.reports.shifts.index') }}"
-       class="inline-flex items-center text-amber-700 hover:text-amber-800">
-        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-        Kembali ke Laporan Shift
+    <a href="{{ route('admin.reports.index') }}"
+       class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        Kembali ke Katalog
     </a>
 </div>
 
@@ -264,4 +261,3 @@
 }
 </style>
 @endsection
-

@@ -1,13 +1,21 @@
 @extends('layouts.admin')
 
 @section('title', 'Laporan Laba Rugi')
+@section('page-title', 'Laporan Laba Rugi')
+@section('page-subtitle', 'Ringkasan laba rugi berdasarkan periode')
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
     <!-- Header -->
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Laporan Laba Rugi</h1>
-        <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
+    <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Laporan Laba Rugi</h1>
+            <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
+        </div>
+        <a href="{{ route('admin.reports.index') }}"
+            class="no-print inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Kembali ke Katalog
+        </a>
     </div>
 
     <!-- Filter -->

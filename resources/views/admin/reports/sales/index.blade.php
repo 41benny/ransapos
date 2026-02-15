@@ -5,6 +5,12 @@
 @section('page-subtitle', 'Ringkasan dan detail transaksi penjualan')
 
 @section('content')
+<div class="mb-4 no-print flex justify-end">
+    <a href="{{ route('admin.reports.index') }}"
+        class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        Kembali ke Katalog
+    </a>
+</div>
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
 
     <!-- Filter Section -->
