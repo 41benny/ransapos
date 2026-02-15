@@ -173,6 +173,17 @@ class CatalogReportController extends Controller
             ]));
         }
 
+        if ($slug === 'attendance-recap') {
+            return redirect()->route('admin.reports.attendance.index', array_filter([
+                'period' => $request->input('period'),
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'user_id' => $request->input('user_id'),
+                'status' => $request->input('status'),
+            ]));
+        }
+
         $report = $reports[$slug];
         $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary'];
         $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
