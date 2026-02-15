@@ -86,6 +86,12 @@ class CatalogReportController extends Controller
                     'other-income-expense',
                 ],
             ],
+            'sdm' => [
+                'label' => 'SDM & Operasional',
+                'items' => [
+                    'attendance-recap',
+                ],
+            ],
         ];
     }
 
@@ -135,6 +141,7 @@ class CatalogReportController extends Controller
             'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
             'inventory-value' => ['title' => 'Nilai Persediaan', 'implemented' => false],
             'other-income-expense' => ['title' => 'Pendapatan Lain-Lain', 'implemented' => false],
+            'attendance-recap' => ['title' => 'Rekap Absensi Karyawan', 'implemented' => true, 'existing_route' => 'admin.reports.attendance.index'],
         ];
     }
 

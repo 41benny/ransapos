@@ -14,11 +14,18 @@
                         <h3 class="text-lg font-semibold text-gray-900">Daftar User</h3>
                         <p class="text-sm text-gray-500 mt-1">Tambahkan user dan tentukan outletnya.</p>
                     </div>
-                    <a href="{{ route('admin.users.create') }}"
-                        class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg inline-flex items-center">
-                        <i class="fas fa-plus mr-2"></i>
-                        Tambah User
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('admin.reports.attendance.index') }}"
+                            class="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg transition hover:bg-indigo-100 inline-flex items-center">
+                            <i class="fas fa-calendar-check mr-2"></i>
+                            Lihat Rekap Absensi
+                        </a>
+                        <a href="{{ route('admin.users.create') }}"
+                            class="px-4 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg inline-flex items-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Tambah User
+                        </a>
+                    </div>
                 </div>
             </div>
 
