@@ -396,6 +396,7 @@ class CatalogReportController extends Controller
 
             $salesItemBase = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
@@ -405,20 +406,22 @@ class CatalogReportController extends Controller
 
             $rows = (clone $salesItemBase)
                 ->select(
-                    'sale_items.product_id',
+                    'sales.invoice_number as transaction_number',
+                    'sales.sale_date',
+                    'outlets.name as outlet_name',
                     'sale_items.product_name',
-                    'sale_items.product_sku'
+                    'sale_items.quantity as qty',
+                    'sale_items.subtotal as total_amount',
+                    'sale_items.cogs as hpp_amount'
                 )
-                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
-                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_sales')
-                ->selectRaw('COALESCE(SUM(sale_items.cogs), 0) as total_hpp')
-                ->groupBy('sale_items.product_id', 'sale_items.product_name', 'sale_items.product_sku')
-                ->orderByDesc('total_sales')
+                ->orderByDesc('sales.sale_date')
+                ->orderByDesc('sales.id')
+                ->orderByDesc('sale_items.id')
                 ->get()
                 ->map(function ($row) {
-                    $grossProfit = (float) $row->total_sales - (float) $row->total_hpp;
-                    $margin = (float) $row->total_sales > 0
-                        ? round(($grossProfit / (float) $row->total_sales) * 100, 2)
+                    $grossProfit = (float) $row->total_amount - (float) $row->hpp_amount;
+                    $margin = (float) $row->total_amount > 0
+                        ? round(($grossProfit / (float) $row->total_amount) * 100, 2)
                         : 0;
 
                     $row->gross_profit = $grossProfit;
@@ -427,13 +430,13 @@ class CatalogReportController extends Controller
                     return $row;
                 });
 
-            $totalSales = (float) $rows->sum('total_sales');
-            $totalHpp = (float) $rows->sum('total_hpp');
+            $totalSales = (float) $rows->sum('total_amount');
+            $totalHpp = (float) $rows->sum('hpp_amount');
             $totalGrossProfit = $totalSales - $totalHpp;
 
             $summary = [
-                'total_items' => (int) $rows->count(),
-                'total_qty' => (float) $rows->sum('total_qty'),
+                'total_items' => (int) $rows->pluck('product_name')->unique()->count(),
+                'total_qty' => (float) $rows->sum('qty'),
                 'total_sales' => $totalSales,
                 'total_hpp' => $totalHpp,
                 'total_gross_profit' => $totalGrossProfit,

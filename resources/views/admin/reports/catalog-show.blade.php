@@ -786,11 +786,13 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                         <tr>
+                            <th class="px-4 py-3">No_Transaksi</th>
+                            <th class="px-4 py-3">Tanggal</th>
+                            <th class="px-4 py-3">Outlet</th>
                             <th class="px-4 py-3">Produk</th>
-                            <th class="px-4 py-3">SKU</th>
                             <th class="px-4 py-3 text-right">Qty</th>
-                            <th class="px-4 py-3 text-right">Penjualan</th>
-                            <th class="px-4 py-3 text-right">HPP</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-right">Hpp</th>
                             <th class="px-4 py-3 text-right">Laba Kotor</th>
                             <th class="px-4 py-3 text-right">Margin</th>
                         </tr>
@@ -798,11 +800,13 @@
                     <tbody class="divide-y divide-slate-100">
                         @forelse($rows as $row)
                             <tr>
+                                <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ $row->transaction_number }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}</td>
+                                <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
                                 <td class="px-4 py-3 font-medium text-slate-800">{{ $row->product_name }}</td>
-                                <td class="px-4 py-3 text-slate-600">{{ $row->product_sku }}</td>
-                                <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_qty, 2, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-right font-semibold text-slate-900">Rp {{ number_format($row->total_sales, 0, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-right font-semibold text-rose-700">Rp {{ number_format($row->total_hpp, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->qty, 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right font-semibold text-slate-900">Rp {{ number_format($row->total_amount, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right font-semibold text-rose-700">Rp {{ number_format($row->hpp_amount, 0, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-right font-semibold {{ $row->gross_profit >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
                                     Rp {{ number_format($row->gross_profit, 0, ',', '.') }}
                                 </td>
@@ -812,7 +816,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk filter yang dipilih.</td>
+                                <td colspan="9" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk filter yang dipilih.</td>
                             </tr>
                         @endforelse
                     </tbody>
