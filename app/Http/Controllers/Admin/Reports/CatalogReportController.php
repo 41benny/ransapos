@@ -51,7 +51,7 @@ class CatalogReportController extends Controller
                     'cancelled-sales',
                     'sales-stock-out',
                     'sales-modifier',
-                    'waiter-performance',
+                    'sales-vs-hpp',
                     'sales-discount',
                     'shift-sessions',
                     'sales-custom-item',
@@ -122,6 +122,7 @@ class CatalogReportController extends Controller
             'cancelled-sales' => ['title' => 'Penjualan yang Dibatalkan', 'implemented' => false],
             'sales-stock-out' => ['title' => 'Stok Keluar dari Penjualan', 'implemented' => false],
             'sales-modifier' => ['title' => 'Penjualan Modifier', 'implemented' => false],
+            'sales-vs-hpp' => ['title' => 'Penjualan Vs HPP', 'implemented' => true],
             'waiter-performance' => ['title' => 'Kinerja Pelayan Berdasarkan Penjualan', 'implemented' => false],
             'sales-discount' => ['title' => 'Laporan Diskon Penjualan', 'implemented' => false],
             'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => false],
@@ -387,6 +388,56 @@ class CatalogReportController extends Controller
                 'payment_rows' => $paymentRows,
                 'sales_type_rows' => $salesTypeRows,
                 'product_rows' => $productRows,
+            ];
+        }
+
+        if ($slug === 'sales-vs-hpp') {
+            $viewType = 'sales-vs-hpp';
+
+            $salesItemBase = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $salesItemBase->where('sales.outlet_id', $outletId);
+            }
+
+            $rows = (clone $salesItemBase)
+                ->select(
+                    'sale_items.product_id',
+                    'sale_items.product_name',
+                    'sale_items.product_sku'
+                )
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_sales')
+                ->selectRaw('COALESCE(SUM(sale_items.cogs), 0) as total_hpp')
+                ->groupBy('sale_items.product_id', 'sale_items.product_name', 'sale_items.product_sku')
+                ->orderByDesc('total_sales')
+                ->get()
+                ->map(function ($row) {
+                    $grossProfit = (float) $row->total_sales - (float) $row->total_hpp;
+                    $margin = (float) $row->total_sales > 0
+                        ? round(($grossProfit / (float) $row->total_sales) * 100, 2)
+                        : 0;
+
+                    $row->gross_profit = $grossProfit;
+                    $row->margin_percent = $margin;
+
+                    return $row;
+                });
+
+            $totalSales = (float) $rows->sum('total_sales');
+            $totalHpp = (float) $rows->sum('total_hpp');
+            $totalGrossProfit = $totalSales - $totalHpp;
+
+            $summary = [
+                'total_items' => (int) $rows->count(),
+                'total_qty' => (float) $rows->sum('total_qty'),
+                'total_sales' => $totalSales,
+                'total_hpp' => $totalHpp,
+                'total_gross_profit' => $totalGrossProfit,
+                'gross_margin_percent' => $totalSales > 0 ? round(($totalGrossProfit / $totalSales) * 100, 2) : 0,
             ];
         }
 

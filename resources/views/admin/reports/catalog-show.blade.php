@@ -758,6 +758,67 @@
                 </table>
             </div>
         </div>
+    @elseif($viewType === 'sales-vs-hpp')
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Jumlah Item</div>
+                    <div class="mt-2 text-2xl font-bold text-slate-900">{{ number_format($summary['total_items'] ?? 0) }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Penjualan</div>
+                    <div class="mt-2 text-2xl font-bold text-emerald-700">Rp {{ number_format($summary['total_sales'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total HPP</div>
+                    <div class="mt-2 text-2xl font-bold text-rose-700">Rp {{ number_format($summary['total_hpp'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Laba Kotor</div>
+                    <div class="mt-2 text-2xl font-bold {{ ($summary['total_gross_profit'] ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                        Rp {{ number_format($summary['total_gross_profit'] ?? 0, 0, ',', '.') }}
+                    </div>
+                    <div class="mt-1 text-xs font-semibold text-slate-500">Margin: {{ number_format($summary['gross_margin_percent'] ?? 0, 2) }}%</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th class="px-4 py-3">Produk</th>
+                            <th class="px-4 py-3">SKU</th>
+                            <th class="px-4 py-3 text-right">Qty</th>
+                            <th class="px-4 py-3 text-right">Penjualan</th>
+                            <th class="px-4 py-3 text-right">HPP</th>
+                            <th class="px-4 py-3 text-right">Laba Kotor</th>
+                            <th class="px-4 py-3 text-right">Margin</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($rows as $row)
+                            <tr>
+                                <td class="px-4 py-3 font-medium text-slate-800">{{ $row->product_name }}</td>
+                                <td class="px-4 py-3 text-slate-600">{{ $row->product_sku }}</td>
+                                <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_qty, 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right font-semibold text-slate-900">Rp {{ number_format($row->total_sales, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right font-semibold text-rose-700">Rp {{ number_format($row->total_hpp, 0, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-right font-semibold {{ $row->gross_profit >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                                    Rp {{ number_format($row->gross_profit, 0, ',', '.') }}
+                                </td>
+                                <td class="px-4 py-3 text-right font-semibold {{ $row->margin_percent >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                                    {{ number_format($row->margin_percent, 2) }}%
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk filter yang dipilih.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     @else
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
             <div class="text-sm font-semibold text-amber-900">Halaman laporan sudah dibuat.</div>
