@@ -38,6 +38,7 @@ class ExpenseCategoryController extends Controller
 
         $coaAccounts = CoaAccount::where('type', 'expense')
             ->active()
+            ->orderByRaw('CASE WHEN code = ? THEN 1 ELSE 0 END', ['6-135'])
             ->orderBy('code')
             ->get();
 
@@ -80,6 +81,7 @@ class ExpenseCategoryController extends Controller
 
         $coaAccounts = CoaAccount::where('type', 'expense')
             ->active()
+            ->orderByRaw('CASE WHEN code = ? THEN 1 ELSE 0 END', ['6-135'])
             ->orderBy('code')
             ->get();
 

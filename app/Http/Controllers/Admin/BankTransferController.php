@@ -87,6 +87,7 @@ class BankTransferController extends Controller
 
             $fromAccount = CashAccount::findOrFail($request->from_cash_account_id);
             $toAccount = CashAccount::findOrFail($request->to_cash_account_id);
+            $transferClearingCoaId = $this->cashAccountService->resolveTransferClearingCoaAccountId();
 
             // Validate balance
             if ($fromAccount->current_balance < $request->amount) {
@@ -114,6 +115,7 @@ class BankTransferController extends Controller
             CashTransaction::create([
                 'transaction_number' => $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $request->transfer_date),
                 'cash_account_id' => $fromAccount->id,
+                'coa_account_id' => $transferClearingCoaId,
                 'type' => 'out',
                 'transaction_date' => $request->transfer_date,
                 'amount' => $request->amount,
@@ -134,6 +136,7 @@ class BankTransferController extends Controller
             CashTransaction::create([
                 'transaction_number' => $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $request->transfer_date),
                 'cash_account_id' => $toAccount->id,
+                'coa_account_id' => $transferClearingCoaId,
                 'type' => 'in',
                 'transaction_date' => $request->transfer_date,
                 'amount' => $request->amount,

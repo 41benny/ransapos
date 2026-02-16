@@ -22,6 +22,7 @@ class CoaAccountController extends Controller
             ['code' => '1-110', 'name' => 'Bank', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Saldo rekening bank'],
             ['code' => '1-120', 'name' => 'Piutang Usaha', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Tagihan ke pelanggan'],
             ['code' => '1-130', 'name' => 'Persediaan', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Nilai stok bahan/produk'],
+            ['code' => '1-190', 'name' => 'Ayat Silang Kas/Bank (Pindah Buku)', 'type' => 'asset', 'group' => 'ASET LANCAR', 'is_active' => true, 'notes' => 'Pos sementara untuk transfer antar akun kas/bank'],
             ['code' => '1-200', 'name' => 'Aset Tetap', 'type' => 'asset', 'group' => 'ASET TETAP', 'is_active' => true, 'notes' => 'Peralatan, mesin, inventaris'],
             ['code' => '2-100', 'name' => 'Utang Usaha', 'type' => 'liability', 'group' => 'KEWAJIBAN LANCAR', 'is_active' => true, 'notes' => 'Tagihan ke supplier'],
             ['code' => '2-110', 'name' => 'Utang Pajak', 'type' => 'liability', 'group' => 'KEWAJIBAN LANCAR', 'is_active' => true, 'notes' => 'Kewajiban pajak berjalan'],

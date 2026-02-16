@@ -37,7 +37,7 @@
                            name="code" 
                            value="{{ old('code') }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
-                           placeholder="Contoh: 6-190"
+                           placeholder="Contoh: 6-135"
                            required>
                     @error('code')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

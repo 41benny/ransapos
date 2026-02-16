@@ -12,7 +12,11 @@ use Exception;
 
 class PettyCashController extends Controller
 {
-    private const DEFAULT_EXPENSE_COA_CODE = 'EXP-OUTLET-LAINNYA';
+    private const DEFAULT_EXPENSE_COA_CODE = '6-135';
+    private const LEGACY_DEFAULT_EXPENSE_COA_CODES = [
+        '6-190',
+        'EXP-OUTLET-LAINNYA',
+    ];
 
     protected CashAccountService $cashAccountService;
 
@@ -196,10 +200,19 @@ class PettyCashController extends Controller
 
     protected function resolveDefaultExpenseAccount(): ?CoaAccount
     {
+        $preferredCodes = [
+            self::DEFAULT_EXPENSE_COA_CODE,
+            ...self::LEGACY_DEFAULT_EXPENSE_COA_CODES,
+        ];
+
         return CoaAccount::query()
-            ->where('code', self::DEFAULT_EXPENSE_COA_CODE)
+            ->whereIn('code', $preferredCodes)
             ->where('type', 'expense')
             ->where('is_active', true)
+            ->orderByRaw(
+                'CASE code WHEN ? THEN 0 WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END',
+                $preferredCodes
+            )
             ->first();
     }
 

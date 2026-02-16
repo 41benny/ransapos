@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CashAccount;
 use App\Models\CashTransaction;
+use App\Models\CoaAccount;
 use App\Models\Purchase;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,6 +13,47 @@ use Illuminate\Support\Facades\DB;
 
 class CashAccountService
 {
+    private const TRANSFER_CLEARING_COA_CODE = '1-190';
+    private const TRANSFER_CLEARING_COA_NAME = 'Ayat Silang Kas/Bank (Pindah Buku)';
+    private const TRANSFER_CLEARING_COA_GROUP = 'ASET LANCAR';
+
+    /**
+     * Resolve COA ayat silang untuk transaksi pindah buku.
+     */
+    public function resolveTransferClearingCoaAccountId(): int
+    {
+        $coa = CoaAccount::query()->firstOrCreate(
+            ['code' => self::TRANSFER_CLEARING_COA_CODE],
+            [
+                'name' => self::TRANSFER_CLEARING_COA_NAME,
+                'type' => 'asset',
+                'group' => self::TRANSFER_CLEARING_COA_GROUP,
+                'is_active' => true,
+                'notes' => 'Akun ayat silang/pos sementara untuk transaksi pindah buku antar kas & bank',
+            ]
+        );
+
+        if ($coa->type !== 'asset') {
+            throw new Exception(
+                'Kode COA ' . self::TRANSFER_CLEARING_COA_CODE .
+                ' sudah dipakai dengan tipe "' . $coa->type . '". ' .
+                'Silakan ubah ke tipe Asset agar bisa dipakai untuk pindah buku.'
+            );
+        }
+
+        $coa->fill([
+            'name' => self::TRANSFER_CLEARING_COA_NAME,
+            'group' => self::TRANSFER_CLEARING_COA_GROUP,
+            'is_active' => true,
+        ]);
+
+        if ($coa->isDirty()) {
+            $coa->save();
+        }
+
+        return (int) $coa->id;
+    }
+
     /**
      * Buat akun kas/bank baru
      */

@@ -27,15 +27,14 @@ Tidak perlu pindah ke halaman lain untuk proses bayar hutang atau transfer antar
    - User pilih rekening sumber dan rekening tujuan.
    - User isi jumlah dan deskripsi transfer.
    - Sistem buat mutasi berpasangan (`out` di sumber, `in` di tujuan) otomatis.
+   - Sistem isi COA otomatis ke `1-190 - Ayat Silang Kas/Bank (Pindah Buku)` untuk kedua sisi transfer.
 
 ## Alur Kasir POS (Petty Cash)
 ### Navigasi
 1. Kasir masuk ke `POS > Petty Cash` (halaman index).
 2. Di index, kasir bisa:
    - lihat saldo petty cash outlet saat ini
-   - lihat total pengeluaran hari ini dan bulan ini
    - lihat riwayat input petty cash (hanya transaksi hari ini agar ringan)
-   - filter kata kunci deskripsi
    - klik `Input Baru` untuk create
    - klik `Edit` pada transaksi untuk koreksi data
 
@@ -48,7 +47,7 @@ Kasir cukup isi:
 
 Kolom lain diisi sistem otomatis:
 1. `cash_account_id` -> akun petty cash outlet kasir
-2. `coa_account_id` -> `EXP-OUTLET-LAINNYA` (`Keperluan Outlet Lainnya`)
+2. `coa_account_id` -> `6-135` (`Biaya Keperluan Outlet Lainnya`)
 3. `type` -> `out`
 4. `reference_type` -> `petty_cash_pos`
 
@@ -56,7 +55,8 @@ Kolom lain diisi sistem otomatis:
 1. Admin membuat akun kas/bank per outlet.
 2. Akun yang dipakai kantong petty cash ditandai `usage_type = petty_cash`.
 3. Kode akun boleh sama antar outlet; validasi unik memakai kombinasi `outlet_id + code`.
-4. COA default petty cash: `EXP-OUTLET-LAINNYA - Keperluan Outlet Lainnya`.
+4. COA default petty cash: `6-135 - Biaya Keperluan Outlet Lainnya`.
+5. COA ayat silang transfer: `1-190 - Ayat Silang Kas/Bank (Pindah Buku)` (tipe `asset`, grup `ASET LANCAR`).
 
 ## Nomor Voucher
 Nomor voucher mengikuti engine kasbank yang sama:
@@ -70,3 +70,4 @@ Tujuan: minim input manual dan mengurangi human error.
 1. Semua transaksi tetap tercatat di `cash_transactions`.
 2. Input petty cash POS muncul di index transaksi kasbank admin.
 3. Bisa difilter dari `reference_type` (contoh: `petty_cash_pos`, `purchase`, `bank_transfer`).
+4. Untuk `bank_transfer`, kolom COA tidak lagi kosong karena otomatis memakai akun ayat silang `1-190`.

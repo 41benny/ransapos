@@ -179,7 +179,11 @@ class CashAccountController extends Controller
     {
         $accounts = CashAccount::active()->orderBy('name')->get();
         $coaIncomeAccounts = \App\Models\CoaAccount::active()->income()->orderBy('code')->get();
-        $coaExpenseAccounts = \App\Models\CoaAccount::active()->expense()->orderBy('code')->get();
+        $coaExpenseAccounts = \App\Models\CoaAccount::active()
+            ->expense()
+            ->orderByRaw('CASE WHEN code = ? THEN 1 ELSE 0 END', ['6-135'])
+            ->orderBy('code')
+            ->get();
 
         $outstandingPurchases = Purchase::query()
             ->with(['supplier', 'outlet'])
@@ -286,6 +290,7 @@ class CashAccountController extends Controller
             }
 
             $amount = (float) $data['transfer_amount'];
+            $transferClearingCoaId = $this->cashAccountService->resolveTransferClearingCoaAccountId();
 
             if ((float) $fromAccount->current_balance < $amount) {
                 throw new \Exception(
@@ -308,6 +313,7 @@ class CashAccountController extends Controller
             CashTransaction::create([
                 'transaction_number' => $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $data['transaction_date']),
                 'cash_account_id' => $fromAccount->id,
+                'coa_account_id' => $transferClearingCoaId,
                 'type' => 'out',
                 'transaction_date' => $data['transaction_date'],
                 'amount' => $amount,
@@ -326,6 +332,7 @@ class CashAccountController extends Controller
             CashTransaction::create([
                 'transaction_number' => $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $data['transaction_date']),
                 'cash_account_id' => $toAccount->id,
+                'coa_account_id' => $transferClearingCoaId,
                 'type' => 'in',
                 'transaction_date' => $data['transaction_date'],
                 'amount' => $amount,
@@ -390,7 +397,11 @@ class CashAccountController extends Controller
         if ($cashTransaction->type === 'in') {
             $coaAccounts = CoaAccount::active()->income()->orderBy('code')->get();
         } else {
-            $coaAccounts = CoaAccount::active()->expense()->orderBy('code')->get();
+            $coaAccounts = CoaAccount::active()
+                ->expense()
+                ->orderByRaw('CASE WHEN code = ? THEN 1 ELSE 0 END', ['6-135'])
+                ->orderBy('code')
+                ->get();
         }
 
         return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts'));
