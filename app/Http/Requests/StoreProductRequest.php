@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreProductRequest extends FormRequest
 {
@@ -79,5 +80,40 @@ class StoreProductRequest extends FormRequest
             'pos_user_ids' => 'pengguna POS',
             'is_active' => 'status',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if (!$this->boolean('is_pos_available')) {
+                return;
+            }
+
+            if (!$this->boolean('is_available_all_outlets') && count($this->normalizeIdList($this->input('pos_outlet_ids', []))) === 0) {
+                $validator->errors()->add('pos_outlet_ids', 'Pilih minimal 1 outlet jika produk tidak tersedia di semua outlet.');
+            }
+
+            if (!$this->boolean('is_available_all_users') && count($this->normalizeIdList($this->input('pos_user_ids', []))) === 0) {
+                $validator->errors()->add('pos_user_ids', 'Pilih minimal 1 pengguna POS jika produk tidak tersedia untuk semua pengguna.');
+            }
+        });
+    }
+
+    private function normalizeIdList(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = array_filter(array_map('trim', explode(',', $value)));
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return collect($value)
+            ->filter(fn($id) => is_numeric($id))
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

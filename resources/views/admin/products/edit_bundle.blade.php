@@ -271,6 +271,9 @@
                                         </span>
                                     </button>
                                     <div id="posOutletHiddenInputs"></div>
+                                    @error('pos_outlet_ids')
+                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <label class="flex items-center gap-3 cursor-pointer">
@@ -291,6 +294,9 @@
                                         </span>
                                     </button>
                                     <div id="posUserHiddenInputs"></div>
+                                    @error('pos_user_ids')
+                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
                         </div>

@@ -32,8 +32,8 @@ class SaleController extends Controller
     public function create()
     {
         $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
-        $currentOutletId = auth()->user()->outlet_id;
-        $currentUserId = auth()->id();
+        $currentOutletId = (int) (auth()->user()->outlet_id ?? 0);
+        $currentUserId = (int) (auth()->id() ?? 0);
 
         $posData = ProductCategory::where('is_active', true)
             ->select(['id', 'name'])
@@ -54,12 +54,22 @@ class SaleController extends Controller
                     ->where('is_pos_available', true)
                     ->whereIn('product_type', ['finished_good', 'service'])
                     ->where(function ($outletQuery) use ($currentOutletId) {
-                        $outletQuery->where('is_available_all_outlets', true)
-                            ->orWhereJsonContains('pos_outlet_ids', $currentOutletId);
+                        $outletQuery->where('is_available_all_outlets', true);
+
+                        if ($currentOutletId > 0) {
+                            // Handle both JSON number ([1,2]) and legacy JSON string (["1","2"]).
+                            $outletQuery->orWhereJsonContains('pos_outlet_ids', $currentOutletId)
+                                ->orWhereJsonContains('pos_outlet_ids', (string) $currentOutletId);
+                        }
                     })
                     ->where(function ($userQuery) use ($currentUserId) {
-                        $userQuery->where('is_available_all_users', true)
-                            ->orWhereJsonContains('pos_user_ids', $currentUserId);
+                        $userQuery->where('is_available_all_users', true);
+
+                        if ($currentUserId > 0) {
+                            // Handle both JSON number ([1,2]) and legacy JSON string (["1","2"]).
+                            $userQuery->orWhereJsonContains('pos_user_ids', $currentUserId)
+                                ->orWhereJsonContains('pos_user_ids', (string) $currentUserId);
+                        }
                     });
             }])
             ->orderBy('name')

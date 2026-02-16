@@ -212,6 +212,9 @@
                                     </button>
                                 </div>
                                 <div id="posOutletHiddenInputs"></div>
+                                @error('pos_outlet_ids')
+                                    <p class="text-xs text-red-600 pl-6">{{ $message }}</p>
+                                @enderror
 
                                 <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" name="is_available_all_users" id="is_available_all_users"
@@ -228,6 +231,9 @@
                                     </button>
                                 </div>
                                 <div id="posUserHiddenInputs"></div>
+                                @error('pos_user_ids')
+                                    <p class="text-xs text-red-600 pl-6">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
                     </div>
