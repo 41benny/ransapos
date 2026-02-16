@@ -247,6 +247,13 @@
                                 </label>
 
                                 <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" name="is_online_order_available"
+                                        id="is_online_order_available" value="1" {{ old('is_online_order_available', $product->is_online_order_available ?? false) ? 'checked' : '' }}
+                                        class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                    <span class="text-sm text-gray-700">Tersedia di Online Order</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
                                     <input type="checkbox" name="is_available_all_outlets" id="is_available_all_outlets"
                                         value="1" {{ old('is_available_all_outlets', $product->is_available_all_outlets ?? true) ? 'checked' : '' }}
                                         class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">

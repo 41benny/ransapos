@@ -30,7 +30,7 @@
                     <p class="text-sm text-gray-500">Total: <span class="font-semibold">{{ $products->total() }}</span>
                         produk</p>
                     <p class="text-xs text-gray-400 mt-1">
-                        Produk tanpa resep pakai ikon <i class="fas fa-edit"></i>. Bundle yang sudah punya resep pakai ikon <i class="fas fa-book-open"></i>/<i class="fas fa-flask"></i>.
+                        Ikon <i class="fas fa-edit"></i> untuk edit master produk/bundle. Ikon <i class="fas fa-book-open"></i>/<i class="fas fa-flask"></i> untuk lihat/edit resep bundle (BOM).
                     </p>
                 </div>
 
@@ -178,6 +178,11 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
 
+                                        <a href="{{ route('admin.products.edit', $product) }}"
+                                            class="text-amber-600 hover:text-amber-800" title="Edit Master Produk/Bundle">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
                                         @if($product->bomHeader)
                                             <a href="{{ route('admin.boms.show', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
                                                 class="text-indigo-600 hover:text-indigo-800" title="Lihat Resep Bundle (BOM)">
@@ -186,11 +191,6 @@
                                             <a href="{{ route('admin.boms.edit', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
                                                 class="text-teal-600 hover:text-teal-800" title="Edit Resep Bundle (BOM)">
                                                 <i class="fas fa-flask"></i>
-                                            </a>
-                                        @else
-                                            <a href="{{ route('admin.products.edit', $product) }}"
-                                                class="text-amber-600 hover:text-amber-800" title="Edit Master Produk/Bundle">
-                                                <i class="fas fa-edit"></i>
                                             </a>
                                         @endif
 
