@@ -61,9 +61,10 @@ class CashAccountService
 
     /**
      * Generate transaction number
-     * Format: {CC}{K|M}{YYMM}{SEQ4}
-     * Contoh kas keluar: BCK26020001
-     * Contoh kas masuk: BCM26020001
+     * Format: {AAA}{K|M}{YYMM}{SEQ4}
+     * AAA = prefix otomatis 3 digit berdasarkan ID akun kas/bank
+     * Contoh kas keluar: 001K26020001
+     * Contoh kas masuk: 001M26020001
      */
     public function generateTransactionNumber(CashAccount $account, string $type, ?string $transactionDate = null): string
     {
@@ -95,6 +96,11 @@ class CashAccountService
 
     protected function resolveAccountCodePrefix(CashAccount $account): string
     {
+        // Otomatisasi prefix berdasarkan ID akun untuk mengurangi error input manual kode akun.
+        if (! empty($account->id)) {
+            return str_pad((string) $account->id, 3, '0', STR_PAD_LEFT);
+        }
+
         $lastCodeSegment = null;
         if (! empty($account->code)) {
             $segments = preg_split('/[-_\s]+/', (string) $account->code);

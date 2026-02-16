@@ -124,6 +124,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Relasi ke promo yang dibuat
+     */
+    public function createdPromotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class, 'created_by');
+    }
+
+    /**
+     * Relasi ke voucher yang dibuat
+     */
+    public function createdVouchers(): HasMany
+    {
+        return $this->hasMany(Voucher::class, 'created_by');
+    }
+
+    /**
      * Cek apakah user memiliki role tertentu
      */
     public function hasRole(string|array $roles): bool

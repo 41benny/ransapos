@@ -178,7 +178,7 @@
                             Current Order
                         </h2>
                     </div>
-                    <button @click="cart = []" v-if="cart.length > 0"
+                    <button @click="clearCart" v-if="cart.length > 0"
                         class="text-primary p-2 hover:bg-red-50 rounded-lg transition" title="Clear All">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -245,7 +245,12 @@
                             </div>
 
                             <div class="flex items-center justify-between mt-1">
-                                <p class="text-xs text-gray-400">@ @{{ formatNumber(item.unit_price) }}</p>
+                                <div class="min-w-0">
+                                    <p class="text-xs text-gray-400">@ @{{ formatNumber(item.unit_price) }}</p>
+                                    <p v-if="item.discount_amount > 0" class="text-[10px] text-red-500">
+                                        Promo @{{ formatNumber(item.promo_discount_percent, 2) }}% (-Rp @{{ formatNumber(item.discount_amount, 2) }})
+                                    </p>
+                                </div>
 
                                 <!-- Qty Control -->
                                 <div class="flex items-center gap-3 bg-gray-100 rounded-lg px-2 py-1">
@@ -292,11 +297,59 @@
                         class="w-full bg-transparent border-b border-gray-300 focus:border-primary py-2 text-sm focus:outline-none placeholder-gray-400 transition">
                 </div>
 
+                <div class="mb-4 space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Promo Kategori</label>
+                        <select v-model="selectedPromotionId"
+                            class="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5">
+                            <option value="">Tanpa Promo</option>
+                            <option v-for="promo in activePromotions" :key="'promo-' + promo.id" :value="String(promo.id)">
+                                @{{ promo.name }}
+                            </option>
+                        </select>
+                        <p v-if="selectedPromotion" class="text-xs text-primary mt-1">
+                            Promo aktif: <strong>@{{ selectedPromotion.name }}</strong>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Voucher</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" v-model="voucherCodeInput" placeholder="Contoh: MEMBER10"
+                                class="flex-1 bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5 uppercase">
+                            <button type="button" @click="applyVoucherCode"
+                                class="px-3 py-2 text-xs font-bold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
+                                Apply
+                            </button>
+                            <button v-if="appliedVoucher" type="button" @click="clearVoucher"
+                                class="px-3 py-2 text-xs font-bold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                                Hapus
+                            </button>
+                        </div>
+                        <p v-if="voucherErrorMessage" class="text-xs text-red-600 mt-1">@{{ voucherErrorMessage }}</p>
+                        <p v-else-if="appliedVoucher" class="text-xs text-emerald-600 mt-1">
+                            Voucher <strong>@{{ appliedVoucher.code }}</strong> aktif
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Totals -->
                 <div class="space-y-2 mb-6">
                     <div class="flex justify-between text-sm text-gray-500">
+                        <span>Subtotal Bruto</span>
+                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(cartGrossSubtotal) }}</span>
+                    </div>
+                    <div v-if="itemDiscountTotal > 0" class="flex justify-between text-sm text-gray-500">
+                        <span>Diskon Promo Kategori</span>
+                        <span class="font-medium text-red-600">- Rp @{{ formatNumber(itemDiscountTotal, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-500">
                         <span>Subtotal</span>
-                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(subtotal) }}</span>
+                        <span class="font-medium text-gray-700">Rp @{{ formatNumber(subtotal, 2) }}</span>
+                    </div>
+                    <div v-if="voucherDiscountAmount > 0" class="flex justify-between text-sm text-gray-500">
+                        <span>Diskon Voucher</span>
+                        <span class="font-medium text-red-600">- Rp @{{ formatNumber(voucherDiscountAmount, 2) }}</span>
                     </div>
                     <div v-if="serviceChargeRate > 0" class="flex justify-between text-sm text-gray-500">
                         <span>Service (@{{ serviceChargeRate }}%)</span>
@@ -321,10 +374,10 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex gap-3 items-stretch h-auto min-h-[4rem]">
-                    <div class="relative flex-1">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="relative">
                         <button type="button" @click="showPaymentModal = true"
-                            class="w-full h-full rounded-xl border border-primary/20 bg-white px-3 py-1 flex items-center justify-between gap-2 hover:bg-red-50 transition shadow-sm">
+                            class="w-full h-14 rounded-xl border border-primary/20 bg-white px-3 py-2 flex items-center justify-between gap-2 hover:bg-red-50 transition shadow-sm">
                             <div class="min-w-0 text-left">
                                 <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold leading-tight">
                                     Metode
@@ -345,7 +398,7 @@
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
                                                                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                                                                                         : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
-                        class="flex-1 py-3 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 h-full">
+                        class="w-full h-14 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 px-4">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
                             }}</span>
                         <span v-else class="flex items-center gap-2">
@@ -623,6 +676,8 @@
                         priceLevels: @json($priceLevels),
                         customers: @json($customers),
                         paymentMethods: @json($paymentMethods),
+                        activePromotions: @json($activePromotions ?? []),
+                        activeVouchers: @json($activeVouchers ?? []),
                         productById: {},
                         productImageById: {},
 
@@ -643,8 +698,10 @@
                         showSuccessModal: false,
                         lastSale: null,
 
-                        discountType: 'none',
-                        discountValue: 0,
+                        selectedPromotionId: '',
+                        voucherCodeInput: '',
+                        appliedVoucher: null,
+                        voucherErrorMessage: '',
                         isProcessing: false,
 
                         outletId: {{ $activeSession->outlet_id ?? 'null' }},
@@ -679,13 +736,25 @@
                         const method = this.paymentMethods.find(m => Number(m.id) === Number(this.selectedPaymentMethod));
                         return method ? method.name : '';
                     },
+                    selectedPromotion() {
+                        if (!this.selectedPromotionId) return null;
+                        return this.activePromotions.find(p => Number(p.id) === Number(this.selectedPromotionId)) || null;
+                    },
+                    cartGrossSubtotal() {
+                        return this.cart.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0);
+                    },
+                    itemDiscountTotal() {
+                        return this.cart.reduce((sum, item) => sum + Number(item.discount_amount || 0), 0);
+                    },
                     subtotal() {
-                        return this.cart.reduce((sum, item) => sum + item.subtotal, 0);
+                        return this.cart.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+                    },
+                    voucherDiscountAmount() {
+                        if (!this.appliedVoucher) return 0;
+                        return this.calculateVoucherDiscount(this.appliedVoucher, this.subtotal);
                     },
                     taxBase() {
-                        // Logic: Subtotal - Discount
-                        // Simple implementation for now
-                        return this.subtotal;
+                        return Math.max(0, this.subtotal - this.voucherDiscountAmount);
                     },
                     serviceChargeAmount() {
                         return this.taxBase * (this.serviceChargeRate / 100);
@@ -746,6 +815,98 @@
                     getProductById(productId) {
                         return this.productById[Number(productId)] || null;
                     },
+                    getPromotionDiscountPercent(categoryId) {
+                        if (!this.selectedPromotion || !Array.isArray(this.selectedPromotion.rules)) {
+                            return 0;
+                        }
+
+                        const rule = this.selectedPromotion.rules.find(
+                            r => Number(r.category_id) === Number(categoryId)
+                        );
+
+                        if (!rule) return 0;
+
+                        return Number(rule.discount_percent || 0);
+                    },
+                    recalculateCartItem(item) {
+                        const qty = Number(item.quantity || 0);
+                        const unitPrice = Number(item.unit_price || 0);
+                        const baseAmount = qty * unitPrice;
+                        const promoPercent = this.getPromotionDiscountPercent(item.category_id);
+                        const promoDiscount = Math.min(baseAmount, Number((baseAmount * (promoPercent / 100)).toFixed(2)));
+
+                        item.promo_discount_percent = promoPercent;
+                        item.discount_amount = promoDiscount;
+                        item.subtotal = baseAmount - promoDiscount;
+                    },
+                    recalculateCart() {
+                        this.cart.forEach(item => this.recalculateCartItem(item));
+                        this.refreshAppliedVoucher();
+                    },
+                    findVoucherByCode(code) {
+                        return this.activeVouchers.find(v => String(v.code).toUpperCase() === String(code).toUpperCase()) || null;
+                    },
+                    calculateVoucherDiscount(voucher, subtotal) {
+                        if (!voucher) return 0;
+
+                        const minPurchase = Number(voucher.min_purchase || 0);
+                        if (subtotal < minPurchase) {
+                            return 0;
+                        }
+
+                        let discount = 0;
+                        if (voucher.discount_type === 'percentage') {
+                            discount = subtotal * (Number(voucher.discount_value || 0) / 100);
+                        } else {
+                            discount = Number(voucher.discount_value || 0);
+                        }
+
+                        if (voucher.max_discount_amount !== null && voucher.max_discount_amount !== undefined) {
+                            discount = Math.min(discount, Number(voucher.max_discount_amount));
+                        }
+
+                        return Math.max(0, Math.min(discount, subtotal));
+                    },
+                    applyVoucherCode() {
+                        const rawCode = String(this.voucherCodeInput || '').trim().toUpperCase();
+                        if (!rawCode) {
+                            this.clearVoucher();
+                            return;
+                        }
+
+                        const voucher = this.findVoucherByCode(rawCode);
+                        if (!voucher) {
+                            this.appliedVoucher = null;
+                            this.voucherErrorMessage = 'Voucher tidak ditemukan atau tidak aktif.';
+                            return;
+                        }
+
+                        if (this.subtotal < Number(voucher.min_purchase || 0)) {
+                            this.appliedVoucher = null;
+                            this.voucherErrorMessage = `Minimum belanja voucher ini Rp ${this.formatNumber(voucher.min_purchase || 0)}.`;
+                            return;
+                        }
+
+                        this.appliedVoucher = voucher;
+                        this.voucherCodeInput = String(voucher.code || '').toUpperCase();
+                        this.voucherErrorMessage = '';
+                    },
+                    clearVoucher() {
+                        this.appliedVoucher = null;
+                        this.voucherErrorMessage = '';
+                        this.voucherCodeInput = '';
+                    },
+                    refreshAppliedVoucher() {
+                        if (!this.appliedVoucher) return;
+
+                        if (this.subtotal < Number(this.appliedVoucher.min_purchase || 0)) {
+                            this.voucherErrorMessage = 'Voucher dilepas karena tidak memenuhi minimum belanja.';
+                            this.appliedVoucher = null;
+                            return;
+                        }
+
+                        this.voucherErrorMessage = '';
+                    },
                     selectPaymentMethod(methodId) {
                         this.selectedPaymentMethod = methodId;
                         this.showPaymentMethodPicker = false;
@@ -784,12 +945,14 @@
                             if (!product) return item;
 
                             const newPrice = this.getProductPrice(product);
-                            return {
+                            const updatedItem = {
                                 ...item,
-                                unit_price: newPrice,
-                                subtotal: item.quantity * newPrice
+                                unit_price: newPrice
                             };
+                            this.recalculateCartItem(updatedItem);
+                            return updatedItem;
                         });
+                        this.refreshAppliedVoucher();
                     },
                     addToCart(product) {
                         const existing = this.cart.find(i => i.product_id === product.id);
@@ -797,34 +960,49 @@
 
                         if (existing) {
                             existing.quantity++;
-                            existing.subtotal = existing.quantity * price;
+                            existing.unit_price = price;
+                            this.recalculateCartItem(existing);
                         } else {
-                            this.cart.push({
+                            const newItem = {
                                 product_id: product.id,
                                 name: product.name,
+                                category_id: product.category_id,
                                 unit_price: price,
                                 quantity: 1,
+                                discount_amount: 0,
+                                promo_discount_percent: 0,
                                 subtotal: price,
                                 notes: ''
-                            });
+                            };
+                            this.recalculateCartItem(newItem);
+                            this.cart.push(newItem);
                         }
+
+                        this.refreshAppliedVoucher();
                     },
                     getProductImage(productId) {
                         return this.productImageById[Number(productId)] || 'https://via.placeholder.com/150';
                     },
+                    clearCart() {
+                        this.cart = [];
+                        this.clearVoucher();
+                    },
                     increaseQty(index) {
                         const item = this.cart[index];
                         item.quantity++;
-                        item.subtotal = item.quantity * item.unit_price;
+                        this.recalculateCartItem(item);
+                        this.refreshAppliedVoucher();
                     },
                     decreaseQty(index) {
                         const item = this.cart[index];
                         if (item.quantity > 1) {
                             item.quantity--;
-                            item.subtotal = item.quantity * item.unit_price;
+                            this.recalculateCartItem(item);
                         } else {
                             this.cart.splice(index, 1);
                         }
+
+                        this.refreshAppliedVoucher();
                     },
                     editItemNotes(index) {
                         const current = this.cart[index].notes || '';
@@ -853,21 +1031,35 @@
                             return;
                         }
 
+                        if (this.voucherCodeInput && !this.appliedVoucher) {
+                            this.applyVoucherCode();
+                            if (!this.appliedVoucher) {
+                                alert(this.voucherErrorMessage || 'Voucher belum valid.');
+                                return;
+                            }
+                        }
+
                         this.isProcessing = true;
 
-                        // Simple Payload
+                        const voucherCode = this.appliedVoucher ? String(this.appliedVoucher.code || '').toUpperCase() : null;
+
+                        // Payload dengan promo/voucher
                         const data = {
                             outlet_id: this.outletId,
                             cash_session_id: this.cashSessionId,
                             customer_id: this.selectedCustomerId,
                             notes: this.orderNotes,
                             sales_type: this.salesType,
-                            discount_type: 'none',
-                            discount_value: 0,
+                            promotion_id: this.selectedPromotionId ? Number(this.selectedPromotionId) : null,
+                            voucher_code: voucherCode,
+                            discount_type: this.appliedVoucher ? this.appliedVoucher.discount_type : 'none',
+                            discount_value: this.appliedVoucher ? Number(this.appliedVoucher.discount_value || 0) : 0,
                             items: this.cart.map(i => ({
                                 product_id: i.product_id,
                                 quantity: i.quantity,
-                                unit_price: i.unit_price
+                                unit_price: i.unit_price,
+                                discount_amount: Number(i.discount_amount || 0),
+                                notes: i.notes || null
                             })),
                             payment_method_id: this.selectedPaymentMethod,
                             payment_amount: this.totalAmount
@@ -892,7 +1084,7 @@
                                     window.location.href = '{{ route('login') }}';
                                     return;
                                 }
-                                alert('Error: ' + (result.message || 'Permintaan gagal diproses.'));
+                                alert('Error: ' + (result.error || result.message || 'Permintaan gagal diproses.'));
                                 return;
                             }
 
@@ -901,6 +1093,8 @@
                                 this.showSuccessModal = true;
                                 this.cart = [];
                                 this.selectedPaymentMethod = '';
+                                this.selectedPromotionId = '';
+                                this.clearVoucher();
                                 this.showPaymentMethodPicker = false;
                             } else {
                                 alert('Error: ' + result.message);
@@ -1048,7 +1242,8 @@
                 },
                 watch: {
                     selectedCategory() { this.filterProducts(); },
-                    salesType() { this.updateCartPricesBySalesType(); }
+                    salesType() { this.updateCartPricesBySalesType(); },
+                    selectedPromotionId() { this.recalculateCart(); }
                 }
             }).mount('#posApp');
         </script>

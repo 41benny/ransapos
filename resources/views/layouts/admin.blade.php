@@ -142,6 +142,12 @@
                                 'match' => 'admin.purchases.*',
                             ],
                             [
+                                'label' => 'Promo & Voucher',
+                                'icon' => 'fas fa-tags',
+                                'route' => 'admin.promo-vouchers.index',
+                                'match' => 'admin.promo-vouchers.*',
+                            ],
+                            [
                                 'label' => 'Keuangan',
                                 'icon' => 'fas fa-wallet',
                                 'route' => 'admin.cash-transactions.index',

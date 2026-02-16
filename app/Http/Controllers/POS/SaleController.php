@@ -8,8 +8,10 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\PaymentMethod;
+use App\Models\Promotion;
 use App\Models\CashSession;
 use App\Models\Outlet;
+use App\Models\Voucher;
 use App\Services\SaleService;
 use App\Models\Sale;
 use Illuminate\Http\Request;
@@ -150,7 +152,66 @@ class SaleController extends Controller
         $outlet = Outlet::select(['id', 'tax_rate', 'service_charge_rate'])
             ->find(auth()->user()->outlet_id);
 
-        return view('pos.sales.create', compact('categories', 'products', 'paymentMethods', 'activeSession', 'customers', 'outlet', 'priceLevels'));
+        $activePromotions = Promotion::query()
+            ->active()
+            ->activeOn(now())
+            ->forOutlet((int) auth()->user()->outlet_id)
+            ->with(['categoryRules' => function ($query) {
+                $query->select(['id', 'promotion_id', 'product_category_id', 'discount_percent']);
+            }])
+            ->orderBy('name')
+            ->get()
+            ->map(function (Promotion $promotion) {
+                return [
+                    'id' => $promotion->id,
+                    'name' => $promotion->name,
+                    'code' => $promotion->code,
+                    'rules' => $promotion->categoryRules->map(function ($rule) {
+                        return [
+                            'category_id' => (int) $rule->product_category_id,
+                            'discount_percent' => (float) $rule->discount_percent,
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
+
+        $activeVouchers = Voucher::query()
+            ->active()
+            ->activeOn(now())
+            ->forOutlet((int) auth()->user()->outlet_id)
+            ->where(function ($query) {
+                $query->whereNull('usage_limit')
+                    ->orWhereColumn('used_count', '<', 'usage_limit');
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function (Voucher $voucher) {
+                return [
+                    'id' => $voucher->id,
+                    'name' => $voucher->name,
+                    'code' => $voucher->code,
+                    'discount_type' => $voucher->discount_type,
+                    'discount_value' => (float) $voucher->discount_value,
+                    'min_purchase' => (float) $voucher->min_purchase,
+                    'max_discount_amount' => $voucher->max_discount_amount !== null
+                        ? (float) $voucher->max_discount_amount
+                        : null,
+                ];
+            })
+            ->values();
+
+        return view('pos.sales.create', compact(
+            'categories',
+            'products',
+            'paymentMethods',
+            'activeSession',
+            'customers',
+            'outlet',
+            'priceLevels',
+            'activePromotions',
+            'activeVouchers'
+        ));
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OutletController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PosDeviceController as AdminPosDeviceController;
+use App\Http\Controllers\Admin\PromoVoucherController;
 use App\Http\Controllers\POS\DashboardController as POSDashboardController;
 use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
@@ -51,6 +52,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
     Route::post('purchases/{purchase}/cancel', [\App\Http\Controllers\Admin\PurchaseController::class, 'cancel'])->name('purchases.cancel');
     Route::get('purchases/{purchase}/payment', [\App\Http\Controllers\Admin\PurchaseController::class, 'showPaymentForm'])->name('purchases.payment');
     Route::post('purchases/{purchase}/payment', [\App\Http\Controllers\Admin\PurchaseController::class, 'storePayment'])->name('purchases.payment.store');
+
+    // Promo & Voucher
+    Route::get('promo-vouchers', [PromoVoucherController::class, 'index'])->name('promo-vouchers.index');
+    Route::post('promo-vouchers/promotions', [PromoVoucherController::class, 'storePromotion'])->name('promo-vouchers.promotions.store');
+    Route::post('promo-vouchers/promotions/{promotion}/toggle', [PromoVoucherController::class, 'togglePromotion'])->name('promo-vouchers.promotions.toggle');
+    Route::delete('promo-vouchers/promotions/{promotion}', [PromoVoucherController::class, 'destroyPromotion'])->name('promo-vouchers.promotions.destroy');
+    Route::post('promo-vouchers/vouchers', [PromoVoucherController::class, 'storeVoucher'])->name('promo-vouchers.vouchers.store');
+    Route::post('promo-vouchers/vouchers/{voucher}/toggle', [PromoVoucherController::class, 'toggleVoucher'])->name('promo-vouchers.vouchers.toggle');
+    Route::delete('promo-vouchers/vouchers/{voucher}', [PromoVoucherController::class, 'destroyVoucher'])->name('promo-vouchers.vouchers.destroy');
 
     // Cash Accounts & Transactions
     Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class);
@@ -187,6 +197,23 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(fu
         ->middleware('role:kasir,admin');
     Route::post('/sales/{sale}/void', [SaleController::class, 'void'])
         ->name('sales.void')
+        ->middleware('role:kasir,admin');
+
+    // Petty Cash POS (Kas Kecil Outlet, terpisah dari kas sales)
+    Route::get('/petty-cash', [\App\Http\Controllers\POS\PettyCashController::class, 'index'])
+        ->name('petty-cash.index')
+        ->middleware('role:kasir,admin');
+    Route::get('/petty-cash/create', [\App\Http\Controllers\POS\PettyCashController::class, 'create'])
+        ->name('petty-cash.create')
+        ->middleware('role:kasir,admin');
+    Route::post('/petty-cash', [\App\Http\Controllers\POS\PettyCashController::class, 'store'])
+        ->name('petty-cash.store')
+        ->middleware('role:kasir,admin');
+    Route::get('/petty-cash/{cashTransaction}/edit', [\App\Http\Controllers\POS\PettyCashController::class, 'edit'])
+        ->name('petty-cash.edit')
+        ->middleware('role:kasir,admin');
+    Route::put('/petty-cash/{cashTransaction}', [\App\Http\Controllers\POS\PettyCashController::class, 'update'])
+        ->name('petty-cash.update')
         ->middleware('role:kasir,admin');
 
     // Simple Kitchen Display (Admin/Kasir/Kitchen)

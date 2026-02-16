@@ -28,4 +28,12 @@ class ProductCategory extends Model
     {
         return $this->hasMany(Product::class, 'category_id');
     }
+
+    /**
+     * Relasi ke aturan diskon promo kategori
+     */
+    public function promotionRules(): HasMany
+    {
+        return $this->hasMany(PromotionCategoryRule::class, 'product_category_id');
+    }
 }

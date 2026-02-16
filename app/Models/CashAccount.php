@@ -13,6 +13,7 @@ class CashAccount extends Model
         'name',
         'code',
         'type',
+        'usage_type',
         'bank_name',
         'account_number',
         'account_holder',
@@ -95,6 +96,14 @@ class CashAccount extends Model
     }
 
     /**
+     * Helper: Cek apakah akun dipakai untuk petty cash
+     */
+    public function isPettyCash(): bool
+    {
+        return $this->usage_type === 'petty_cash';
+    }
+
+    /**
      * Scope: Hanya akun aktif
      */
     public function scopeActive($query)
@@ -116,6 +125,14 @@ class CashAccount extends Model
     public function scopeBank($query)
     {
         return $query->where('type', 'bank');
+    }
+
+    /**
+     * Scope: Hanya akun petty cash
+     */
+    public function scopePettyCash($query)
+    {
+        return $query->where('usage_type', 'petty_cash');
     }
 
     /**

@@ -99,6 +99,12 @@
                         <span class="hidden sm:inline">Absensi</span>
                     </a>
 
+                    <a href="{{ route('pos.petty-cash.index') }}"
+                        class="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                        <span class="material-icons-round text-base">payments</span>
+                        <span class="hidden sm:inline">Petty Cash</span>
+                    </a>
+
                     <a href="{{ route('pos.sessions.close') }}"
                         class="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
                         <span class="material-icons-round text-base">logout</span>

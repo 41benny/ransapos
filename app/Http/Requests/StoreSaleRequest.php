@@ -15,6 +15,7 @@ class StoreSaleRequest extends FormRequest
         $this->merge([
             'discount_type' => $this->input('discount_type', 'none'),
             'discount_value' => $this->input('discount_value', 0),
+            'voucher_code' => $this->input('voucher_code') ? strtoupper(trim((string) $this->input('voucher_code'))) : null,
         ]);
     }
 
@@ -62,6 +63,8 @@ class StoreSaleRequest extends FormRequest
             'customer_name' => 'nullable|string|max:200',
             'notes' => 'nullable|string',
             'sales_type' => ['nullable', 'string', Rule::in($salesTypeKeys)],
+            'promotion_id' => ['nullable', 'exists:promotions,id'],
+            'voucher_code' => 'nullable|string|max:60',
             
             // Diskon global
             'discount_type' => 'required|in:none,percentage,fixed',
@@ -102,6 +105,8 @@ class StoreSaleRequest extends FormRequest
             'items.*.quantity.min' => 'Kuantitas minimal 0.01',
             'items.*.unit_price.required' => 'Harga harus diisi',
             'items.*.notes.max' => 'Catatan item maksimal 255 karakter',
+            'promotion_id.exists' => 'Promo tidak ditemukan',
+            'voucher_code.max' => 'Kode voucher maksimal 60 karakter',
             'payment_method_id.required' => 'Metode pembayaran harus dipilih',
             'payment_method_id.exists' => 'Metode pembayaran tidak valid',
             'payment_amount.required' => 'Jumlah pembayaran harus diisi',

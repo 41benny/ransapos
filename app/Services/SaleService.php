@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\CashSession;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
+use App\Models\Promotion;
+use App\Models\Voucher;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -45,27 +47,120 @@ class SaleService
             // 1. Generate invoice number
             $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
 
-            // 2. Hitung subtotal dari items
+            // 2. Resolve promo kategori (opsional)
+            $promotion = null;
+            if (!empty($data['promotion_id'])) {
+                $promotion = Promotion::query()
+                    ->with(['categoryRules' => function ($query) {
+                        $query->select(['id', 'promotion_id', 'product_category_id', 'discount_percent']);
+                    }])
+                    ->find($data['promotion_id']);
+
+                if (!$promotion || !$promotion->isValidFor((int) $data['outlet_id'])) {
+                    throw new Exception('Promo tidak valid atau tidak aktif untuk outlet ini.');
+                }
+            }
+
+            // 3. Preload products (sekali query) untuk hitung diskon + proses stok/BOM
+            $productIds = collect($data['items'])
+                ->pluck('product_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            $products = Product::with(['bomHeader' => function ($q) {
+                $q->where('is_active', true)->with('details.component');
+            }])
+                ->whereIn('id', $productIds)
+                ->get()
+                ->keyBy('id');
+
+            if ($products->count() !== $productIds->count()) {
+                throw new Exception('Satu atau lebih produk pada transaksi tidak ditemukan.');
+            }
+
+            $promotionRuleByCategory = [];
+            if ($promotion) {
+                $promotionRuleByCategory = $promotion->categoryRules
+                    ->mapWithKeys(function ($rule) {
+                        return [(int) $rule->product_category_id => (float) $rule->discount_percent];
+                    })
+                    ->all();
+            }
+
+            // 4. Hitung subtotal dari items (termasuk diskon item dari promo kategori)
             $subtotal = 0;
+            $normalizedItems = [];
+
             foreach ($data['items'] as $item) {
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-                $itemSubtotal -= $item['discount_amount'] ?? 0;
+                $productId = (int) $item['product_id'];
+                /** @var Product|null $product */
+                $product = $products->get($productId);
+                if (!$product) {
+                    throw new Exception('Produk transaksi tidak valid.');
+                }
+
+                $quantity = (float) $item['quantity'];
+                $unitPrice = (float) $item['unit_price'];
+                $baseAmount = $quantity * $unitPrice;
+
+                $manualDiscount = max(0, (float) ($item['discount_amount'] ?? 0));
+                $promoDiscount = 0.0;
+                $promoRate = $promotionRuleByCategory[(int) $product->category_id] ?? null;
+                if ($promoRate !== null && $promoRate > 0) {
+                    $promoDiscount = round($baseAmount * ($promoRate / 100), 2);
+                }
+
+                // Tidak stack manual+promo. Ambil nilai terbesar agar aman dari diskon ganda.
+                $itemDiscount = min($baseAmount, max($manualDiscount, $promoDiscount));
+                $itemSubtotal = $baseAmount - $itemDiscount;
+
                 $subtotal += $itemSubtotal;
+
+                $normalizedItems[] = [
+                    'product' => $product,
+                    'product_id' => $product->id,
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'discount_amount' => $itemDiscount,
+                    'subtotal' => $itemSubtotal,
+                    'notes' => $item['notes'] ?? null,
+                ];
             }
 
-            // 3. Hitung diskon global
+            // 5. Hitung diskon global (manual/voucher)
             $discountAmount = 0;
-            if ($data['discount_type'] === 'percentage') {
-                $discountAmount = $subtotal * ($data['discount_value'] / 100);
-            } elseif ($data['discount_type'] === 'fixed') {
-                $discountAmount = $data['discount_value'];
+            $discountType = $data['discount_type'] ?? 'none';
+            $discountValue = (float) ($data['discount_value'] ?? 0);
+            $voucher = null;
+
+            if (!empty($data['voucher_code'])) {
+                $voucherCode = strtoupper(trim((string) $data['voucher_code']));
+                $voucher = Voucher::query()
+                    ->where('code', $voucherCode)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$voucher || !$voucher->isValidFor((int) $data['outlet_id'], $subtotal)) {
+                    throw new Exception('Voucher tidak valid, tidak aktif, atau tidak memenuhi syarat minimum belanja.');
+                }
+
+                $discountAmount = $voucher->calculateDiscountAmount($subtotal);
+                $discountType = $voucher->discount_type;
+                $discountValue = (float) $voucher->discount_value;
+            } elseif ($discountType === 'percentage') {
+                $discountAmount = $subtotal * ($discountValue / 100);
+            } elseif ($discountType === 'fixed') {
+                $discountAmount = $discountValue;
             }
 
-            // 4. Hitung Service Charge & Tax (PB1)
+            $discountAmount = min($discountAmount, $subtotal);
+
+            // 6. Hitung Service Charge & Tax (PB1)
             $outlet = \App\Models\Outlet::find($data['outlet_id']);
 
             // Tax base (DPP) = Subtotal - Discount
-            $taxBase = $subtotal - $discountAmount;
+            $taxBase = max(0, $subtotal - $discountAmount);
 
             // Service Charge: X% dari Tax Base
             $serviceChargeRate = $outlet->service_charge_rate ?? 0;
@@ -84,7 +179,7 @@ class SaleService
             $totalAmount = (float) round($rawTotalAmount, 0);
             $roundingAmount = (float) round($totalAmount - $rawTotalAmount, 2);
 
-            // 5. Buat record sale
+            // 7. Buat record sale
             $sale = Sale::create([
                 'invoice_number' => $invoiceNumber,
                 'outlet_id' => $data['outlet_id'],
@@ -92,11 +187,14 @@ class SaleService
                 // Gunakan auth()->id() (helper standar Laravel) jika tersedia
                 'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $data['user_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
+                'promotion_id' => $promotion?->id,
+                'voucher_id' => $voucher?->id,
+                'voucher_code' => $voucher?->code,
                 'sale_date' => now()->toDateString(),
                 'sales_type' => $data['sales_type'] ?? 'regular',
                 'subtotal' => $subtotal,
-                'discount_type' => $data['discount_type'],
-                'discount_value' => $data['discount_value'] ?? 0,
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
                 'discount_amount' => $discountAmount,
                 'service_charge_amount' => $serviceChargeAmount,
                 'rounding_amount' => $roundingAmount,
@@ -107,14 +205,12 @@ class SaleService
                 'status' => 'completed',
             ]);
 
-            // 6. Buat sale items & logika BOM / pengurangan stok
-            foreach ($data['items'] as $item) {
-                $product = Product::with(['bomHeader' => function ($q) {
-                    $q->where('is_active', true)->with('details.component');
-                }])->findOrFail($item['product_id']);
+            // 8. Buat sale items & logika BOM / pengurangan stok
+            foreach ($normalizedItems as $item) {
+                /** @var Product $product */
+                $product = $item['product'];
 
-                $itemSubtotal = ($item['quantity'] * $item['unit_price']) - ($item['discount_amount'] ?? 0);
-
+                $itemSubtotal = (float) $item['subtotal'];
                 // Hitung COGS per item
                 $itemCogs = $this->calculateItemCogs($product, $item['quantity']);
 
@@ -125,7 +221,7 @@ class SaleService
                     'product_sku' => $product->sku,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'discount_amount' => $item['discount_amount'] ?? 0,
+                    'discount_amount' => $item['discount_amount'],
                     'subtotal' => $itemSubtotal,
                     'cogs' => $itemCogs,
                     'notes' => $item['notes'] ?? null,
@@ -182,7 +278,7 @@ class SaleService
                 }
             }
 
-            // 7. Catat pembayaran
+            // 9. Catat pembayaran
             Payment::create([
                 'sale_id' => $sale->id,
                 'payment_method_id' => $data['payment_method_id'],
@@ -191,10 +287,16 @@ class SaleService
                 'notes' => $data['payment_notes'] ?? null,
             ]);
 
-            // 8. Update cash session
+            // 10. Update cash session
             $this->updateCashSession($data['cash_session_id'], $totalAmount, $data['payment_method_id']);
 
-            // 9. Loyalty points & customer stats (jika ada customer)
+            // 11. Mark voucher usage
+            if ($voucher) {
+                $voucher->used_count = (int) $voucher->used_count + 1;
+                $voucher->save();
+            }
+
+            // 12. Loyalty points & customer stats (jika ada customer)
             if (!empty($data['customer_id'])) {
                 /** @var Customer|null $customer */
                 $customer = $sale->customer()->first();
@@ -211,7 +313,7 @@ class SaleService
 
             DB::commit();
 
-            return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
+            return $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer', 'promotion', 'voucher']);
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -294,7 +396,7 @@ class SaleService
         DB::beginTransaction();
 
         try {
-            $sale = Sale::with('items')->findOrFail($saleId);
+            $sale = Sale::with(['items', 'voucher'])->findOrFail($saleId);
 
             // Cek apakah sudah dibatalkan
             if ($sale->status === 'cancelled') {
@@ -364,6 +466,12 @@ class SaleService
 
                 $session->expected_balance = $session->opening_balance + $session->total_cash;
                 $session->save();
+            }
+
+            // Jika transaksi memakai voucher, kembalikan kuota penggunaan
+            if ($sale->voucher && $sale->voucher->used_count > 0) {
+                $sale->voucher->used_count = max(0, (int) $sale->voucher->used_count - 1);
+                $sale->voucher->save();
             }
 
             DB::commit();

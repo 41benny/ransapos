@@ -144,6 +144,17 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900">{{ $account->name }}</div>
+                                                <div class="mt-1">
+                                                    @if(($account->usage_type ?? 'operational') === 'petty_cash')
+                                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-800">
+                                                            Petty Cash
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-100 text-gray-700">
+                                                            Operasional
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 @if($account->notes)
                                                     <div class="text-sm text-gray-500">{{ Str::limit($account->notes, 30) }}</div>
                                                 @endif

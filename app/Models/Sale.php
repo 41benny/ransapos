@@ -14,6 +14,9 @@ class Sale extends Model
         'cash_session_id',
         'user_id',
         'customer_id',
+        'promotion_id',
+        'voucher_id',
+        'voucher_code',
         'sale_date',
         'sales_type',
         'subtotal',
@@ -34,6 +37,8 @@ class Sale extends Model
     protected $casts = [
         'sale_date' => 'date',
         'sales_type' => 'string',
+        'promotion_id' => 'integer',
+        'voucher_id' => 'integer',
         'subtotal' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
@@ -73,6 +78,22 @@ class Sale extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Relasi ke promo (opsional)
+     */
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
+    }
+
+    /**
+     * Relasi ke voucher (opsional)
+     */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class);
     }
 
     /**

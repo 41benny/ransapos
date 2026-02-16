@@ -170,6 +170,11 @@
                         {{ session('error') }}
                     </div>
                     @endif
+                    @if($errors->any())
+                    <div class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
+                        {{ $errors->first('email') ?: $errors->first() }}
+                    </div>
+                    @endif
 
                     <div class="space-y-2">
                         <label class="block text-sm font-semibold text-gray-300 ml-1" for="email">Email / Staff

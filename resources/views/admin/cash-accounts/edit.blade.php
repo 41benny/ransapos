@@ -114,6 +114,59 @@
                     @enderror
                 </div>
 
+                <!-- Tipe Penggunaan Akun -->
+                <div>
+                    <label for="usage_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tipe Penggunaan <span class="text-red-500">*</span>
+                    </label>
+                    <select id="usage_type"
+                            name="usage_type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
+                            required>
+                        <option value="operational" {{ old('usage_type', $cashAccount->usage_type ?? 'operational') == 'operational' ? 'selected' : '' }}>Operasional Umum</option>
+                        <option value="petty_cash" {{ old('usage_type', $cashAccount->usage_type) == 'petty_cash' ? 'selected' : '' }}>Petty Cash Outlet</option>
+                    </select>
+                    @error('usage_type')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Bank Details -->
+                <div id="bank-details" class="space-y-4 pl-4 border-l-2 border-indigo-200" style="display:none;">
+                    <div>
+                        <label for="bank_name" class="block text-sm font-medium text-gray-700 mb-2">Nama Bank</label>
+                        <input type="text"
+                               id="bank_name"
+                               name="bank_name"
+                               value="{{ old('bank_name', $cashAccount->bank_name) }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="account_number" class="block text-sm font-medium text-gray-700 mb-2">Nomor Rekening</label>
+                        <input type="text"
+                               id="account_number"
+                               name="account_number"
+                               value="{{ old('account_number', $cashAccount->account_number) }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="account_holder" class="block text-sm font-medium text-gray-700 mb-2">Nama Pemegang Rekening</label>
+                        <input type="text"
+                               id="account_holder"
+                               name="account_holder"
+                               value="{{ old('account_holder', $cashAccount->account_holder) }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="branch" class="block text-sm font-medium text-gray-700 mb-2">Cabang Bank (Opsional)</label>
+                        <input type="text"
+                               id="branch"
+                               name="branch"
+                               value="{{ old('branch', $cashAccount->branch) }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+
                 <!-- Saldo (Read-only) -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -189,5 +242,25 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeEl = document.getElementById('type');
+    const bankDetails = document.getElementById('bank-details');
+
+    function syncBankFieldsVisibility() {
+        if (!typeEl || !bankDetails) {
+            return;
+        }
+
+        bankDetails.style.display = typeEl.value === 'bank' ? 'block' : 'none';
+    }
+
+    syncBankFieldsVisibility();
+    if (typeEl) {
+        typeEl.addEventListener('change', syncBankFieldsVisibility);
+    }
+});
+</script>
 @endsection
 

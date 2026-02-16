@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\PosDevice;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +86,19 @@ class AuthController extends Controller
             }
 
             $user = Auth::user();
+            $this->clearStaleActivePosDevice($user);
             $device = $this->resolvePosDevice($request);
+            if ($user && $device && $user->outlet_id && (int) $device->outlet_id !== (int) $user->outlet_id) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
+
+                throw ValidationException::withMessages([
+                    'email' => 'Perangkat browser ini terdaftar untuk outlet lain. Silakan lakukan pairing ulang untuk outlet Anda.',
+                ]);
+            }
+
             if ($user && $device && $user->hasRole(self::SINGLE_DEVICE_ROLES)) {
                 if ($user->active_pos_device_id && (int) $user->active_pos_device_id !== (int) $device->id) {
                     Auth::logout();
@@ -197,6 +210,31 @@ class AuthController extends Controller
         $email = mb_strtolower((string) $request->input('email', ''));
 
         return 'login:' . $email . '|' . $request->ip();
+    }
+
+    /**
+     * Bersihkan penandaan device aktif yang sudah tidak valid
+     * (mis. device lama/revoked atau outlet device tidak sama dengan outlet user saat ini).
+     */
+    private function clearStaleActivePosDevice(?User $user): void
+    {
+        if (!$user || !$user->hasRole(self::SINGLE_DEVICE_ROLES) || !$user->active_pos_device_id) {
+            return;
+        }
+
+        $activeDevice = PosDevice::query()
+            ->select(['id', 'outlet_id', 'is_active', 'revoked_at'])
+            ->find($user->active_pos_device_id);
+
+        $isStale = !$activeDevice
+            || !$activeDevice->is_active
+            || $activeDevice->revoked_at !== null
+            || ($user->outlet_id && (int) $activeDevice->outlet_id !== (int) $user->outlet_id);
+
+        if ($isStale) {
+            $user->forceFill(['active_pos_device_id' => null])->save();
+            $user->refresh();
+        }
     }
 
     private function resolvePosDevice(Request $request): ?PosDevice

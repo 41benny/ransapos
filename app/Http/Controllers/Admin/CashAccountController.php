@@ -6,12 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCashAccountRequest;
 use App\Http\Requests\StoreCashTransactionRequest;
 use App\Http\Requests\UpdateCashAccountRequest;
+use App\Models\BankTransfer;
 use App\Models\CashAccount;
 use App\Models\CashTransaction;
 use App\Models\CoaAccount;
+use App\Models\Purchase;
 use App\Services\CashAccountService;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class CashAccountController extends Controller
 {
@@ -177,7 +181,30 @@ class CashAccountController extends Controller
         $coaIncomeAccounts = \App\Models\CoaAccount::active()->income()->orderBy('code')->get();
         $coaExpenseAccounts = \App\Models\CoaAccount::active()->expense()->orderBy('code')->get();
 
-        return view('admin.cash-accounts.create-transaction', compact('accounts', 'coaIncomeAccounts', 'coaExpenseAccounts'));
+        $outstandingPurchases = Purchase::query()
+            ->with(['supplier', 'outlet'])
+            ->where('status', 'received')
+            ->where(function ($query) {
+                $query->whereIn('payment_status', ['unpaid', 'partial'])
+                    ->orWhereNull('payment_status');
+            })
+            ->withSum('cashTransactions as total_paid', 'amount')
+            ->orderByDesc('purchase_date')
+            ->get()
+            ->map(function (Purchase $purchase) {
+                $totalPaid = (float) ($purchase->total_paid ?? 0);
+                $purchase->remaining_amount = max(0, (float) $purchase->total_amount - $totalPaid);
+                return $purchase;
+            })
+            ->filter(fn (Purchase $purchase) => $purchase->remaining_amount > 0)
+            ->values();
+
+        return view('admin.cash-accounts.create-transaction', compact(
+            'accounts',
+            'coaIncomeAccounts',
+            'coaExpenseAccounts',
+            'outstandingPurchases'
+        ));
     }
 
     /**
@@ -188,6 +215,16 @@ class CashAccountController extends Controller
         try {
             $data = $request->validated();
             $data['created_by'] = auth()->id() ?? 1; // TODO: Replace with actual auth
+
+            $transactionCategory = $data['transaction_category'] ?? 'general';
+
+            if ($transactionCategory === 'purchase_payment') {
+                return $this->storePurchasePaymentFromCashTransaction($data);
+            }
+
+            if ($transactionCategory === 'book_transfer') {
+                return $this->storeBookTransferFromCashTransaction($data);
+            }
 
             $rows = $data['rows'] ?? [];
             unset($data['rows']);
@@ -206,6 +243,133 @@ class CashAccountController extends Controller
                 ->withInput()
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Catat pembayaran hutang purchase dari menu Transaksi Kas/Bank.
+     */
+    protected function storePurchasePaymentFromCashTransaction(array $data)
+    {
+        $purchase = Purchase::findOrFail((int) $data['purchase_id']);
+
+        $transaction = $this->cashAccountService->recordPurchasePayment($purchase, [
+            'cash_account_id' => (int) $data['cash_account_id'],
+            'amount' => (float) $data['purchase_amount'],
+            'transaction_date' => $data['transaction_date'],
+            'notes' => $data['purchase_notes'] ?? null,
+            'created_by' => $data['created_by'],
+        ]);
+
+        return redirect()
+            ->route('admin.cash-transactions.index')
+            ->with('success', 'Pembayaran hutang purchase berhasil dicatat. Nomor: ' . $transaction->transaction_number);
+    }
+
+    /**
+     * Catat pindah buku (transfer antar rekening) dari menu Transaksi Kas/Bank.
+     */
+    protected function storeBookTransferFromCashTransaction(array $data)
+    {
+        DB::beginTransaction();
+
+        try {
+            $fromAccount = CashAccount::query()
+                ->lockForUpdate()
+                ->findOrFail((int) $data['cash_account_id']);
+
+            $toAccount = CashAccount::query()
+                ->lockForUpdate()
+                ->findOrFail((int) $data['transfer_to_cash_account_id']);
+
+            if ($fromAccount->id === $toAccount->id) {
+                throw new \Exception('Rekening tujuan harus berbeda dengan rekening sumber.');
+            }
+
+            $amount = (float) $data['transfer_amount'];
+
+            if ((float) $fromAccount->current_balance < $amount) {
+                throw new \Exception(
+                    'Saldo rekening sumber tidak cukup! Saldo tersedia: Rp ' .
+                    number_format((float) $fromAccount->current_balance, 0, ',', '.')
+                );
+            }
+
+            $transfer = BankTransfer::create([
+                'transfer_number' => $this->generateTransferNumber($data['transaction_date']),
+                'from_cash_account_id' => $fromAccount->id,
+                'to_cash_account_id' => $toAccount->id,
+                'transfer_date' => $data['transaction_date'],
+                'amount' => $amount,
+                'description' => $data['transfer_description'],
+                'notes' => $data['transfer_notes'] ?? null,
+                'created_by' => $data['created_by'],
+            ]);
+
+            CashTransaction::create([
+                'transaction_number' => $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $data['transaction_date']),
+                'cash_account_id' => $fromAccount->id,
+                'type' => 'out',
+                'transaction_date' => $data['transaction_date'],
+                'amount' => $amount,
+                'balance_before' => $fromAccount->current_balance,
+                'balance_after' => $fromAccount->current_balance - $amount,
+                'description' => 'Transfer ke ' . $toAccount->name . ' - ' . $data['transfer_description'],
+                'reference_type' => 'bank_transfer',
+                'reference_id' => $transfer->id,
+                'notes' => $data['transfer_notes'] ?? null,
+                'created_by' => $data['created_by'],
+            ]);
+
+            $fromAccount->current_balance -= $amount;
+            $fromAccount->save();
+
+            CashTransaction::create([
+                'transaction_number' => $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $data['transaction_date']),
+                'cash_account_id' => $toAccount->id,
+                'type' => 'in',
+                'transaction_date' => $data['transaction_date'],
+                'amount' => $amount,
+                'balance_before' => $toAccount->current_balance,
+                'balance_after' => $toAccount->current_balance + $amount,
+                'description' => 'Transfer dari ' . $fromAccount->name . ' - ' . $data['transfer_description'],
+                'reference_type' => 'bank_transfer',
+                'reference_id' => $transfer->id,
+                'notes' => $data['transfer_notes'] ?? null,
+                'created_by' => $data['created_by'],
+            ]);
+
+            $toAccount->current_balance += $amount;
+            $toAccount->save();
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.cash-transactions.index')
+                ->with('success', 'Pindah buku berhasil dicatat! Nomor transfer: ' . $transfer->transfer_number);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    protected function generateTransferNumber(?string $transferDate = null): string
+    {
+        $date = Carbon::parse($transferDate ?? now())->format('Ymd');
+        $prefix = 'TRF-' . $date . '-';
+
+        $lastTransfer = BankTransfer::where('transfer_number', 'like', $prefix . '%')
+            ->lockForUpdate()
+            ->orderBy('transfer_number', 'desc')
+            ->first();
+
+        if ($lastTransfer) {
+            $lastNumber = (int) substr($lastTransfer->transfer_number, -4);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return $prefix . str_pad((string) $newNumber, 4, '0', STR_PAD_LEFT);
     }
 
     /**

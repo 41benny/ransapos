@@ -59,7 +59,7 @@
                     @error('code')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi akun</p>
+                    <p class="mt-1 text-sm text-gray-500">Kode unik per outlet untuk identifikasi akun</p>
                 </div>
 
                 <!-- Outlet -->
@@ -98,6 +98,24 @@
                     @error('type')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- Tipe Penggunaan Akun -->
+                <div>
+                    <label for="usage_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tipe Penggunaan <span class="text-red-500">*</span>
+                    </label>
+                    <select id="usage_type"
+                            name="usage_type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
+                            required>
+                        <option value="operational" {{ old('usage_type', 'operational') == 'operational' ? 'selected' : '' }}>Operasional Umum</option>
+                        <option value="petty_cash" {{ old('usage_type') == 'petty_cash' ? 'selected' : '' }}>Petty Cash Outlet</option>
+                    </select>
+                    @error('usage_type')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-sm text-gray-500">Pilih <strong>Petty Cash Outlet</strong> jika akun ini dipakai untuk pengeluaran kas kecil POS.</p>
                 </div>
 
                 <!-- Bank Details (Conditional) -->
@@ -173,7 +191,7 @@
                               placeholder="Catatan tambahan tentang akun ini (opsional)">{{ old('notes') }}</textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror>
+                    @enderror
                 </div>
             </div>
 

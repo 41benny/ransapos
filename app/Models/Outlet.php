@@ -76,6 +76,22 @@ class Outlet extends Model
     }
 
     /**
+     * Relasi ke promo
+     */
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class);
+    }
+
+    /**
+     * Relasi ke voucher
+     */
+    public function vouchers(): HasMany
+    {
+        return $this->hasMany(Voucher::class);
+    }
+
+    /**
      * Relasi ke attendances (absensi karyawan)
      */
     public function attendances(): HasMany
