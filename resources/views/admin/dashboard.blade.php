@@ -534,6 +534,7 @@
             let hourlyTooltipEl = null;
             let lastTopProductsSignature = null;
             let prevTopRankByKey = new Map();
+            let topTrendBadgeByKey = new Map();
 
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text;
@@ -798,47 +799,19 @@
                 return `name:${String(row?.product_name || '').toLowerCase().trim()}`;
             }
 
-            function buildTrendMeta(prevRank, currentRank) {
-                if (prevRank === null || prevRank === undefined) {
-                    return {
-                        badge: '<span class="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">NEW</span>',
-                        movementClass: 'top-rank-new',
-                    };
-                }
-
-                if (currentRank < prevRank) {
-                    const diff = prevRank - currentRank;
-                    return {
-                        badge: `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${diff}</span>`,
-                        movementClass: 'top-rank-up',
-                    };
-                }
-
-                if (currentRank > prevRank) {
-                    const diff = currentRank - prevRank;
-                    return {
-                        badge: `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${diff}</span>`,
-                        movementClass: 'top-rank-down',
-                    };
-                }
-
-                return {
-                    badge: '<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">Tetap</span>',
-                    movementClass: '',
-                };
-            }
-
             function renderTopProducts(rows, dataSignature) {
                 productRowsEl.innerHTML = '';
                 if (!rows || rows.length === 0) {
                     productEmptyEl.classList.remove('hidden');
                     prevTopRankByKey = new Map();
+                    topTrendBadgeByKey = new Map();
                     lastTopProductsSignature = dataSignature;
                     return;
                 }
 
                 if (lastTopProductsSignature !== dataSignature) {
                     prevTopRankByKey = new Map();
+                    topTrendBadgeByKey = new Map();
                 }
 
                 productEmptyEl.classList.add('hidden');
@@ -847,25 +820,42 @@
                     const rank = productRowsEl.children.length + 1;
                     const key = formatTopProductKey(row);
                     const prevRank = prevTopRankByKey.has(key) ? prevTopRankByKey.get(key) : null;
-                    const trendMeta = buildTrendMeta(prevRank, rank);
+                    let trendBadge = topTrendBadgeByKey.get(key) || '';
+                    let movementClass = '';
+
+                    if (prevRank !== null && prevRank !== undefined) {
+                        if (rank < prevRank) {
+                            const diff = prevRank - rank;
+                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${diff}</span>`;
+                            movementClass = 'top-rank-up';
+                        } else if (rank > prevRank) {
+                            const diff = rank - prevRank;
+                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${diff}</span>`;
+                            movementClass = 'top-rank-down';
+                        }
+                    }
 
                     const tr = document.createElement('tr');
-                    if (trendMeta.movementClass) {
-                        tr.classList.add(trendMeta.movementClass);
+                    if (movementClass) {
+                        tr.classList.add(movementClass);
                     }
                     tr.innerHTML = `
                                         <td class="px-3 py-2 text-slate-700 font-semibold">${rank}</td>
-                                        <td class="px-3 py-2 text-slate-700">
-                                            <div class="flex items-center justify-between gap-2">
-                                                <span class="truncate" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                ${trendMeta.badge}
-                                            </div>
-                                        </td>
+                        <td class="px-3 py-2 text-slate-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="truncate" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                ${trendBadge}
+                            </div>
+                        </td>
                                         <td class="px-3 py-2 text-right text-slate-700">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
                                         <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
                                     `;
                     productRowsEl.appendChild(tr);
                     nextRankByKey.set(key, rank);
+
+                    if (trendBadge) {
+                        topTrendBadgeByKey.set(key, trendBadge);
+                    }
                 }
 
                 prevTopRankByKey = nextRankByKey;

@@ -106,6 +106,8 @@ class DashboardController extends Controller
                 ->groupBy('sale_items.product_id', 'sale_items.product_name')
                 ->selectRaw('sale_items.product_id as product_id, sale_items.product_name as product_name, COALESCE(SUM(sale_items.quantity), 0) as qty, COALESCE(SUM(sale_items.subtotal), 0) as amount')
                 ->orderByDesc('amount')
+                ->orderByDesc('qty')
+                ->orderBy('sale_items.product_id')
                 ->limit(10)
                 ->get()
                 ->map(fn ($row) => [
