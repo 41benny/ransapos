@@ -295,9 +295,43 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product->load('category', 'creator', 'stocks.outlet');
+        $product->load(
+            'category',
+            'creator',
+            'stocks.outlet',
+            'bomHeader.details.component'
+        );
 
-        return view('admin.products.show', compact('product'));
+        $isBundleProduct = $product->bomHeader !== null;
+        $bundleComponents = collect();
+        $bundleTotalHpp = 0.0;
+
+        if ($isBundleProduct) {
+            $bundleComponents = $product->bomHeader->details
+                ->map(function (BomDetail $detail): array {
+                    $quantity = (float) $detail->quantity;
+                    $unitCost = (float) ($detail->component?->purchase_price ?? 0);
+
+                    return [
+                        'component_name' => $detail->component?->name ?? '-',
+                        'component_sku' => $detail->component?->sku ?? '-',
+                        'quantity' => $quantity,
+                        'uom' => $detail->uom ?: ($detail->component?->unit ?? '-'),
+                        'unit_cost' => $unitCost,
+                        'subtotal' => $quantity * $unitCost,
+                    ];
+                })
+                ->values();
+
+            $bundleTotalHpp = (float) $bundleComponents->sum('subtotal');
+        }
+
+        return view('admin.products.show', [
+            'product' => $product,
+            'isBundleProduct' => $isBundleProduct,
+            'bundleComponents' => $bundleComponents,
+            'bundleTotalHpp' => $bundleTotalHpp,
+        ]);
     }
 
     /**

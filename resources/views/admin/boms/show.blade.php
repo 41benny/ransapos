@@ -9,6 +9,12 @@
         $isBundleRecipe = $recipeSourceType === 'bundle';
         $defaultBackUrl = $isBundleRecipe ? route('admin.products.index') : route('admin.boms.index', ['source_type' => 'production']);
         $backUrl = $returnTo ?? $defaultBackUrl;
+        $totalHpp = (float) $bom->details->sum(function ($detail) {
+            $quantity = (float) ($detail->quantity ?? 0);
+            $unitCost = (float) ($detail->component?->purchase_price ?? 0);
+
+            return $quantity * $unitCost;
+        });
     @endphp
 
     <div class="max-w-5xl mx-auto space-y-6">
@@ -57,6 +63,10 @@
                     <div class="text-slate-500">Total Komponen</div>
                     <div class="font-medium text-slate-900">{{ $bom->details->count() }}</div>
                 </div>
+                <div>
+                    <div class="text-slate-500">Total HPP</div>
+                    <div class="font-medium text-rose-700">Rp {{ number_format($totalHpp, 0, ',', '.') }}</div>
+                </div>
             </div>
         </div>
 
@@ -73,22 +83,39 @@
                             <th class="text-left px-6 py-3 font-semibold text-slate-700">SKU</th>
                             <th class="text-right px-6 py-3 font-semibold text-slate-700">Qty</th>
                             <th class="text-left px-6 py-3 font-semibold text-slate-700">UOM</th>
+                            <th class="text-right px-6 py-3 font-semibold text-slate-700">Harga Beli</th>
+                            <th class="text-right px-6 py-3 font-semibold text-slate-700">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($bom->details as $detail)
+                            @php
+                                $quantity = (float) ($detail->quantity ?? 0);
+                                $unitCost = (float) ($detail->component?->purchase_price ?? 0);
+                                $subtotal = $quantity * $unitCost;
+                            @endphp
                             <tr class="border-t border-slate-100">
-                                <td class="px-6 py-3">{{ $detail->component->name ?? '-' }}</td>
-                                <td class="px-6 py-3 font-mono text-xs">{{ $detail->component->sku ?? '-' }}</td>
-                                <td class="px-6 py-3 text-right">{{ rtrim(rtrim(number_format((float)$detail->quantity, 4, '.', ''), '0'), '.') }}</td>
-                                <td class="px-6 py-3">{{ $detail->uom ?: ($detail->component->unit ?? '-') }}</td>
+                                <td class="px-6 py-3">{{ $detail->component?->name ?? '-' }}</td>
+                                <td class="px-6 py-3 font-mono text-xs">{{ $detail->component?->sku ?? '-' }}</td>
+                                <td class="px-6 py-3 text-right">{{ rtrim(rtrim(number_format($quantity, 4, '.', ''), '0'), '.') }}</td>
+                                <td class="px-6 py-3">{{ $detail->uom ?: ($detail->component?->unit ?? '-') }}</td>
+                                <td class="px-6 py-3 text-right">Rp {{ number_format($unitCost, 0, ',', '.') }}</td>
+                                <td class="px-6 py-3 text-right font-semibold text-slate-800">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-8 text-center text-slate-500">Belum ada komponen.</td>
+                                <td colspan="6" class="px-6 py-8 text-center text-slate-500">Belum ada komponen.</td>
                             </tr>
                         @endforelse
                     </tbody>
+                    @if($bom->details->isNotEmpty())
+                        <tfoot class="bg-slate-50 border-t border-slate-200">
+                            <tr>
+                                <td colspan="5" class="px-6 py-3 text-right font-semibold text-slate-700">Total HPP</td>
+                                <td class="px-6 py-3 text-right font-semibold text-rose-700">Rp {{ number_format($totalHpp, 0, ',', '.') }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
         </div>

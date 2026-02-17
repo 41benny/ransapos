@@ -78,74 +78,153 @@
             </div>
         </div>
 
-        <!-- Stok per Outlet -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-900">Stok per Outlet</h3>
-                <p class="text-sm text-gray-500 mt-1">Ketersediaan stok di setiap outlet</p>
-            </div>
+        @if($isBundleProduct)
+            <!-- Resep Bundle + HPP -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Komponen Resep Bundle</h3>
+                        <p class="text-sm text-gray-500 mt-1">Bundle tidak menyimpan stok langsung, HPP dihitung dari total
+                            modal komponen resep.</p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Total HPP</p>
+                        <p class="text-xl font-semibold text-rose-600">Rp {{ number_format($bundleTotalHpp, 0, ',', '.') }}</p>
+                    </div>
+                </div>
 
-            <div class="overflow-x-auto">
-                <table class="imperial-table w-full">
-                    <thead class="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Outlet</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Stok Tersedia</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Terakhir Dimutasi</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($product->stocks as $stock)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4">
-                                    <p class="text-sm font-medium text-gray-900">{{ $stock->outlet->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $stock->outlet->code }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-sm font-semibold text-gray-900">{{ number_format($stock->quantity, 0) }}
-                                        {{ $product->unit }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p class="text-sm text-gray-600">
-                                        {{ $stock->last_mutation_at ? $stock->last_mutation_at->format('d M Y H:i') : '-' }}
-                                    </p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($stock->quantity <= 0)
-                                        <span
-                                            class="px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Habis</span>
-                                    @elseif($product->min_stock && $stock->quantity <= $product->min_stock)
-                                        <span
-                                            class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Menipis</span>
-                                    @else
-                                        <span
-                                            class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Aman</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
+                <div class="overflow-x-auto">
+                    <table class="imperial-table w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center">
-                                        <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                        </svg>
-                                        <p class="text-gray-500">Belum ada data stok</p>
-                                    </div>
-                                </td>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Komponen</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    SKU</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Qty</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    UOM</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Harga Beli</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Subtotal</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($bundleComponents as $component)
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $component['component_name'] }}</td>
+                                    <td class="px-6 py-4 text-xs font-mono text-gray-600">{{ $component['component_sku'] }}</td>
+                                    <td class="px-6 py-4 text-sm text-right text-gray-900">
+                                        {{ rtrim(rtrim(number_format((float) $component['quantity'], 4, '.', ''), '0'), '.') }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-700">{{ $component['uom'] }}</td>
+                                    <td class="px-6 py-4 text-sm text-right text-gray-700">
+                                        Rp {{ number_format((float) $component['unit_cost'], 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                                        Rp {{ number_format((float) $component['subtotal'], 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                            </svg>
+                                            <p class="text-gray-500">Belum ada komponen resep</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        @if($bundleComponents->isNotEmpty())
+                            <tfoot class="bg-gray-50 border-t border-gray-100">
+                                <tr>
+                                    <td colspan="5" class="px-6 py-3 text-sm text-right font-semibold text-gray-700">Total HPP
+                                        Bundle</td>
+                                    <td class="px-6 py-3 text-sm text-right font-semibold text-rose-600">Rp
+                                        {{ number_format($bundleTotalHpp, 0, ',', '.') }}</td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
             </div>
-        </div>
+        @else
+            <!-- Stok per Outlet -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                <div class="p-6 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900">Stok per Outlet</h3>
+                    <p class="text-sm text-gray-500 mt-1">Ketersediaan stok di setiap outlet</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="imperial-table w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Outlet</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Stok Tersedia</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Terakhir Dimutasi</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse($product->stocks as $stock)
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm font-medium text-gray-900">{{ $stock->outlet->name }}</p>
+                                        <p class="text-xs text-gray-500">{{ $stock->outlet->code }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm font-semibold text-gray-900">{{ number_format($stock->quantity, 0) }}
+                                            {{ $product->unit }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="text-sm text-gray-600">
+                                            {{ $stock->last_mutation_at ? $stock->last_mutation_at->format('d M Y H:i') : '-' }}
+                                        </p>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if($stock->quantity <= 0)
+                                            <span
+                                                class="px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Habis</span>
+                                        @elseif($product->min_stock && $stock->quantity <= $product->min_stock)
+                                            <span
+                                                class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Menipis</span>
+                                        @else
+                                            <span
+                                                class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Aman</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                            </svg>
+                                            <p class="text-gray-500">Belum ada data stok</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
 
         <!-- Action Buttons -->
         <div class="flex items-center justify-between">
