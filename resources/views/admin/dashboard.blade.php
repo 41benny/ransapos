@@ -540,6 +540,10 @@
                 return `admin.dashboard.top_badges.${signature}`;
             }
 
+            function topRankStorageKey(signature) {
+                return `admin.dashboard.top_ranks.${signature}`;
+            }
+
             function loadTopBadgeState(signature) {
                 try {
                     const raw = localStorage.getItem(topBadgeStorageKey(signature));
@@ -556,6 +560,29 @@
                 try {
                     const payload = Object.fromEntries(badgeMap.entries());
                     localStorage.setItem(topBadgeStorageKey(signature), JSON.stringify(payload));
+                } catch (e) {}
+            }
+
+            function loadTopRankState(signature) {
+                try {
+                    const raw = localStorage.getItem(topRankStorageKey(signature));
+                    if (!raw) return new Map();
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return new Map();
+                    return new Map(
+                        Object.entries(parsed)
+                            .map(([k, v]) => [k, Number(v)])
+                            .filter(([, v]) => Number.isFinite(v) && v > 0)
+                    );
+                } catch (e) {
+                    return new Map();
+                }
+            }
+
+            function saveTopRankState(signature, rankMap) {
+                try {
+                    const payload = Object.fromEntries(rankMap.entries());
+                    localStorage.setItem(topRankStorageKey(signature), JSON.stringify(payload));
                 } catch (e) {}
             }
 
@@ -829,12 +856,13 @@
                     prevTopRankByKey = new Map();
                     topTrendBadgeByKey = new Map();
                     saveTopBadgeState(dataSignature, topTrendBadgeByKey);
+                    saveTopRankState(dataSignature, prevTopRankByKey);
                     lastTopProductsSignature = dataSignature;
                     return;
                 }
 
                 if (lastTopProductsSignature !== dataSignature) {
-                    prevTopRankByKey = new Map();
+                    prevTopRankByKey = loadTopRankState(dataSignature);
                     topTrendBadgeByKey = loadTopBadgeState(dataSignature);
                 }
 
@@ -886,6 +914,7 @@
                 prevTopRankByKey = nextRankByKey;
                 topTrendBadgeByKey = nextBadgeByKey;
                 saveTopBadgeState(dataSignature, topTrendBadgeByKey);
+                saveTopRankState(dataSignature, prevTopRankByKey);
                 lastTopProductsSignature = dataSignature;
             }
 
