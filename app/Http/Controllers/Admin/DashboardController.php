@@ -61,7 +61,7 @@ class DashboardController extends Controller
             $salesBase = Sale::query()
                 ->where('sale_date', $date)
                 ->where('status', 'completed')
-                ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId));
+                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
 
             $kpis = (clone $salesBase)
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales, COUNT(*) as total_transactions, COALESCE(SUM(discount_amount), 0) as discount_total')
@@ -76,7 +76,7 @@ class DashboardController extends Controller
             $cancelledBase = Sale::query()
                 ->where('sale_date', $date)
                 ->where('status', 'cancelled')
-                ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId));
+                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
 
             $cancelledKpis = (clone $cancelledBase)
                 ->selectRaw('COUNT(*) as cancelled_transactions, COALESCE(SUM(total_amount), 0) as cancelled_amount')
@@ -100,19 +100,21 @@ class DashboardController extends Controller
 
             $topProducts = SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn ($q) => $q->where('sales.outlet_id', $outletId))
-                ->groupBy('sale_items.product_id', 'sale_items.product_name')
-                ->selectRaw('sale_items.product_id as product_id, sale_items.product_name as product_name, COALESCE(SUM(sale_items.quantity), 0) as qty, COALESCE(SUM(sale_items.subtotal), 0) as amount')
+                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
+                ->groupBy('sale_items.product_id', 'sale_items.product_name', 'products.thumbnail_path', 'products.image_path')
+                ->selectRaw('sale_items.product_id as product_id, sale_items.product_name as product_name, products.thumbnail_path, products.image_path, COALESCE(SUM(sale_items.quantity), 0) as qty, COALESCE(SUM(sale_items.subtotal), 0) as amount')
                 ->orderByDesc('amount')
                 ->orderByDesc('qty')
                 ->orderBy('sale_items.product_id')
                 ->limit(10)
                 ->get()
-                ->map(fn ($row) => [
+                ->map(fn($row) => [
                     'product_id' => (int) $row->product_id,
                     'product_name' => (string) $row->product_name,
+                    'image_url' => $row->thumbnail_path ? \Illuminate\Support\Facades\Storage::url($row->thumbnail_path) : ($row->image_path ? \Illuminate\Support\Facades\Storage::url($row->image_path) : null),
                     'qty' => (float) $row->qty,
                     'amount' => (float) $row->amount,
                 ])
@@ -192,13 +194,13 @@ class DashboardController extends Controller
                 ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn ($q) => $q->where('sales.outlet_id', $outletId))
+                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
                 ->groupBy('product_categories.id', 'product_categories.name')
                 ->selectRaw("COALESCE(product_categories.name, 'Uncategorized') as category, COALESCE(SUM(sale_items.subtotal), 0) as amount")
                 ->orderByDesc('amount')
                 ->limit(10)
                 ->get()
-                ->map(fn ($row) => [
+                ->map(fn($row) => [
                     'category' => (string) $row->category,
                     'amount' => (float) $row->amount,
                 ])
@@ -209,12 +211,12 @@ class DashboardController extends Controller
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn ($q) => $q->where('sales.outlet_id', $outletId))
+                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
                 ->groupBy('payment_methods.id', 'payment_methods.name')
                 ->selectRaw('payment_methods.id as payment_method_id, payment_methods.name as payment_method_name, COALESCE(SUM(payments.amount), 0) as amount')
                 ->orderByDesc('amount')
                 ->get()
-                ->map(fn ($row) => [
+                ->map(fn($row) => [
                     'payment_method_id' => (int) $row->payment_method_id,
                     'payment_method_name' => (string) $row->payment_method_name,
                     'amount' => (float) $row->amount,
@@ -231,7 +233,7 @@ class DashboardController extends Controller
                     ->selectRaw('outlets.id as outlet_id, outlets.name as outlet_name, COALESCE(SUM(sales.total_amount), 0) as amount, COUNT(*) as transactions, MAX(sales.created_at) as last_sale_at')
                     ->orderByDesc('amount')
                     ->get()
-                    ->map(fn ($row) => [
+                    ->map(fn($row) => [
                         'outlet_id' => (int) $row->outlet_id,
                         'outlet_name' => (string) $row->outlet_name,
                         'amount' => (float) $row->amount,
@@ -252,7 +254,7 @@ class DashboardController extends Controller
                 $topOutletIds = $topOutlets->pluck('outlet_id')->all();
 
                 $outletNameById = $outletSales
-                    ->mapWithKeys(fn ($r) => [(int) $r['outlet_id'] => (string) $r['outlet_name']])
+                    ->mapWithKeys(fn($r) => [(int) $r['outlet_id'] => (string) $r['outlet_name']])
                     ->all();
 
                 $hourOutletRows = Sale::query()
@@ -305,7 +307,7 @@ class DashboardController extends Controller
                             ];
                         }
 
-                        usort($othersBreakdown, fn ($a, $b) => ($b['amount'] <=> $a['amount']));
+                        usort($othersBreakdown, fn($a, $b) => ($b['amount'] <=> $a['amount']));
                     }
 
                     $hourlyStacked[] = [
@@ -321,7 +323,7 @@ class DashboardController extends Controller
 
                 $hourlyStackedMeta = [
                     'top_outlets' => $topOutlets
-                        ->map(fn ($r) => [
+                        ->map(fn($r) => [
                             'outlet_id' => (int) $r['outlet_id'],
                             'outlet_name' => (string) $r['outlet_name'],
                         ])
@@ -360,7 +362,7 @@ class DashboardController extends Controller
             $base = Sale::query()
                 ->where('sale_date', $prevDate)
                 ->where('status', 'completed')
-                ->when($outletId, fn ($q) => $q->where('outlet_id', $outletId));
+                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
 
             $kpis = (clone $base)
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales, COUNT(*) as total_transactions')
