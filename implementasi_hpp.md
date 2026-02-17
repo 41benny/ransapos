@@ -47,6 +47,24 @@ Dokumen ini jadi aturan main penerapan HPP agar:
 1. Cancel sale menggunakan cost referensi transaksi asli (bukan avg cost terbaru).
 2. Tujuan: reversal akurat dan tidak mendistorsi laba historis.
 
+### 5. Stock transfer antar outlet
+1. Barang keluar dari outlet pengirim dicatat menggunakan `avg cost outlet pengirim` saat transfer.
+2. Barang masuk ke outlet penerima menghitung avg cost baru:
+   - `avg_baru = ((qty_lama x avg_lama) + (qty_masuk x cost_transfer)) / (qty_lama + qty_masuk)`
+3. Transfer tidak menghasilkan laba/rugi — perbedaan avg cost antar outlet dianggap wajar.
+4. Snapshot `unit_cost` dan `total_cost` wajib tercatat di `stock_mutations` untuk audit trail.
+
+### 6. Retur pembelian (purchase return)
+1. Barang yang diretur mengurangi qty dan menghitung ulang avg cost:
+   - `avg_baru = ((qty_lama x avg_lama) - (qty_retur x cost_saat_receive)) / (qty_lama - qty_retur)`
+2. Cost yang dipakai untuk retur = cost saat barang awalnya di-receive (snapshot dari purchase receive).
+3. Jika qty setelah retur menjadi 0, avg cost di-reset (menunggu receive berikutnya).
+
+### 7. Edge cases
+1. **Qty negatif**: Jika stok menjadi negatif (karena kebijakan `ALLOW_NEGATIVE_STOCK=true`), avg cost TIDAK berubah. Cost yang dipakai tetap avg cost terakhir yang valid.
+2. **Receive pertama (qty lama = 0)**: avg cost = harga beli neto, tanpa perhitungan rata-rata.
+3. **BOM dengan komponen kosong**: Jika salah satu komponen BOM belum punya avg cost, gunakan `purchase_price` terakhir dari master produk sebagai fallback.
+
 ## Standar Rekonsiliasi HPP (Apple-to-Apple)
 
 ### 1. Definisi perbandingan yang benar
@@ -160,10 +178,18 @@ Karena stok dikelola per outlet, avg cost lebih akurat jika disimpan per outlet:
    - simpan ke cost ledger.
 2. `post sale`:
    - ambil avg cost aktif,
-   - hitung cogs,
-   - simpan snapshot.
+   - hitung cogs per item (untuk BOM: sum komponen x avg cost masing-masing),
+   - simpan snapshot ke `sale_items.cogs` dan `stock_mutations.unit_cost/total_cost`.
 3. `cancel sale`:
    - reversal berdasarkan snapshot cost transaksi asal.
+4. `stock transfer`:
+   - outlet pengirim: mutasi out dengan avg cost pengirim,
+   - outlet penerima: mutasi in, hitung avg cost baru penerima.
+5. `purchase return`:
+   - reversal stok dan recalculate avg cost berdasarkan cost saat receive awal.
+6. `stock adjustment/opname`:
+   - selisih qty dicatat menggunakan avg cost aktif saat adjustment.
+   - jurnal penyesuaian persediaan otomatis dibuat.
 
 ## SOP Operasional Bulanan
 1. Tanggal H+1 awal bulan: rekonsiliasi stok dan kas.
@@ -179,11 +205,30 @@ Karena stok dikelola per outlet, avg cost lebih akurat jika disimpan per outlet:
 5. Multi outlet tidak saling mencampur avg cost.
 6. HPP laba rugi (penjualan kotor) sama dengan total mutasi `out sale` pada filter yang sama.
 7. Nilai persediaan Neraca sama dengan nilai persediaan laporan mutasi persediaan pada tanggal cut-off yang sama.
+8. Transfer antar outlet menggunakan cost pengirim dan menghitung avg cost baru di penerima.
+9. Retur pembelian menghitung ulang avg cost dengan benar.
+10. Stok negatif (jika diizinkan) tidak mendistorsi avg cost.
 
 ## Kondisi Sistem Saat Ini (Baseline)
 1. Sistem sudah menyimpan `sale_items.cogs`.
 2. Sistem sudah mencatat mutasi stok in/out.
-3. Sistem belum otomatis update `purchase_price` sebagai moving average saat receive purchase.
-4. Sistem belum punya lock period akuntansi formal.
+3. Sistem sudah mendukung stock transfer antar outlet.
+4. Sistem belum otomatis update `purchase_price` sebagai moving average saat receive purchase.
+5. Sistem belum punya lock period akuntansi formal.
+6. Sistem belum mencatat cost pada stock transfer (transfer tanpa valuasi).
+7. Sistem belum punya mekanisme retur pembelian dengan recalculate avg cost.
+
+## Prioritas Implementasi
+1. **Fase 1** — Moving average cost engine:
+   - Tabel `product_costs` (per product, per outlet).
+   - Update avg cost saat receive purchase.
+   - Snapshot cogs saat post sale.
+2. **Fase 2** — Valuasi transfer & retur:
+   - Catat cost pada stock transfer.
+   - Hitung ulang avg cost saat retur pembelian.
+3. **Fase 3** — Period closing:
+   - Tabel `accounting_periods` + lock date.
+   - Validasi backdate terhadap lock date.
+   - Laporan rekonsiliasi otomatis (Neraca vs Mutasi Persediaan).
 
 Dokumen ini menjadi acuan diskusi final sebelum implementasi coding berikutnya.

@@ -64,7 +64,7 @@ class SaleService
             // 3. Preload products (sekali query) untuk hitung diskon + proses stok/BOM
             $productIds = collect($data['items'])
                 ->pluck('product_id')
-                ->map(fn ($id) => (int) $id)
+                ->map(fn($id) => (int) $id)
                 ->unique()
                 ->values();
 
@@ -212,7 +212,7 @@ class SaleService
 
                 $itemSubtotal = (float) $item['subtotal'];
                 // Hitung COGS per item
-                $itemCogs = $this->calculateItemCogs($product, $item['quantity']);
+                $itemCogs = $this->calculateItemCogs($product, $item['quantity'], (int) $data['outlet_id']);
 
                 SaleItem::create([
                     'sale_id' => $sale->id,
@@ -484,39 +484,16 @@ class SaleService
     }
 
     /**
-     * Hitung COGS (Cost of Goods Sold) per item berdasarkan BOM atau purchase_price
+     * Hitung COGS (Cost of Goods Sold) per item menggunakan moving average cost.
+     * Delegasi ke CostService untuk konsistensi perhitungan.
      *
      * @param Product $product
      * @param float $quantity
+     * @param int $outletId
      * @return float
      */
-    protected function calculateItemCogs(Product $product, float $quantity): float
+    protected function calculateItemCogs(Product $product, float $quantity, int $outletId): float
     {
-        $type = $product->product_type ?? 'finished_good';
-
-        if ($type === 'service') {
-            return 0; // Service tidak ada COGS
-        }
-
-        if ($type === 'raw_material') {
-            // Raw material: COGS = purchase_price × quantity
-            return ($product->purchase_price ?? 0) * $quantity;
-        }
-
-        // finished_good: Cek ada BOM aktif atau tidak
-        $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
-
-        if ($bom) {
-            // Ada BOM: COGS = sum(component.purchase_price × bom_detail.quantity × sale_quantity)
-            $totalCogs = 0;
-            foreach ($bom->details as $detail) {
-                $componentCost = ($detail->component->purchase_price ?? 0) * $detail->quantity * $quantity;
-                $totalCogs += $componentCost;
-            }
-            return $totalCogs;
-        } else {
-            // Tidak ada BOM: COGS = purchase_price × quantity (fallback)
-            return ($product->purchase_price ?? 0) * $quantity;
-        }
+        return app(CostService::class)->calculateItemCogs($product, $quantity, $outletId);
     }
 }

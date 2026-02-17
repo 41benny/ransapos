@@ -6,6 +6,7 @@ use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
 use App\Models\Stock;
 use App\Models\StockMutation;
+use App\Services\CostService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -103,7 +104,7 @@ class StockTransferService
                 if (!$stock || $stock->quantity < $item->quantity) {
                     throw new Exception(
                         "Stok {$item->product->name} tidak mencukupi di outlet pengirim. " .
-                        "Tersedia: " . ($stock ? $stock->quantity : 0) . ", Dibutuhkan: {$item->quantity}"
+                            "Tersedia: " . ($stock ? $stock->quantity : 0) . ", Dibutuhkan: {$item->quantity}"
                     );
                 }
 
@@ -113,12 +114,18 @@ class StockTransferService
                 $stock->last_mutation_at = now();
                 $stock->save();
 
-                // Catat mutasi (transfer_out)
+                // Ambil avg cost dari outlet pengirim
+                $costService = app(CostService::class);
+                $unitCost = $costService->getAvgCost($item->product_id, $transfer->from_outlet_id);
+
+                // Catat mutasi (transfer_out) dengan valuasi cost
                 StockMutation::create([
                     'product_id' => $item->product_id,
                     'outlet_id' => $transfer->from_outlet_id,
                     'mutation_type' => 'transfer_out',
                     'quantity' => -$item->quantity,
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $unitCost * $item->quantity,
                     'stock_before' => $stockBefore,
                     'stock_after' => $stock->quantity,
                     'reference_type' => 'stock_transfer',
@@ -182,12 +189,23 @@ class StockTransferService
                 $stock->last_mutation_at = now();
                 $stock->save();
 
-                // Catat mutasi (transfer_in)
+                // Ambil unit cost dari mutasi transfer_out (cost outlet pengirim)
+                $outMutation = StockMutation::where('product_id', $item->product_id)
+                    ->where('outlet_id', $transfer->from_outlet_id)
+                    ->where('reference_type', 'stock_transfer')
+                    ->where('reference_id', $transfer->id)
+                    ->where('mutation_type', 'transfer_out')
+                    ->first();
+                $unitCost = $outMutation->unit_cost ?? 0;
+
+                // Catat mutasi (transfer_in) dengan valuasi cost
                 StockMutation::create([
                     'product_id' => $item->product_id,
                     'outlet_id' => $transfer->to_outlet_id,
                     'mutation_type' => 'transfer_in',
                     'quantity' => $receivedQty,
+                    'unit_cost' => $unitCost,
+                    'total_cost' => $unitCost * $receivedQty,
                     'stock_before' => $stockBefore,
                     'stock_after' => $stock->quantity,
                     'reference_type' => 'stock_transfer',
@@ -196,6 +214,15 @@ class StockTransferService
                     'notes' => "Transfer dari {$transfer->fromOutlet->name}",
                     'created_by' => auth()->id(),
                 ]);
+
+                // Update avg cost outlet penerima (seperti menerima pembelian)
+                $costService = app(CostService::class);
+                $costService->updateAvgCostOnReceive(
+                    productId: $item->product_id,
+                    outletId: $transfer->to_outlet_id,
+                    receivedQty: $receivedQty,
+                    unitPrice: $unitCost,
+                );
 
                 // Jika ada selisih (shortage/damage), catat sebagai adjustment di outlet pengirim
                 $difference = $receivedQty - $item->quantity;
@@ -262,12 +289,23 @@ class StockTransferService
                         $stock->last_mutation_at = now();
                         $stock->save();
 
-                        // Catat mutasi pembatalan
+                        // Ambil cost dari mutasi transfer_out asli
+                        $outMutation = StockMutation::where('product_id', $item->product_id)
+                            ->where('outlet_id', $transfer->from_outlet_id)
+                            ->where('reference_type', 'stock_transfer')
+                            ->where('reference_id', $transfer->id)
+                            ->where('mutation_type', 'transfer_out')
+                            ->first();
+                        $unitCost = $outMutation->unit_cost ?? 0;
+
+                        // Catat mutasi pembatalan dengan cost
                         StockMutation::create([
                             'product_id' => $item->product_id,
                             'outlet_id' => $transfer->from_outlet_id,
                             'mutation_type' => 'adjustment',
                             'quantity' => $item->quantity,
+                            'unit_cost' => $unitCost,
+                            'total_cost' => $unitCost * $item->quantity,
                             'stock_before' => $stockBefore,
                             'stock_after' => $stock->quantity,
                             'reference_type' => 'stock_transfer',

@@ -54,12 +54,13 @@ return new class extends Migration
 
     private function indexExists(string $table, string $indexName): bool
     {
-        $databaseName = DB::getDatabaseName();
-
-        return DB::table('information_schema.statistics')
-            ->where('table_schema', $databaseName)
-            ->where('table_name', $table)
-            ->where('index_name', $indexName)
-            ->exists();
+        // Use Schema facade for cross-database compatibility (MySQL + SQLite)
+        $indexes = Schema::getIndexes($table);
+        foreach ($indexes as $index) {
+            if ($index['name'] === $indexName) {
+                return true;
+            }
+        }
+        return false;
     }
 };

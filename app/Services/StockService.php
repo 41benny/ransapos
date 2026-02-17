@@ -53,9 +53,8 @@ class StockService
             $stock->last_mutation_at = now();
             $stock->save();
 
-            // Ambil cost dari product (purchase_price sebagai cost)
-            $product = Product::find($productId);
-            $unitCost = $product->purchase_price ?? 0;
+            // Ambil cost dari CostService (moving average)
+            $unitCost = app(CostService::class)->getAvgCost($productId, $outletId);
             $totalCost = $unitCost * $quantity;
 
             // Catat mutasi dengan HPP
@@ -111,9 +110,15 @@ class StockService
             $stock->last_mutation_at = now();
             $stock->save();
 
-            // Ambil cost referensi: gunakan purchase_price sebagai unit cost reversal
-            $product = Product::find($productId);
-            $unitCost = $product->purchase_price ?? 0;
+            // Ambil cost dari mutasi sale asli (snapshot saat penjualan terjadi)
+            $originalMutation = StockMutation::where('product_id', $productId)
+                ->where('outlet_id', $outletId)
+                ->where('reference_type', 'sale')
+                ->where('reference_id', $saleId)
+                ->where('mutation_type', 'out')
+                ->first();
+
+            $unitCost = $originalMutation->unit_cost ?? app(CostService::class)->getAvgCost($productId, $outletId);
             $totalCost = $unitCost * $quantity;
 
             StockMutation::create([
@@ -154,7 +159,8 @@ class StockService
         int $outletId,
         float $quantity,
         int $purchaseId,
-        ?int $userId = null
+        ?int $userId = null,
+        float $unitPrice = 0
     ): void {
         DB::beginTransaction();
 
@@ -179,12 +185,14 @@ class StockService
             $stock->last_mutation_at = now();
             $stock->save();
 
-            // Catat mutasi
+            // Catat mutasi dengan cost
             StockMutation::create([
                 'product_id' => $productId,
                 'outlet_id' => $outletId,
                 'mutation_type' => 'in',
                 'quantity' => $quantity, // Positif karena masuk
+                'unit_cost' => $unitPrice,
+                'total_cost' => $unitPrice * $quantity,
                 'stock_before' => $stockBefore,
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'purchase',

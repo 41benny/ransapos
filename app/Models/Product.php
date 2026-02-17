@@ -105,6 +105,14 @@ class Product extends Model
     }
 
     /**
+     * Relasi ke product costs (avg cost per outlet)
+     */
+    public function costs(): HasMany
+    {
+        return $this->hasMany(ProductCost::class);
+    }
+
+    /**
      * Relasi ke resep bundle (aktif maupun tidak).
      * Bundle disimpan sebagai source_type=bundle agar terpisah dari BOM produksi.
      */

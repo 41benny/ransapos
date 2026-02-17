@@ -11,10 +11,12 @@ use Exception;
 class PurchaseService
 {
     protected StockService $stockService;
+    protected CostService $costService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, CostService $costService)
     {
         $this->stockService = $stockService;
+        $this->costService = $costService;
     }
 
     /**
@@ -27,7 +29,7 @@ class PurchaseService
     public function createPurchase(array $data): Purchase
     {
         DB::beginTransaction();
-        
+
         try {
             // 1. Generate purchase number
             $purchaseNumber = $this->generatePurchaseNumber($data['outlet_id']);
@@ -81,7 +83,6 @@ class PurchaseService
             DB::commit();
 
             return $purchase->load(['items.product', 'outlet', 'supplier', 'creator']);
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -99,7 +100,7 @@ class PurchaseService
     public function updatePurchase(Purchase $purchase, array $data): Purchase
     {
         DB::beginTransaction();
-        
+
         try {
             // Hanya bisa update jika masih draft
             if (!$purchase->isDraft()) {
@@ -155,7 +156,6 @@ class PurchaseService
             DB::commit();
 
             return $purchase->fresh()->load(['items.product', 'outlet', 'supplier', 'creator']);
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -172,7 +172,7 @@ class PurchaseService
     public function receivePurchase(Purchase $purchase): Purchase
     {
         DB::beginTransaction();
-        
+
         try {
             // Validasi status
             if (!$purchase->isDraft()) {
@@ -186,21 +186,35 @@ class PurchaseService
                 'received_by' => auth()->id(),
             ]);
 
-            // Tambah stok untuk setiap item
+            // Tambah stok dan update avg cost untuk setiap item
             foreach ($purchase->items as $item) {
+                // Harga beli neto per unit (harga - diskon per unit)
+                $netUnitPrice = (float) $item->unit_price;
+                if ((float) $item->discount_amount > 0 && (float) $item->quantity > 0) {
+                    $netUnitPrice -= ((float) $item->discount_amount / (float) $item->quantity);
+                }
+
                 $this->stockService->addPurchaseStock(
                     productId: $item->product_id,
                     outletId: $purchase->outlet_id,
                     quantity: $item->quantity,
                     purchaseId: $purchase->id,
-                    userId: auth()->id()
+                    userId: auth()->id(),
+                    unitPrice: $netUnitPrice
+                );
+
+                // Update moving average cost
+                $this->costService->updateAvgCostOnReceive(
+                    productId: $item->product_id,
+                    outletId: $purchase->outlet_id,
+                    receivedQty: $item->quantity,
+                    unitPrice: $netUnitPrice,
                 );
             }
 
             DB::commit();
 
             return $purchase->fresh()->load(['items.product', 'outlet', 'supplier', 'creator', 'receiver']);
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -218,7 +232,7 @@ class PurchaseService
     public function cancelPurchase(Purchase $purchase, string $reason = ''): Purchase
     {
         DB::beginTransaction();
-        
+
         try {
             // Tidak bisa cancel jika sudah received
             if ($purchase->isReceived()) {
@@ -233,7 +247,6 @@ class PurchaseService
             DB::commit();
 
             return $purchase->fresh();
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -250,7 +263,7 @@ class PurchaseService
     {
         $date = now()->format('Ymd');
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
-        
+
         // Cari purchase terakhir hari ini untuk outlet ini
         $lastPurchase = Purchase::where('outlet_id', $outletId)
             ->whereDate('purchase_date', now())
@@ -310,5 +323,3 @@ class PurchaseService
             ->paginate(15);
     }
 }
-
-
