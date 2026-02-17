@@ -2,7 +2,146 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Product;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('products:generate-thumbnails {--force : Regenerate even if thumbnail already exists} {--dry-run : Show impact without writing files}', function () {
+    $isForce = (bool) $this->option('force');
+    $isDryRun = (bool) $this->option('dry-run');
+
+    if (!extension_loaded('gd')) {
+        $this->error('GD extension tidak aktif. Thumbnail tidak bisa dibuat.');
+        return self::FAILURE;
+    }
+
+    $query = Product::query()
+        ->whereNotNull('image_path')
+        ->where('image_path', '<>', '');
+
+    if (!$isForce) {
+        $query->where(function ($inner) {
+            $inner->whereNull('thumbnail_path')
+                ->orWhere('thumbnail_path', '');
+        });
+    }
+
+    $products = $query->orderBy('id')->get(['id', 'name', 'image_path', 'thumbnail_path']);
+    $total = $products->count();
+
+    if ($total === 0) {
+        $this->info('Tidak ada produk yang perlu diproses.');
+        return self::SUCCESS;
+    }
+
+    $this->info(sprintf(
+        'Memproses %d produk (force=%s, dry-run=%s)',
+        $total,
+        $isForce ? 'yes' : 'no',
+        $isDryRun ? 'yes' : 'no'
+    ));
+
+    $disk = Storage::disk('public');
+    $processed = 0;
+    $failed = 0;
+    $written = 0;
+
+    foreach ($products as $product) {
+        $processed++;
+        $sourceAbsolutePath = $disk->path($product->image_path);
+
+        if (!is_file($sourceAbsolutePath)) {
+            $failed++;
+            $this->warn("[$processed/$total] Skip #{$product->id} {$product->name}: file image tidak ditemukan.");
+            continue;
+        }
+
+        $filename = pathinfo($product->image_path, PATHINFO_FILENAME);
+        $thumbnailPath = 'products/thumbnails/' . $filename . '_thumb.jpg';
+
+        if ($isDryRun) {
+            $this->line("[$processed/$total] DRY-RUN #{$product->id} -> {$thumbnailPath}");
+            continue;
+        }
+
+        $imageData = @file_get_contents($sourceAbsolutePath);
+        if ($imageData === false) {
+            $failed++;
+            $this->warn("[$processed/$total] Gagal baca file #{$product->id}.");
+            continue;
+        }
+
+        $sourceImage = @imagecreatefromstring($imageData);
+        if ($sourceImage === false) {
+            $failed++;
+            $this->warn("[$processed/$total] Format gambar tidak didukung #{$product->id}.");
+            continue;
+        }
+
+        $sourceWidth = imagesx($sourceImage);
+        $sourceHeight = imagesy($sourceImage);
+        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+            imagedestroy($sourceImage);
+            $failed++;
+            $this->warn("[$processed/$total] Dimensi gambar invalid #{$product->id}.");
+            continue;
+        }
+
+        $thumbSize = 360;
+        $cropSize = min($sourceWidth, $sourceHeight);
+        $cropX = (int) floor(($sourceWidth - $cropSize) / 2);
+        $cropY = (int) floor(($sourceHeight - $cropSize) / 2);
+
+        $thumbnailImage = imagecreatetruecolor($thumbSize, $thumbSize);
+        $background = imagecolorallocate($thumbnailImage, 255, 255, 255);
+        imagefill($thumbnailImage, 0, 0, $background);
+
+        imagecopyresampled(
+            $thumbnailImage,
+            $sourceImage,
+            0,
+            0,
+            $cropX,
+            $cropY,
+            $thumbSize,
+            $thumbSize,
+            $cropSize,
+            $cropSize
+        );
+
+        $thumbnailAbsolutePath = $disk->path($thumbnailPath);
+        $thumbnailDir = dirname($thumbnailAbsolutePath);
+        if (!is_dir($thumbnailDir)) {
+            mkdir($thumbnailDir, 0755, true);
+        }
+
+        $ok = @imagejpeg($thumbnailImage, $thumbnailAbsolutePath, 82);
+        imagedestroy($thumbnailImage);
+        imagedestroy($sourceImage);
+
+        if (!$ok) {
+            $failed++;
+            Log::warning('Failed to write product thumbnail from artisan command', [
+                'product_id' => $product->id,
+                'image_path' => $product->image_path,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
+            $this->warn("[$processed/$total] Gagal menulis thumbnail #{$product->id}.");
+            continue;
+        }
+
+        $product->thumbnail_path = $thumbnailPath;
+        $product->save();
+        $written++;
+        $this->info("[$processed/$total] OK #{$product->id} -> {$thumbnailPath}");
+    }
+
+    $this->newLine();
+    $this->info("Selesai. Total: {$total}, berhasil: {$written}, gagal: {$failed}" . ($isDryRun ? ' (dry-run)' : ''));
+
+    return $failed > 0 ? self::FAILURE : self::SUCCESS;
+})->purpose('Generate thumbnail produk untuk image lama yang belum punya thumbnail_path');
