@@ -65,15 +65,6 @@
                 <span class="text-xs font-bold text-gray-700 group-hover:text-rose-700">Rekap Shift</span>
             </a>
 
-            <!-- History Button with Vue Click Handler -->
-            <button @click="openHistory" type="button"
-                class="bg-white p-4 rounded-xl shadow-sm border border-blue-100 hover:border-blue-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24 w-full">
-                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
-                    <span class="material-icons-round">history</span>
-                </div>
-                <span class="text-xs font-bold text-gray-700 group-hover:text-blue-700">Riwayat</span>
-            </button>
-
             <a href="{{ route('pos.petty-cash.index') }}"
                 class="bg-white p-4 rounded-xl shadow-sm border border-amber-100 hover:border-amber-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
@@ -425,10 +416,6 @@
             }
         },
         methods: {
-            openHistory() {
-                this.showHistoryModal = true;
-                this.fetchHistory();
-            },
             openHistoryWithSale(saleId) {
                 this.showHistoryModal = true;
                 this.fetchHistory().then(() => {
