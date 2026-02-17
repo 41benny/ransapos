@@ -173,7 +173,8 @@
 
             <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars"
                 aria-label="Sales per hour chart"></div>
-            <div id="hourlyEmpty" class="hidden mt-2 text-[11px] text-slate-500">Belum ada transaksi pada rentang jam ini.
+            <div id="hourlyEmpty" class="hidden mt-2 text-xs font-semibold text-orange-700">Data per jam belum tersedia
+                untuk filter ini.
             </div>
             <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
                 @for ($i = 0; $i < 24; $i += 2)
@@ -334,11 +335,11 @@
 
         .hourly-col {
             display: flex;
-            align-items: end;
+            align-items: flex-end;
             justify-content: center;
             flex: 1 1 0%;
             min-width: 0;
-            height: 100%;
+            align-self: stretch;
             position: relative;
         }
 
@@ -1036,11 +1037,7 @@
 
                 setTarget(data?.target);
 
-                if (!data?.outlet_id && Array.isArray(data?.hourly_stacked)) {
-                    renderHourlyStacked(data.hourly_stacked, data?.hourly_stacked_meta);
-                } else {
-                    renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
-                }
+                renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
                 const topProductsSignature = `${String(data?.date || '')}|${String(data?.outlet_id ?? 'all')}`;
