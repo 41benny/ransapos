@@ -536,6 +536,29 @@
             let prevTopRankByKey = new Map();
             let topTrendBadgeByKey = new Map();
 
+            function topBadgeStorageKey(signature) {
+                return `admin.dashboard.top_badges.${signature}`;
+            }
+
+            function loadTopBadgeState(signature) {
+                try {
+                    const raw = localStorage.getItem(topBadgeStorageKey(signature));
+                    if (!raw) return new Map();
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return new Map();
+                    return new Map(Object.entries(parsed));
+                } catch (e) {
+                    return new Map();
+                }
+            }
+
+            function saveTopBadgeState(signature, badgeMap) {
+                try {
+                    const payload = Object.fromEntries(badgeMap.entries());
+                    localStorage.setItem(topBadgeStorageKey(signature), JSON.stringify(payload));
+                } catch (e) {}
+            }
+
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text;
                 statusTextEl.className = 'text-xs';
@@ -805,17 +828,19 @@
                     productEmptyEl.classList.remove('hidden');
                     prevTopRankByKey = new Map();
                     topTrendBadgeByKey = new Map();
+                    saveTopBadgeState(dataSignature, topTrendBadgeByKey);
                     lastTopProductsSignature = dataSignature;
                     return;
                 }
 
                 if (lastTopProductsSignature !== dataSignature) {
                     prevTopRankByKey = new Map();
-                    topTrendBadgeByKey = new Map();
+                    topTrendBadgeByKey = loadTopBadgeState(dataSignature);
                 }
 
                 productEmptyEl.classList.add('hidden');
                 const nextRankByKey = new Map();
+                const nextBadgeByKey = new Map();
                 for (const row of rows) {
                     const rank = productRowsEl.children.length + 1;
                     const key = formatTopProductKey(row);
@@ -854,11 +879,13 @@
                     nextRankByKey.set(key, rank);
 
                     if (trendBadge) {
-                        topTrendBadgeByKey.set(key, trendBadge);
+                        nextBadgeByKey.set(key, trendBadge);
                     }
                 }
 
                 prevTopRankByKey = nextRankByKey;
+                topTrendBadgeByKey = nextBadgeByKey;
+                saveTopBadgeState(dataSignature, topTrendBadgeByKey);
                 lastTopProductsSignature = dataSignature;
             }
 
