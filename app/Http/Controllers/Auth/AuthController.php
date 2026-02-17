@@ -15,7 +15,7 @@ class AuthController extends Controller
 {
     private const MAX_LOGIN_ATTEMPTS = 5;
     private const LOGIN_DECAY_SECONDS = 900; // 15 menit
-    private const SINGLE_DEVICE_ROLES = ['kasir', 'kitchen'];
+    private const SINGLE_DEVICE_ROLES = ['kitchen'];
 
     /**
      * Tampilkan halaman login

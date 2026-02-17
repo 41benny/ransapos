@@ -19,7 +19,7 @@ class PinLoginController extends Controller
     private const MAX_ATTEMPTS = 5;
     private const DECAY_SECONDS = 900;
     private const ALLOWED_ROLES = ['kasir', 'admin', 'kitchen'];
-    private const SINGLE_DEVICE_ROLES = ['kasir', 'kitchen'];
+    private const SINGLE_DEVICE_ROLES = ['kitchen'];
 
     public function show(Request $request): View|RedirectResponse
     {
