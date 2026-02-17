@@ -118,6 +118,65 @@ class DashboardController extends Controller
                 ])
                 ->values();
 
+            $rankStateKey = 'admin.dashboard.top_products.rank_state:' . $date . ':' . ($outletId ?? 'all');
+            $badgeStateKey = 'admin.dashboard.top_products.badge_state:' . $date . ':' . ($outletId ?? 'all');
+
+            $prevRankState = Cache::get($rankStateKey, []);
+            $prevBadgeState = Cache::get($badgeStateKey, []);
+
+            $nextRankState = [];
+            $nextBadgeState = [];
+
+            $topProducts = $topProducts
+                ->values()
+                ->map(function (array $row, int $idx) use ($prevRankState, $prevBadgeState, &$nextRankState, &$nextBadgeState) {
+                    $productId = (int) ($row['product_id'] ?? 0);
+                    $productName = strtolower(trim((string) ($row['product_name'] ?? '')));
+                    $key = $productId > 0 ? "id:{$productId}" : "name:{$productName}";
+
+                    $currentRank = $idx + 1;
+                    $nextRankState[$key] = $currentRank;
+
+                    $badge = null;
+                    if (is_array($prevBadgeState) && isset($prevBadgeState[$key]) && is_array($prevBadgeState[$key])) {
+                        $badge = $prevBadgeState[$key];
+                    }
+
+                    $prevRank = null;
+                    if (is_array($prevRankState) && array_key_exists($key, $prevRankState)) {
+                        $candidatePrev = (int) $prevRankState[$key];
+                        if ($candidatePrev > 0) {
+                            $prevRank = $candidatePrev;
+                        }
+                    }
+
+                    if ($prevRank !== null) {
+                        if ($currentRank < $prevRank) {
+                            $badge = [
+                                'direction' => 'up',
+                                'delta' => $prevRank - $currentRank,
+                            ];
+                        } elseif ($currentRank > $prevRank) {
+                            $badge = [
+                                'direction' => 'down',
+                                'delta' => $currentRank - $prevRank,
+                            ];
+                        }
+                    }
+
+                    if (is_array($badge) && isset($badge['direction'], $badge['delta'])) {
+                        $nextBadgeState[$key] = $badge;
+                    }
+
+                    $row['movement'] = $badge;
+
+                    return $row;
+                })
+                ->values();
+
+            Cache::put($rankStateKey, $nextRankState, now()->addHours(12));
+            Cache::put($badgeStateKey, $nextBadgeState, now()->addHours(12));
+
             $categorySales = SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('products', 'sale_items.product_id', '=', 'products.id')

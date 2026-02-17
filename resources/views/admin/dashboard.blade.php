@@ -892,7 +892,19 @@
                     let trendBadge = topTrendBadgeByKey.get(key) || '';
                     let movementClass = '';
 
-                    if (prevRank !== null && prevRank !== undefined) {
+                    const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
+                    const movementDir = movement?.direction === 'up' || movement?.direction === 'down' ? movement.direction : null;
+                    const movementDelta = Number(movement?.delta || 0);
+
+                    if (movementDir === 'up' && movementDelta > 0) {
+                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${movementDelta}</span>`;
+                        movementClass = 'top-rank-up';
+                    } else if (movementDir === 'down' && movementDelta > 0) {
+                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
+                        movementClass = 'top-rank-down';
+                    }
+
+                    if (!movementClass && prevRank !== null && prevRank !== undefined) {
                         if (rank < prevRank) {
                             const diff = prevRank - rank;
                             trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${diff}</span>`;
