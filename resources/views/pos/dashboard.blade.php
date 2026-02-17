@@ -48,7 +48,7 @@
         </div>
 
         {{-- Quick Actions Grid --}}
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 my-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:[grid-template-columns:repeat(auto-fit,minmax(170px,1fr))] gap-3 my-4">
             <a href="{{ route('pos.sales.create') }}"
                 class="bg-emerald-50 p-4 rounded-xl shadow-sm border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-white text-emerald-600 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
