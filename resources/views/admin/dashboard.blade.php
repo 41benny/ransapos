@@ -97,18 +97,6 @@
         </div>
 
         <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.14);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-orange-50 rounded-xl">
-                    <i class="fas fa-receipt text-orange-600"></i>
-                </div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Transaksi</p>
-            <p id="kpiTransactions" class="text-2xl font-bold text-slate-900">-</p>
-            <p class="text-xs text-slate-500 mt-2">Jumlah transaksi selesai</p>
-        </div>
-
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
             style="--dash-accent:#f59e0b;--dash-accent-2:#fbbf24;--dash-accent-soft:rgba(245,158,11,0.14);">
             <div class="flex items-start justify-between mb-3">
                 <div class="p-3 bg-amber-50 rounded-xl">
@@ -118,33 +106,6 @@
             <p class="text-sm text-slate-500 font-medium mb-1">Rata-rata Transaksi</p>
             <p id="kpiAvgTransaction" class="text-2xl font-bold text-slate-900">-</p>
             <p class="text-xs text-slate-500 mt-2">Omzet / transaksi</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#d97706;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(217,119,6,0.14);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-amber-50 rounded-xl">
-                    <i class="fas fa-tags text-amber-600"></i>
-                </div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Total Diskon</p>
-            <p id="kpiDiscountTotal" class="text-2xl font-bold text-slate-900">-</p>
-            <p class="text-xs text-slate-500 mt-2">Dari transaksi completed</p>
-        </div>
-
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#f43f5e;--dash-accent-2:#fb7185;--dash-accent-soft:rgba(244,63,94,0.12);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-rose-50 rounded-xl">
-                    <i class="fas fa-ban text-rose-600"></i>
-                </div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Void (Cancelled)</p>
-            <p class="text-2xl font-bold text-slate-900"><span id="kpiCancelledCount">-</span></p>
-            <p class="text-xs text-slate-500 mt-2">Nilai: <span id="kpiCancelledAmount"
-                    class="font-semibold text-slate-700">-</span></p>
         </div>
 
         <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
@@ -484,7 +445,7 @@
             const outletIdEl = document.getElementById('outletId'); const dateEl = document.getElementById('date'); const refreshBtn = document.getElementById('refreshBtn');
             const statusTextEl = document.getElementById('statusText'); const lastUpdatedEl = document.getElementById('lastUpdated');
             const outletBreakdownHintEl = document.getElementById('outletBreakdownHint'); const outletBreakdownWrapEl = document.getElementById('outletBreakdownWrap'); const outletBreakdownRowsEl = document.getElementById('outletBreakdownRows');
-            const kpiTotalSalesEl = document.getElementById('kpiTotalSales'); const kpiTransactionsEl = document.getElementById('kpiTransactions'); const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction'); const kpiDiscountTotalEl = document.getElementById('kpiDiscountTotal'); const kpiCancelledCountEl = document.getElementById('kpiCancelledCount'); const kpiCancelledAmountEl = document.getElementById('kpiCancelledAmount');
+            const kpiTotalSalesEl = document.getElementById('kpiTotalSales'); const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');
             const trendSalesEl = document.getElementById('trendSales'); const trendSalesPctEl = document.getElementById('trendSalesPct');
             const targetWrapEl = document.getElementById('targetWrap'); const targetValueEl = document.getElementById('targetValue'); const targetPctEl = document.getElementById('targetPct'); const targetBarEl = document.getElementById('targetBar');
             const hourlyBarsEl = document.getElementById('hourlyBars'); const hourlyEmptyEl = document.getElementById('hourlyEmpty');
@@ -522,9 +483,9 @@
                     const bar = document.createElement('div'); bar.className = 'flex-1 relative'; bar.style.background = isPeak ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)' : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)'; bar.style.height = `${pct}%`; bar.style.minHeight = '4px'; bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem'; bar.style.flex = '1 1 0%'; bar.style.boxShadow = isPeak ? '0 14px 24px -12px rgba(194,65,12,0.85)' : '0 8px 16px -10px rgba(194,65,12,0.65)';
                     const cap = document.createElement('div'); cap.style.cssText = isPeak ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);' : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);'; bar.appendChild(cap);
                     const tooltipHtml = `
-                                                                                    <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
-                                                                                    <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
-                                                                                                    `;
+                                                                                            <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
+                                                                                            <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
+                                                                                                            `;
 
                     bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                     bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -586,10 +547,10 @@
 
                         const outletName = escapeHtml(seg.outlet_name);
                         const tooltipHtml = `
-                                                                                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                        <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
-                                                                                        <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                                    `;
+                                                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                                                <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
+                                                                                                <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                                                            `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -612,12 +573,12 @@
                         const moreCount = Math.max(0, breakdown.length - 8);
 
                         const tooltipHtml = `
-                                                                                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                        <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
-                                                                                        <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
-                                                                                        ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
-                                                                                        <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                                    `;
+                                                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                                                <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
+                                                                                                <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
+                                                                                                ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
+                                                                                                <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                                                            `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -675,15 +636,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                    <div class="flex items-end justify-between mb-1.5">
-                                                                        <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                        <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                    </div>
-                                                                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                        <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
-                                                                        </div>
-                                                                    </div>
-                                                                `;
+                                                                            <div class="flex items-end justify-between mb-1.5">
+                                                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
+                                                                            </div>
+                                                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                </div>
+                                                                            </div>
+                                                                        `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -715,14 +676,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                            <i class="fas ${style.icon} text-lg ${style.text}"></i>
-                                        </div>
-                                        <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                    </div>
-                                    <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                `;
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                    <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                </div>
+                                                <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
+                                            </div>
+                                            <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                        `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -765,23 +726,23 @@
                     }
 
                     tr.innerHTML = `
-                                                            <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
-                                                            <td class="px-3 py-3 text-slate-700">
-                                                                <div class="flex items-center gap-4 min-w-max">
-                                                                    ${imageHtml}
-                                                                    <div class="flex-1">
-                                                                        <div class="flex flex-col gap-0.5">
-                                                                            <div class="flex items-center gap-2">
-                                                                                <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                                ${trendBadge}
+                                                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                                    <td class="px-3 py-3 text-slate-700">
+                                                                        <div class="flex items-center gap-4 min-w-max">
+                                                                            ${imageHtml}
+                                                                            <div class="flex-1">
+                                                                                <div class="flex flex-col gap-0.5">
+                                                                                    <div class="flex items-center gap-2">
+                                                                                        <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                        ${trendBadge}
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                            <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
-                                                        `;
+                                                                    </td>
+                                                                    <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                                    <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                                `;
                     productRowsEl.appendChild(tr);
                 }
             }
@@ -808,19 +769,19 @@
                     const wrap = document.createElement('div');
                     wrap.className = 'grid grid-cols-12 gap-3 items-center';
                     wrap.innerHTML = `
-                                                                                    <div class="col-span-4 sm:col-span-3">
-                                                                                        <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                                                                                        <div class="text-[11px] text-slate-500">
-                                                                                            ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="col-span-5 sm:col-span-7">
-                                                                                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                                                                            <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                                                                                `;
+                                                                                            <div class="col-span-4 sm:col-span-3">
+                                                                                                <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
+                                                                                                <div class="text-[11px] text-slate-500">
+                                                                                                    ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="col-span-5 sm:col-span-7">
+                                                                                                <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                                                                                                    <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
+                                                                                        `;
                     outletBarsEl.appendChild(wrap);
                 }
             }
@@ -856,9 +817,9 @@
                 for (const row of safeRows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                                                                                    <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                                                    <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                                                `;
+                                                                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                                                                            <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                                                                        `;
                     outletBreakdownRowsEl.appendChild(tr);
                 }
             }
@@ -889,11 +850,7 @@
 
             function render(data) {
                 kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
-                kpiTransactionsEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.total_transactions || 0));
                 kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
-                kpiDiscountTotalEl.textContent = idr.format(Number(data?.kpis?.discount_total || 0));
-                kpiCancelledCountEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.cancelled_transactions || 0));
-                kpiCancelledAmountEl.textContent = idr.format(Number(data?.kpis?.cancelled_amount || 0));
 
                 const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
                 const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
