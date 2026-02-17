@@ -116,8 +116,9 @@ class SalesReportController extends Controller
                     'sale_items.product_name',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as price',
-                    'sale_items.discount_amount as item_discount',
+                    DB::raw('COALESCE(sale_items.discount_amount, 0) as item_discount'),
                     'sale_items.subtotal as item_subtotal',
+                    'sale_items.subtotal as item_total',
                     'sales.tax_amount',
                     'sales.service_charge_amount',
                     'sales.rounding_amount',
@@ -291,9 +292,10 @@ class SalesReportController extends Controller
                     'sale_items.product_name as produk',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as harga',
+                    DB::raw('COALESCE(sale_items.discount_amount, 0) as diskon_item'),
                     'sale_items.subtotal as subtotal',
                     DB::raw("COALESCE(pay_agg.payment_methods, '-') as metode_bayar"),
-                    'sales.total_amount as total_invoice'
+                    'sale_items.subtotal as total_item'
                 )
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.created_at')
@@ -309,9 +311,10 @@ class SalesReportController extends Controller
                 ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
                 ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'harga', 'label' => 'Harga', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'diskon_item', 'label' => 'Diskon Item', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'subtotal', 'label' => 'Subtotal', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'metode_bayar', 'label' => 'Metode Bayar', 'type' => 'text'],
-                ['key' => 'total_invoice', 'label' => 'Total Invoice', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_item', 'label' => 'Total Item', 'type' => 'number', 'decimals' => 2],
             ];
         } else {
             $sales = $query->orderBy('sale_date', 'desc')

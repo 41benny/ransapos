@@ -214,7 +214,7 @@
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
                             {{ $row->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs($row->rounding_amount), 2, ',', '.') }}
                         </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->total_amount, 0, ',', '.') }}</td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->item_total ?? $row->item_subtotal, 0, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm">
                             @if($row->payment_status === 'Lunas')
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Lunas</span>
