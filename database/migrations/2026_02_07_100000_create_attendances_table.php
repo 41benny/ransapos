@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('logged_in_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('outlet_id')->constrained('outlets')->onDelete('cascade');
-            $table->timestamp('clock_in');
+            // Explicit default avoids MariaDB/MySQL implicit ON UPDATE behavior.
+            $table->timestamp('clock_in')->useCurrent();
             $table->timestamp('clock_out')->nullable();
             $table->text('notes')->nullable();
             $table->enum('status', ['present', 'late', 'absent'])->default('present');
