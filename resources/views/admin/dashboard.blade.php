@@ -482,13 +482,13 @@
             });
 
             const hourlyPalette = [
-                'bg-orange-500/80',
-                'bg-amber-500/80',
-                'bg-orange-600/80',
-                'bg-yellow-500/80',
-                'bg-rose-500/80',
+                'rgba(249, 115, 22, 0.86)',
+                'rgba(245, 158, 11, 0.84)',
+                'rgba(234, 88, 12, 0.86)',
+                'rgba(250, 204, 21, 0.84)',
+                'rgba(244, 63, 94, 0.8)',
             ];
-            const hourlyOthersClass = 'bg-orange-300/70';
+            const hourlyOthersColor = 'rgba(253, 186, 116, 0.78)';
 
             let timer = null;
             let isLoading = false;
@@ -624,11 +624,12 @@
                         if (amt <= 0 || total <= 0) continue;
 
                         const idx = topIdToIndex.has(Number(seg.outlet_id)) ? topIdToIndex.get(Number(seg.outlet_id)) : 0;
-                        const colorClass = hourlyPalette[idx % hourlyPalette.length];
+                        const colorValue = hourlyPalette[idx % hourlyPalette.length];
 
                         const segEl = document.createElement('div');
-                        segEl.className = `w-full ${colorClass}`;
+                        segEl.className = 'w-full';
                         segEl.style.height = `${(amt / total) * 100}%`;
+                        segEl.style.backgroundColor = colorValue;
 
                         const outletName = escapeHtml(seg.outlet_name);
                         const tooltipHtml = `
@@ -647,8 +648,9 @@
                     const othersAmt = Number(others?.amount || 0);
                     if (othersAmt > 0 && total > 0) {
                         const segEl = document.createElement('div');
-                        segEl.className = `w-full ${hourlyOthersClass}`;
+                        segEl.className = 'w-full';
                         segEl.style.height = `${(othersAmt / total) * 100}%`;
+                        segEl.style.backgroundColor = hourlyOthersColor;
 
                         const breakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
                         const rows = breakdown
