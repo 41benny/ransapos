@@ -209,8 +209,8 @@
                     <p class="text-xs text-slate-500">Komposisi pembayaran (completed)</p>
                 </div>
             </div>
-            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col max-h-[400px]">
-                <div class="overflow-y-auto grow custom-scrollbar p-1">
+            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col" style="max-height: 400px;">
+                <div class="overflow-y-auto overflow-x-hidden grow custom-scrollbar p-1">
                     <div id="paymentList" class="space-y-3"></div>
                 </div>
             </div>
@@ -225,15 +225,16 @@
                     <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
                 </div>
             </div>
-            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col max-h-[400px]">
-                <div class="overflow-y-auto grow custom-scrollbar">
-                    <table class="w-full text-sm relative">
+            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col" style="max-height: 400px;">
+                <div class="overflow-y-auto overflow-x-hidden grow custom-scrollbar">
+                    <table class="w-full text-sm relative table-fixed">
                         <thead class="sticky top-0 z-10 table-head-accent text-slate-700 text-xs shadow-sm">
                             <tr>
-                                <th class="text-left px-3 py-2 font-semibold bg-slate-50/95 backdrop-blur-sm">Pos</th>
-                                <th class="text-left px-3 py-2 font-semibold bg-slate-50/95 backdrop-blur-sm">Produk</th>
-                                <th class="text-right px-3 py-2 font-semibold bg-slate-50/95 backdrop-blur-sm">Qty</th>
-                                <th class="text-right px-3 py-2 font-semibold bg-slate-50/95 backdrop-blur-sm">Omzet</th>
+                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-16">Pos</th>
+                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm">Produk</th>
+                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-20">Qty</th>
+                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-32">Omzet
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
@@ -474,614 +475,476 @@
 @endpush
 
 @push('scripts')
-    <script>
-        (() => {
-            const endpoint = @json(route('admin.dashboard.summary'));
+    <script>     (() => {         const endpoint = @json(route('admin.dashboard.summary'));
+             const outletIdEl = document.getElementById('outletId');         const dateEl = document.getElementById('date');         const refreshBtn = document.getElementById('refreshBtn');
+             const statusTextEl = document.getElementById('statusText');         const lastUpdatedEl = document.getElementById('lastUpdated');
+             const outletBreakdownHintEl = document.getElementById('outletBreakdownHint');         const outletBreakdownWrapEl = document.getElementById('outletBreakdownWrap');         const outletBreakdownRowsEl = document.getElementById('outletBreakdownRows');
+             const kpiTotalSalesEl = document.getElementById('kpiTotalSales');         const kpiTransactionsEl = document.getElementById('kpiTransactions');         const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');         const kpiDiscountTotalEl = document.getElementById('kpiDiscountTotal');         const kpiCancelledCountEl = document.getElementById('kpiCancelledCount');         const kpiCancelledAmountEl = document.getElementById('kpiCancelledAmount');
+             const trendSalesEl = document.getElementById('trendSales');         const trendSalesPctEl = document.getElementById('trendSalesPct');
+             const targetWrapEl = document.getElementById('targetWrap');         const targetValueEl = document.getElementById('targetValue');         const targetPctEl = document.getElementById('targetPct');         const targetBarEl = document.getElementById('targetBar');
+             const hourlyBarsEl = document.getElementById('hourlyBars');         const hourlyEmptyEl = document.getElementById('hourlyEmpty');
+             const categoryListEl = document.getElementById('categoryList');         const categoryEmptyEl = document.getElementById('categoryEmpty');
+             const paymentListEl = document.getElementById('paymentList');         const paymentEmptyEl = document.getElementById('paymentEmpty');
+             const productRowsEl = document.getElementById('productRows');         const productEmptyEl = document.getElementById('productEmpty');
+             const outletPanelEl = document.getElementById('outletPanel');         const outletBarsEl = document.getElementById('outletBars');         const outletEmptyEl = document.getElementById('outletEmpty');
+             const idr = new Intl.NumberFormat('id-ID', {             style: 'currency',             currency: 'IDR',             maximumFractionDigits: 0,         });
+             const hourlyPalette = [             'rgba(249, 115, 22, 0.86)',             'rgba(245, 158, 11, 0.84)',             'rgba(234, 88, 12, 0.86)',             'rgba(250, 204, 21, 0.84)',             'rgba(244, 63, 94, 0.8)',         ];         const hourlyOthersColor = 'rgba(253, 186, 116, 0.78)';
+             let timer = null;         let isLoading = false;         let hourlyTooltipEl = null;
+             function setStatus(text, type = 'info') {             statusTextEl.textContent = text;             statusTextEl.className = 'text-xs';
+                 if (type === 'error') {                 statusTextEl.classList.add('text-red-600');             } else if (type === 'success') {                 statusTextEl.classList.add('text-green-600');             } else {                 statusTextEl.classList.add('text-slate-500');             }         }
+             function setLoadingState(loading) {             isLoading = loading;             refreshBtn.disabled = loading;             refreshBtn.classList.toggle('opacity-60', loading);             refreshBtn.classList.toggle('cursor-not-allowed', loading);         }
+             function buildUrl() {             const outletId = outletIdEl.value || 'all';             const date = dateEl.value || @json($defaultDate);             const url = new URL(endpoint, window.location.origin);             url.searchParams.set('outlet_id', outletId);             url.searchParams.set('date', date);             return url.toString();         }
+             function ensureHourlyTooltip() {             if (hourlyTooltipEl) return hourlyTooltipEl;
+                 hourlyTooltipEl = document.createElement('div');             hourlyTooltipEl.style.cssText = 'position:absolute;z-index:20;display:none;min-width:14rem;max-width:24rem;border-radius:0.75rem;border:1px solid #e2e8f0;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);padding:0.75rem;font-size:0.75rem;color:#334155;';             hourlyTooltipEl.style.left = '0px';             hourlyTooltipEl.style.top = '0px';             hourlyBarsEl.appendChild(hourlyTooltipEl);             return hourlyTooltipEl;         }
+             function showHourlyTooltip(html, clientX, clientY) {             const tip = ensureHourlyTooltip();             tip.innerHTML = html;             tip.style.display = 'block';
+                 const rect = hourlyBarsEl.getBoundingClientRect();             const padding = 12;
+                 const desiredLeft = clientX - rect.left + 10;             const desiredTop = clientY - rect.top + 10;
+                 tip.style.left = `${Math.max(padding, Math.min(desiredLeft, rect.width - tip.offsetWidth - padding))}px`;             tip.style.top = `${Math.max(padding, Math.min(desiredTop, rect.height - tip.offsetHeight - padding))}px`;         }
+             function hideHourlyTooltip() {             if (!hourlyTooltipEl) return;             hourlyTooltipEl.style.display = 'none';         }
+             function prepareHourlyContainer() {             hourlyBarsEl.style.display = 'flex';             hourlyBarsEl.style.alignItems = 'flex-end';             hourlyBarsEl.style.gap = '0.35rem';         }
+             function renderHourlyBars(series) {             const max = Math.max(...series.map(x => Number(x.amount || 0)), 0);             const peakAmount = max;             const hasPositive = series.some(x => Number(x.amount || 0) > 0);
+                 if (!hasPositive) {                 renderHourlyEmptyState();                 return;             }
+                 hourlyEmptyEl.classList.add('hidden');
+                 hourlyBarsEl.innerHTML = '';             hourlyTooltipEl = null;             prepareHourlyContainer();             for (const point of series) {                 const amount = Number(point.amount || 0);                 const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;                 const isPeak = peakAmount > 0 && amount === peakAmount;                 const hourLabel = `${String(point.hour).padStart(2, '0')}:00`;
+                     const bar = document.createElement('div');                 bar.className = 'flex-1 relative';                 bar.style.background = isPeak                     ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)'                     : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)';                 bar.style.height = `${pct}%`;                 bar.style.minHeight = '4px';                 bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';                 bar.style.flex = '1 1 0%';                 bar.style.boxShadow = isPeak                     ? '0 14px 24px -12px rgba(194,65,12,0.85)'                     : '0 8px 16px -10px rgba(194,65,12,0.65)';
+                     const cap = document.createElement('div');                 cap.style.cssText = isPeak                     ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);'                     : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);';                 bar.appendChild(cap);
+                     const tooltipHtml = `
+                                                            <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
+                                                            <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
+                                                                            `;
 
-            const outletIdEl = document.getElementById('outletId');
-            const dateEl = document.getElementById('date');
-            const refreshBtn = document.getElementById('refreshBtn');
+                        bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                        bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                        bar.addEventListener('mouseleave', hideHourlyTooltip);
 
-            const statusTextEl = document.getElementById('statusText');
-            const lastUpdatedEl = document.getElementById('lastUpdated');
-
-            const outletBreakdownHintEl = document.getElementById('outletBreakdownHint');
-            const outletBreakdownWrapEl = document.getElementById('outletBreakdownWrap');
-            const outletBreakdownRowsEl = document.getElementById('outletBreakdownRows');
-
-            const kpiTotalSalesEl = document.getElementById('kpiTotalSales');
-            const kpiTransactionsEl = document.getElementById('kpiTransactions');
-            const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');
-            const kpiDiscountTotalEl = document.getElementById('kpiDiscountTotal');
-            const kpiCancelledCountEl = document.getElementById('kpiCancelledCount');
-            const kpiCancelledAmountEl = document.getElementById('kpiCancelledAmount');
-
-            const trendSalesEl = document.getElementById('trendSales');
-            const trendSalesPctEl = document.getElementById('trendSalesPct');
-
-            const targetWrapEl = document.getElementById('targetWrap');
-            const targetValueEl = document.getElementById('targetValue');
-            const targetPctEl = document.getElementById('targetPct');
-            const targetBarEl = document.getElementById('targetBar');
-
-            const hourlyBarsEl = document.getElementById('hourlyBars');
-            const hourlyEmptyEl = document.getElementById('hourlyEmpty');
-
-            const categoryListEl = document.getElementById('categoryList');
-            const categoryEmptyEl = document.getElementById('categoryEmpty');
-
-            const paymentListEl = document.getElementById('paymentList');
-            const paymentEmptyEl = document.getElementById('paymentEmpty');
-
-            const productRowsEl = document.getElementById('productRows');
-            const productEmptyEl = document.getElementById('productEmpty');
-
-            const outletPanelEl = document.getElementById('outletPanel');
-            const outletBarsEl = document.getElementById('outletBars');
-            const outletEmptyEl = document.getElementById('outletEmpty');
-
-            const idr = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                maximumFractionDigits: 0,
-            });
-
-            const hourlyPalette = [
-                'rgba(249, 115, 22, 0.86)',
-                'rgba(245, 158, 11, 0.84)',
-                'rgba(234, 88, 12, 0.86)',
-                'rgba(250, 204, 21, 0.84)',
-                'rgba(244, 63, 94, 0.8)',
-            ];
-            const hourlyOthersColor = 'rgba(253, 186, 116, 0.78)';
-
-            let timer = null;
-            let isLoading = false;
-            let hourlyTooltipEl = null;
-
-            function setStatus(text, type = 'info') {
-                statusTextEl.textContent = text;
-                statusTextEl.className = 'text-xs';
-
-                if (type === 'error') {
-                    statusTextEl.classList.add('text-red-600');
-                } else if (type === 'success') {
-                    statusTextEl.classList.add('text-green-600');
-                } else {
-                    statusTextEl.classList.add('text-slate-500');
-                }
-            }
-
-            function setLoadingState(loading) {
-                isLoading = loading;
-                refreshBtn.disabled = loading;
-                refreshBtn.classList.toggle('opacity-60', loading);
-                refreshBtn.classList.toggle('cursor-not-allowed', loading);
-            }
-
-            function buildUrl() {
-                const outletId = outletIdEl.value || 'all';
-                const date = dateEl.value || @json($defaultDate);
-                const url = new URL(endpoint, window.location.origin);
-                url.searchParams.set('outlet_id', outletId);
-                url.searchParams.set('date', date);
-                return url.toString();
-            }
-
-            function ensureHourlyTooltip() {
-                if (hourlyTooltipEl) return hourlyTooltipEl;
-
-                hourlyTooltipEl = document.createElement('div');
-                hourlyTooltipEl.style.cssText = 'position:absolute;z-index:20;display:none;min-width:14rem;max-width:24rem;border-radius:0.75rem;border:1px solid #e2e8f0;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);padding:0.75rem;font-size:0.75rem;color:#334155;';
-                hourlyTooltipEl.style.left = '0px';
-                hourlyTooltipEl.style.top = '0px';
-                hourlyBarsEl.appendChild(hourlyTooltipEl);
-                return hourlyTooltipEl;
-            }
-
-            function showHourlyTooltip(html, clientX, clientY) {
-                const tip = ensureHourlyTooltip();
-                tip.innerHTML = html;
-                tip.style.display = 'block';
-
-                const rect = hourlyBarsEl.getBoundingClientRect();
-                const padding = 12;
-
-                const desiredLeft = clientX - rect.left + 10;
-                const desiredTop = clientY - rect.top + 10;
-
-                tip.style.left = `${Math.max(padding, Math.min(desiredLeft, rect.width - tip.offsetWidth - padding))}px`;
-                tip.style.top = `${Math.max(padding, Math.min(desiredTop, rect.height - tip.offsetHeight - padding))}px`;
-            }
-
-            function hideHourlyTooltip() {
-                if (!hourlyTooltipEl) return;
-                hourlyTooltipEl.style.display = 'none';
-            }
-
-            function prepareHourlyContainer() {
-                hourlyBarsEl.style.display = 'flex';
-                hourlyBarsEl.style.alignItems = 'flex-end';
-                hourlyBarsEl.style.gap = '0.35rem';
-            }
-
-            function renderHourlyBars(series) {
-                const max = Math.max(...series.map(x => Number(x.amount || 0)), 0);
-                const peakAmount = max;
-                const hasPositive = series.some(x => Number(x.amount || 0) > 0);
-
-                if (!hasPositive) {
-                    renderHourlyEmptyState();
-                    return;
+                        hourlyBarsEl.appendChild(bar);
+                    }
                 }
 
-                hourlyEmptyEl.classList.add('hidden');
-
-                hourlyBarsEl.innerHTML = '';
-                hourlyTooltipEl = null;
-                prepareHourlyContainer();
-                for (const point of series) {
-                    const amount = Number(point.amount || 0);
-                    const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;
-                    const isPeak = peakAmount > 0 && amount === peakAmount;
-                    const hourLabel = `${String(point.hour).padStart(2, '0')}:00`;
-
-                    const bar = document.createElement('div');
-                    bar.className = 'flex-1 relative';
-                    bar.style.background = isPeak
-                        ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)'
-                        : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)';
-                    bar.style.height = `${pct}%`;
-                    bar.style.minHeight = '4px';
-                    bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';
-                    bar.style.flex = '1 1 0%';
-                    bar.style.boxShadow = isPeak
-                        ? '0 14px 24px -12px rgba(194,65,12,0.85)'
-                        : '0 8px 16px -10px rgba(194,65,12,0.65)';
-
-                    const cap = document.createElement('div');
-                    cap.style.cssText = isPeak
-                        ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);'
-                        : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);';
-                    bar.appendChild(cap);
-
-                    const tooltipHtml = `
-                                                        <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
-                                                        <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
-                                                    `;
-
-                    bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    bar.addEventListener('mouseleave', hideHourlyTooltip);
-
-                    hourlyBarsEl.appendChild(bar);
-                }
-            }
-
-            function renderHourlyStacked(hourlyStacked, meta) {
-                if (!Array.isArray(hourlyStacked) || hourlyStacked.length === 0) {
-                    renderHourlyEmptyState();
-                    return;
-                }
-
-                const hasPositive = hourlyStacked.some(x => Number(x?.total || 0) > 0);
-                if (!hasPositive) {
-                    renderHourlyEmptyState();
-                    return;
-                }
-
-                hourlyEmptyEl.classList.add('hidden');
-
-                const topOutlets = Array.isArray(meta?.top_outlets) ? meta.top_outlets : [];
-                const topIdToIndex = new Map(topOutlets.map((o, idx) => [Number(o.outlet_id), idx]));
-
-                const maxTotal = Math.max(...hourlyStacked.map(x => Number(x.total || 0)), 0);
-
-                hourlyBarsEl.innerHTML = '';
-                hourlyTooltipEl = null;
-
-                for (const point of hourlyStacked) {
-                    const hour = Number(point.hour || 0);
-                    const total = Number(point.total || 0);
-                    const barHeightPct = maxTotal > 0 ? Math.max(2, Math.round((total / maxTotal) * 100)) : 2;
-
-                    const col = document.createElement('div');
-                    col.className = 'hourly-col';
-
-                    const outer = document.createElement('div');
-                    outer.className = 'hourly-stack-shell';
-                    outer.style.height = `${barHeightPct}%`;
-
-                    const stack = document.createElement('div');
-                    stack.style.cssText = 'height:100%;width:100%;display:flex;flex-direction:column-reverse;';
-
-                    const segments = Array.isArray(point.segments) ? point.segments : [];
-                    const others = point.others || null;
-
-                    for (const seg of segments) {
-                        const amt = Number(seg.amount || 0);
-                        if (amt <= 0 || total <= 0) continue;
-
-                        const idx = topIdToIndex.has(Number(seg.outlet_id)) ? topIdToIndex.get(Number(seg.outlet_id)) : 0;
-                        const colorValue = hourlyPalette[idx % hourlyPalette.length];
-
-                        const segEl = document.createElement('div');
-                        segEl.style.cssText = `width:100%;height:${(amt / total) * 100}%;background-color:${colorValue};`;
-
-                        const outletName = escapeHtml(seg.outlet_name);
-                        const tooltipHtml = `
-                                                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                            <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
-                                                            <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                        `;
-
-                        segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mouseleave', hideHourlyTooltip);
-
-                        stack.appendChild(segEl);
+                function renderHourlyStacked(hourlyStacked, meta) {
+                    if (!Array.isArray(hourlyStacked) || hourlyStacked.length === 0) {
+                        renderHourlyEmptyState();
+                        return;
                     }
 
-                    const othersAmt = Number(others?.amount || 0);
-                    if (othersAmt > 0 && total > 0) {
-                        const segEl = document.createElement('div');
-                        segEl.style.cssText = `width:100%;height:${(othersAmt / total) * 100}%;background-color:${hourlyOthersColor};`;
-
-                        const breakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
-                        const rows = breakdown
-                            .filter(r => Number(r.amount || 0) > 0)
-                            .slice(0, 8)
-                            .map(r => `<div class="flex items-center justify-between gap-3"><div class="truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div><div class="font-semibold">${escapeHtml(idr.format(Number(r.amount || 0)))}</div></div>`)
-                            .join('');
-                        const moreCount = Math.max(0, breakdown.length - 8);
-
-                        const tooltipHtml = `
-                                                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                            <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
-                                                            <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
-                                                            ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
-                                                            <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                        `;
-
-                        segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mouseleave', hideHourlyTooltip);
-
-                        stack.appendChild(segEl);
+                    const hasPositive = hourlyStacked.some(x => Number(x?.total || 0) > 0);
+                    if (!hasPositive) {
+                        renderHourlyEmptyState();
+                        return;
                     }
 
-                    outer.title = `${String(hour).padStart(2, '0')}:00 - ${idr.format(total)}`;
-                    outer.appendChild(stack);
-                    col.appendChild(outer);
-                    hourlyBarsEl.appendChild(col);
+                    hourlyEmptyEl.classList.add('hidden');
+
+                    const topOutlets = Array.isArray(meta?.top_outlets) ? meta.top_outlets : [];
+                    const topIdToIndex = new Map(topOutlets.map((o, idx) => [Number(o.outlet_id), idx]));
+
+                    const maxTotal = Math.max(...hourlyStacked.map(x => Number(x.total || 0)), 0);
+
+                    hourlyBarsEl.innerHTML = '';
+                    hourlyTooltipEl = null;
+
+                    for (const point of hourlyStacked) {
+                        const hour = Number(point.hour || 0);
+                        const total = Number(point.total || 0);
+                        const barHeightPct = maxTotal > 0 ? Math.max(2, Math.round((total / maxTotal) * 100)) : 2;
+
+                        const col = document.createElement('div');
+                        col.className = 'hourly-col';
+
+                        const outer = document.createElement('div');
+                        outer.className = 'hourly-stack-shell';
+                        outer.style.height = `${barHeightPct}%`;
+
+                        const stack = document.createElement('div');
+                        stack.style.cssText = 'height:100%;width:100%;display:flex;flex-direction:column-reverse;';
+
+                        const segments = Array.isArray(point.segments) ? point.segments : [];
+                        const others = point.others || null;
+
+                        for (const seg of segments) {
+                            const amt = Number(seg.amount || 0);
+                            if (amt <= 0 || total <= 0) continue;
+
+                            const idx = topIdToIndex.has(Number(seg.outlet_id)) ? topIdToIndex.get(Number(seg.outlet_id)) : 0;
+                            const colorValue = hourlyPalette[idx % hourlyPalette.length];
+
+                            const segEl = document.createElement('div');
+                            segEl.style.cssText = `width:100%;height:${(amt / total) * 100}%;background-color:${colorValue};`;
+
+                            const outletName = escapeHtml(seg.outlet_name);
+                            const tooltipHtml = `
+                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
+                                                                <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                            `;
+
+                            segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                            segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                            segEl.addEventListener('mouseleave', hideHourlyTooltip);
+
+                            stack.appendChild(segEl);
+                        }
+
+                        const othersAmt = Number(others?.amount || 0);
+                        if (othersAmt > 0 && total > 0) {
+                            const segEl = document.createElement('div');
+                            segEl.style.cssText = `width:100%;height:${(othersAmt / total) * 100}%;background-color:${hourlyOthersColor};`;
+
+                            const breakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
+                            const rows = breakdown
+                                .filter(r => Number(r.amount || 0) > 0)
+                                .slice(0, 8)
+                                .map(r => `<div class="flex items-center justify-between gap-3"><div class="truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div><div class="font-semibold">${escapeHtml(idr.format(Number(r.amount || 0)))}</div></div>`)
+                                .join('');
+                            const moreCount = Math.max(0, breakdown.length - 8);
+
+                            const tooltipHtml = `
+                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
+                                                                <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
+                                                                ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
+                                                                <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                            `;
+
+                            segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                            segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                            segEl.addEventListener('mouseleave', hideHourlyTooltip);
+
+                            stack.appendChild(segEl);
+                        }
+
+                        outer.title = `${String(hour).padStart(2, '0')}:00 - ${idr.format(total)}`;
+                        outer.appendChild(stack);
+                        col.appendChild(outer);
+                        hourlyBarsEl.appendChild(col);
+                    }
                 }
-            }
 
-            function renderHourlyEmptyState() {
-                hourlyBarsEl.innerHTML = '';
-                hourlyTooltipEl = null;
-                hourlyEmptyEl.classList.remove('hidden');
-                prepareHourlyContainer();
+                function renderHourlyEmptyState() {
+                    hourlyBarsEl.innerHTML = '';
+                    hourlyTooltipEl = null;
+                    hourlyEmptyEl.classList.remove('hidden');
+                    prepareHourlyContainer();
 
-                for (let h = 0; h <= 23; h++) {
-                    const bar = document.createElement('div');
-                    bar.className = 'flex-1';
-                    bar.style.height = '6%';
-                    bar.style.minHeight = '3px';
-                    bar.style.flex = '1 1 0%';
-                    bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
-                    bar.style.background = 'rgba(253,186,116,0.7)';
-                    hourlyBarsEl.appendChild(bar);
-                }
-            }
-
-            function renderCategoryRows(rows) {
-                categoryListEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    categoryEmptyEl.classList.remove('hidden');
-                    return;
+                    for (let h = 0; h <= 23; h++) {
+                        const bar = document.createElement('div');
+                        bar.className = 'flex-1';
+                        bar.style.height = '6%';
+                        bar.style.minHeight = '3px';
+                        bar.style.flex = '1 1 0%';
+                        bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
+                        bar.style.background = 'rgba(253,186,116,0.7)';
+                        hourlyBarsEl.appendChild(bar);
+                    }
                 }
 
-                categoryEmptyEl.classList.add('hidden');
+                function renderCategoryRows(rows) {
+                    categoryListEl.innerHTML = '';
+                    if (!rows || rows.length === 0) {
+                        categoryEmptyEl.classList.remove('hidden');
+                        return;
+                    }
 
-                // Cari nilai tertinggi untuk skala progress bar
-                // Agar bar terpanjang = 100% (atau relative terhadap total, tapi biasanya relative terhadap max item lebih bagus visualnya)
-                const amounts = rows.map(r => Number(r.amount || 0));
-                const maxVal = Math.max(...amounts, 0);
+                    categoryEmptyEl.classList.add('hidden');
 
-                // Warna progress bar (gradient-like or solid)
-                // Kita pakai solid orange sesuai design user
+                    // Cari nilai tertinggi untuk skala progress bar
+                    // Agar bar terpanjang = 100% (atau relative terhadap total, tapi biasanya relative terhadap max item lebih bagus visualnya)
+                    const amounts = rows.map(r => Number(r.amount || 0));
+                    const maxVal = Math.max(...amounts, 0);
 
-                for (const row of rows) {
-                    const amount = Number(row.amount || 0);
-                    const pct = maxVal > 0 ? (amount / maxVal) * 100 : 0;
+                    // Warna progress bar (gradient-like or solid)
+                    // Kita pakai solid orange sesuai design user
 
-                    const item = document.createElement('div');
-                    item.className = 'group';
-                    item.innerHTML = `
-                                        <div class="flex items-end justify-between mb-1.5">
-                                            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                            <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                        </div>
-                                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                            <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                    for (const row of rows) {
+                        const amount = Number(row.amount || 0);
+                        const pct = maxVal > 0 ? (amount / maxVal) * 100 : 0;
+
+                        const item = document.createElement('div');
+                        item.className = 'group';
+                        item.innerHTML = `
+                                            <div class="flex items-end justify-between mb-1.5">
+                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
                                             </div>
+                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                </div>
+                                            </div>
+                                        `;
+                        categoryListEl.appendChild(item);
+                    }
+                }
+
+                function getPaymentIcon(name) {
+                    const n = (name || '').toLowerCase();
+                    if (n.includes('cash') || n.includes('tunai')) return { icon: 'fa-money-bill-wave', color: 'text-emerald-500 bg-emerald-50' };
+                    if (n.includes('qris')) return { icon: 'fa-qrcode', color: 'text-slate-600 bg-slate-100' };
+                    if (n.includes('debit') || n.includes('credit') || n.includes('card') || n.includes('kartu')) return { icon: 'fa-credit-card', color: 'text-blue-500 bg-blue-50' };
+                    if (n.includes('transfer')) return { icon: 'fa-money-bill-transfer', color: 'text-indigo-500 bg-indigo-50' };
+                    if (n.includes('shopee')) return { icon: 'fa-wallet', color: 'text-orange-500 bg-orange-50' };
+                    if (n.includes('gopay')) return { icon: 'fa-wallet', color: 'text-sky-500 bg-sky-50' };
+                    if (n.includes('ovo')) return { icon: 'fa-wallet', color: 'text-violet-500 bg-violet-50' };
+                    if (n.includes('dana')) return { icon: 'fa-wallet', color: 'text-blue-500 bg-blue-50' };
+                    return { icon: 'fa-wallet', color: 'text-slate-500 bg-slate-50' };
+                }
+
+                function renderPaymentRows(rows) {
+                    paymentListEl.innerHTML = '';
+                    if (!rows || rows.length === 0) {
+                        paymentEmptyEl.classList.remove('hidden');
+                        return;
+                    }
+
+                    paymentEmptyEl.classList.add('hidden');
+                    for (const row of rows) {
+                        const style = getPaymentIcon(row.payment_method_name);
+
+                        const item = document.createElement('div');
+                        item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group';
+                        item.innerHTML = `
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.color} transition-transform group-hover:scale-110">
+                                                <i class="fas ${style.icon} text-lg"></i>
+                                            </div>
+                                            <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
                                         </div>
+                                        <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
                                     `;
-                    categoryListEl.appendChild(item);
-                }
-            }
-
-            function getPaymentIcon(name) {
-                const n = (name || '').toLowerCase();
-                if (n.includes('cash') || n.includes('tunai')) return { icon: 'fa-money-bill-wave', color: 'text-emerald-500 bg-emerald-50' };
-                if (n.includes('qris')) return { icon: 'fa-qrcode', color: 'text-slate-600 bg-slate-100' };
-                if (n.includes('debit') || n.includes('credit') || n.includes('card') || n.includes('kartu')) return { icon: 'fa-credit-card', color: 'text-blue-500 bg-blue-50' };
-                if (n.includes('transfer')) return { icon: 'fa-money-bill-transfer', color: 'text-indigo-500 bg-indigo-50' };
-                if (n.includes('shopee')) return { icon: 'fa-wallet', color: 'text-orange-500 bg-orange-50' };
-                if (n.includes('gopay')) return { icon: 'fa-wallet', color: 'text-sky-500 bg-sky-50' };
-                if (n.includes('ovo')) return { icon: 'fa-wallet', color: 'text-violet-500 bg-violet-50' };
-                if (n.includes('dana')) return { icon: 'fa-wallet', color: 'text-blue-500 bg-blue-50' };
-                return { icon: 'fa-wallet', color: 'text-slate-500 bg-slate-50' };
-            }
-
-            function renderPaymentRows(rows) {
-                paymentListEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    paymentEmptyEl.classList.remove('hidden');
-                    return;
+                        paymentListEl.appendChild(item);
+                    }
                 }
 
-                paymentEmptyEl.classList.add('hidden');
-                for (const row of rows) {
-                    const style = getPaymentIcon(row.payment_method_name);
-
-                    const item = document.createElement('div');
-                    item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group';
-                    item.innerHTML = `
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.color} transition-transform group-hover:scale-110">
-                                            <i class="fas ${style.icon} text-lg"></i>
-                                        </div>
-                                        <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                    </div>
-                                    <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                `;
-                    paymentListEl.appendChild(item);
-                }
-            }
-
-            function renderTopProducts(rows) {
-                productRowsEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    productEmptyEl.classList.remove('hidden');
-                    return;
-                }
-
-                productEmptyEl.classList.add('hidden');
-                for (const row of rows) {
-                    const rank = productRowsEl.children.length + 1;
-                    let trendBadge = '';
-                    let movementClass = '';
-
-                    const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
-                    const movementDir = movement?.direction === 'up' || movement?.direction === 'down' ? movement.direction : null;
-                    const movementDelta = Number(movement?.delta || 0);
-
-                    if (movementDir === 'up' && movementDelta > 0) {
-                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${movementDelta}</span>`;
-                        movementClass = 'top-rank-up';
-                    } else if (movementDir === 'down' && movementDelta > 0) {
-                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
-                        movementClass = 'top-rank-down';
+                function renderTopProducts(rows) {
+                    productRowsEl.innerHTML = '';
+                    if (!rows || rows.length === 0) {
+                        productEmptyEl.classList.remove('hidden');
+                        return;
                     }
 
-                    const tr = document.createElement('tr');
-                    if (movementClass) {
-                        tr.classList.add(movementClass);
-                    }
+                    productEmptyEl.classList.add('hidden');
+                    for (const row of rows) {
+                        const rank = productRowsEl.children.length + 1;
+                        let trendBadge = '';
+                        let movementClass = '';
 
-                    let imageHtml = '';
-                    if (row.image_url) {
-                        imageHtml = `<img src="${row.image_url}" class="w-12 h-12 rounded-lg object-cover border border-slate-100 bg-white shrink-0" alt="img" onerror="this.src='https://via.placeholder.com/48?text=IMG'"/>`;
-                    } else {
-                        imageHtml = `<div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-sm text-slate-400 shrink-0"><i class="fas fa-image"></i></div>`;
-                    }
+                        const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
+                        const movementDir = movement?.direction === 'up' || movement?.direction === 'down' ? movement.direction : null;
+                        const movementDelta = Number(movement?.delta || 0);
 
-                    tr.innerHTML = `
-                                <td class="px-3 py-3 text-slate-500 font-semibold text-center w-12">${rank}</td>
-                                <td class="px-3 py-3 text-slate-700">
-                                    <div class="flex items-center gap-4">
-                                        ${imageHtml}
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex flex-col gap-0.5">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="truncate font-semibold text-slate-800 text-base" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                    ${trendBadge}
+                        if (movementDir === 'up' && movementDelta > 0) {
+                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${movementDelta}</span>`;
+                            movementClass = 'top-rank-up';
+                        } else if (movementDir === 'down' && movementDelta > 0) {
+                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
+                            movementClass = 'top-rank-down';
+                        }
+
+                        const tr = document.createElement('tr');
+                        if (movementClass) {
+                            tr.classList.add(movementClass);
+                        }
+
+                        let imageHtml = '';
+                        if (row.image_url) {
+                            imageHtml = `<img src="${row.image_url}" class="w-12 h-12 rounded-lg object-cover border border-slate-100 bg-white shrink-0" alt="img" onerror="this.src='https://via.placeholder.com/48?text=IMG'"/>`;
+                        } else {
+                            imageHtml = `<div class="w-12 h-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-sm text-slate-400 shrink-0"><i class="fas fa-image"></i></div>`;
+                        }
+
+                        tr.innerHTML = `
+                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center w-12">${rank}</td>
+                                    <td class="px-3 py-3 text-slate-700">
+                                        <div class="flex items-center gap-4">
+                                            ${imageHtml}
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="truncate font-semibold text-slate-800 text-base" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                        ${trendBadge}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-3 py-3 text-right text-slate-600">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                <td class="px-3 py-3 text-right font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                            `;
-                    productRowsEl.appendChild(tr);
-                }
-            }
-
-            function renderOutletRows(rows, isAllOutlets) {
-                outletPanelEl.classList.toggle('hidden', !isAllOutlets);
-                if (!isAllOutlets) return;
-
-                outletBarsEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    outletEmptyEl.classList.remove('hidden');
-                    return;
+                                    </td>
+                                    <td class="px-3 py-3 text-right text-slate-600">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                    <td class="px-3 py-3 text-right font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                `;
+                        productRowsEl.appendChild(tr);
+                    }
                 }
 
-                outletEmptyEl.classList.add('hidden');
+                function renderOutletRows(rows, isAllOutlets) {
+                    outletPanelEl.classList.toggle('hidden', !isAllOutlets);
+                    if (!isAllOutlets) return;
 
-                const max = Math.max(...rows.map(x => Number(x.amount || 0)), 0);
-                for (const row of rows) {
-                    const amount = Number(row.amount || 0);
-                    const pct = max > 0 ? Math.max(4, Math.round((amount / max) * 100)) : 0;
-                    const transactions = Number(row.transactions || 0);
-                    const lastSaleAt = row.last_sale_at ? new Date(row.last_sale_at) : null;
-
-                    const wrap = document.createElement('div');
-                    wrap.className = 'grid grid-cols-12 gap-3 items-center';
-                    wrap.innerHTML = `
-                                                        <div class="col-span-4 sm:col-span-3">
-                                                            <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                                                            <div class="text-[11px] text-slate-500">
-                                                                ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-span-5 sm:col-span-7">
-                                                            <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                                                <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                                                    `;
-                    outletBarsEl.appendChild(wrap);
-                }
-            }
-
-            function formatSignedPct(value) {
-                if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-                const raw = Number(value);
-                const n = Math.abs(raw) < 0.05 ? 0 : raw;
-                const sign = n > 0 ? '+' : '';
-                return `${sign}${n.toFixed(1)}%`;
-            }
-
-            function renderOutletBreakdown(rows, isAllOutlets) {
-                outletBreakdownRowsEl.innerHTML = '';
-
-                if (!isAllOutlets) {
-                    outletBreakdownHintEl.classList.remove('hidden');
-                    outletBreakdownWrapEl.classList.add('hidden');
-                    return;
-                }
-
-                outletBreakdownHintEl.classList.add('hidden');
-                outletBreakdownWrapEl.classList.remove('hidden');
-
-                const safeRows = Array.isArray(rows) ? rows : [];
-                if (safeRows.length === 0) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="px-3 py-2 text-slate-500" colspan="2">Belum ada data.</td>`;
-                    outletBreakdownRowsEl.appendChild(tr);
-                    return;
-                }
-
-                for (const row of safeRows) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                                                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                    `;
-                    outletBreakdownRowsEl.appendChild(tr);
-                }
-            }
-
-            function setTarget(target) {
-                const dailyTarget = Number(target?.daily_sales_target || 0);
-                const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
-
-                if (!dailyTarget || dailyTarget <= 0 || pct === null) {
-                    targetWrapEl.classList.add('hidden');
-                    return;
-                }
-
-                targetWrapEl.classList.remove('hidden');
-                targetValueEl.textContent = idr.format(dailyTarget);
-                targetPctEl.textContent = `${pct.toFixed(0)}%`;
-                targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-            }
-
-            function escapeHtml(value) {
-                return String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-            }
-
-            function render(data) {
-                kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
-                kpiTransactionsEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.total_transactions || 0));
-                kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
-                kpiDiscountTotalEl.textContent = idr.format(Number(data?.kpis?.discount_total || 0));
-                kpiCancelledCountEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.cancelled_transactions || 0));
-                kpiCancelledAmountEl.textContent = idr.format(Number(data?.kpis?.cancelled_amount || 0));
-
-                const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
-                const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
-                const trendPrev = data?.trend_vs_prev_day?.prev_total_sales ?? null;
-
-                trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
-                trendSalesPctEl.textContent = formatSignedPct(trendPct);
-
-                setTarget(data?.target);
-
-                renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
-                renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
-                renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
-                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
-                renderOutletBreakdown(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
-                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
-
-                const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
-                lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
-            }
-
-            async function fetchSummary(showSuccess = false) {
-                if (isLoading) return;
-
-                setLoadingState(true);
-                setStatus('Memuat data...', 'info');
-
-                try {
-                    const res = await fetch(buildUrl(), {
-                        headers: {
-                            'Accept': 'application/json',
-                        }
-                    });
-
-                    if (!res.ok) {
-                        let msg = `Gagal memuat data (HTTP ${res.status}).`;
-                        try {
-                            const body = await res.json();
-                            if (body?.message) msg = body.message;
-                        } catch (e) { }
-                        throw new Error(msg);
+                    outletBarsEl.innerHTML = '';
+                    if (!rows || rows.length === 0) {
+                        outletEmptyEl.classList.remove('hidden');
+                        return;
                     }
 
-                    const data = await res.json();
-                    render(data);
-                    setStatus(showSuccess ? 'Berhasil diperbarui.' : 'Aktif (auto refresh).', showSuccess ? 'success' : 'info');
-                } catch (err) {
-                    setStatus(err?.message || 'Terjadi error saat memuat data.', 'error');
-                } finally {
-                    setLoadingState(false);
+                    outletEmptyEl.classList.add('hidden');
+
+                    const max = Math.max(...rows.map(x => Number(x.amount || 0)), 0);
+                    for (const row of rows) {
+                        const amount = Number(row.amount || 0);
+                        const pct = max > 0 ? Math.max(4, Math.round((amount / max) * 100)) : 0;
+                        const transactions = Number(row.transactions || 0);
+                        const lastSaleAt = row.last_sale_at ? new Date(row.last_sale_at) : null;
+
+                        const wrap = document.createElement('div');
+                        wrap.className = 'grid grid-cols-12 gap-3 items-center';
+                        wrap.innerHTML = `
+                                                            <div class="col-span-4 sm:col-span-3">
+                                                                <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
+                                                                <div class="text-[11px] text-slate-500">
+                                                                    ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-span-5 sm:col-span-7">
+                                                                <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                                                                    <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
+                                                        `;
+                        outletBarsEl.appendChild(wrap);
+                    }
                 }
-            }
 
-            function startAutoRefresh() {
-                if (timer) clearInterval(timer);
-                timer = setInterval(() => fetchSummary(false), 15000);
-            }
+                function formatSignedPct(value) {
+                    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+                    const raw = Number(value);
+                    const n = Math.abs(raw) < 0.05 ? 0 : raw;
+                    const sign = n > 0 ? '+' : '';
+                    return `${sign}${n.toFixed(1)}%`;
+                }
 
-            refreshBtn.addEventListener('click', () => fetchSummary(true));
-            outletIdEl.addEventListener('change', () => fetchSummary(true));
-            dateEl.addEventListener('change', () => fetchSummary(true));
+                function renderOutletBreakdown(rows, isAllOutlets) {
+                    outletBreakdownRowsEl.innerHTML = '';
 
-            fetchSummary(false);
-            startAutoRefresh();
-        })();
-    </script>
+                    if (!isAllOutlets) {
+                        outletBreakdownHintEl.classList.remove('hidden');
+                        outletBreakdownWrapEl.classList.add('hidden');
+                        return;
+                    }
+
+                    outletBreakdownHintEl.classList.add('hidden');
+                    outletBreakdownWrapEl.classList.remove('hidden');
+
+                    const safeRows = Array.isArray(rows) ? rows : [];
+                    if (safeRows.length === 0) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td class="px-3 py-2 text-slate-500" colspan="2">Belum ada data.</td>`;
+                        outletBreakdownRowsEl.appendChild(tr);
+                        return;
+                    }
+
+                    for (const row of safeRows) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                                            <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                                        `;
+                        outletBreakdownRowsEl.appendChild(tr);
+                    }
+                }
+
+                function setTarget(target) {
+                    const dailyTarget = Number(target?.daily_sales_target || 0);
+                    const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
+
+                    if (!dailyTarget || dailyTarget <= 0 || pct === null) {
+                        targetWrapEl.classList.add('hidden');
+                        return;
+                    }
+
+                    targetWrapEl.classList.remove('hidden');
+                    targetValueEl.textContent = idr.format(dailyTarget);
+                    targetPctEl.textContent = `${pct.toFixed(0)}%`;
+                    targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+                }
+
+                function escapeHtml(value) {
+                    return String(value ?? '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+
+                function render(data) {
+                    kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
+                    kpiTransactionsEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.total_transactions || 0));
+                    kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
+                    kpiDiscountTotalEl.textContent = idr.format(Number(data?.kpis?.discount_total || 0));
+                    kpiCancelledCountEl.textContent = new Intl.NumberFormat('id-ID').format(Number(data?.kpis?.cancelled_transactions || 0));
+                    kpiCancelledAmountEl.textContent = idr.format(Number(data?.kpis?.cancelled_amount || 0));
+
+                    const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
+                    const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
+                    const trendPrev = data?.trend_vs_prev_day?.prev_total_sales ?? null;
+
+                    trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
+                    trendSalesPctEl.textContent = formatSignedPct(trendPct);
+
+                    setTarget(data?.target);
+
+                    renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
+                    renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
+                    renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
+                    renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
+                    renderOutletBreakdown(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
+                    renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
+
+                    const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
+                    lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
+                }
+
+                async function fetchSummary(showSuccess = false) {
+                    if (isLoading) return;
+
+                    setLoadingState(true);
+                    setStatus('Memuat data...', 'info');
+
+                    try {
+                        const res = await fetch(buildUrl(), {
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+
+                        if (!res.ok) {
+                            let msg = `Gagal memuat data (HTTP ${res.status}).`;
+                            try {
+                                const body = await res.json();
+                                if (body?.message) msg = body.message;
+                            } catch (e) { }
+                            throw new Error(msg);
+                        }
+
+                        const data = await res.json();
+                        render(data);
+                        setStatus(showSuccess ? 'Berhasil diperbarui.' : 'Aktif (auto refresh).', showSuccess ? 'success' : 'info');
+                    } catch (err) {
+                        setStatus(err?.message || 'Terjadi error saat memuat data.', 'error');
+                    } finally {
+                        setLoadingState(false);
+                    }
+                }
+
+                function startAutoRefresh() {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(() => fetchSummary(false), 15000);
+                }
+
+                refreshBtn.addEventListener('click', () => fetchSummary(true));
+                outletIdEl.addEventListener('change', () => fetchSummary(true));
+                dateEl.addEventListener('change', () => fetchSummary(true));
+
+                fetchSummary(false);
+                startAutoRefresh();
+            })();
+        </script>
 @endpush
