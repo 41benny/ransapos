@@ -647,6 +647,12 @@
                 hourlyTooltipEl.style.display = 'none';
             }
 
+            function prepareHourlyContainer() {
+                hourlyBarsEl.style.display = 'flex';
+                hourlyBarsEl.style.alignItems = 'flex-end';
+                hourlyBarsEl.style.gap = '0.35rem';
+            }
+
             function renderHourlyBars(series) {
                 const max = Math.max(...series.map(x => Number(x.amount || 0)), 0);
                 const peakAmount = max;
@@ -660,6 +666,8 @@
                 hourlyEmptyEl.classList.add('hidden');
 
                 hourlyBarsEl.innerHTML = '';
+                hourlyTooltipEl = null;
+                prepareHourlyContainer();
                 for (const point of series) {
                     const amount = Number(point.amount || 0);
                     const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;
@@ -674,6 +682,7 @@
                     bar.style.height = `${pct}%`;
                     bar.style.minHeight = '4px';
                     bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';
+                    bar.style.flex = '1 1 0%';
                     bar.style.boxShadow = isPeak
                         ? '0 14px 24px -12px rgba(194,65,12,0.85)'
                         : '0 8px 16px -10px rgba(194,65,12,0.65)';
@@ -800,12 +809,14 @@
                 hourlyBarsEl.innerHTML = '';
                 hourlyTooltipEl = null;
                 hourlyEmptyEl.classList.remove('hidden');
+                prepareHourlyContainer();
 
                 for (let h = 0; h <= 23; h++) {
                     const bar = document.createElement('div');
                     bar.className = 'flex-1';
                     bar.style.height = '6%';
                     bar.style.minHeight = '3px';
+                    bar.style.flex = '1 1 0%';
                     bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
                     bar.style.background = 'rgba(253,186,116,0.7)';
                     hourlyBarsEl.appendChild(bar);
