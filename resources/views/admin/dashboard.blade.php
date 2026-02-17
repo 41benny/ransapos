@@ -5,7 +5,7 @@
 @section('page-title', 'Dashboard Penjualan')
 
 @section('content')
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+<div class="dashboard-hero bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
     <div class="flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
         <div>
             <p class="text-sm text-slate-500">Pantau omzet (near real-time)</p>
@@ -16,7 +16,7 @@
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Outlet</label>
                 <select id="outletId"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400">
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400">
                     <option value="all">Semua Outlet</option>
                     @foreach ($outlets as $outlet)
                         <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
@@ -26,11 +26,11 @@
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
                 <input id="date" type="date" value="{{ $defaultDate }}"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400" />
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
             </div>
             <div class="flex items-end gap-2">
                 <button id="refreshBtn" type="button"
-                    class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors">
+                    class="btn btn-primary w-full justify-center">
                     <i class="fas fa-rotate"></i>
                     Refresh
                 </button>
@@ -45,10 +45,10 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
         <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-green-50 rounded-xl">
-                <i class="fas fa-coins text-green-600"></i>
+            <div class="p-3 bg-orange-50 rounded-xl">
+                <i class="fas fa-coins text-orange-600"></i>
             </div>
             <div class="relative group">
                 <button type="button"
@@ -94,10 +94,10 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.14);">
         <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-blue-50 rounded-xl">
-                <i class="fas fa-receipt text-blue-600"></i>
+            <div class="p-3 bg-orange-50 rounded-xl">
+                <i class="fas fa-receipt text-orange-600"></i>
             </div>
         </div>
         <p class="text-sm text-slate-500 font-medium mb-1">Transaksi</p>
@@ -105,10 +105,10 @@
         <p class="text-xs text-slate-500 mt-2">Jumlah transaksi selesai</p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f59e0b;--dash-accent-2:#fbbf24;--dash-accent-soft:rgba(245,158,11,0.14);">
         <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-purple-50 rounded-xl">
-                <i class="fas fa-chart-simple text-purple-600"></i>
+            <div class="p-3 bg-amber-50 rounded-xl">
+                <i class="fas fa-chart-simple text-amber-600"></i>
             </div>
         </div>
         <p class="text-sm text-slate-500 font-medium mb-1">Rata-rata Transaksi</p>
@@ -118,7 +118,7 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#d97706;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(217,119,6,0.14);">
         <div class="flex items-start justify-between mb-3">
             <div class="p-3 bg-amber-50 rounded-xl">
                 <i class="fas fa-tags text-amber-600"></i>
@@ -129,7 +129,7 @@
         <p class="text-xs text-slate-500 mt-2">Dari transaksi completed</p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f43f5e;--dash-accent-2:#fb7185;--dash-accent-soft:rgba(244,63,94,0.12);">
         <div class="flex items-start justify-between mb-3">
             <div class="p-3 bg-rose-50 rounded-xl">
                 <i class="fas fa-ban text-rose-600"></i>
@@ -140,10 +140,10 @@
         <p class="text-xs text-slate-500 mt-2">Nilai: <span id="kpiCancelledAmount" class="font-semibold text-slate-700">-</span></p>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#c2410c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(194,65,12,0.14);">
         <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-slate-50 rounded-xl">
-                <i class="fas fa-arrow-trend-up text-slate-700"></i>
+            <div class="p-3 bg-orange-50 rounded-xl">
+                <i class="fas fa-arrow-trend-up text-orange-700"></i>
             </div>
         </div>
         <p class="text-sm text-slate-500 font-medium mb-1">Trend vs Kemarin</p>
@@ -153,8 +153,8 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2" style="--dash-accent:#ea580c;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(234,88,12,0.13);">
+        <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
                 <p class="text-xs text-slate-500">Berdasarkan jam transaksi (created_at)</p>
@@ -170,8 +170,8 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#fb923c;--dash-accent-2:#fdba74;--dash-accent-soft:rgba(251,146,60,0.14);">
+        <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Per Kategori</h3>
                 <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
@@ -180,7 +180,7 @@
 
         <div class="overflow-hidden rounded-xl border border-slate-100">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600 text-xs">
+                <thead class="table-head-accent text-slate-700 text-xs">
                     <tr>
                         <th class="text-left px-3 py-2 font-semibold">Kategori</th>
                         <th class="text-right px-3 py-2 font-semibold">Omzet</th>
@@ -195,8 +195,8 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.13);">
+        <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Metode Pembayaran</h3>
                 <p class="text-xs text-slate-500">Komposisi pembayaran (completed)</p>
@@ -204,7 +204,7 @@
         </div>
         <div class="overflow-hidden rounded-xl border border-slate-100">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600 text-xs">
+                <thead class="table-head-accent text-slate-700 text-xs">
                     <tr>
                         <th class="text-left px-3 py-2 font-semibold">Metode</th>
                         <th class="text-right px-3 py-2 font-semibold">Jumlah</th>
@@ -216,8 +216,8 @@
         <div id="paymentEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between mb-4">
+    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
+        <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Top Produk</h3>
                 <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
@@ -225,8 +225,9 @@
         </div>
         <div class="overflow-hidden rounded-xl border border-slate-100">
             <table class="w-full text-sm">
-                <thead class="bg-slate-50 text-slate-600 text-xs">
+                <thead class="table-head-accent text-slate-700 text-xs">
                     <tr>
+                        <th class="text-left px-3 py-2 font-semibold">Pos</th>
                         <th class="text-left px-3 py-2 font-semibold">Produk</th>
                         <th class="text-right px-3 py-2 font-semibold">Qty</th>
                         <th class="text-right px-3 py-2 font-semibold">Omzet</th>
@@ -239,8 +240,8 @@
     </div>
 </div>
 
-<div id="outletPanel" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-    <div class="flex items-center justify-between mb-4">
+<div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
+    <div class="dash-card-head flex items-center justify-between mb-4">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
             <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
@@ -259,6 +260,86 @@
 </noscript>
 
 @endsection
+
+@push('styles')
+    <style>
+        .dashboard-hero {
+            background-image:
+                radial-gradient(circle at top right, rgba(249, 115, 22, 0.16), transparent 42%),
+                radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.1), transparent 38%);
+        }
+
+        .dash-panel {
+            position: relative;
+            overflow: hidden;
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        }
+
+        .dash-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--dash-accent, #ec4913), var(--dash-accent-2, #fb923c));
+        }
+
+        .dash-panel:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        .dash-card-head {
+            margin: -0.5rem -0.5rem 1rem;
+            padding: 0.75rem 0.75rem;
+            border-radius: 0.9rem;
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236,73,19,0.12)), rgba(255,255,255,0));
+        }
+
+        .table-head-accent {
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236,73,19,0.12)), rgba(248,250,252,0.85));
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .dash-panel {
+                transition: none;
+            }
+
+            .dash-panel:hover {
+                transform: none;
+            }
+        }
+
+        @keyframes topRankUpFlash {
+            0% { background-color: rgba(16, 185, 129, 0.2); }
+            100% { background-color: transparent; }
+        }
+
+        @keyframes topRankDownFlash {
+            0% { background-color: rgba(244, 63, 94, 0.18); }
+            100% { background-color: transparent; }
+        }
+
+        @keyframes topRankNewFlash {
+            0% { background-color: rgba(249, 115, 22, 0.2); }
+            100% { background-color: transparent; }
+        }
+
+        .top-rank-up {
+            animation: topRankUpFlash 900ms ease-out;
+        }
+
+        .top-rank-down {
+            animation: topRankDownFlash 900ms ease-out;
+        }
+
+        .top-rank-new {
+            animation: topRankNewFlash 900ms ease-out;
+        }
+    </style>
+@endpush
 
 @push('scripts')
     <script>
@@ -313,17 +394,19 @@
             });
 
             const hourlyPalette = [
-                'bg-emerald-500/80',
-                'bg-blue-500/80',
+                'bg-orange-500/80',
                 'bg-amber-500/80',
-                'bg-violet-500/80',
+                'bg-orange-600/80',
+                'bg-yellow-500/80',
                 'bg-rose-500/80',
             ];
-            const hourlyOthersClass = 'bg-slate-400/80';
+            const hourlyOthersClass = 'bg-orange-300/70';
 
             let timer = null;
             let isLoading = false;
             let hourlyTooltipEl = null;
+            let lastTopProductsSignature = null;
+            let prevTopRankByKey = new Map();
 
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text;
@@ -393,7 +476,7 @@
                     const amount = Number(point.amount || 0);
                     const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;
                     const bar = document.createElement('div');
-                    bar.className = 'flex-1 rounded-t-lg bg-blue-500/70 hover:bg-blue-600 transition-colors';
+                    bar.className = 'flex-1 rounded-t-lg bg-orange-500/70 hover:bg-orange-600 transition-colors';
                     bar.style.height = `${pct}%`;
                     bar.title = `${String(point.hour).padStart(2,'0')}:00 - ${idr.format(amount)}`;
                     hourlyBarsEl.appendChild(bar);
@@ -520,23 +603,84 @@
                 }
             }
 
-            function renderTopProducts(rows) {
+            function formatTopProductKey(row) {
+                const productId = Number(row?.product_id || 0);
+                if (productId > 0) return `id:${productId}`;
+                return `name:${String(row?.product_name || '').toLowerCase().trim()}`;
+            }
+
+            function buildTrendMeta(prevRank, currentRank) {
+                if (prevRank === null || prevRank === undefined) {
+                    return {
+                        badge: '<span class="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">NEW</span>',
+                        movementClass: 'top-rank-new',
+                    };
+                }
+
+                if (currentRank < prevRank) {
+                    const diff = prevRank - currentRank;
+                    return {
+                        badge: `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${diff}</span>`,
+                        movementClass: 'top-rank-up',
+                    };
+                }
+
+                if (currentRank > prevRank) {
+                    const diff = currentRank - prevRank;
+                    return {
+                        badge: `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${diff}</span>`,
+                        movementClass: 'top-rank-down',
+                    };
+                }
+
+                return {
+                    badge: '<span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600"><i class="fas fa-minus"></i> 0</span>',
+                    movementClass: '',
+                };
+            }
+
+            function renderTopProducts(rows, dataSignature) {
                 productRowsEl.innerHTML = '';
                 if (!rows || rows.length === 0) {
                     productEmptyEl.classList.remove('hidden');
+                    prevTopRankByKey = new Map();
+                    lastTopProductsSignature = dataSignature;
                     return;
                 }
 
+                if (lastTopProductsSignature !== dataSignature) {
+                    prevTopRankByKey = new Map();
+                }
+
                 productEmptyEl.classList.add('hidden');
+                const nextRankByKey = new Map();
                 for (const row of rows) {
+                    const rank = productRowsEl.children.length + 1;
+                    const key = formatTopProductKey(row);
+                    const prevRank = prevTopRankByKey.has(key) ? prevTopRankByKey.get(key) : null;
+                    const trendMeta = buildTrendMeta(prevRank, rank);
+
                     const tr = document.createElement('tr');
+                    if (trendMeta.movementClass) {
+                        tr.classList.add(trendMeta.movementClass);
+                    }
                     tr.innerHTML = `
-                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.product_name)}</td>
+                        <td class="px-3 py-2 text-slate-700 font-semibold">${rank}</td>
+                        <td class="px-3 py-2 text-slate-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="truncate" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                ${trendMeta.badge}
+                            </div>
+                        </td>
                         <td class="px-3 py-2 text-right text-slate-700">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
                         <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
                     `;
                     productRowsEl.appendChild(tr);
+                    nextRankByKey.set(key, rank);
                 }
+
+                prevTopRankByKey = nextRankByKey;
+                lastTopProductsSignature = dataSignature;
             }
 
             function renderOutletRows(rows, isAllOutlets) {
@@ -663,7 +807,8 @@
                 }
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
-                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
+                const topProductsSignature = `${String(data?.date || '')}|${String(data?.outlet_id ?? 'all')}`;
+                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : [], topProductsSignature);
                 renderOutletBreakdown(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
                 renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
 

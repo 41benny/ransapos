@@ -171,7 +171,6 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">No Transaksi</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pelanggan</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Qty</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Harga</th>
@@ -203,7 +202,6 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm font-mono text-gray-900">{{ $row->transaction_number }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ \Carbon\Carbon::parse($row->sale_date)->format('d M Y') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ $row->outlet_name }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ $row->customer_name ?: '-' }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->product_name }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ number_format($row->qty, 2, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->price, 0, ',', '.') }}</td>
