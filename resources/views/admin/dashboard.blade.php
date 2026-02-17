@@ -226,14 +226,18 @@
                 </div>
             </div>
             <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col" style="max-height: 400px;">
-                <div class="overflow-y-auto overflow-x-hidden grow custom-scrollbar">
-                    <table class="w-full text-sm relative table-fixed">
+                <div class="overflow-y-auto overflow-x-auto grow custom-scrollbar">
+                    <table class="w-full text-sm relative">
                         <thead class="sticky top-0 z-10 table-head-accent text-slate-700 text-xs shadow-sm">
                             <tr>
-                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-12">Pos</th>
-                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm">Produk</th>
-                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-20">Qty</th>
-                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm w-36 pr-4">
+                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[50px]">
+                                    Pos</th>
+                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[200px]">
+                                    Produk</th>
+                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[80px]">
+                                    Qty</th>
+                                <th
+                                    class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[120px] pr-4">
                                     Omzet</th>
                             </tr>
                         </thead>
@@ -518,9 +522,9 @@
                     const bar = document.createElement('div'); bar.className = 'flex-1 relative'; bar.style.background = isPeak ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)' : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)'; bar.style.height = `${pct}%`; bar.style.minHeight = '4px'; bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem'; bar.style.flex = '1 1 0%'; bar.style.boxShadow = isPeak ? '0 14px 24px -12px rgba(194,65,12,0.85)' : '0 8px 16px -10px rgba(194,65,12,0.65)';
                     const cap = document.createElement('div'); cap.style.cssText = isPeak ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);' : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);'; bar.appendChild(cap);
                     const tooltipHtml = `
-                                                                            <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
-                                                                            <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
-                                                                                            `;
+                                                                                    <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
+                                                                                    <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
+                                                                                                    `;
 
                     bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                     bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -582,10 +586,10 @@
 
                         const outletName = escapeHtml(seg.outlet_name);
                         const tooltipHtml = `
-                                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
-                                                                                <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                            `;
+                                                                                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                                        <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
+                                                                                        <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                                                    `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -608,12 +612,12 @@
                         const moreCount = Math.max(0, breakdown.length - 8);
 
                         const tooltipHtml = `
-                                                                                <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
-                                                                                <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
-                                                                                ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
-                                                                                <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                            `;
+                                                                                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                                                                        <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
+                                                                                        <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
+                                                                                        ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
+                                                                                        <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                                                                    `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -671,15 +675,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                            <div class="flex items-end justify-between mb-1.5">
-                                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                            </div>
-                                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
-                                                                </div>
-                                                            </div>
-                                                        `;
+                                                                    <div class="flex items-end justify-between mb-1.5">
+                                                                        <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                        <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
+                                                                    </div>
+                                                                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                        <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                        </div>
+                                                                    </div>
+                                                                `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -711,14 +715,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                    <i class="fas ${style.icon} text-lg ${style.text}"></i>
-                                </div>
-                                <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                            </div>
-                            <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                        `;
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                            <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                        </div>
+                                        <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
+                                    </div>
+                                    <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -761,23 +765,23 @@
                     }
 
                     tr.innerHTML = `
-                                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center w-12">${rank}</td>
-                                                    <td class="px-3 py-3 text-slate-700">
-                                                        <div class="flex items-center gap-4">
-                                                            ${imageHtml}
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="flex flex-col gap-0.5">
-                                                                    <div class="flex items-center gap-2">
-                                                                        <span class="truncate font-semibold text-slate-800 text-base" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                        ${trendBadge}
+                                                            <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                            <td class="px-3 py-3 text-slate-700">
+                                                                <div class="flex items-center gap-4 min-w-max">
+                                                                    ${imageHtml}
+                                                                    <div class="flex-1">
+                                                                        <div class="flex flex-col gap-0.5">
+                                                                            <div class="flex items-center gap-2">
+                                                                                <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                ${trendBadge}
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td class="px-3 py-3 text-right text-slate-600">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                    <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4">${idr.format(Number(row.amount || 0))}</td>
-                                                `;
+                                                            </td>
+                                                            <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                            <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                        `;
                     productRowsEl.appendChild(tr);
                 }
             }
@@ -804,19 +808,19 @@
                     const wrap = document.createElement('div');
                     wrap.className = 'grid grid-cols-12 gap-3 items-center';
                     wrap.innerHTML = `
-                                                                            <div class="col-span-4 sm:col-span-3">
-                                                                                <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                                                                                <div class="text-[11px] text-slate-500">
-                                                                                    ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="col-span-5 sm:col-span-7">
-                                                                                <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                                                                    <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                                                                        `;
+                                                                                    <div class="col-span-4 sm:col-span-3">
+                                                                                        <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
+                                                                                        <div class="text-[11px] text-slate-500">
+                                                                                            ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="col-span-5 sm:col-span-7">
+                                                                                        <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                                                                                            <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
+                                                                                `;
                     outletBarsEl.appendChild(wrap);
                 }
             }
@@ -852,9 +856,9 @@
                 for (const row of safeRows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                                                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                                            <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                                        `;
+                                                                                    <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                                                                    <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                                                                `;
                     outletBreakdownRowsEl.appendChild(tr);
                 }
             }
