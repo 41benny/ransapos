@@ -5,260 +5,275 @@
 @section('page-title', 'Dashboard Penjualan')
 
 @section('content')
-<div class="dashboard-hero bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-    <div class="flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
-        <div>
-            <p class="text-sm text-slate-500">Pantau omzet (near real-time)</p>
-            <h2 class="text-xl font-bold text-slate-900">Ringkasan Penjualan</h2>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+    <div class="dashboard-hero bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div class="flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Outlet</label>
-                <select id="outletId"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400">
-                    <option value="all">Semua Outlet</option>
-                    @foreach ($outlets as $outlet)
-                        <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
-                    @endforeach
-                </select>
+                <p class="text-sm text-slate-500">Pantau omzet (near real-time)</p>
+                <h2 class="text-xl font-bold text-slate-900">Ringkasan Penjualan</h2>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
-                <input id="date" type="date" value="{{ $defaultDate }}"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
-            </div>
-            <div class="flex items-end gap-2">
-                <button id="refreshBtn" type="button"
-                    class="btn btn-primary w-full justify-center">
-                    <i class="fas fa-rotate"></i>
-                    Refresh
-                </button>
-            </div>
-        </div>
-    </div>
 
-    <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
-        <div id="statusText">Memuat data...</div>
-        <div>Last updated: <span id="lastUpdated">-</span></div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-orange-50 rounded-xl">
-                <i class="fas fa-coins text-orange-600"></i>
-            </div>
-            <div class="relative group">
-                <button type="button"
-                    class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
-                    aria-label="Lihat breakdown omzet per outlet">
-                    <i class="fas fa-circle-info"></i>
-                </button>
-                <div
-                    class="pointer-events-none absolute right-0 top-full mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3 text-xs text-slate-700 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
-                    <div class="font-semibold text-slate-900 mb-1">Breakdown Omzet per Outlet</div>
-                    <div id="outletBreakdownHint" class="text-slate-600">Pilih <span class="font-semibold">Semua Outlet</span> untuk melihat rinciannya.</div>
-                    <div id="outletBreakdownWrap" class="hidden mt-2">
-                        <div class="max-h-56 overflow-auto rounded-lg border border-slate-100">
-                            <table class="w-full">
-                                <thead class="bg-slate-50 text-slate-600">
-                                    <tr>
-                                        <th class="text-left px-3 py-2 font-semibold">Outlet</th>
-                                        <th class="text-right px-3 py-2 font-semibold">Omzet</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="outletBreakdownRows" class="divide-y divide-slate-100"></tbody>
-                            </table>
-                        </div>
-                        <div class="mt-2 text-[11px] text-slate-500">Angka menghitung transaksi <span class="font-semibold">completed</span>.</div>
-                    </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Outlet</label>
+                    <select id="outletId"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400">
+                        <option value="all">Semua Outlet</option>
+                        @foreach ($outlets as $outlet)
+                            <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
+                    <input id="date" type="date" value="{{ $defaultDate }}"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
+                </div>
+                <div class="flex items-end gap-2">
+                    <button id="refreshBtn" type="button" class="btn btn-primary w-full justify-center">
+                        <i class="fas fa-rotate"></i>
+                        Refresh
+                    </button>
                 </div>
             </div>
         </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Omzet</p>
-        <p id="kpiTotalSales" class="text-2xl font-bold text-slate-900">-</p>
-        <div class="mt-2 text-xs text-slate-500 space-y-1">
-            <div>Status: completed</div>
-            <div>Vs kemarin: <span id="trendSales" class="font-semibold text-slate-700">-</span></div>
-        </div>
-        <div id="targetWrap" class="mt-3 hidden">
-            <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                <div>Target harian</div>
-                <div><span id="targetValue">-</span> (<span id="targetPct">-</span>)</div>
-            </div>
-            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div id="targetBar" class="h-2 rounded-full bg-emerald-500/80" style="width: 0%"></div>
-            </div>
+
+        <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
+            <div id="statusText">Memuat data...</div>
+            <div>Last updated: <span id="lastUpdated">-</span></div>
         </div>
     </div>
 
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.14);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-orange-50 rounded-xl">
-                <i class="fas fa-receipt text-orange-600"></i>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-orange-50 rounded-xl">
+                    <i class="fas fa-coins text-orange-600"></i>
+                </div>
+                <div class="relative group">
+                    <button type="button"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                        aria-label="Lihat breakdown omzet per outlet">
+                        <i class="fas fa-circle-info"></i>
+                    </button>
+                    <div
+                        class="pointer-events-none absolute right-0 top-full mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3 text-xs text-slate-700 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
+                        <div class="font-semibold text-slate-900 mb-1">Breakdown Omzet per Outlet</div>
+                        <div id="outletBreakdownHint" class="text-slate-600">Pilih <span class="font-semibold">Semua
+                                Outlet</span> untuk melihat rinciannya.</div>
+                        <div id="outletBreakdownWrap" class="hidden mt-2">
+                            <div class="max-h-56 overflow-auto rounded-lg border border-slate-100">
+                                <table class="w-full">
+                                    <thead class="bg-slate-50 text-slate-600">
+                                        <tr>
+                                            <th class="text-left px-3 py-2 font-semibold">Outlet</th>
+                                            <th class="text-right px-3 py-2 font-semibold">Omzet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="outletBreakdownRows" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                            <div class="mt-2 text-[11px] text-slate-500">Angka menghitung transaksi <span
+                                    class="font-semibold">completed</span>.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Omzet</p>
+            <p id="kpiTotalSales" class="text-2xl font-bold text-slate-900">-</p>
+            <div class="mt-2 text-xs text-slate-500 space-y-1">
+                <div>Status: completed</div>
+                <div>Vs kemarin: <span id="trendSales" class="font-semibold text-slate-700">-</span></div>
+            </div>
+            <div id="targetWrap" class="mt-3 hidden">
+                <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                    <div>Target harian</div>
+                    <div><span id="targetValue">-</span> (<span id="targetPct">-</span>)</div>
+                </div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div id="targetBar" class="h-2 rounded-full bg-emerald-500/80" style="width: 0%"></div>
+                </div>
             </div>
         </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Transaksi</p>
-        <p id="kpiTransactions" class="text-2xl font-bold text-slate-900">-</p>
-        <p class="text-xs text-slate-500 mt-2">Jumlah transaksi selesai</p>
+
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.14);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-orange-50 rounded-xl">
+                    <i class="fas fa-receipt text-orange-600"></i>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Transaksi</p>
+            <p id="kpiTransactions" class="text-2xl font-bold text-slate-900">-</p>
+            <p class="text-xs text-slate-500 mt-2">Jumlah transaksi selesai</p>
+        </div>
+
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#f59e0b;--dash-accent-2:#fbbf24;--dash-accent-soft:rgba(245,158,11,0.14);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-amber-50 rounded-xl">
+                    <i class="fas fa-chart-simple text-amber-600"></i>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Rata-rata Transaksi</p>
+            <p id="kpiAvgTransaction" class="text-2xl font-bold text-slate-900">-</p>
+            <p class="text-xs text-slate-500 mt-2">Omzet / transaksi</p>
+        </div>
     </div>
 
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f59e0b;--dash-accent-2:#fbbf24;--dash-accent-soft:rgba(245,158,11,0.14);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-amber-50 rounded-xl">
-                <i class="fas fa-chart-simple text-amber-600"></i>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#d97706;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(217,119,6,0.14);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-amber-50 rounded-xl">
+                    <i class="fas fa-tags text-amber-600"></i>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Total Diskon</p>
+            <p id="kpiDiscountTotal" class="text-2xl font-bold text-slate-900">-</p>
+            <p class="text-xs text-slate-500 mt-2">Dari transaksi completed</p>
+        </div>
+
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#f43f5e;--dash-accent-2:#fb7185;--dash-accent-soft:rgba(244,63,94,0.12);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-rose-50 rounded-xl">
+                    <i class="fas fa-ban text-rose-600"></i>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Void (Cancelled)</p>
+            <p class="text-2xl font-bold text-slate-900"><span id="kpiCancelledCount">-</span></p>
+            <p class="text-xs text-slate-500 mt-2">Nilai: <span id="kpiCancelledAmount"
+                    class="font-semibold text-slate-700">-</span></p>
+        </div>
+
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#c2410c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(194,65,12,0.14);">
+            <div class="flex items-start justify-between mb-3">
+                <div class="p-3 bg-orange-50 rounded-xl">
+                    <i class="fas fa-arrow-trend-up text-orange-700"></i>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 font-medium mb-1">Trend vs Kemarin</p>
+            <p id="trendSalesPct" class="text-2xl font-bold text-slate-900">-</p>
+            <p class="text-xs text-slate-500 mt-2">Omzet & transaksi dibanding H-1</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2"
+            style="--dash-accent:#ea580c;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(234,88,12,0.13);">
+            <div class="dash-card-head flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
+                    <p class="text-xs text-slate-500">Berdasarkan jam transaksi (created_at)</p>
+                </div>
+                <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
+            </div>
+
+            <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars"
+                aria-label="Sales per hour chart"></div>
+            <div id="hourlyEmpty" class="hidden mt-2 text-[11px] text-slate-500">Belum ada transaksi pada rentang jam ini.
+            </div>
+            <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
+                @for ($i = 0; $i < 24; $i += 2)
+                    <div class="col-span-1 text-left">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</div>
+                @endfor
             </div>
         </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Rata-rata Transaksi</p>
-        <p id="kpiAvgTransaction" class="text-2xl font-bold text-slate-900">-</p>
-        <p class="text-xs text-slate-500 mt-2">Omzet / transaksi</p>
-    </div>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#d97706;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(217,119,6,0.14);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-amber-50 rounded-xl">
-                <i class="fas fa-tags text-amber-600"></i>
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#fb923c;--dash-accent-2:#fdba74;--dash-accent-soft:rgba(251,146,60,0.14);">
+            <div class="dash-card-head flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Per Kategori</h3>
+                    <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
+                </div>
             </div>
-        </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Total Diskon</p>
-        <p id="kpiDiscountTotal" class="text-2xl font-bold text-slate-900">-</p>
-        <p class="text-xs text-slate-500 mt-2">Dari transaksi completed</p>
-    </div>
 
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f43f5e;--dash-accent-2:#fb7185;--dash-accent-soft:rgba(244,63,94,0.12);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-rose-50 rounded-xl">
-                <i class="fas fa-ban text-rose-600"></i>
+            <div class="overflow-hidden rounded-xl border border-slate-100">
+                <table class="w-full text-sm">
+                    <thead class="table-head-accent text-slate-700 text-xs">
+                        <tr>
+                            <th class="text-left px-3 py-2 font-semibold">Kategori</th>
+                            <th class="text-right px-3 py-2 font-semibold">Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryRows" class="divide-y divide-slate-100"></tbody>
+                </table>
             </div>
+
+            <div id="categoryEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
         </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Void (Cancelled)</p>
-        <p class="text-2xl font-bold text-slate-900"><span id="kpiCancelledCount">-</span></p>
-        <p class="text-xs text-slate-500 mt-2">Nilai: <span id="kpiCancelledAmount" class="font-semibold text-slate-700">-</span></p>
     </div>
 
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#c2410c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(194,65,12,0.14);">
-        <div class="flex items-start justify-between mb-3">
-            <div class="p-3 bg-orange-50 rounded-xl">
-                <i class="fas fa-arrow-trend-up text-orange-700"></i>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.13);">
+            <div class="dash-card-head flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Metode Pembayaran</h3>
+                    <p class="text-xs text-slate-500">Komposisi pembayaran (completed)</p>
+                </div>
             </div>
+            <div class="overflow-hidden rounded-xl border border-slate-100">
+                <table class="w-full text-sm">
+                    <thead class="table-head-accent text-slate-700 text-xs">
+                        <tr>
+                            <th class="text-left px-3 py-2 font-semibold">Metode</th>
+                            <th class="text-right px-3 py-2 font-semibold">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentRows" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <div id="paymentEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
         </div>
-        <p class="text-sm text-slate-500 font-medium mb-1">Trend vs Kemarin</p>
-        <p id="trendSalesPct" class="text-2xl font-bold text-slate-900">-</p>
-        <p class="text-xs text-slate-500 mt-2">Omzet & transaksi dibanding H-1</p>
-    </div>
-</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2" style="--dash-accent:#ea580c;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(234,88,12,0.13);">
+        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
+            <div class="dash-card-head flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Top Produk</h3>
+                    <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
+                </div>
+            </div>
+            <div class="overflow-hidden rounded-xl border border-slate-100">
+                <table class="w-full text-sm">
+                    <thead class="table-head-accent text-slate-700 text-xs">
+                        <tr>
+                            <th class="text-left px-3 py-2 font-semibold">Pos</th>
+                            <th class="text-left px-3 py-2 font-semibold">Produk</th>
+                            <th class="text-right px-3 py-2 font-semibold">Qty</th>
+                            <th class="text-right px-3 py-2 font-semibold">Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <div id="productEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
+        </div>
+    </div>
+
+    <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+        style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
         <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
-                <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
-                <p class="text-xs text-slate-500">Berdasarkan jam transaksi (created_at)</p>
-            </div>
-            <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
-        </div>
-
-        <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars" aria-label="Sales per hour chart"></div>
-        <div id="hourlyEmpty" class="hidden mt-2 text-[11px] text-slate-500">Belum ada transaksi pada rentang jam ini.</div>
-        <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
-            @for ($i = 0; $i < 24; $i += 2)
-                <div class="col-span-1 text-left">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</div>
-            @endfor
-        </div>
-    </div>
-
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#fb923c;--dash-accent-2:#fdba74;--dash-accent-soft:rgba(251,146,60,0.14);">
-        <div class="dash-card-head flex items-center justify-between mb-4">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900">Per Kategori</h3>
-                <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
+                <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
+                <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-100">
-            <table class="w-full text-sm">
-                <thead class="table-head-accent text-slate-700 text-xs">
-                    <tr>
-                        <th class="text-left px-3 py-2 font-semibold">Kategori</th>
-                        <th class="text-right px-3 py-2 font-semibold">Omzet</th>
-                    </tr>
-                </thead>
-                <tbody id="categoryRows" class="divide-y divide-slate-100"></tbody>
-            </table>
-        </div>
+        <div id="outletBars" class="space-y-3"></div>
 
-        <div id="categoryEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.13);">
-        <div class="dash-card-head flex items-center justify-between mb-4">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900">Metode Pembayaran</h3>
-                <p class="text-xs text-slate-500">Komposisi pembayaran (completed)</p>
-            </div>
-        </div>
-        <div class="overflow-hidden rounded-xl border border-slate-100">
-            <table class="w-full text-sm">
-                <thead class="table-head-accent text-slate-700 text-xs">
-                    <tr>
-                        <th class="text-left px-3 py-2 font-semibold">Metode</th>
-                        <th class="text-right px-3 py-2 font-semibold">Jumlah</th>
-                    </tr>
-                </thead>
-                <tbody id="paymentRows" class="divide-y divide-slate-100"></tbody>
-            </table>
-        </div>
-        <div id="paymentEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
+        <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
     </div>
 
-    <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
-        <div class="dash-card-head flex items-center justify-between mb-4">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900">Top Produk</h3>
-                <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
-            </div>
+    <noscript>
+        <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
+            Dashboard ini butuh JavaScript untuk update data otomatis.
         </div>
-        <div class="overflow-hidden rounded-xl border border-slate-100">
-            <table class="w-full text-sm">
-                <thead class="table-head-accent text-slate-700 text-xs">
-                    <tr>
-                        <th class="text-left px-3 py-2 font-semibold">Pos</th>
-                        <th class="text-left px-3 py-2 font-semibold">Produk</th>
-                        <th class="text-right px-3 py-2 font-semibold">Qty</th>
-                        <th class="text-right px-3 py-2 font-semibold">Omzet</th>
-                    </tr>
-                </thead>
-                <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
-            </table>
-        </div>
-        <div id="productEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-    </div>
-</div>
-
-<div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6" style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
-    <div class="dash-card-head flex items-center justify-between mb-4">
-        <div>
-            <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
-            <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
-        </div>
-    </div>
-
-    <div id="outletBars" class="space-y-3"></div>
-
-    <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-</div>
-
-<noscript>
-    <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
-        Dashboard ini butuh JavaScript untuk update data otomatis.
-    </div>
-</noscript>
+    </noscript>
 
 @endsection
 
@@ -296,11 +311,11 @@
             margin: -0.5rem -0.5rem 1rem;
             padding: 0.75rem 0.75rem;
             border-radius: 0.9rem;
-            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236,73,19,0.12)), rgba(255,255,255,0));
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236, 73, 19, 0.12)), rgba(255, 255, 255, 0));
         }
 
         .table-head-accent {
-            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236,73,19,0.12)), rgba(248,250,252,0.85));
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236, 73, 19, 0.12)), rgba(248, 250, 252, 0.85));
         }
 
         .hourly-chart {
@@ -309,13 +324,11 @@
             padding: 0.85rem 0.5rem 0.35rem;
             background:
                 linear-gradient(180deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.9) 100%),
-                repeating-linear-gradient(
-                    to top,
+                repeating-linear-gradient(to top,
                     rgba(251, 146, 60, 0.1) 0px,
                     rgba(251, 146, 60, 0.1) 1px,
                     transparent 1px,
-                    transparent 28px
-                );
+                    transparent 28px);
             overflow: visible;
         }
 
@@ -411,18 +424,33 @@
         }
 
         @keyframes topRankUpFlash {
-            0% { background-color: rgba(16, 185, 129, 0.2); }
-            100% { background-color: transparent; }
+            0% {
+                background-color: rgba(16, 185, 129, 0.2);
+            }
+
+            100% {
+                background-color: transparent;
+            }
         }
 
         @keyframes topRankDownFlash {
-            0% { background-color: rgba(244, 63, 94, 0.18); }
-            100% { background-color: transparent; }
+            0% {
+                background-color: rgba(244, 63, 94, 0.18);
+            }
+
+            100% {
+                background-color: transparent;
+            }
         }
 
         @keyframes topRankNewFlash {
-            0% { background-color: rgba(249, 115, 22, 0.2); }
-            100% { background-color: transparent; }
+            0% {
+                background-color: rgba(249, 115, 22, 0.2);
+            }
+
+            100% {
+                background-color: transparent;
+            }
         }
 
         .top-rank-up {
@@ -540,7 +568,7 @@
                 if (hourlyTooltipEl) return hourlyTooltipEl;
 
                 hourlyTooltipEl = document.createElement('div');
-                hourlyTooltipEl.className = 'absolute z-20 hidden min-w-56 max-w-sm rounded-xl border border-slate-200 bg-white shadow-lg p-3 text-xs text-slate-700';
+                hourlyTooltipEl.style.cssText = 'position:absolute;z-index:20;display:none;min-width:14rem;max-width:24rem;border-radius:0.75rem;border:1px solid #e2e8f0;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);padding:0.75rem;font-size:0.75rem;color:#334155;';
                 hourlyTooltipEl.style.left = '0px';
                 hourlyTooltipEl.style.top = '0px';
                 hourlyBarsEl.appendChild(hourlyTooltipEl);
@@ -550,7 +578,7 @@
             function showHourlyTooltip(html, clientX, clientY) {
                 const tip = ensureHourlyTooltip();
                 tip.innerHTML = html;
-                tip.classList.remove('hidden');
+                tip.style.display = 'block';
 
                 const rect = hourlyBarsEl.getBoundingClientRect();
                 const padding = 12;
@@ -564,7 +592,7 @@
 
             function hideHourlyTooltip() {
                 if (!hourlyTooltipEl) return;
-                hourlyTooltipEl.classList.add('hidden');
+                hourlyTooltipEl.style.display = 'none';
             }
 
             function renderHourlyBars(series) {
@@ -584,7 +612,7 @@
                     const amount = Number(point.amount || 0);
                     const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;
                     const isPeak = peakAmount > 0 && amount === peakAmount;
-                    const hourLabel = `${String(point.hour).padStart(2,'0')}:00`;
+                    const hourLabel = `${String(point.hour).padStart(2, '0')}:00`;
 
                     const col = document.createElement('div');
                     col.className = 'hourly-col';
@@ -598,9 +626,9 @@
                     bar.appendChild(cap);
 
                     const tooltipHtml = `
-                        <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
-                        <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
-                    `;
+                                        <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
+                                        <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
+                                    `;
 
                     bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                     bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -646,7 +674,7 @@
                     outer.style.height = `${barHeightPct}%`;
 
                     const stack = document.createElement('div');
-                    stack.className = 'h-full w-full flex flex-col-reverse';
+                    stack.style.cssText = 'height:100%;width:100%;display:flex;flex-direction:column-reverse;';
 
                     const segments = Array.isArray(point.segments) ? point.segments : [];
                     const others = point.others || null;
@@ -659,16 +687,14 @@
                         const colorValue = hourlyPalette[idx % hourlyPalette.length];
 
                         const segEl = document.createElement('div');
-                        segEl.className = 'w-full';
-                        segEl.style.height = `${(amt / total) * 100}%`;
-                        segEl.style.backgroundColor = colorValue;
+                        segEl.style.cssText = `width:100%;height:${(amt / total) * 100}%;background-color:${colorValue};`;
 
                         const outletName = escapeHtml(seg.outlet_name);
                         const tooltipHtml = `
-                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2,'0')}:00</div>
-                            <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
-                            <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                        `;
+                                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                            <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
+                                            <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                        `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -680,9 +706,7 @@
                     const othersAmt = Number(others?.amount || 0);
                     if (othersAmt > 0 && total > 0) {
                         const segEl = document.createElement('div');
-                        segEl.className = 'w-full';
-                        segEl.style.height = `${(othersAmt / total) * 100}%`;
-                        segEl.style.backgroundColor = hourlyOthersColor;
+                        segEl.style.cssText = `width:100%;height:${(othersAmt / total) * 100}%;background-color:${hourlyOthersColor};`;
 
                         const breakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
                         const rows = breakdown
@@ -693,12 +717,12 @@
                         const moreCount = Math.max(0, breakdown.length - 8);
 
                         const tooltipHtml = `
-                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2,'0')}:00</div>
-                            <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
-                            <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
-                            ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
-                            <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                        `;
+                                            <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                                            <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
+                                            <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
+                                            ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
+                                            <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
+                                        `;
 
                         segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                         segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
@@ -707,7 +731,7 @@
                         stack.appendChild(segEl);
                     }
 
-                    outer.title = `${String(hour).padStart(2,'0')}:00 - ${idr.format(total)}`;
+                    outer.title = `${String(hour).padStart(2, '0')}:00 - ${idr.format(total)}`;
                     outer.appendChild(stack);
                     col.appendChild(outer);
                     hourlyBarsEl.appendChild(col);
@@ -743,9 +767,9 @@
                 for (const row of rows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.category)}</td>
-                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                    `;
+                                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.category)}</td>
+                                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                    `;
                     categoryRowsEl.appendChild(tr);
                 }
             }
@@ -761,9 +785,9 @@
                 for (const row of rows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.payment_method_name)}</td>
-                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                    `;
+                                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.payment_method_name)}</td>
+                                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                    `;
                     paymentRowsEl.appendChild(tr);
                 }
             }
@@ -830,16 +854,16 @@
                         tr.classList.add(trendMeta.movementClass);
                     }
                     tr.innerHTML = `
-                        <td class="px-3 py-2 text-slate-700 font-semibold">${rank}</td>
-                        <td class="px-3 py-2 text-slate-700">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="truncate" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                ${trendMeta.badge}
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-right text-slate-700">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                    `;
+                                        <td class="px-3 py-2 text-slate-700 font-semibold">${rank}</td>
+                                        <td class="px-3 py-2 text-slate-700">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="truncate" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                ${trendMeta.badge}
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-right text-slate-700">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                    `;
                     productRowsEl.appendChild(tr);
                     nextRankByKey.set(key, rank);
                 }
@@ -870,19 +894,19 @@
                     const wrap = document.createElement('div');
                     wrap.className = 'grid grid-cols-12 gap-3 items-center';
                     wrap.innerHTML = `
-                        <div class="col-span-4 sm:col-span-3">
-                            <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                            <div class="text-[11px] text-slate-500">
-                                ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                            </div>
-                        </div>
-                        <div class="col-span-5 sm:col-span-7">
-                            <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                            </div>
-                        </div>
-                        <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                    `;
+                                        <div class="col-span-4 sm:col-span-3">
+                                            <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
+                                            <div class="text-[11px] text-slate-500">
+                                                ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                            </div>
+                                        </div>
+                                        <div class="col-span-5 sm:col-span-7">
+                                            <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
+                                                <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
+                                    `;
                     outletBarsEl.appendChild(wrap);
                 }
             }
@@ -918,9 +942,9 @@
                 for (const row of safeRows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                    `;
+                                        <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                        <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                    `;
                     outletBreakdownRowsEl.appendChild(tr);
                 }
             }
@@ -1000,7 +1024,7 @@
                         try {
                             const body = await res.json();
                             if (body?.message) msg = body.message;
-                        } catch (e) {}
+                        } catch (e) { }
                         throw new Error(msg);
                     }
 
