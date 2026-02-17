@@ -162,7 +162,7 @@
             <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
         </div>
 
-        <div class="h-48 flex items-end gap-1 relative" id="hourlyBars" aria-label="Sales per hour chart"></div>
+        <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars" aria-label="Sales per hour chart"></div>
         <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
             @for ($i = 0; $i < 24; $i += 2)
                 <div class="col-span-1 text-left">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</div>
@@ -300,6 +300,94 @@
 
         .table-head-accent {
             background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236,73,19,0.12)), rgba(248,250,252,0.85));
+        }
+
+        .hourly-chart {
+            border: 1px solid rgba(251, 146, 60, 0.28);
+            border-radius: 0.9rem;
+            padding: 0.85rem 0.5rem 0.35rem;
+            background:
+                linear-gradient(180deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.9) 100%),
+                repeating-linear-gradient(
+                    to top,
+                    rgba(251, 146, 60, 0.1) 0px,
+                    rgba(251, 146, 60, 0.1) 1px,
+                    transparent 1px,
+                    transparent 28px
+                );
+            overflow: visible;
+        }
+
+        .hourly-col {
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            flex: 1 1 0%;
+            min-width: 0;
+            height: 100%;
+            position: relative;
+        }
+
+        .hourly-bar {
+            width: 100%;
+            border-radius: 0.7rem 0.7rem 0.45rem 0.45rem;
+            background: linear-gradient(180deg, #fb923c 0%, #f97316 45%, #ea580c 100%);
+            position: relative;
+            transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+            box-shadow: 0 8px 16px -10px rgba(194, 65, 12, 0.65);
+        }
+
+        .hourly-bar::after {
+            content: '';
+            position: absolute;
+            left: 20%;
+            top: 8%;
+            width: 60%;
+            height: 26%;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.23);
+            pointer-events: none;
+        }
+
+        .hourly-bar:hover {
+            transform: translateY(-2px);
+            filter: saturate(1.04);
+        }
+
+        .hourly-bar.is-peak {
+            background: linear-gradient(180deg, #fdba74 0%, #fb923c 40%, #ea580c 100%);
+            box-shadow: 0 14px 24px -12px rgba(194, 65, 12, 0.85);
+        }
+
+        .hourly-stack-shell {
+            width: 100%;
+            border-radius: 0.75rem 0.75rem 0.45rem 0.45rem;
+            background: rgba(255, 237, 213, 0.6);
+            overflow: hidden;
+            border: 1px solid rgba(251, 146, 60, 0.2);
+        }
+
+        .hourly-stack-shell:hover {
+            transform: translateY(-1px);
+        }
+
+        .hourly-cap {
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: #fdba74;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92);
+        }
+
+        .hourly-cap.is-peak {
+            width: 8px;
+            height: 8px;
+            background: #f97316;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 6px rgba(249, 115, 22, 0.14);
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -470,16 +558,37 @@
 
             function renderHourlyBars(series) {
                 const max = Math.max(...series.map(x => Number(x.amount || 0)), 0);
+                const peakAmount = max;
 
                 hourlyBarsEl.innerHTML = '';
                 for (const point of series) {
                     const amount = Number(point.amount || 0);
                     const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2;
+                    const isPeak = peakAmount > 0 && amount === peakAmount;
+                    const hourLabel = `${String(point.hour).padStart(2,'0')}:00`;
+
+                    const col = document.createElement('div');
+                    col.className = 'hourly-col';
+
                     const bar = document.createElement('div');
-                    bar.className = 'flex-1 rounded-t-lg bg-orange-500/70 hover:bg-orange-600 transition-colors';
+                    bar.className = `hourly-bar ${isPeak ? 'is-peak' : ''}`;
                     bar.style.height = `${pct}%`;
-                    bar.title = `${String(point.hour).padStart(2,'0')}:00 - ${idr.format(amount)}`;
-                    hourlyBarsEl.appendChild(bar);
+
+                    const cap = document.createElement('div');
+                    cap.className = `hourly-cap ${isPeak ? 'is-peak' : ''}`;
+                    bar.appendChild(cap);
+
+                    const tooltipHtml = `
+                        <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
+                        <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
+                    `;
+
+                    bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                    bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                    bar.addEventListener('mouseleave', hideHourlyTooltip);
+
+                    col.appendChild(bar);
+                    hourlyBarsEl.appendChild(col);
                 }
             }
 
@@ -497,8 +606,11 @@
                     const total = Number(point.total || 0);
                     const barHeightPct = maxTotal > 0 ? Math.max(2, Math.round((total / maxTotal) * 100)) : 2;
 
+                    const col = document.createElement('div');
+                    col.className = 'hourly-col';
+
                     const outer = document.createElement('div');
-                    outer.className = 'flex-1 rounded-t-lg bg-slate-100 overflow-hidden';
+                    outer.className = 'hourly-stack-shell';
                     outer.style.height = `${barHeightPct}%`;
 
                     const stack = document.createElement('div');
@@ -563,7 +675,8 @@
 
                     outer.title = `${String(hour).padStart(2,'0')}:00 - ${idr.format(total)}`;
                     outer.appendChild(stack);
-                    hourlyBarsEl.appendChild(outer);
+                    col.appendChild(outer);
+                    hourlyBarsEl.appendChild(col);
                 }
             }
 
