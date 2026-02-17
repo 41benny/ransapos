@@ -163,6 +163,7 @@
         </div>
 
         <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars" aria-label="Sales per hour chart"></div>
+        <div id="hourlyEmpty" class="hidden mt-2 text-[11px] text-slate-500">Belum ada transaksi pada rentang jam ini.</div>
         <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
             @for ($i = 0; $i < 24; $i += 2)
                 <div class="col-span-1 text-left">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</div>
@@ -359,6 +360,15 @@
             box-shadow: 0 14px 24px -12px rgba(194, 65, 12, 0.85);
         }
 
+        .hourly-bar.is-empty {
+            background: rgba(251, 146, 60, 0.22);
+            box-shadow: none;
+        }
+
+        .hourly-bar.is-empty::after {
+            display: none;
+        }
+
         .hourly-stack-shell {
             width: 100%;
             border-radius: 0.75rem 0.75rem 0.45rem 0.45rem;
@@ -461,6 +471,7 @@
             const targetBarEl = document.getElementById('targetBar');
 
             const hourlyBarsEl = document.getElementById('hourlyBars');
+            const hourlyEmptyEl = document.getElementById('hourlyEmpty');
 
             const categoryRowsEl = document.getElementById('categoryRows');
             const categoryEmptyEl = document.getElementById('categoryEmpty');
@@ -559,6 +570,14 @@
             function renderHourlyBars(series) {
                 const max = Math.max(...series.map(x => Number(x.amount || 0)), 0);
                 const peakAmount = max;
+                const hasPositive = series.some(x => Number(x.amount || 0) > 0);
+
+                if (!hasPositive) {
+                    renderHourlyEmptyState();
+                    return;
+                }
+
+                hourlyEmptyEl.classList.add('hidden');
 
                 hourlyBarsEl.innerHTML = '';
                 for (const point of series) {
@@ -593,6 +612,19 @@
             }
 
             function renderHourlyStacked(hourlyStacked, meta) {
+                if (!Array.isArray(hourlyStacked) || hourlyStacked.length === 0) {
+                    renderHourlyEmptyState();
+                    return;
+                }
+
+                const hasPositive = hourlyStacked.some(x => Number(x?.total || 0) > 0);
+                if (!hasPositive) {
+                    renderHourlyEmptyState();
+                    return;
+                }
+
+                hourlyEmptyEl.classList.add('hidden');
+
                 const topOutlets = Array.isArray(meta?.top_outlets) ? meta.top_outlets : [];
                 const topIdToIndex = new Map(topOutlets.map((o, idx) => [Number(o.outlet_id), idx]));
 
@@ -678,6 +710,24 @@
                     outer.title = `${String(hour).padStart(2,'0')}:00 - ${idr.format(total)}`;
                     outer.appendChild(stack);
                     col.appendChild(outer);
+                    hourlyBarsEl.appendChild(col);
+                }
+            }
+
+            function renderHourlyEmptyState() {
+                hourlyBarsEl.innerHTML = '';
+                hourlyTooltipEl = null;
+                hourlyEmptyEl.classList.remove('hidden');
+
+                for (let h = 0; h <= 23; h++) {
+                    const col = document.createElement('div');
+                    col.className = 'hourly-col';
+
+                    const bar = document.createElement('div');
+                    bar.className = 'hourly-bar is-empty';
+                    bar.style.height = '6%';
+                    col.appendChild(bar);
+
                     hourlyBarsEl.appendChild(col);
                 }
             }
