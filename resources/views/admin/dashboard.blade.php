@@ -533,59 +533,6 @@
             let timer = null;
             let isLoading = false;
             let hourlyTooltipEl = null;
-            let lastTopProductsSignature = null;
-            let prevTopRankByKey = new Map();
-            let topTrendBadgeByKey = new Map();
-
-            function topBadgeStorageKey(signature) {
-                return `admin.dashboard.top_badges.${signature}`;
-            }
-
-            function topRankStorageKey(signature) {
-                return `admin.dashboard.top_ranks.${signature}`;
-            }
-
-            function loadTopBadgeState(signature) {
-                try {
-                    const raw = localStorage.getItem(topBadgeStorageKey(signature));
-                    if (!raw) return new Map();
-                    const parsed = JSON.parse(raw);
-                    if (!parsed || typeof parsed !== 'object') return new Map();
-                    return new Map(Object.entries(parsed));
-                } catch (e) {
-                    return new Map();
-                }
-            }
-
-            function saveTopBadgeState(signature, badgeMap) {
-                try {
-                    const payload = Object.fromEntries(badgeMap.entries());
-                    localStorage.setItem(topBadgeStorageKey(signature), JSON.stringify(payload));
-                } catch (e) {}
-            }
-
-            function loadTopRankState(signature) {
-                try {
-                    const raw = localStorage.getItem(topRankStorageKey(signature));
-                    if (!raw) return new Map();
-                    const parsed = JSON.parse(raw);
-                    if (!parsed || typeof parsed !== 'object') return new Map();
-                    return new Map(
-                        Object.entries(parsed)
-                            .map(([k, v]) => [k, Number(v)])
-                            .filter(([, v]) => Number.isFinite(v) && v > 0)
-                    );
-                } catch (e) {
-                    return new Map();
-                }
-            }
-
-            function saveTopRankState(signature, rankMap) {
-                try {
-                    const payload = Object.fromEntries(rankMap.entries());
-                    localStorage.setItem(topRankStorageKey(signature), JSON.stringify(payload));
-                } catch (e) {}
-            }
 
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text;
@@ -859,37 +806,17 @@
                 }
             }
 
-            function formatTopProductKey(row) {
-                const productId = Number(row?.product_id || 0);
-                if (productId > 0) return `id:${productId}`;
-                return `name:${String(row?.product_name || '').toLowerCase().trim()}`;
-            }
-
-            function renderTopProducts(rows, dataSignature) {
+            function renderTopProducts(rows) {
                 productRowsEl.innerHTML = '';
                 if (!rows || rows.length === 0) {
                     productEmptyEl.classList.remove('hidden');
-                    prevTopRankByKey = new Map();
-                    topTrendBadgeByKey = new Map();
-                    saveTopBadgeState(dataSignature, topTrendBadgeByKey);
-                    saveTopRankState(dataSignature, prevTopRankByKey);
-                    lastTopProductsSignature = dataSignature;
                     return;
                 }
 
-                if (lastTopProductsSignature !== dataSignature) {
-                    prevTopRankByKey = loadTopRankState(dataSignature);
-                    topTrendBadgeByKey = loadTopBadgeState(dataSignature);
-                }
-
                 productEmptyEl.classList.add('hidden');
-                const nextRankByKey = new Map();
-                const nextBadgeByKey = new Map();
                 for (const row of rows) {
                     const rank = productRowsEl.children.length + 1;
-                    const key = formatTopProductKey(row);
-                    const prevRank = prevTopRankByKey.has(key) ? prevTopRankByKey.get(key) : null;
-                    let trendBadge = topTrendBadgeByKey.get(key) || '';
+                    let trendBadge = '';
                     let movementClass = '';
 
                     const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
@@ -902,18 +829,6 @@
                     } else if (movementDir === 'down' && movementDelta > 0) {
                         trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
                         movementClass = 'top-rank-down';
-                    }
-
-                    if (!movementClass && prevRank !== null && prevRank !== undefined) {
-                        if (rank < prevRank) {
-                            const diff = prevRank - rank;
-                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${diff}</span>`;
-                            movementClass = 'top-rank-up';
-                        } else if (rank > prevRank) {
-                            const diff = rank - prevRank;
-                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${diff}</span>`;
-                            movementClass = 'top-rank-down';
-                        }
                     }
 
                     const tr = document.createElement('tr');
@@ -932,18 +847,7 @@
                                         <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
                                     `;
                     productRowsEl.appendChild(tr);
-                    nextRankByKey.set(key, rank);
-
-                    if (trendBadge) {
-                        nextBadgeByKey.set(key, trendBadge);
-                    }
                 }
-
-                prevTopRankByKey = nextRankByKey;
-                topTrendBadgeByKey = nextBadgeByKey;
-                saveTopBadgeState(dataSignature, topTrendBadgeByKey);
-                saveTopRankState(dataSignature, prevTopRankByKey);
-                lastTopProductsSignature = dataSignature;
             }
 
             function renderOutletRows(rows, isAllOutlets) {
@@ -1067,8 +971,7 @@
                 renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
-                const topProductsSignature = `${String(data?.date || '')}|${String(data?.outlet_id ?? 'all')}`;
-                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : [], topProductsSignature);
+                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
                 renderOutletBreakdown(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
                 renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
 

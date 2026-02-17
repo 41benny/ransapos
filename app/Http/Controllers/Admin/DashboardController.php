@@ -118,11 +118,16 @@ class DashboardController extends Controller
                 ])
                 ->values();
 
-            $rankStateKey = 'admin.dashboard.top_products.rank_state:' . $date . ':' . ($outletId ?? 'all');
-            $badgeStateKey = 'admin.dashboard.top_products.badge_state:' . $date . ':' . ($outletId ?? 'all');
+            $topStateKey = 'dashboard.top_products.state.' . ($outletId ?? 'all');
+            $stateRaw = Setting::getValue($topStateKey, null);
+            $state = is_string($stateRaw) ? json_decode($stateRaw, true) : null;
 
-            $prevRankState = Cache::get($rankStateKey, []);
-            $prevBadgeState = Cache::get($badgeStateKey, []);
+            $prevRankState = [];
+            $prevBadgeState = [];
+            if (is_array($state) && ($state['date'] ?? null) === $date) {
+                $prevRankState = is_array($state['ranks'] ?? null) ? $state['ranks'] : [];
+                $prevBadgeState = is_array($state['badges'] ?? null) ? $state['badges'] : [];
+            }
 
             $nextRankState = [];
             $nextBadgeState = [];
@@ -174,8 +179,12 @@ class DashboardController extends Controller
                 })
                 ->values();
 
-            Cache::put($rankStateKey, $nextRankState, now()->addHours(12));
-            Cache::put($badgeStateKey, $nextBadgeState, now()->addHours(12));
+            Setting::setValue($topStateKey, json_encode([
+                'date' => $date,
+                'ranks' => $nextRankState,
+                'badges' => $nextBadgeState,
+                'updated_at' => now()->toIso8601String(),
+            ], JSON_UNESCAPED_UNICODE));
 
             $categorySales = SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
