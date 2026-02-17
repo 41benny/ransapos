@@ -666,15 +666,22 @@
                     const isPeak = peakAmount > 0 && amount === peakAmount;
                     const hourLabel = `${String(point.hour).padStart(2, '0')}:00`;
 
-                    const col = document.createElement('div');
-                    col.className = 'hourly-col';
-
                     const bar = document.createElement('div');
-                    bar.className = `hourly-bar ${isPeak ? 'is-peak' : ''}`;
+                    bar.className = 'flex-1 relative';
+                    bar.style.background = isPeak
+                        ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)'
+                        : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)';
                     bar.style.height = `${pct}%`;
+                    bar.style.minHeight = '4px';
+                    bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';
+                    bar.style.boxShadow = isPeak
+                        ? '0 14px 24px -12px rgba(194,65,12,0.85)'
+                        : '0 8px 16px -10px rgba(194,65,12,0.65)';
 
                     const cap = document.createElement('div');
-                    cap.className = `hourly-cap ${isPeak ? 'is-peak' : ''}`;
+                    cap.style.cssText = isPeak
+                        ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);'
+                        : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);';
                     bar.appendChild(cap);
 
                     const tooltipHtml = `
@@ -686,8 +693,7 @@
                     bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
                     bar.addEventListener('mouseleave', hideHourlyTooltip);
 
-                    col.appendChild(bar);
-                    hourlyBarsEl.appendChild(col);
+                    hourlyBarsEl.appendChild(bar);
                 }
             }
 
@@ -796,15 +802,13 @@
                 hourlyEmptyEl.classList.remove('hidden');
 
                 for (let h = 0; h <= 23; h++) {
-                    const col = document.createElement('div');
-                    col.className = 'hourly-col';
-
                     const bar = document.createElement('div');
-                    bar.className = 'hourly-bar is-empty';
+                    bar.className = 'flex-1';
                     bar.style.height = '6%';
-                    col.appendChild(bar);
-
-                    hourlyBarsEl.appendChild(col);
+                    bar.style.minHeight = '3px';
+                    bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
+                    bar.style.background = 'rgba(253,186,116,0.7)';
+                    hourlyBarsEl.appendChild(bar);
                 }
             }
 
