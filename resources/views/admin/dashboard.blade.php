@@ -634,7 +634,7 @@
                 }
 
                 return {
-                    badge: '<span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600"><i class="fas fa-minus"></i> 0</span>',
+                    badge: '<span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">Tetap</span>',
                     movementClass: '',
                 };
             }
@@ -713,7 +713,7 @@
                         </div>
                         <div class="col-span-5 sm:col-span-7">
                             <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                <div class="h-3 rounded-full bg-emerald-500/80" style="width: ${pct}%"></div>
+                                <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
                             </div>
                         </div>
                         <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
@@ -724,7 +724,8 @@
 
             function formatSignedPct(value) {
                 if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-                const n = Number(value);
+                const raw = Number(value);
+                const n = Math.abs(raw) < 0.05 ? 0 : raw;
                 const sign = n > 0 ? '+' : '';
                 return `${sign}${n.toFixed(1)}%`;
             }
