@@ -147,10 +147,34 @@
     </div>
 </form>
 
+@php
+    $existingItemsForEdit = old('items');
+
+    if (!is_array($existingItemsForEdit) || count($existingItemsForEdit) === 0) {
+        $existingItemsForEdit = $purchase->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'discount_amount' => (float) $item->discount_amount,
+            ];
+        })->values()->all();
+    } else {
+        $existingItemsForEdit = collect($existingItemsForEdit)->map(function ($item) {
+            return [
+                'product_id' => $item['product_id'] ?? null,
+                'quantity' => $item['quantity'] ?? 1,
+                'unit_price' => $item['unit_price'] ?? 0,
+                'discount_amount' => $item['discount_amount'] ?? 0,
+            ];
+        })->values()->all();
+    }
+@endphp
+
 <script>
 let itemIndex = 0;
-const products = @json($categories->flatMap->products);
-const existingItems = @json($purchase->items);
+const products = @json($products);
+const existingItems = @json($existingItemsForEdit);
 
 function addItem(existingItem = null) {
     const tbody = document.getElementById('itemsBody');
@@ -158,17 +182,24 @@ function addItem(existingItem = null) {
     row.className = 'border-b';
     row.id = `item-${itemIndex}`;
 
-    const selectedProductId = existingItem ? existingItem.product_id : '';
+    const selectedProductId = existingItem ? String(existingItem.product_id ?? '') : '';
     const quantity = existingItem ? existingItem.quantity : 1;
     const unitPrice = existingItem ? existingItem.unit_price : 0;
     const discount = existingItem ? existingItem.discount_amount : 0;
+    const hasSelectedProduct = selectedProductId
+        ? products.some((p) => String(p.id) === selectedProductId)
+        : false;
+    const missingSelectedOption = selectedProductId && !hasSelectedProduct
+        ? `<option value="${selectedProductId}" data-price="${unitPrice}" selected>Produk #${selectedProductId} (tidak aktif / tidak tersedia)</option>`
+        : '';
 
     row.innerHTML = `
         <td class="px-4 py-3">
             <select name="items[${itemIndex}][product_id]" required onchange="updateItemPrice(${itemIndex})"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Pilih produk...</option>
-                ${products.map(p => `<option value="${p.id}" data-price="${p.purchase_price}" ${p.id == selectedProductId ? 'selected' : ''}>${p.name} (${p.sku})</option>`).join('')}
+                ${missingSelectedOption}
+                ${products.map((p) => `<option value="${p.id}" data-price="${p.purchase_price ?? 0}" ${String(p.id) === selectedProductId ? 'selected' : ''}>${p.name} (${p.sku ?? '-'})</option>`).join('')}
             </select>
         </td>
         <td class="px-4 py-3">
@@ -225,7 +256,10 @@ function calculateItemSubtotal(index) {
 }
 
 function removeItem(index) {
-    document.getElementById(`item-${index}`).remove();
+    const row = document.getElementById(`item-${index}`);
+    if (row) {
+        row.remove();
+    }
     calculateTotal();
 }
 
@@ -263,9 +297,11 @@ function formatRupiah(amount) {
 
 // Load existing items on page load
 document.addEventListener('DOMContentLoaded', function() {
-    existingItems.forEach(item => {
-        addItem(item);
-    });
+    if (Array.isArray(existingItems) && existingItems.length > 0) {
+        existingItems.forEach((item) => addItem(item));
+    } else {
+        addItem();
+    }
 
     calculateTotal();
 });

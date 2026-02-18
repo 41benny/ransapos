@@ -135,13 +135,19 @@ class PurchaseController extends Controller
         $purchase->load('items.product');
         $outlets = Outlet::where('is_active', true)->get();
         $suppliers = Supplier::where('is_active', true)->get();
-        $categories = ProductCategory::where('is_active', true)
-            ->with(['products' => function($query) {
-                $query->where('is_active', true);
-            }])
+        $activeProducts = Product::query()
+            ->where('is_active', true)
             ->get();
+        $draftProducts = $purchase->items
+            ->pluck('product')
+            ->filter();
+        $products = $activeProducts
+            ->merge($draftProducts)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
 
-        return view('admin.purchases.edit', compact('purchase', 'outlets', 'suppliers', 'categories'));
+        return view('admin.purchases.edit', compact('purchase', 'outlets', 'suppliers', 'products'));
     }
 
     /**
