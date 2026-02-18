@@ -441,7 +441,9 @@
 
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>     (() => {
+            let outletChart = null;
             const endpoint = @json(route('admin.dashboard.summary'));
             const outletIdEl = document.getElementById('outletId'); const dateEl = document.getElementById('date'); const refreshBtn = document.getElementById('refreshBtn');
             const statusTextEl = document.getElementById('statusText'); const lastUpdatedEl = document.getElementById('lastUpdated');
@@ -545,9 +547,9 @@
                 gradient.setAttribute("x2", "0");
                 gradient.setAttribute("y2", "1");
                 gradient.innerHTML = `
-                            <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
-                            <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
-                        `;
+                                    <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
+                                `;
                 defs.appendChild(gradient);
                 svg.appendChild(defs);
 
@@ -614,20 +616,20 @@
 
                         const hourLabel = String(s.hour).padStart(2, '0') + ':00';
                         const html = `
-                                    <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
-                                    <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
-                                    <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(p.val)}</div>
-                                `;
+                                            <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
+                                            <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
+                                            <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(p.val)}</div>
+                                        `;
                         showHourlyTooltip(html, e.clientX, e.clientY);
                     });
 
                     slice.addEventListener('mousemove', (e) => {
                         const hourLabel = String(s.hour).padStart(2, '0') + ':00';
                         const html = `
-                                    <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
-                                    <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
-                                    <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(points[i].val)}</div>
-                                `;
+                                            <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
+                                            <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
+                                            <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(points[i].val)}</div>
+                                        `;
                         showHourlyTooltip(html, e.clientX, e.clientY);
                     });
 
@@ -686,15 +688,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                                            <div class="flex items-end justify-between mb-1.5">
-                                                                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                                            </div>
-                                                                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        `;
+                                                                                                    <div class="flex items-end justify-between mb-1.5">
+                                                                                                        <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                                        <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
+                                                                                                    </div>
+                                                                                                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                                        <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -726,14 +728,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                                                            <div class="flex items-center gap-3">
-                                                                <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                                                    <i class="fas ${style.icon} text-lg ${style.text}"></i>
-                                                                </div>
-                                                                <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                                            </div>
-                                                            <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                                        `;
+                                                                    <div class="flex items-center gap-3">
+                                                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                                            <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                        </div>
+                                                                        <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
+                                                                    </div>
+                                                                    <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                                                `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -776,23 +778,23 @@
                     }
 
                     tr.innerHTML = `
-                                                                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
-                                                                                    <td class="px-3 py-3 text-slate-700">
-                                                                                        <div class="flex items-center gap-4 min-w-max">
-                                                                                            ${imageHtml}
-                                                                                            <div class="flex-1">
-                                                                                                <div class="flex flex-col gap-0.5">
-                                                                                                    <div class="flex items-center gap-2">
-                                                                                                        <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                                                        ${trendBadge}
+                                                                                            <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                                                            <td class="px-3 py-3 text-slate-700">
+                                                                                                <div class="flex items-center gap-4 min-w-max">
+                                                                                                    ${imageHtml}
+                                                                                                    <div class="flex-1">
+                                                                                                        <div class="flex flex-col gap-0.5">
+                                                                                                            <div class="flex items-center gap-2">
+                                                                                                                <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                                                ${trendBadge}
+                                                                                                            </div>
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                 </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                    <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                                                    <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
-                                                                                `;
+                                                                                            </td>
+                                                                                            <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                                                            <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                                                        `;
                     productRowsEl.appendChild(tr);
                 }
             }
@@ -801,55 +803,97 @@
                 outletPanelEl.classList.toggle('hidden', !isAllOutlets);
                 if (!isAllOutlets) return;
 
-                outletBarsEl.innerHTML = '';
                 if (!rows || rows.length === 0) {
                     outletEmptyEl.classList.remove('hidden');
+                    outletBarsEl.innerHTML = '';
+                    if (outletChart) {
+                        outletChart.destroy();
+                        outletChart = null;
+                    }
                     return;
                 }
 
                 outletEmptyEl.classList.add('hidden');
 
-                const max = Math.max(...rows.map(x => Number(x.amount || 0)), 0);
+                const labels = rows.map(r => r.outlet_name);
+                const data = rows.map(r => Number(r.amount || 0));
 
-                // Initialize bars then animate them
-                setTimeout(() => {
-                    const bars = outletBarsEl.querySelectorAll('.velocity-bar');
-                    bars.forEach(bar => {
-                        bar.style.width = bar.getAttribute('data-width');
-                    });
-                }, 100);
+                const options = {
+                    series: [{
+                        name: 'Omzet',
+                        data: data
+                    }],
+                    chart: {
+                        type: 'bar',
+                        height: Math.max(250, rows.length * 60),
+                        fontFamily: 'Inter, sans-serif',
+                        toolbar: { show: false },
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800,
+                            animateGradually: { enabled: true, delay: 150 },
+                            dynamicAnimation: { enabled: true, speed: 350 }
+                        }
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: true,
+                            borderRadius: 6,
+                            barHeight: '60%',
+                            distributed: true,
+                        }
+                    },
+                    colors: ['#f97316', '#fb923c', '#fdba74', '#ea580c', '#c2410c'],
+                    dataLabels: {
+                        enabled: true,
+                        textAnchor: 'start',
+                        style: { colors: ['#fff'] },
+                        formatter: function (val, opt) {
+                            return idr.format(val);
+                        },
+                        offsetX: 0,
+                    },
+                    xaxis: {
+                        categories: labels,
+                        labels: {
+                            formatter: function (val) {
+                                return idr.format(val);
+                            },
+                            style: { fontSize: '11px', fontFamily: 'Inter, sans-serif' }
+                        }
+                    },
+                    yaxis: {
+                        labels: {
+                            style: { fontSize: '12px', fontWeight: 600, colors: ['#334155'], fontFamily: 'Inter, sans-serif' },
+                            maxWidth: 200
+                        }
+                    },
+                    grid: {
+                        borderColor: '#f1f5f9',
+                        xaxis: { lines: { show: true } }
+                    },
+                    tooltip: {
+                        theme: 'light',
+                        y: {
+                            formatter: function (val) {
+                                return idr.format(val);
+                            }
+                        },
+                        x: { show: true }
+                    }
+                };
 
-                for (const row of rows) {
-                    const amount = Number(row.amount || 0);
-                    const pct = max > 0 ? Math.max(4, Math.round((amount / max) * 100)) : 0;
-                    const transactions = Number(row.transactions || 0);
-                    const lastSaleAt = row.last_sale_at ? new Date(row.last_sale_at) : null;
-
-                    const wrap = document.createElement('div');
-                    wrap.className = 'grid grid-cols-12 gap-3 items-center group';
-                    wrap.innerHTML = `
-                                    <div class="col-span-4 sm:col-span-4">
-                                        <div class="text-sm font-semibold text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name.toUpperCase())}</div>
-                                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
-                                            <span>${transactions} trx</span>
-                                            ${lastSaleAt ? `<span class="opacity-60">•</span> <span>last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')}</span>` : ''}
-                                        </div>
-                                    </div>
-                                    <div class="col-span-5 sm:col-span-6">
-                                        <div class="h-3.5 rounded-full bg-slate-100 overflow-hidden shadow-inner">
-                                            <div class="velocity-bar h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 shadow-sm relative transition-all duration-1000 ease-out"
-                                                 style="width: 0%"
-                                                 data-width="${pct}%">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-span-3 sm:col-span-2 text-right">
-                                         <div class="text-sm font-bold text-slate-900">${idr.format(amount)}</div>
-                                    </div>
-                                `;
-                    outletBarsEl.appendChild(wrap);
+                if (outletChart) {
+                    outletChart.updateOptions(options);
+                    outletChart.updateSeries([{ data: data }]);
+                } else {
+                    outletBarsEl.innerHTML = '';
+                    outletChart = new ApexCharts(outletBarsEl, options);
+                    outletChart.render();
                 }
             }
+
 
             function formatSignedPct(value) {
                 if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
@@ -882,9 +926,9 @@
                 for (const row of safeRows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                                                                                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                                                                            <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                                                                        `;
+                                                                                                                    <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                                                                                                    <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                                                                                                `;
                     outletBreakdownRowsEl.appendChild(tr);
                 }
             }
