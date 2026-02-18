@@ -8,9 +8,11 @@
 
 <!-- Back Button -->
 <div class="mb-4 no-print">
-    <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
-       class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
-        Kembali ke Katalog
+    <a href="{{ route('admin.reports.shifts.index', ['tab' => request('tab', 'penjualan')]) }}"
+       class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+       aria-label="Kembali ke Index Shift"
+       title="Kembali ke Index Shift">
+        <i class="fas fa-arrow-left text-sm"></i>
     </a>
 </div>
 
