@@ -9,6 +9,26 @@
     @csrf
 
     <div class="max-w-6xl space-y-6">
+        @if(session('error'))
+            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div class="font-semibold">Gagal menyimpan pembelian</div>
+                <div class="mt-1">{{ session('error') }}</div>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <div class="font-semibold">Form belum valid</div>
+                <ul class="mt-1 list-disc pl-5 space-y-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div id="purchaseClientDebug" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"></div>
+
         <!-- Info Pembelian -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="p-6 border-b border-gray-100">
@@ -150,7 +170,7 @@
             <a href="{{ route('admin.purchases.index') }}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 Batal
             </a>
-            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
+            <button type="submit" id="submitPurchaseBtn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
                 Simpan Pembelian
             </button>
         </div>
@@ -160,41 +180,48 @@
 <script>
 let itemIndex = 0;
 const products = @json($categories->flatMap->products);
+const oldItems = @json(old('items', []));
 
-function addItem() {
+function addItem(initialData = {}) {
+    const currentIndex = itemIndex;
     const tbody = document.getElementById('itemsBody');
     const row = document.createElement('tr');
     row.className = 'border-b';
-    row.id = `item-${itemIndex}`;
+    row.id = `item-${currentIndex}`;
+
+    const selectedProductId = initialData?.product_id ?? '';
+    const quantity = initialData?.quantity ?? 1;
+    const unitPrice = initialData?.unit_price ?? 0;
+    const discountAmount = initialData?.discount_amount ?? 0;
 
     row.innerHTML = `
         <td class="px-4 py-3">
-            <select name="items[${itemIndex}][product_id]" required onchange="updateItemPrice(${itemIndex})"
+            <select name="items[${currentIndex}][product_id]" required onchange="updateItemPrice(${currentIndex})"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Pilih produk...</option>
-                ${products.map(p => `<option value="${p.id}" data-price="${p.purchase_price}">${p.name} (${p.sku})</option>`).join('')}
+                ${products.map(p => `<option value="${p.id}" data-price="${p.purchase_price ?? 0}" ${String(selectedProductId) === String(p.id) ? 'selected' : ''}>${p.name} (${p.sku})</option>`).join('')}
             </select>
         </td>
         <td class="px-4 py-3">
-            <input type="number" name="items[${itemIndex}][quantity]" value="1" min="0.01" step="0.01" required
-                   onchange="calculateItemSubtotal(${itemIndex})"
-                   class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="qty-${itemIndex}">
+            <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
+                   onchange="calculateItemSubtotal(${currentIndex})"
+                   class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="qty-${currentIndex}">
         </td>
         <td class="px-4 py-3">
-            <input type="number" name="items[${itemIndex}][unit_price]" value="0" min="0" step="0.01" required
-                   onchange="calculateItemSubtotal(${itemIndex})"
-                   class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="price-${itemIndex}">
+            <input type="number" name="items[${currentIndex}][unit_price]" value="${unitPrice}" min="0" step="0.01" required
+                   onchange="calculateItemSubtotal(${currentIndex})"
+                   class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="price-${currentIndex}">
         </td>
         <td class="px-4 py-3">
-            <input type="number" name="items[${itemIndex}][discount_amount]" value="0" min="0" step="0.01"
-                   onchange="calculateItemSubtotal(${itemIndex})"
-                   class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="discount-${itemIndex}">
+            <input type="number" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" min="0" step="0.01"
+                   onchange="calculateItemSubtotal(${currentIndex})"
+                   class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="discount-${currentIndex}">
         </td>
         <td class="px-4 py-3">
-            <span class="font-semibold text-gray-900" id="subtotal-${itemIndex}">Rp 0</span>
+            <span class="font-semibold text-gray-900" id="subtotal-${currentIndex}">Rp 0</span>
         </td>
         <td class="px-4 py-3 text-center">
-            <button type="button" onclick="removeItem(${itemIndex})"
+            <button type="button" onclick="removeItem(${currentIndex})"
                     class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -204,6 +231,7 @@ function addItem() {
     `;
 
     tbody.appendChild(row);
+    calculateItemSubtotal(currentIndex);
     itemIndex++;
 }
 
@@ -228,7 +256,10 @@ function calculateItemSubtotal(index) {
 }
 
 function removeItem(index) {
-    document.getElementById(`item-${index}`).remove();
+    const itemRow = document.getElementById(`item-${index}`);
+    if (itemRow) {
+        itemRow.remove();
+    }
     calculateTotal();
 }
 
@@ -264,9 +295,65 @@ function formatRupiah(amount) {
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
 }
 
+function showClientDebug(message) {
+    const debugBox = document.getElementById('purchaseClientDebug');
+    if (!debugBox) {
+        return;
+    }
+
+    debugBox.textContent = message;
+    debugBox.classList.remove('hidden');
+}
+
 // Add first item on load
 document.addEventListener('DOMContentLoaded', function() {
-    addItem();
+    const form = document.getElementById('purchaseForm');
+    const submitButton = document.getElementById('submitPurchaseBtn');
+
+    if (Array.isArray(oldItems) && oldItems.length > 0) {
+        oldItems.forEach((item) => addItem(item));
+    } else {
+        addItem();
+    }
+
+    calculateTotal();
+
+    form.addEventListener('submit', function(event) {
+        const invalidInput = form.querySelector(':invalid');
+        if (invalidInput) {
+            event.preventDefault();
+            showClientDebug('Form belum valid. Cek field wajib yang disorot browser.');
+            invalidInput.reportValidity();
+            invalidInput.focus();
+            return;
+        }
+
+        const itemRows = document.querySelectorAll('#itemsBody tr').length;
+        const selectedProducts = Array.from(
+            document.querySelectorAll('#itemsBody select[name*=\"[product_id]\"]')
+        ).filter((selectEl) => selectEl.value);
+
+        if (itemRows < 1 || selectedProducts.length < 1) {
+            event.preventDefault();
+            showClientDebug('Minimal pilih 1 produk sebelum menyimpan pembelian.');
+            return;
+        }
+
+        console.info('Purchase submit debug', {
+            outlet_id: form.querySelector('select[name=\"outlet_id\"]')?.value ?? null,
+            supplier_id: form.querySelector('select[name=\"supplier_id\"]')?.value ?? null,
+            purchase_date: form.querySelector('input[name=\"purchase_date\"]')?.value ?? null,
+            item_rows: itemRows,
+            selected_products: selectedProducts.length,
+            total: document.getElementById('displayTotal')?.textContent ?? null,
+        });
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-60', 'cursor-not-allowed');
+            submitButton.textContent = 'Menyimpan...';
+        }
+    });
 });
 </script>
 @endsection

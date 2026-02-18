@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -32,7 +33,10 @@ class PurchaseService
 
         try {
             // 1. Generate purchase number
-            $purchaseNumber = $this->generatePurchaseNumber($data['outlet_id']);
+            $purchaseNumber = $this->generatePurchaseNumber(
+                outletId: (int) $data['outlet_id'],
+                purchaseDate: $data['purchase_date'] ?? now()->toDateString(),
+            );
 
             // 2. Hitung total dari items
             $subtotal = 0;
@@ -257,16 +261,18 @@ class PurchaseService
      * Generate purchase number unik
      * 
      * @param int $outletId
+     * @param string $purchaseDate
      * @return string
      */
-    protected function generatePurchaseNumber(int $outletId): string
+    protected function generatePurchaseNumber(int $outletId, string $purchaseDate): string
     {
-        $date = now()->format('Ymd');
+        $purchaseDateObj = Carbon::parse($purchaseDate);
+        $date = $purchaseDateObj->format('Ymd');
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
 
-        // Cari purchase terakhir hari ini untuk outlet ini
+        // Cari purchase terakhir pada tanggal purchase tersebut untuk outlet ini
         $lastPurchase = Purchase::where('outlet_id', $outletId)
-            ->whereDate('purchase_date', now())
+            ->whereDate('purchase_date', $purchaseDateObj->toDateString())
             ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();

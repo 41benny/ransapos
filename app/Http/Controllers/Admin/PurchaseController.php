@@ -14,6 +14,8 @@ use App\Http\Requests\UpdatePurchaseRequest;
 use App\Services\PurchaseService;
 use App\Services\CashAccountService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Exception;
 
 class PurchaseController extends Controller
@@ -61,18 +63,36 @@ class PurchaseController extends Controller
      */
     public function store(StorePurchaseRequest $request)
     {
+        $validated = $request->validated();
+
         try {
-            $purchase = $this->purchaseService->createPurchase($request->validated());
+            $purchase = $this->purchaseService->createPurchase($validated);
 
             return redirect()
                 ->route('admin.purchases.show', $purchase)
                 ->with('success', 'Pembelian berhasil dibuat dengan nomor: ' . $purchase->purchase_number);
 
         } catch (Exception $e) {
+            $errorRef = (string) Str::uuid();
+            Log::error('Gagal membuat pembelian', [
+                'error_ref' => $errorRef,
+                'user_id' => auth()->id(),
+                'outlet_id' => $validated['outlet_id'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
+                'purchase_date' => $validated['purchase_date'] ?? null,
+                'item_count' => isset($validated['items']) ? count($validated['items']) : 0,
+                'message' => $e->getMessage(),
+            ]);
+
+            $message = 'Gagal membuat pembelian. Ref: ' . $errorRef;
+            if (app()->environment('local')) {
+                $message .= ' | Detail: ' . $e->getMessage();
+            }
+
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Gagal membuat pembelian: ' . $e->getMessage());
+                ->with('error', $message);
         }
     }
 
