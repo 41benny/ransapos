@@ -16,11 +16,44 @@ class UserController extends Controller
     /**
      * Daftar users
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['role', 'outlet'])
-            ->orderBy('name')
-            ->paginate(20);
+        $usersQuery = User::with(['role', 'outlet'])
+            ->orderBy('name');
+
+        if ($request->filled('name')) {
+            $usersQuery->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
+        }
+
+        if ($request->filled('email')) {
+            $usersQuery->where('email', 'like', '%' . trim((string) $request->input('email')) . '%');
+        }
+
+        if ($request->filled('role')) {
+            $role = trim((string) $request->input('role'));
+            $usersQuery->whereHas('role', function ($query) use ($role) {
+                $query->where('name', 'like', '%' . $role . '%')
+                    ->orWhere('display_name', 'like', '%' . $role . '%');
+            });
+        }
+
+        if ($request->filled('outlet')) {
+            $outlet = trim((string) $request->input('outlet'));
+            $usersQuery->whereHas('outlet', function ($query) use ($outlet) {
+                $query->where('name', 'like', '%' . $outlet . '%');
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = strtolower(trim((string) $request->input('status')));
+            if (in_array($status, ['aktif', 'active', '1'], true)) {
+                $usersQuery->where('is_active', true);
+            } elseif (in_array($status, ['nonaktif', 'inactive', '0'], true)) {
+                $usersQuery->where('is_active', false);
+            }
+        }
+
+        $users = $usersQuery->paginate(20)->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }

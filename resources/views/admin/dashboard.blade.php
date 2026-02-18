@@ -439,6 +439,7 @@
     </style>
 @endpush
 
+
 @push('scripts')
     <script>     (() => {
             const endpoint = @json(route('admin.dashboard.summary'));
@@ -474,141 +475,181 @@
             }
             function hideHourlyTooltip() { if (!hourlyTooltipEl) return; hourlyTooltipEl.style.display = 'none'; }
             function prepareHourlyContainer() { hourlyBarsEl.style.display = 'flex'; hourlyBarsEl.style.alignItems = 'flex-end'; hourlyBarsEl.style.gap = '0.35rem'; }
-            function renderHourlyBars(series) {
-                const max = Math.max(...series.map(x => Number(x.amount || 0)), 0); const peakAmount = max; const hasPositive = series.some(x => Number(x.amount || 0) > 0);
-                if (!hasPositive) { renderHourlyEmptyState(); return; }
-                hourlyEmptyEl.classList.add('hidden');
-                hourlyBarsEl.innerHTML = ''; hourlyTooltipEl = null; prepareHourlyContainer(); for (const point of series) {
-                    const amount = Number(point.amount || 0); const pct = max > 0 ? Math.max(2, Math.round((amount / max) * 100)) : 2; const isPeak = peakAmount > 0 && amount === peakAmount; const hourLabel = `${String(point.hour).padStart(2, '0')}:00`;
-                    const bar = document.createElement('div'); bar.className = 'flex-1 relative'; bar.style.background = isPeak ? 'linear-gradient(180deg,#fdba74 0%,#fb923c 40%,#ea580c 100%)' : 'linear-gradient(180deg,#fb923c 0%,#f97316 45%,#ea580c 100%)'; bar.style.height = `${pct}%`; bar.style.minHeight = '4px'; bar.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem'; bar.style.flex = '1 1 0%'; bar.style.boxShadow = isPeak ? '0 14px 24px -12px rgba(194,65,12,0.85)' : '0 8px 16px -10px rgba(194,65,12,0.65)';
-                    const cap = document.createElement('div'); cap.style.cssText = isPeak ? 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:9999px;background:#f97316;box-shadow:0 0 0 2px rgba(255,255,255,0.95),0 0 0 6px rgba(249,115,22,0.14);' : 'position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:9999px;background:#fdba74;box-shadow:0 0 0 2px rgba(255,255,255,0.92);'; bar.appendChild(cap);
-                    const tooltipHtml = `
-                                                                                                <div class="font-semibold text-slate-900 mb-1">${hourLabel}${isPeak ? ' <span class="text-[11px] text-orange-700">(Peak)</span>' : ''}</div>
-                                                                                                <div class="text-slate-700">Omzet: <span class="font-semibold">${escapeHtml(idr.format(amount))}</span></div>
-                                                                                                                `;
-
-                    bar.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    bar.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    bar.addEventListener('mouseleave', hideHourlyTooltip);
-
-                    hourlyBarsEl.appendChild(bar);
-                }
+            function getControlPoint(current, previous, next, reverse, smoothing = 0.15) {
+                const p = previous || current;
+                const n = next || current;
+                const o = {
+                    x: p.x - n.x,
+                    y: p.y - n.y
+                };
+                const angle = Math.atan2(o.y, o.x) + (reverse ? Math.PI : 0);
+                const length = Math.sqrt(Math.pow(o.x, 2) + Math.pow(o.y, 2)) * smoothing;
+                return {
+                    x: current.x + Math.cos(angle) * length,
+                    y: current.y + Math.sin(angle) * length
+                };
             }
 
-            function renderHourlyStacked(hourlyStacked, meta) {
-                if (!Array.isArray(hourlyStacked) || hourlyStacked.length === 0) {
-                    renderHourlyEmptyState();
-                    return;
+            function getSplinePath(points, smoothing) {
+                if (points.length === 0) return '';
+                if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+                let d = `M ${points[0].x} ${points[0].y}`;
+                for (let i = 0; i < points.length - 1; i++) {
+                    const current = points[i];
+                    const next = points[i + 1];
+                    const cps = getControlPoint(current, i > 0 ? points[i - 1] : null, next, false, smoothing);
+                    const cpe = getControlPoint(next, current, i < points.length - 2 ? points[i + 2] : next, true, smoothing);
+                    d += ` C ${cps.x} ${cps.y} ${cpe.x} ${cpe.y} ${next.x} ${next.y}`;
                 }
+                return d;
+            }
 
-                const hasPositive = hourlyStacked.some(x => Number(x?.total || 0) > 0);
+            function renderVelocityChart(series) {
+                hourlyBarsEl.innerHTML = '';
+                hourlyBarsEl.style.display = 'block';
+                hourlyBarsEl.style.position = 'relative';
+
+                // Remove previous flexibility classes if present
+                hourlyBarsEl.classList.remove('flex', 'items-end', 'gap-1.5');
+
+                const amounts = series.map(s => Number(s.amount || s.total || 0));
+                const maxVal = Math.max(...amounts, 0);
+                const hasPositive = amounts.some(a => a > 0);
+
                 if (!hasPositive) {
-                    renderHourlyEmptyState();
+                    renderVelocityEmpty();
                     return;
                 }
 
                 hourlyEmptyEl.classList.add('hidden');
 
-                const topOutlets = Array.isArray(meta?.top_outlets) ? meta.top_outlets : [];
-                const topIdToIndex = new Map(topOutlets.map((o, idx) => [Number(o.outlet_id), idx]));
+                const width = hourlyBarsEl.offsetWidth || 800;
+                const height = 208; // h-52 is 13rem = 208px
+                const padding = { top: 20, right: 10, bottom: 5, left: 10 };
+                const graphWidth = width - padding.left - padding.right;
+                const graphHeight = height - padding.top - padding.bottom;
 
-                const maxTotal = Math.max(...hourlyStacked.map(x => Number(x.total || 0)), 0);
+                // SVG
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+                svg.style.overflow = "visible";
 
-                hourlyBarsEl.innerHTML = '';
-                hourlyTooltipEl = null;
-                prepareHourlyContainer();
+                // Defs
+                const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+                const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+                gradient.setAttribute("id", "velocityGradient");
+                gradient.setAttribute("x1", "0");
+                gradient.setAttribute("y1", "0");
+                gradient.setAttribute("x2", "0");
+                gradient.setAttribute("y2", "1");
+                gradient.innerHTML = `
+                            <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
+                            <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
+                        `;
+                defs.appendChild(gradient);
+                svg.appendChild(defs);
 
-                for (const point of hourlyStacked) {
-                    const hour = Number(point.hour || 0);
-                    const total = Number(point.total || 0);
-                    const barHeightPct = maxTotal > 0 ? Math.max(2, Math.round((total / maxTotal) * 100)) : 2;
+                // Points
+                const points = series.map((s, i) => {
+                    const x = padding.left + (i / (series.length - 1)) * graphWidth;
+                    const val = Number(s.amount || s.total || 0);
+                    const ratio = maxVal > 0 ? val / maxVal : 0;
+                    const y = padding.top + graphHeight - (ratio * graphHeight);
+                    return { x: x, y: y, val: val, hour: s.hour };
+                });
 
-                    const outer = document.createElement('div');
-                    outer.className = 'relative';
-                    outer.style.flex = '1 1 0%';
-                    outer.style.minHeight = '4px';
-                    outer.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';
-                    outer.style.overflow = 'hidden';
-                    outer.style.border = '1px solid rgba(251,146,60,0.2)';
-                    outer.style.background = 'rgba(255,237,213,0.7)';
-                    outer.style.height = `${barHeightPct}%`;
+                // Paths
+                const linePathD = getSplinePath(points, 0.2);
+                const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
 
-                    const stack = document.createElement('div');
-                    stack.style.cssText = 'height:100%;width:100%;display:flex;flex-direction:column-reverse;';
+                // Draw Area
+                const area = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                area.setAttribute("d", areaPathD);
+                area.setAttribute("fill", "url(#velocityGradient)");
+                area.style.opacity = "0";
+                area.style.transition = "opacity 0.6s ease";
+                svg.appendChild(area);
+                setTimeout(() => area.style.opacity = "1", 50);
 
-                    const segments = Array.isArray(point.segments) ? point.segments : [];
-                    const others = point.others || null;
+                // Draw Line
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                line.setAttribute("d", linePathD);
+                line.setAttribute("fill", "none");
+                line.setAttribute("stroke", "#f97316"); // Orange-500
+                line.setAttribute("stroke-width", "3");
+                line.setAttribute("stroke-linecap", "round");
+                line.setAttribute("stroke-linejoin", "round");
+                line.style.filter = "drop-shadow(0 4px 6px rgba(249, 115, 22, 0.4))";
+                svg.appendChild(line);
 
-                    for (const seg of segments) {
-                        const amt = Number(seg.amount || 0);
-                        if (amt <= 0 || total <= 0) continue;
+                // Overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 z-10 flex';
 
-                        const idx = topIdToIndex.has(Number(seg.outlet_id)) ? topIdToIndex.get(Number(seg.outlet_id)) : 0;
-                        const colorValue = hourlyPalette[idx % hourlyPalette.length];
+                series.forEach((s, i) => {
+                    const slice = document.createElement('div');
+                    slice.style.flex = '1';
+                    slice.style.height = '100%';
+                    slice.style.cursor = 'crosshair';
 
-                        const segEl = document.createElement('div');
-                        segEl.style.cssText = `width:100%;height:${(amt / total) * 100}%;background-color:${colorValue};`;
+                    const p = points[i];
 
-                        stack.appendChild(segEl);
-                    }
+                    slice.addEventListener('mouseenter', (e) => {
+                        let dot = document.getElementById('v-dot');
+                        if (!dot) {
+                            dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                            dot.setAttribute("id", "v-dot");
+                            dot.setAttribute("r", "5");
+                            dot.setAttribute("fill", "#fff");
+                            dot.setAttribute("stroke", "#ea580c"); // Orange-600
+                            dot.setAttribute("stroke-width", "2.5");
+                            dot.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.1))";
+                            svg.appendChild(dot);
+                        }
+                        dot.setAttribute("cx", p.x);
+                        dot.setAttribute("cy", p.y);
+                        dot.style.display = 'block';
 
-                    const othersAmt = Number(others?.amount || 0);
-                    if (othersAmt > 0 && total > 0) {
-                        const segEl = document.createElement('div');
-                        segEl.style.cssText = `width:100%;height:${(othersAmt / total) * 100}%;background-color:${hourlyOthersColor};`;
+                        const hourLabel = String(s.hour).padStart(2, '0') + ':00';
+                        const html = `
+                                    <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
+                                    <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
+                                    <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(p.val)}</div>
+                                `;
+                        showHourlyTooltip(html, e.clientX, e.clientY);
+                    });
 
-                        stack.appendChild(segEl);
-                    }
+                    slice.addEventListener('mousemove', (e) => {
+                        const hourLabel = String(s.hour).padStart(2, '0') + ':00';
+                        const html = `
+                                    <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
+                                    <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
+                                    <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(points[i].val)}</div>
+                                `;
+                        showHourlyTooltip(html, e.clientX, e.clientY);
+                    });
 
-                    const fullBreakdown = [];
-                    for (const seg of segments) {
-                        const amt = Number(seg.amount || 0);
-                        if (amt <= 0) continue;
-                        fullBreakdown.push({
-                            outlet_name: String(seg.outlet_name || ''),
-                            amount: amt,
-                        });
-                    }
-                    const othersBreakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
-                    for (const row of othersBreakdown) {
-                        const amt = Number(row.amount || 0);
-                        if (amt <= 0) continue;
-                        fullBreakdown.push({
-                            outlet_name: String(row.outlet_name || ''),
-                            amount: amt,
-                        });
-                    }
-                    fullBreakdown.sort((a, b) => b.amount - a.amount);
+                    slice.addEventListener('mouseleave', () => {
+                        const dot = document.getElementById('v-dot');
+                        if (dot) dot.style.display = 'none';
+                        hideHourlyTooltip();
+                    });
 
-                    const rowsHtml = fullBreakdown.length > 0
-                        ? fullBreakdown
-                            .map(r => `<div class="flex items-center justify-between gap-3"><div class="truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div><div class="font-semibold">${escapeHtml(idr.format(r.amount))}</div></div>`)
-                            .join('')
-                        : '<div class="text-slate-500">Tidak ada breakdown outlet.</div>';
+                    overlay.appendChild(slice);
+                });
 
-                    const tooltipHtml = `
-                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                        <div class="text-slate-700">Total jam ini: <span class="font-semibold">${escapeHtml(idr.format(total))}</span></div>
-                        <div class="mt-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Breakdown Outlet</div>
-                        <div class="mt-1 text-slate-600 space-y-1">${rowsHtml}</div>
-                    `;
-
-                    outer.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    outer.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                    outer.addEventListener('mouseleave', hideHourlyTooltip);
-
-                    outer.title = `${String(hour).padStart(2, '0')}:00 - ${idr.format(total)}`;
-                    outer.appendChild(stack);
-                    hourlyBarsEl.appendChild(outer);
-                }
+                hourlyBarsEl.appendChild(svg);
+                hourlyBarsEl.appendChild(overlay);
             }
 
-            function renderHourlyEmptyState() {
+            function renderVelocityEmpty() {
                 hourlyBarsEl.innerHTML = '';
-                hourlyTooltipEl = null;
+                hourlyBarsEl.style.display = 'flex';
+                hourlyBarsEl.style.alignItems = 'flex-end';
+                hourlyBarsEl.style.gap = '0.35rem';
                 hourlyEmptyEl.classList.remove('hidden');
-                prepareHourlyContainer();
-
                 for (let h = 0; h <= 23; h++) {
                     const bar = document.createElement('div');
                     bar.className = 'flex-1';
@@ -616,7 +657,7 @@
                     bar.style.minHeight = '3px';
                     bar.style.flex = '1 1 0%';
                     bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
-                    bar.style.background = 'rgba(253,186,116,0.7)';
+                    bar.style.background = 'rgba(253,186,116,0.2)';
                     hourlyBarsEl.appendChild(bar);
                 }
             }
@@ -645,15 +686,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                                <div class="flex items-end justify-between mb-1.5">
-                                                                                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                                    <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                                </div>
-                                                                                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                    <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
-                                                                                    </div>
-                                                                                </div>
-                                                                            `;
+                                                                                            <div class="flex items-end justify-between mb-1.5">
+                                                                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
+                                                                                            </div>
+                                                                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -685,14 +726,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                                                <div class="flex items-center gap-3">
-                                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                                        <i class="fas ${style.icon} text-lg ${style.text}"></i>
-                                                    </div>
-                                                    <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                                </div>
-                                                <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                            `;
+                                                            <div class="flex items-center gap-3">
+                                                                <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                                    <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                </div>
+                                                                <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
+                                                            </div>
+                                                            <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                                        `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -735,23 +776,23 @@
                     }
 
                     tr.innerHTML = `
-                                                                        <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
-                                                                        <td class="px-3 py-3 text-slate-700">
-                                                                            <div class="flex items-center gap-4 min-w-max">
-                                                                                ${imageHtml}
-                                                                                <div class="flex-1">
-                                                                                    <div class="flex flex-col gap-0.5">
-                                                                                        <div class="flex items-center gap-2">
-                                                                                            <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                                            ${trendBadge}
+                                                                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                                                    <td class="px-3 py-3 text-slate-700">
+                                                                                        <div class="flex items-center gap-4 min-w-max">
+                                                                                            ${imageHtml}
+                                                                                            <div class="flex-1">
+                                                                                                <div class="flex flex-col gap-0.5">
+                                                                                                    <div class="flex items-center gap-2">
+                                                                                                        <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                                        ${trendBadge}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                                        <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
-                                                                    `;
+                                                                                    </td>
+                                                                                    <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                                                    <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                                                `;
                     productRowsEl.appendChild(tr);
                 }
             }
@@ -769,6 +810,15 @@
                 outletEmptyEl.classList.add('hidden');
 
                 const max = Math.max(...rows.map(x => Number(x.amount || 0)), 0);
+
+                // Initialize bars then animate them
+                setTimeout(() => {
+                    const bars = outletBarsEl.querySelectorAll('.velocity-bar');
+                    bars.forEach(bar => {
+                        bar.style.width = bar.getAttribute('data-width');
+                    });
+                }, 100);
+
                 for (const row of rows) {
                     const amount = Number(row.amount || 0);
                     const pct = max > 0 ? Math.max(4, Math.round((amount / max) * 100)) : 0;
@@ -776,21 +826,27 @@
                     const lastSaleAt = row.last_sale_at ? new Date(row.last_sale_at) : null;
 
                     const wrap = document.createElement('div');
-                    wrap.className = 'grid grid-cols-12 gap-3 items-center';
+                    wrap.className = 'grid grid-cols-12 gap-3 items-center group';
                     wrap.innerHTML = `
-                                                                                                <div class="col-span-4 sm:col-span-3">
-                                                                                                    <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                                                                                                    <div class="text-[11px] text-slate-500">
-                                                                                                        ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div class="col-span-5 sm:col-span-7">
-                                                                                                    <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                                                                                        <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                                                                                            `;
+                                    <div class="col-span-4 sm:col-span-4">
+                                        <div class="text-sm font-semibold text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name.toUpperCase())}</div>
+                                        <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                                            <span>${transactions} trx</span>
+                                            ${lastSaleAt ? `<span class="opacity-60">•</span> <span>last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="col-span-5 sm:col-span-6">
+                                        <div class="h-3.5 rounded-full bg-slate-100 overflow-hidden shadow-inner">
+                                            <div class="velocity-bar h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 shadow-sm relative transition-all duration-1000 ease-out"
+                                                 style="width: 0%"
+                                                 data-width="${pct}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-span-3 sm:col-span-2 text-right">
+                                         <div class="text-sm font-bold text-slate-900">${idr.format(amount)}</div>
+                                    </div>
+                                `;
                     outletBarsEl.appendChild(wrap);
                 }
             }
@@ -826,9 +882,9 @@
                 for (const row of safeRows) {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                                                                                                <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                                                                <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                                                            `;
+                                                                                                            <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
+                                                                                                            <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
+                                                                                                        `;
                     outletBreakdownRowsEl.appendChild(tr);
                 }
             }
@@ -871,9 +927,11 @@
                 setTarget(data?.target);
 
                 if (!data?.outlet_id && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
-                    renderHourlyStacked(data.hourly_stacked, data?.hourly_stacked_meta);
+                    // Normalize stacked data to straight velocity
+                    const normalized = data.hourly_stacked.map(x => ({ hour: x.hour, amount: x.total }));
+                    renderVelocityChart(normalized);
                 } else {
-                    renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
+                    renderVelocityChart(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
                 }
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);

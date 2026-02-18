@@ -115,7 +115,7 @@ class CatalogReportController extends Controller
             'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => false],
             'sales-order' => ['title' => 'Order Penjualan', 'implemented' => false],
             'sales-by-customer' => ['title' => 'Penjualan per Pelanggan', 'implemented' => false],
-            'sales-by-product' => ['title' => 'Penjualan per Produk', 'implemented' => false, 'existing_route' => 'admin.reports.sales.products'],
+            'sales-by-product' => ['title' => 'Penjualan per Produk', 'implemented' => true, 'existing_route' => 'admin.reports.sales.products'],
             'sales-by-type' => ['title' => 'Penjualan per Tipe Penjualan', 'implemented' => false],
             'sales-by-payment-method' => ['title' => 'Penjualan per Metode Pembayaran', 'implemented' => true],
             'sales-by-category' => ['title' => 'Penjualan per Kategori Produk', 'implemented' => false],
@@ -172,6 +172,16 @@ class CatalogReportController extends Controller
                 'date_to' => $request->input('date_to'),
                 'outlet_id' => $request->input('outlet_id'),
                 'view_mode' => $request->input('view_mode'),
+                'tab' => $request->input('tab', 'penjualan'),
+            ]));
+        }
+
+        if ($slug === 'sales-by-product') {
+            return redirect()->route('admin.reports.sales.products', array_filter([
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'user_id' => $request->input('user_id'),
                 'tab' => $request->input('tab', 'penjualan'),
             ]));
         }

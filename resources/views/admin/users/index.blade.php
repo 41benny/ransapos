@@ -49,7 +49,7 @@
 
             <div class="p-6">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm text-left">
+                    <table class="min-w-full text-sm text-left" id="usersTable">
                         <thead class="text-xs uppercase text-gray-500 border-b">
                             <tr>
                                 <th class="py-3 pr-4">Nama</th>
@@ -58,6 +58,44 @@
                                 <th class="py-3 pr-4">Outlet</th>
                                 <th class="py-3 pr-4">Status</th>
                                 <th class="py-3 pr-4 text-right">Aksi</th>
+                            </tr>
+                            <tr class="filter-row bg-gray-50">
+                                <th class="px-2 py-2 pr-4">
+                                    <input type="text"
+                                        class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        data-name="name" placeholder="Filter Nama...">
+                                </th>
+                                <th class="px-2 py-2 pr-4">
+                                    <input type="text"
+                                        class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        data-name="email" placeholder="Filter Email...">
+                                </th>
+                                <th class="px-2 py-2 pr-4">
+                                    <input type="text"
+                                        class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        data-name="role" placeholder="Filter Role...">
+                                </th>
+                                <th class="px-2 py-2 pr-4">
+                                    <input type="text"
+                                        class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        data-name="outlet" placeholder="Filter Outlet...">
+                                </th>
+                                <th class="px-2 py-2 pr-4">
+                                    <select
+                                        class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        data-name="status">
+                                        <option value="">Semua Status</option>
+                                        <option value="aktif">Aktif</option>
+                                        <option value="nonaktif">Nonaktif</option>
+                                    </select>
+                                </th>
+                                <th class="px-2 py-2 pr-4 text-right">
+                                    <button type="button" id="clearFilters"
+                                        class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                                        title="Clear all filters">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
@@ -109,3 +147,74 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <style>
+        .filter-row th {
+            background-color: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+    </style>
+
+    <script>
+        const filterInputs = document.querySelectorAll('.filter-input');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+
+        function populateFilters() {
+            const params = new URLSearchParams(window.location.search);
+
+            filterInputs.forEach(input => {
+                const name = input.dataset.name;
+                if (params.has(name)) {
+                    input.value = params.get(name);
+                }
+            });
+        }
+
+        let debounceTimer;
+        function updateFilter(name, value) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const url = new URL(window.location.href);
+
+                if (value.trim() !== '') {
+                    url.searchParams.set(name, value.trim());
+                } else {
+                    url.searchParams.delete(name);
+                }
+
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            }, 500);
+        }
+
+        filterInputs.forEach(input => {
+            const name = input.dataset.name;
+
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', (e) => {
+                    updateFilter(name, e.target.value);
+                });
+            } else {
+                input.addEventListener('input', (e) => {
+                    updateFilter(name, e.target.value);
+                });
+            }
+        });
+
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function () {
+                const url = new URL(window.location.href);
+
+                filterInputs.forEach(input => {
+                    url.searchParams.delete(input.dataset.name);
+                });
+
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
+        }
+
+        populateFilters();
+    </script>
+@endpush
