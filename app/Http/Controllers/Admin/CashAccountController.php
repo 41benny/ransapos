@@ -470,6 +470,20 @@ class CashAccountController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Fallback legacy: data lama sebelum voucher_number dibakukan
+        // bisa punya nomor baris berbeda walau sebenarnya 1 submit multi-baris.
+        if ($voucherTransactions->count() <= 1) {
+            $legacyVoucherTransactions = $this->resolveLegacyVoucherTransactions($cashTransaction);
+            if ($legacyVoucherTransactions->count() > $voucherTransactions->count()) {
+                $voucherTransactions = $legacyVoucherTransactions;
+                $voucherNumber = (string) (
+                    $voucherTransactions->pluck('voucher_number')->filter()->sort()->first()
+                    ?? $voucherTransactions->pluck('transaction_number')->filter()->sort()->first()
+                    ?? $voucherNumber
+                );
+            }
+        }
+
         if ($voucherTransactions->isEmpty()) {
             $voucherTransactions = collect([$cashTransaction->load(['coaAccount', 'cashAccount'])]);
         }
@@ -482,6 +496,31 @@ class CashAccountController extends Controller
             'voucherNumber',
             'totalAmount'
         ));
+    }
+
+    protected function resolveLegacyVoucherTransactions(CashTransaction $cashTransaction)
+    {
+        if (! $cashTransaction->created_at || ! $cashTransaction->transaction_date) {
+            return collect();
+        }
+
+        $createdAtStart = $cashTransaction->created_at->copy()->startOfSecond();
+        $createdAtEnd = $cashTransaction->created_at->copy()->endOfSecond();
+        $notes = trim((string) ($cashTransaction->notes ?? ''));
+
+        return CashTransaction::query()
+            ->with(['coaAccount', 'cashAccount'])
+            ->where('cash_account_id', $cashTransaction->cash_account_id)
+            ->where('type', $cashTransaction->type)
+            ->whereDate('transaction_date', $cashTransaction->transaction_date->format('Y-m-d'))
+            ->where('created_by', $cashTransaction->created_by)
+            ->whereNull('reference_type')
+            ->whereNull('reference_id')
+            ->whereBetween('created_at', [$createdAtStart, $createdAtEnd])
+            ->whereRaw('COALESCE(TRIM(notes), \'\') = ?', [$notes])
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
     }
 
     /**
