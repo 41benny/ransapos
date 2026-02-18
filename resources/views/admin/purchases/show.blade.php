@@ -256,6 +256,12 @@
         </a>
 
         <div class="flex items-center space-x-3">
+            <a href="{{ route('admin.purchases.print', $purchase) }}" target="_blank" class="px-5 py-2 border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-50 transition flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/>
+                </svg>
+                Print PO
+            </a>
             @if($purchase->isDraft())
                 <!-- Edit -->
                 <a href="{{ route('admin.purchases.edit', $purchase) }}" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center">

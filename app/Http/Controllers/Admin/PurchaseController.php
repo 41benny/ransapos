@@ -111,6 +111,16 @@ class PurchaseController extends Controller
     }
 
     /**
+     * Print purchase order.
+     */
+    public function printPo(Purchase $purchase)
+    {
+        $purchase->load(['items.product', 'outlet', 'supplier', 'creator', 'receiver']);
+
+        return view('admin.purchases.print', compact('purchase'));
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Purchase $purchase)

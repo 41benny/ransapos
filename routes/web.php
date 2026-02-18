@@ -48,6 +48,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
 
     // Purchases
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class);
+    Route::get('purchases/{purchase}/print', [\App\Http\Controllers\Admin\PurchaseController::class, 'printPo'])->name('purchases.print');
     Route::post('purchases/{purchase}/receive', [\App\Http\Controllers\Admin\PurchaseController::class, 'receive'])->name('purchases.receive');
     Route::post('purchases/{purchase}/cancel', [\App\Http\Controllers\Admin\PurchaseController::class, 'cancel'])->name('purchases.cancel');
     Route::get('purchases/{purchase}/payment', [\App\Http\Controllers\Admin\PurchaseController::class, 'showPaymentForm'])->name('purchases.payment');
