@@ -126,7 +126,7 @@ class CatalogReportController extends Controller
             'sales-vs-hpp' => ['title' => 'Penjualan Vs HPP', 'implemented' => true],
             'waiter-performance' => ['title' => 'Kinerja Pelayan Berdasarkan Penjualan', 'implemented' => false],
             'sales-discount' => ['title' => 'Laporan Diskon Penjualan', 'implemented' => false],
-            'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => false],
+            'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => true, 'existing_route' => 'admin.reports.shifts.index'],
             'sales-custom-item' => ['title' => 'Penjualan per Custom Item', 'implemented' => false],
             'receivables' => ['title' => 'Piutang', 'implemented' => false],
             'promo' => ['title' => 'Promo', 'implemented' => false],
@@ -185,6 +185,17 @@ class CatalogReportController extends Controller
                 'user_id' => $request->input('user_id'),
                 'status' => $request->input('status'),
                 'tab' => $request->input('tab', 'sdm'),
+            ]));
+        }
+
+        if ($slug === 'shift-sessions') {
+            return redirect()->route('admin.reports.shifts.index', array_filter([
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'user_id' => $request->input('user_id'),
+                'status' => $request->input('status'),
+                'tab' => $request->input('tab', 'penjualan'),
             ]));
         }
 
