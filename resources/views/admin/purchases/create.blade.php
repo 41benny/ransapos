@@ -181,6 +181,93 @@
 let itemIndex = 0;
 const products = @json($categories->flatMap->products);
 const oldItems = @json(old('items', []));
+const productMasterListId = 'purchaseProductMasterList';
+const normalizedProducts = products.map((product) => {
+    const id = String(product.id);
+    const name = String(product.name ?? '').trim();
+    const sku = String(product.sku ?? '').trim();
+    const label = sku ? `${name} (${sku})` : name;
+
+    return {
+        id,
+        name,
+        sku,
+        label,
+        purchasePrice: Number(product.purchase_price ?? 0),
+    };
+});
+const productsById = new Map(normalizedProducts.map((product) => [product.id, product]));
+const productsByLabel = new Map(normalizedProducts.map((product) => [normalizeKeyword(product.label), product]));
+const productsBySku = new Map(
+    normalizedProducts
+        .filter((product) => product.sku)
+        .map((product) => [normalizeKeyword(product.sku), product])
+);
+
+function normalizeKeyword(value) {
+    return String(value ?? '').trim().toLowerCase();
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function mountProductDatalist() {
+    if (document.getElementById(productMasterListId)) {
+        return;
+    }
+
+    const datalist = document.createElement('datalist');
+    datalist.id = productMasterListId;
+    datalist.innerHTML = normalizedProducts
+        .map((product) => `<option value="${escapeHtml(product.label)}"></option>`)
+        .join('');
+
+    document.body.appendChild(datalist);
+}
+
+function resolveProduct(inputValue, allowPartial = false) {
+    const keyword = normalizeKeyword(inputValue);
+    if (!keyword) {
+        return null;
+    }
+
+    const exactLabelMatch = productsByLabel.get(keyword);
+    if (exactLabelMatch) {
+        return exactLabelMatch;
+    }
+
+    const exactSkuMatch = productsBySku.get(keyword);
+    if (exactSkuMatch) {
+        return exactSkuMatch;
+    }
+
+    const exactNameMatches = normalizedProducts.filter((product) => normalizeKeyword(product.name) === keyword);
+    if (exactNameMatches.length === 1) {
+        return exactNameMatches[0];
+    }
+
+    if (!allowPartial) {
+        return null;
+    }
+
+    const partialMatches = normalizedProducts.filter((product) => {
+        const productName = normalizeKeyword(product.name);
+        const productSku = normalizeKeyword(product.sku);
+        return productName.includes(keyword) || productSku.includes(keyword);
+    });
+
+    if (partialMatches.length === 1) {
+        return partialMatches[0];
+    }
+
+    return null;
+}
 
 function addItem(initialData = {}) {
     const currentIndex = itemIndex;
@@ -189,18 +276,25 @@ function addItem(initialData = {}) {
     row.className = 'border-b';
     row.id = `item-${currentIndex}`;
 
-    const selectedProductId = initialData?.product_id ?? '';
+    const selectedProductId = String(initialData?.product_id ?? '');
+    const selectedProduct = productsById.get(selectedProductId);
+    const selectedProductLabel = selectedProduct ? selectedProduct.label : '';
     const quantity = initialData?.quantity ?? 1;
-    const unitPrice = initialData?.unit_price ?? 0;
+    const unitPrice = initialData?.unit_price ?? (selectedProduct?.purchasePrice ?? 0);
     const discountAmount = initialData?.discount_amount ?? 0;
 
     row.innerHTML = `
         <td class="px-4 py-3">
-            <select name="items[${currentIndex}][product_id]" required onchange="updateItemPrice(${currentIndex})"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option value="">Pilih produk...</option>
-                ${products.map(p => `<option value="${p.id}" data-price="${p.purchase_price ?? 0}" ${String(selectedProductId) === String(p.id) ? 'selected' : ''}>${p.name} (${p.sku})</option>`).join('')}
-            </select>
+            <div class="space-y-1">
+                <input type="text" id="product-input-${currentIndex}" list="${productMasterListId}"
+                       value="${escapeHtml(selectedProductLabel)}"
+                       placeholder="Ketik nama / SKU produk..."
+                       oninput="syncProductInput(${currentIndex})"
+                       onchange="syncProductInput(${currentIndex}, true)"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <input type="hidden" name="items[${currentIndex}][product_id]" id="product-id-${currentIndex}" value="${escapeHtml(selectedProductId)}">
+                <p class="text-xs text-gray-500">Ketik item lalu pilih dari suggestion master produk</p>
+            </div>
         </td>
         <td class="px-4 py-3">
             <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
@@ -231,16 +325,44 @@ function addItem(initialData = {}) {
     `;
 
     tbody.appendChild(row);
+    if (selectedProductId) {
+        syncProductInput(currentIndex, true);
+    }
     calculateItemSubtotal(currentIndex);
     itemIndex++;
 }
 
-function updateItemPrice(index) {
-    const select = document.querySelector(`select[name="items[${index}][product_id]"]`);
+function syncProductInput(index, allowPartial = false) {
+    const textInput = document.getElementById(`product-input-${index}`);
+    const productIdInput = document.getElementById(`product-id-${index}`);
     const priceInput = document.getElementById(`price-${index}`);
-    const selectedOption = select.options[select.selectedIndex];
-    const price = selectedOption.getAttribute('data-price') || 0;
-    priceInput.value = price;
+    if (!textInput || !productIdInput) {
+        return;
+    }
+
+    const previousProductId = productIdInput.value;
+    const selectedProduct = resolveProduct(textInput.value, allowPartial);
+
+    if (!selectedProduct) {
+        productIdInput.value = '';
+
+        if (allowPartial && normalizeKeyword(textInput.value)) {
+            textInput.classList.add('border-amber-400');
+        } else {
+            textInput.classList.remove('border-amber-400');
+        }
+
+        return;
+    }
+
+    textInput.classList.remove('border-amber-400');
+    textInput.value = selectedProduct.label;
+    productIdInput.value = selectedProduct.id;
+
+    if (priceInput && previousProductId !== selectedProduct.id) {
+        priceInput.value = selectedProduct.purchasePrice;
+    }
+
     calculateItemSubtotal(index);
 }
 
@@ -309,6 +431,7 @@ function showClientDebug(message) {
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('purchaseForm');
     const submitButton = document.getElementById('submitPurchaseBtn');
+    mountProductDatalist();
 
     if (Array.isArray(oldItems) && oldItems.length > 0) {
         oldItems.forEach((item) => addItem(item));
@@ -329,13 +452,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const itemRows = document.querySelectorAll('#itemsBody tr').length;
-        const selectedProducts = Array.from(
-            document.querySelectorAll('#itemsBody select[name*=\"[product_id]\"]')
-        ).filter((selectEl) => selectEl.value);
+        const productIdInputs = Array.from(
+            document.querySelectorAll('#itemsBody input[name*=\"[product_id]\"]')
+        );
+        const selectedProducts = productIdInputs.filter((inputEl) => inputEl.value);
 
         if (itemRows < 1 || selectedProducts.length < 1) {
             event.preventDefault();
             showClientDebug('Minimal pilih 1 produk sebelum menyimpan pembelian.');
+            return;
+        }
+
+        if (selectedProducts.length !== productIdInputs.length) {
+            event.preventDefault();
+            showClientDebug('Masih ada item yang belum valid. Ketik lalu pilih item dari suggestion master produk.');
+
+            const firstInvalidProductInput = productIdInputs.find((inputEl) => !inputEl.value);
+            const row = firstInvalidProductInput?.closest('tr');
+            const textInput = row?.querySelector('input[list]');
+            textInput?.focus();
             return;
         }
 
@@ -357,3 +492,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
