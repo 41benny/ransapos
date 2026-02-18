@@ -120,13 +120,13 @@ class PettyCashController extends Controller
             ], $mappedRows);
 
             $count = count($transactions);
-            $firstNumber = $transactions[0]->transaction_number ?? null;
+            $voucherNumber = $transactions[0]->voucher_number ?? $transactions[0]->transaction_number ?? null;
 
             return redirect()
                 ->route('pos.petty-cash.index')
                 ->with('success', $count === 1
-                    ? 'Pengeluaran petty cash berhasil disimpan. Nomor: ' . $firstNumber
-                    : 'Pengeluaran petty cash berhasil disimpan. Total: ' . $count . ' baris.');
+                    ? 'Pengeluaran petty cash berhasil disimpan. Nomor voucher: ' . $voucherNumber
+                    : 'Pengeluaran petty cash berhasil disimpan. Nomor voucher: ' . $voucherNumber . ' (' . $count . ' baris).');
         } catch (Exception $e) {
             return back()
                 ->withInput()

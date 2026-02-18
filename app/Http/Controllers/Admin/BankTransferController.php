@@ -112,8 +112,10 @@ class BankTransferController extends Controller
             ]);
 
             // Create OUT transaction for from account
+            $fromTransactionNumber = $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $request->transfer_date);
             CashTransaction::create([
-                'transaction_number' => $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $request->transfer_date),
+                'transaction_number' => $fromTransactionNumber,
+                'voucher_number' => $fromTransactionNumber,
                 'cash_account_id' => $fromAccount->id,
                 'coa_account_id' => $transferClearingCoaId,
                 'type' => 'out',
@@ -133,8 +135,10 @@ class BankTransferController extends Controller
             $fromAccount->save();
 
             // Create IN transaction for to account
+            $toTransactionNumber = $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $request->transfer_date);
             CashTransaction::create([
-                'transaction_number' => $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $request->transfer_date),
+                'transaction_number' => $toTransactionNumber,
+                'voucher_number' => $toTransactionNumber,
                 'cash_account_id' => $toAccount->id,
                 'coa_account_id' => $transferClearingCoaId,
                 'type' => 'in',

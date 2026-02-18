@@ -92,7 +92,7 @@
                                 <input type="text"
                                     class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     data-name="transaction_number" value="{{ request('transaction_number') }}"
-                                    placeholder="Filter nomor...">
+                                    placeholder="Filter nomor voucher...">
                             </th>
                             <th class="px-3 py-1">
                                 <input type="date"
@@ -191,6 +191,12 @@
                                     $representative->setAttribute('display_row_count', $rowCount);
                                     $representative->setAttribute('display_is_batch', $isBatch);
                                     $representative->setAttribute(
+                                        'display_voucher_number',
+                                        (string) ($group->pluck('voucher_number')->filter()->sort()->first()
+                                            ?? $representative->voucher_number
+                                            ?? $representative->transaction_number)
+                                    );
+                                    $representative->setAttribute(
                                         'display_description',
                                         $isBatch ? 'Transaksi Umum (' . $rowCount . ' baris)' : $representative->description
                                     );
@@ -205,11 +211,14 @@
                                 $displayAmount = (float) ($transaction->display_amount ?? $transaction->amount);
                                 $displayRowCount = (int) ($transaction->display_row_count ?? 1);
                                 $isBatchRow = (bool) ($transaction->display_is_batch ?? false);
+                                $displayVoucherNumber = (string) ($transaction->display_voucher_number
+                                    ?? $transaction->voucher_number
+                                    ?? $transaction->transaction_number);
                             @endphp
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     <a href="{{ route('admin.cash-transactions.show', $transaction) }}" class="hover:text-indigo-600 hover:underline">
-                                        {{ $transaction->transaction_number }}
+                                        {{ $displayVoucherNumber }}
                                     </a>
                                     @if($isBatchRow)
                                         <div class="text-xs text-gray-500 mt-0.5">{{ $displayRowCount }} baris digabung</div>

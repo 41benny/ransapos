@@ -235,13 +235,13 @@ class CashAccountController extends Controller
 
             $transactions = $this->cashAccountService->recordTransactionsBulk($data, $rows);
             $count = count($transactions);
-            $firstNumber = $transactions[0]->transaction_number ?? null;
+            $voucherNumber = $transactions[0]->voucher_number ?? $transactions[0]->transaction_number ?? null;
 
             return redirect()
                 ->route('admin.cash-transactions.index')
                 ->with('success', $count === 1
-                    ? 'Transaksi berhasil dicatat! Nomor: ' . $firstNumber
-                    : 'Transaksi berhasil dicatat! Total: ' . $count . ' baris.');
+                    ? 'Transaksi berhasil dicatat! Nomor voucher: ' . $voucherNumber
+                    : 'Transaksi berhasil dicatat! Nomor voucher: ' . $voucherNumber . ' (' . $count . ' baris).');
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -266,7 +266,7 @@ class CashAccountController extends Controller
 
         return redirect()
             ->route('admin.cash-transactions.index')
-            ->with('success', 'Pembayaran hutang purchase berhasil dicatat. Nomor: ' . $transaction->transaction_number);
+            ->with('success', 'Pembayaran hutang purchase berhasil dicatat. Nomor voucher: ' . ($transaction->voucher_number ?? $transaction->transaction_number));
     }
 
     /**
@@ -310,8 +310,10 @@ class CashAccountController extends Controller
                 'created_by' => $data['created_by'],
             ]);
 
+            $fromTransactionNumber = $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $data['transaction_date']);
             CashTransaction::create([
-                'transaction_number' => $this->cashAccountService->generateTransactionNumber($fromAccount, 'out', $data['transaction_date']),
+                'transaction_number' => $fromTransactionNumber,
+                'voucher_number' => $fromTransactionNumber,
                 'cash_account_id' => $fromAccount->id,
                 'coa_account_id' => $transferClearingCoaId,
                 'type' => 'out',
@@ -329,8 +331,10 @@ class CashAccountController extends Controller
             $fromAccount->current_balance -= $amount;
             $fromAccount->save();
 
+            $toTransactionNumber = $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $data['transaction_date']);
             CashTransaction::create([
-                'transaction_number' => $this->cashAccountService->generateTransactionNumber($toAccount, 'in', $data['transaction_date']),
+                'transaction_number' => $toTransactionNumber,
+                'voucher_number' => $toTransactionNumber,
                 'cash_account_id' => $toAccount->id,
                 'coa_account_id' => $transferClearingCoaId,
                 'type' => 'in',
@@ -455,7 +459,29 @@ class CashAccountController extends Controller
      */
     public function printVoucher(CashTransaction $cashTransaction)
     {
-        return view('admin.cash-accounts.print-voucher', compact('cashTransaction'));
+        $voucherNumber = (string) ($cashTransaction->voucher_number ?: $cashTransaction->transaction_number);
+
+        $voucherTransactions = CashTransaction::query()
+            ->with(['coaAccount', 'cashAccount'])
+            ->where('voucher_number', $voucherNumber)
+            ->where('cash_account_id', $cashTransaction->cash_account_id)
+            ->where('type', $cashTransaction->type)
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($voucherTransactions->isEmpty()) {
+            $voucherTransactions = collect([$cashTransaction->load(['coaAccount', 'cashAccount'])]);
+        }
+
+        $totalAmount = (float) $voucherTransactions->sum('amount');
+
+        return view('admin.cash-accounts.print-voucher', compact(
+            'cashTransaction',
+            'voucherTransactions',
+            'voucherNumber',
+            'totalAmount'
+        ));
     }
 
     /**

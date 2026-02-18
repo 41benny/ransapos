@@ -208,10 +208,16 @@ class CashAccountService
             $batchReferenceId = $isBatchTransaction
                 ? (int) round(microtime(true) * 1000000)
                 : null;
+            $voucherNumber = $header['voucher_number'] ?? $this->generateTransactionNumber(
+                $account,
+                $header['type'],
+                $header['transaction_date'] ?? null
+            );
 
             foreach ($rows as $row) {
                 $data = array_merge($header, $row);
                 unset($data['rows']);
+                $data['voucher_number'] = $voucherNumber;
 
                 if ($isBatchTransaction && empty($data['reference_type'])) {
                     $data['reference_type'] = 'general_batch';
@@ -317,6 +323,7 @@ class CashAccountService
             $data['type'],
             $data['transaction_date'] ?? null
         );
+        $data['voucher_number'] = $data['voucher_number'] ?? $data['transaction_number'];
 
         // Set balance before
         $data['balance_before'] = $account->current_balance;
@@ -503,7 +510,11 @@ class CashAccountService
     {
         // Filter by transaction number
         if (! empty($filters['transaction_number'])) {
-            $query->where('transaction_number', 'like', '%' . $filters['transaction_number'] . '%');
+            $keyword = '%' . $filters['transaction_number'] . '%';
+            $query->where(function ($q) use ($keyword) {
+                $q->where('transaction_number', 'like', $keyword)
+                    ->orWhere('voucher_number', 'like', $keyword);
+            });
         }
 
         // Filter by exact transaction date

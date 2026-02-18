@@ -9,6 +9,7 @@ class CashTransaction extends Model
 {
     protected $fillable = [
         'transaction_number',
+        'voucher_number',
         'cash_account_id',
         'coa_account_id',
         'type',

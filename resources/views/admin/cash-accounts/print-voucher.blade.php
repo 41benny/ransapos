@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voucher - {{ $cashTransaction->transaction_number }}</title>
+    <title>Voucher - {{ $voucherNumber }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,24 +16,24 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             border: 1px solid #ccc;
-            padding: 30px;
+            padding: 24px;
             position: relative;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             border-bottom: 2px solid #333;
-            padding-bottom: 15px;
+            padding-bottom: 12px;
         }
 
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
 
@@ -50,11 +50,12 @@
         .voucher-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            gap: 16px;
         }
 
         .info-group {
-            width: 48%;
+            width: 50%;
         }
 
         .row {
@@ -63,13 +64,38 @@
         }
 
         .label {
-            width: 120px;
+            width: 130px;
             font-weight: bold;
         }
 
         .value {
             flex: 1;
             border-bottom: 1px dotted #ccc;
+        }
+
+        .lines-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 16px;
+        }
+
+        .lines-table th,
+        .lines-table td {
+            border: 1px solid #d1d5db;
+            padding: 8px 10px;
+            vertical-align: top;
+        }
+
+        .lines-table th {
+            background: #f8fafc;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .text-right {
+            text-align: right;
+            white-space: nowrap;
         }
 
         .amount-box {
@@ -83,10 +109,10 @@
         }
 
         .signatures {
-            margin-top: 50px;
+            margin-top: 44px;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 10px;
         }
 
         .signature-box {
@@ -101,7 +127,7 @@
         }
 
         .footer {
-            margin-top: 30px;
+            margin-top: 26px;
             font-size: 10px;
             text-align: center;
             color: #777;
@@ -143,60 +169,91 @@
 <body>
     <button class="print-btn" onclick="window.print()">Cetak Voucher</button>
 
+    @php
+        $firstLine = $voucherTransactions->first() ?? $cashTransaction;
+        $notesList = $voucherTransactions
+            ->pluck('notes')
+            ->filter(fn ($note) => trim((string) $note) !== '')
+            ->unique()
+            ->values();
+        $lineCount = $voucherTransactions->count();
+    @endphp
+
     <div class="container">
         <div class="header">
             <div class="company-name">MORESTO</div>
             <div>Jalan Raya Sekincau, Lampung Barat</div>
             <div class="voucher-title">
-                {{ $cashTransaction->type == 'in' ? 'BUKTI KAS MASUK' : 'BUKTI KAS KELUAR' }}
+                {{ $firstLine->type == 'in' ? 'BUKTI KAS MASUK' : 'BUKTI KAS KELUAR' }}
             </div>
         </div>
 
         <div class="voucher-info">
             <div class="info-group">
                 <div class="row">
-                    <span class="label">No. Transaksi</span>
-                    <span class="value">: {{ $cashTransaction->transaction_number }}</span>
+                    <span class="label">No. Voucher</span>
+                    <span class="value">: {{ $voucherNumber }}</span>
                 </div>
                 <div class="row">
-                    <span class="label">Keterangan</span>
-                    <span class="value">:
-                        {{ $cashTransaction->reference_type ? ucfirst($cashTransaction->reference_type) . ' #' . $cashTransaction->reference_id : '-' }}</span>
+                    <span class="label">Jumlah Baris</span>
+                    <span class="value">: {{ $lineCount }} baris</span>
                 </div>
             </div>
             <div class="info-group">
                 <div class="row">
                     <span class="label">Tanggal</span>
-                    <span class="value">: {{ $cashTransaction->transaction_date->format('d M Y') }}</span>
+                    <span class="value">: {{ optional($firstLine->transaction_date)->format('d M Y') }}</span>
                 </div>
                 <div class="row">
                     <span class="label">Akun Kas/Bank</span>
-                    <span class="value">: {{ $cashTransaction->cashAccount->name }}
-                        ({{ $cashTransaction->cashAccount->code }})</span>
+                    <span class="value">: {{ $firstLine->cashAccount->name ?? '-' }}
+                        ({{ $firstLine->cashAccount->code ?? '-' }})</span>
                 </div>
             </div>
         </div>
 
-        <div style="margin-bottom: 20px;">
+        <table class="lines-table">
+            <thead>
+                <tr>
+                    <th style="width: 52px;">No</th>
+                    <th>Keterangan</th>
+                    <th style="width: 220px;">Akun Lawan (COA)</th>
+                    <th style="width: 150px;" class="text-right">Jumlah</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($voucherTransactions as $index => $line)
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $line->description }}</td>
+                        <td>{{ $line->coaAccount->code ?? '-' }} - {{ $line->coaAccount->name ?? '-' }}</td>
+                        <td class="text-right">Rp {{ number_format((float) $line->amount, 2, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div style="margin-bottom: 14px;">
             <div class="row">
-                <span class="label">Dibayarkan Kepada /<br>Diterima Dari</span>
-                <span class="value" style="height: 40px; vertical-align: bottom; display: flex; align-items: end;">
-                    : {{ $cashTransaction->description }}
+                <span class="label">Keterangan</span>
+                <span class="value">:
+                    {{ $firstLine->reference_type ? ucfirst($firstLine->reference_type) . (filled($firstLine->reference_id) ? ' #' . $firstLine->reference_id : '') : '-' }}
                 </span>
             </div>
             <div class="row">
-                <span class="label">Akun Lawan (COA)</span>
-                <span class="value">: {{ $cashTransaction->coaAccount->code ?? '-' }} -
-                    {{ $cashTransaction->coaAccount->name ?? '-' }}</span>
-            </div>
-            <div class="row">
                 <span class="label">Catatan</span>
-                <span class="value">: {{ $cashTransaction->notes ?? '-' }}</span>
+                <span class="value">:
+                    @if($notesList->isEmpty())
+                        -
+                    @else
+                        {{ $notesList->implode(' | ') }}
+                    @endif
+                </span>
             </div>
         </div>
 
         <div class="amount-box">
-            Rp {{ number_format($cashTransaction->amount, 2, ',', '.') }}
+            TOTAL: Rp {{ number_format((float) $totalAmount, 2, ',', '.') }}
         </div>
 
         <div class="signatures">
@@ -215,8 +272,8 @@
         </div>
 
         <div class="footer">
-            Dicetak pada: {{ now()->format('d M Y H:i:s') }} oleh {{ auth()->user()->name ?? 'System' }} | Ref ID:
-            {{ $cashTransaction->id }}
+            Dicetak pada: {{ now()->format('d M Y H:i:s') }} oleh {{ auth()->user()->name ?? 'System' }} | Voucher:
+            {{ $voucherNumber }}
         </div>
     </div>
 </body>
