@@ -516,17 +516,21 @@
 
                 hourlyBarsEl.innerHTML = '';
                 hourlyTooltipEl = null;
+                prepareHourlyContainer();
 
                 for (const point of hourlyStacked) {
                     const hour = Number(point.hour || 0);
                     const total = Number(point.total || 0);
                     const barHeightPct = maxTotal > 0 ? Math.max(2, Math.round((total / maxTotal) * 100)) : 2;
 
-                    const col = document.createElement('div');
-                    col.className = 'hourly-col';
-
                     const outer = document.createElement('div');
-                    outer.className = 'hourly-stack-shell';
+                    outer.className = 'relative';
+                    outer.style.flex = '1 1 0%';
+                    outer.style.minHeight = '4px';
+                    outer.style.borderRadius = '0.75rem 0.75rem 0.45rem 0.45rem';
+                    outer.style.overflow = 'hidden';
+                    outer.style.border = '1px solid rgba(251,146,60,0.2)';
+                    outer.style.background = 'rgba(255,237,213,0.7)';
                     outer.style.height = `${barHeightPct}%`;
 
                     const stack = document.createElement('div');
@@ -545,17 +549,6 @@
                         const segEl = document.createElement('div');
                         segEl.style.cssText = `width:100%;height:${(amt / total) * 100}%;background-color:${colorValue};`;
 
-                        const outletName = escapeHtml(seg.outlet_name);
-                        const tooltipHtml = `
-                                                                                                    <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                                    <div class="text-slate-700">${outletName}: <span class="font-semibold">${escapeHtml(idr.format(amt))}</span></div>
-                                                                                                    <div class="mt-1 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                                                `;
-
-                        segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mouseleave', hideHourlyTooltip);
-
                         stack.appendChild(segEl);
                     }
 
@@ -564,33 +557,49 @@
                         const segEl = document.createElement('div');
                         segEl.style.cssText = `width:100%;height:${(othersAmt / total) * 100}%;background-color:${hourlyOthersColor};`;
 
-                        const breakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
-                        const rows = breakdown
-                            .filter(r => Number(r.amount || 0) > 0)
-                            .slice(0, 8)
-                            .map(r => `<div class="flex items-center justify-between gap-3"><div class="truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div><div class="font-semibold">${escapeHtml(idr.format(Number(r.amount || 0)))}</div></div>`)
-                            .join('');
-                        const moreCount = Math.max(0, breakdown.length - 8);
-
-                        const tooltipHtml = `
-                                                                                                    <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
-                                                                                                    <div class="text-slate-700">Others: <span class="font-semibold">${escapeHtml(idr.format(othersAmt))}</span></div>
-                                                                                                    <div class="mt-2 text-slate-600 space-y-1">${rows || '<div class="text-slate-500">Tidak ada breakdown.</div>'}</div>
-                                                                                                    ${moreCount > 0 ? `<div class="mt-2 text-[11px] text-slate-500">+${moreCount} outlet lainnya</div>` : ''}
-                                                                                                    <div class="mt-2 text-slate-500">Total jam ini: ${escapeHtml(idr.format(total))}</div>
-                                                                                                `;
-
-                        segEl.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
-                        segEl.addEventListener('mouseleave', hideHourlyTooltip);
-
                         stack.appendChild(segEl);
                     }
 
+                    const fullBreakdown = [];
+                    for (const seg of segments) {
+                        const amt = Number(seg.amount || 0);
+                        if (amt <= 0) continue;
+                        fullBreakdown.push({
+                            outlet_name: String(seg.outlet_name || ''),
+                            amount: amt,
+                        });
+                    }
+                    const othersBreakdown = Array.isArray(others?.breakdown) ? others.breakdown : [];
+                    for (const row of othersBreakdown) {
+                        const amt = Number(row.amount || 0);
+                        if (amt <= 0) continue;
+                        fullBreakdown.push({
+                            outlet_name: String(row.outlet_name || ''),
+                            amount: amt,
+                        });
+                    }
+                    fullBreakdown.sort((a, b) => b.amount - a.amount);
+
+                    const rowsHtml = fullBreakdown.length > 0
+                        ? fullBreakdown
+                            .map(r => `<div class="flex items-center justify-between gap-3"><div class="truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div><div class="font-semibold">${escapeHtml(idr.format(r.amount))}</div></div>`)
+                            .join('')
+                        : '<div class="text-slate-500">Tidak ada breakdown outlet.</div>';
+
+                    const tooltipHtml = `
+                        <div class="font-semibold text-slate-900 mb-1">${String(hour).padStart(2, '0')}:00</div>
+                        <div class="text-slate-700">Total jam ini: <span class="font-semibold">${escapeHtml(idr.format(total))}</span></div>
+                        <div class="mt-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Breakdown Outlet</div>
+                        <div class="mt-1 text-slate-600 space-y-1">${rowsHtml}</div>
+                    `;
+
+                    outer.addEventListener('mouseenter', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                    outer.addEventListener('mousemove', (e) => showHourlyTooltip(tooltipHtml, e.clientX, e.clientY));
+                    outer.addEventListener('mouseleave', hideHourlyTooltip);
+
                     outer.title = `${String(hour).padStart(2, '0')}:00 - ${idr.format(total)}`;
                     outer.appendChild(stack);
-                    col.appendChild(outer);
-                    hourlyBarsEl.appendChild(col);
+                    hourlyBarsEl.appendChild(outer);
                 }
             }
 
@@ -861,7 +870,11 @@
 
                 setTarget(data?.target);
 
-                renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
+                if (!data?.outlet_id && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
+                    renderHourlyStacked(data.hourly_stacked, data?.hourly_stacked_meta);
+                } else {
+                    renderHourlyBars(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
+                }
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
                 renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
