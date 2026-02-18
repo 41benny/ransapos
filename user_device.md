@@ -16,7 +16,8 @@ Dokumen ini merangkum aturan yang saat ini dipakai aplikasi untuk login, outlet,
 - Role `karyawan_outlet` selalu ditolak login.
 - Jika ada token device di browser:
   - outlet device harus sama dengan outlet user,
-  - khusus role `kitchen`, akun hanya boleh aktif di 1 device pada saat yang sama.
+  - untuk role `kasir` dan `kitchen`, akun hanya boleh aktif di 1 device pada saat yang sama.
+  - login di device baru akan mengambil alih sesi aktif, lalu device lama dipaksa logout saat request berikutnya.
 
 ## 3) Rule Pairing Device
 - Kode pairing dibuat oleh `admin/manager` dari menu Admin `Perangkat POS`.
@@ -34,12 +35,13 @@ Dokumen ini merangkum aturan yang saat ini dipakai aplikasi untuk login, outlet,
   - jika token tidak ada/tidak valid, user diarahkan ke `/pos/device/register`,
   - jika user punya `outlet_id`, outlet device harus sama dengan outlet user.
 
-## 5) Rule Single-Device (Kitchen)
-- Berlaku untuk role `kitchen`.
+## 5) Rule Single-Device (Kasir/Kitchen, Dengan Takeover)
+- Berlaku untuk role `kasir` dan `kitchen`.
 - Satu user hanya boleh punya 1 `active_pos_device_id` aktif.
-- Jika user masih aktif di device A, login di device B ditolak.
+- Jika user login di device B, `active_pos_device_id` langsung pindah ke device B.
+- Device A (lama) akan otomatis logout saat mengakses POS lagi.
 - Cara pindah device:
-  1. Logout di device lama, atau
+  1. Cukup login di device baru (takeover otomatis), atau
   2. Admin revoke device lama dari menu `Perangkat POS`.
 
 ## 6) Rule PIN Login di Device POS
@@ -54,6 +56,6 @@ Pertanyaan: apakah user outlet bisa buka di perangkat mana saja selama dapat kod
 
 Jawaban:
 - `Bisa`, dengan syarat kode pairing valid dan outlet pada kode pairing sama dengan outlet user.
-- Role `kasir` boleh login di banyak perangkat selama tiap perangkat sudah pairing valid.
-- Role `kitchen` tetap single-device (tidak bisa aktif bersamaan di banyak perangkat).
+- Role `kasir` dan `kitchen` tidak bisa aktif bersamaan di banyak perangkat.
+- Saat login di perangkat baru, sesi perangkat lama akan diputus otomatis.
 - Role `karyawan_outlet` tetap `tidak bisa login`, walaupun punya kode pairing.

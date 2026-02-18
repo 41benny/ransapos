@@ -6,10 +6,13 @@ use App\Models\Setting;
 use App\Models\PosDevice;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsurePosDevice
 {
+    private const SINGLE_DEVICE_ROLES = ['kasir', 'kitchen'];
+
     /**
      * Handle an incoming request.
      *
@@ -30,7 +33,12 @@ class EnsurePosDevice
                     ->first();
 
                 if ($device) {
+                    if ($response = $this->enforceSingleDeviceSession($request, $device)) {
+                        return $response;
+                    }
+
                     $this->syncDeviceTelemetry($device, $request);
+                    $request->attributes->set('pos_device', $device);
                 }
             }
 
@@ -56,6 +64,10 @@ class EnsurePosDevice
         $user = $request->user();
         if ($user && $user->outlet_id && $device->outlet_id !== $user->outlet_id) {
             return $this->reject($request, 'Perangkat ini tidak terdaftar untuk outlet Anda.');
+        }
+
+        if ($response = $this->enforceSingleDeviceSession($request, $device)) {
+            return $response;
         }
 
         $this->syncDeviceTelemetry($device, $request);
@@ -124,6 +136,43 @@ class EnsurePosDevice
                 $device->forceFill($updatePayload)->save();
             }
         }
+    }
+
+    protected function enforceSingleDeviceSession(Request $request, PosDevice $device): ?Response
+    {
+        $user = $request->user();
+        if (!$user || !$user->hasRole(self::SINGLE_DEVICE_ROLES)) {
+            return null;
+        }
+
+        if (!$user->active_pos_device_id) {
+            $user->forceFill(['active_pos_device_id' => $device->id])->save();
+
+            return null;
+        }
+
+        if ((int) $user->active_pos_device_id === (int) $device->id) {
+            return null;
+        }
+
+        Auth::logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        $message = 'Sesi Anda telah dipindahkan ke perangkat lain. Silakan login kembali.';
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 401);
+        }
+
+        return redirect()->route('pos.pin.show')->withErrors([
+            'email' => $message,
+        ]);
     }
 
     protected function extractDeviceMeta(Request $request): array

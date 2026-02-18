@@ -19,7 +19,7 @@ class PinLoginController extends Controller
     private const MAX_ATTEMPTS = 5;
     private const DECAY_SECONDS = 900;
     private const ALLOWED_ROLES = ['kasir', 'admin', 'kitchen'];
-    private const SINGLE_DEVICE_ROLES = ['kitchen'];
+    private const SINGLE_DEVICE_ROLES = ['kasir', 'kitchen'];
 
     public function show(Request $request): View|RedirectResponse
     {
@@ -116,17 +116,8 @@ class PinLoginController extends Controller
         }
 
         if ($user->hasRole(self::SINGLE_DEVICE_ROLES)
-            && $user->active_pos_device_id
             && (int) $user->active_pos_device_id !== (int) $device->id) {
-            RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
-
-            throw ValidationException::withMessages([
-                'pin' => 'Akun sedang aktif di perangkat lain. Logout dari perangkat sebelumnya atau hubungi admin.',
-            ]);
-        }
-
-        if ($user->hasRole(self::SINGLE_DEVICE_ROLES)
-            && (int) $user->active_pos_device_id !== (int) $device->id) {
+            // Device baru langsung mengambil alih sesi aktif user.
             $user->forceFill(['active_pos_device_id' => $device->id])->save();
         }
 
