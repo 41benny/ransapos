@@ -157,12 +157,35 @@
                                         return 'batch:' . $transaction->reference_id;
                                     }
 
+                                    // Fallback untuk data lama (sebelum ada reference general_batch):
+                                    // satu submit multi-baris biasanya punya cap created_at detik yang sama.
+                                    $isLegacyCandidate = empty($transaction->reference_type)
+                                        && empty($transaction->reference_id)
+                                        && !empty($transaction->created_at);
+
+                                    if ($isLegacyCandidate) {
+                                        $createdAtKey = optional($transaction->created_at)->format('Y-m-d H:i:s');
+                                        $dateKey = optional($transaction->transaction_date)->format('Y-m-d');
+                                        $notesHash = md5(trim((string) ($transaction->notes ?? '')));
+
+                                        return 'legacy:' . implode('|', [
+                                            (string) $transaction->cash_account_id,
+                                            (string) ($transaction->created_by ?? 0),
+                                            (string) $transaction->type,
+                                            (string) $dateKey,
+                                            (string) $createdAtKey,
+                                            $notesHash,
+                                        ]);
+                                    }
+
                                     return 'single:' . $transaction->id;
                                 })
-                                ->map(function ($group) {
+                                ->map(function ($group, $groupKey) {
                                     $representative = $group->first();
                                     $rowCount = $group->count();
-                                    $isBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
+                                    $isGeneralBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
+                                    $isLegacyBatch = $rowCount > 1 && Str::startsWith($groupKey, 'legacy:');
+                                    $isBatch = $isGeneralBatch || $isLegacyBatch;
 
                                     $representative->setAttribute('display_amount', (float) $group->sum('amount'));
                                     $representative->setAttribute('display_row_count', $rowCount);
