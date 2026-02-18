@@ -7,14 +7,14 @@
         <div class="mb-6 flex justify-between items-center">
             <div>
                 <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                    <a href="{{ route('admin.cash-transactions.index') }}" class="hover:text-indigo-600">Transaksi</a>
+                    <a href="{{ route('admin.cash-transactions.index', request()->query()) }}" class="hover:text-indigo-600">Transaksi</a>
                     <span>/</span>
                     <span class="text-gray-900">Detail</span>
                 </div>
                 <h1 class="text-2xl font-bold text-gray-900">Detail Transaksi</h1>
             </div>
             <div class="flex space-x-2">
-                <a href="{{ route('admin.cash-transactions.edit', $cashTransaction) }}"
+                <a href="{{ route('admin.cash-transactions.edit', array_merge(['cashTransaction' => $cashTransaction], request()->query())) }}"
                     class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg flex items-center space-x-2">
                     <i class="fas fa-edit"></i>
                     <span>Edit</span>

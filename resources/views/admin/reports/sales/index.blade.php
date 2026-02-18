@@ -2,315 +2,351 @@
 
 @section('title', 'Laporan Penjualan')
 @section('page-title', 'Laporan Penjualan')
-@section('page-subtitle', 'Ringkasan dan detail transaksi penjualan')
+@section('page-subtitle', 'Ringkasan dan detail transaksi penjualan unit usaha')
 
 @section('content')
-<div class="mb-4 no-print flex justify-end">
-    <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
-        class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
-        Kembali ke Katalog
-    </a>
-</div>
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
-
-    <!-- Filter Section -->
-    <div class="p-6 border-b border-gray-100 no-print">
-        <form method="GET" action="{{ route('admin.reports.sales.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <input type="hidden" name="tab" value="{{ request('tab', 'penjualan') }}">
-
-            <!-- Date From -->
+    <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-                <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Laporan Penjualan</h1>
+                <p class="text-xs font-normal text-slate-500 mt-0.5">Ringkasan dan detail transaksi penjualan unit usaha</p>
             </div>
-
-            <!-- Date To -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
-                <input type="date" name="date_to" value="{{ $dateTo }}" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-            </div>
-
-            <!-- Outlet -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
-                <select name="outlet_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Semua Outlet</option>
-                    @foreach($outlets as $outlet)
-                    <option value="{{ $outlet->id }}" {{ ($filters['outlet_id'] ?? '') == $outlet->id ? 'selected' : '' }}>
-                        {{ $outlet->name }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Kasir -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Kasir</label>
-                <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Semua Kasir</option>
-                    @foreach($users as $user)
-                    <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
-                        {{ $user->name }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Payment Method -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran</label>
-                <select name="payment_method_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Semua Metode</option>
-                    @foreach($paymentMethods as $method)
-                    <option value="{{ $method->id }}" {{ ($filters['payment_method_id'] ?? '') == $method->id ? 'selected' : '' }}>
-                        {{ $method->name }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Mode View -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tampilan</label>
-                <select name="view_mode" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
-                    <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
-                </select>
-            </div>
-
-            <!-- Actions -->
-            <div class="md:col-span-6 flex space-x-2">
-                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
-                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    Filter
-                </button>
-                <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}" class="px-5 py-2.5 bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 rounded-full transition">
-                    Reset
+            <div class="flex items-center gap-3 no-print">
+                <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
+                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    <i class="fas fa-arrow-left text-[10px]"></i>
+                    <span>Kembali ke Katalog</span>
                 </a>
-                <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}" class="px-5 py-2.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-full transition">
-                    Export Excel
-                </a>
-                <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}" class="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-full transition">
-                    Export PDF
-                </a>
-                <button type="button" onclick="window.print()" class="ml-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-full transition shadow-md hover:shadow-lg">
-                    <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Print
-                </button>
             </div>
-        </form>
-    </div>
+        </div>
 
-    <!-- Report Header (Print) -->
-    <div class="p-6 border-b border-gray-100 print-only hidden">
-        <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-900">LAPORAN PENJUALAN</h1>
-            <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
-            <p class="text-sm text-gray-500">Dicetak: {{ now()->format('d M Y, H:i') }}</p>
+        <!-- Filter Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-filter text-indigo-500 text-xs"></i>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Laporan</h3>
+                </div>
+            </div>
+            <div class="p-5">
+                <form method="GET" action="{{ route('admin.reports.sales.index') }}" class="space-y-4">
+                    <input type="hidden" name="tab" value="{{ request('tab', 'penjualan') }}">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <!-- Date From -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari Tanggal</label>
+                            <input type="date" name="date_from" value="{{ $dateFrom }}" required
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        </div>
+
+                        <!-- Date To -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai Tanggal</label>
+                            <input type="date" name="date_to" value="{{ $dateTo }}" required
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        </div>
+
+                        <!-- Outlet -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
+                            <select name="outlet_id"
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <option value="">Semua Outlet</option>
+                                @foreach($outlets as $outlet)
+                                    <option value="{{ $outlet->id }}" {{ ($filters['outlet_id'] ?? '') == $outlet->id ? 'selected' : '' }}>
+                                        {{ $outlet->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Kasir -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kasir</label>
+                            <select name="user_id"
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <option value="">Semua Kasir</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pembayaran</label>
+                            <select name="payment_method_id"
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <option value="">Semua Metode</option>
+                                @foreach($paymentMethods as $method)
+                                    <option value="{{ $method->id }}" {{ ($filters['payment_method_id'] ?? '') == $method->id ? 'selected' : '' }}>
+                                        {{ $method->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Mode View -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tampilan</label>
+                            <select name="view_mode"
+                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
+                                <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <div class="flex items-center gap-2">
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                                <i class="fas fa-filter text-[10px]"></i>
+                                <span>Terapkan Filter</span>
+                            </button>
+                            <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                <i class="fas fa-undo text-[10px]"></i>
+                                <span>Reset</span>
+                            </a>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
+                                <i class="fas fa-file-excel text-[10px]"></i>
+                                <span>Excel</span>
+                            </a>
+                            <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-xs font-normal text-rose-700 border border-rose-100 shadow-sm transition-all hover:bg-rose-100 active:scale-95">
+                                <i class="fas fa-file-pdf text-[10px]"></i>
+                                <span>PDF</span>
+                            </a>
+                            <button type="button" onclick="window.print()"
+                                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95">
+                                <i class="fas fa-print text-[10px]"></i>
+                                <span>Cetak Laporan</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Report Header (Print) -->
+        <div class="p-6 border-b border-gray-100 print-only hidden">
+            <div class="text-center mb-4">
+                <h1 class="text-2xl font-normal text-gray-900">LAPORAN PENJUALAN</h1>
+                <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} -
+                    {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
+                <p class="text-sm text-gray-500">Dicetak: {{ now()->format('d M Y, H:i') }}</p>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            <!-- Total Transaksi Card -->
+            <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-indigo-500">Total Transaksi</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                        <i class="fas fa-shopping-bag text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-normal text-slate-800">{{ $summary['total_transactions'] }}</h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Transaksi Terhitung</p>
+                </div>
+            </div>
+
+            <!-- Total Omzet Card -->
+            <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Total Omzet</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                        <i class="fas fa-money-bill-wave text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}</h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Penjualan Kotor</p>
+                </div>
+            </div>
+
+            <!-- Total Pembulatan Card -->
+            <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-slate-500">Total Pembulatan</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-600 transition-colors group-hover:bg-slate-600 group-hover:text-white">
+                        <i class="fas fa-coins text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-normal text-slate-800">
+                        {{ $summary['total_rounding'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($summary['total_rounding']), 0, ',', '.') }}
+                    </h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Selisih Pembulatan</p>
+                </div>
+            </div>
+
+            <!-- Average Card -->
+            <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-purple-500">Rerata Per Transaksi</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white">
+                        <i class="fas fa-percentage text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['avg_per_transaction'], 0, ',', '.') }}</h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Average Value</p>
+                </div>
+            </div>
+
+            <!-- Cash vs Non Card -->
+            <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-amber-500">Cash vs Non-Cash</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+                        <i class="fas fa-credit-card text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['total_cash'], 0, ',', '.') }}</h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5 text-ellipsis overflow-hidden whitespace-nowrap">Cash: {{ number_format($summary['total_cash'], 0, ',', '.') }} | Non: {{ number_format($summary['total_non_cash'], 0, ',', '.') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
+                        @if(($viewMode ?? 'ringkas') === 'detail')
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">No Transaksi</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tanggal</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Produk</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Qty</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Harga</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Diskon</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Subtotal</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Total</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Metode</th>
+                            </tr>
+                        @else
+                            <tr>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tanggal & Jam</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Invoice</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Kasir</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Pembayaran</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Bulat</th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Total</th>
+                            </tr>
+                        @endif
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        @if(($viewMode ?? 'ringkas') === 'detail')
+                            @forelse($detailRows as $row)
+                                <tr class="group hover:bg-slate-50/80 transition-colors">
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-800">{{ $row->transaction_number }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ \Carbon\Carbon::parse($row->sale_date)->format('d M Y') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-800 font-normal uppercase tracking-tighter">{{ $row->product_name }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-800 font-normal">{{ number_format($row->qty, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-500 italic">Rp {{ number_format($row->price, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-rose-500 font-normal whitespace-nowrap">Rp {{ number_format($row->item_discount, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] font-normal text-slate-800">Rp {{ number_format($row->item_subtotal, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] font-normal text-indigo-600">Rp {{ number_format($row->item_total ?? $row->item_subtotal, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-normal {{ $row->payment_status === 'Lunas' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }}">
+                                            {{ $row->payment_status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">{{ $row->payment_methods }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="11" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center opacity-40">
+                                            <i class="fas fa-receipt text-4xl mb-4 text-slate-300"></i>
+                                            <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada detail penjualan pada periode ini</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        @else
+                            @forelse($sales as $sale)
+                                <tr class="group hover:bg-slate-50/80 transition-colors">
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-600">
+                                        {{ $sale->created_at->format('d M Y, H:i') }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-800">
+                                        {{ $sale->invoice_number }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">
+                                        {{ $sale->outlet->name }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">
+                                        {{ $sale->user->name }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-normal bg-indigo-50 text-indigo-700">
+                                            {{ $sale->payments->first()->paymentMethod->name ?? 'Mixed' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-400 italic">
+                                        {{ (float) $sale->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs((float) $sale->rounding_amount), 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] font-normal text-slate-900">
+                                        Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center opacity-40">
+                                            <i class="fas fa-file-invoice-dollar text-4xl mb-4 text-slate-300"></i>
+                                            <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada transaksi pada periode ini</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        @endif
+                    </tbody>
+                    @if(($viewMode ?? 'ringkas') !== 'detail' && $sales->count() > 0)
+                        <tfoot class="bg-indigo-50/30">
+                            <tr>
+                                <td colspan="6" class="px-4 py-3 text-right text-[10px] font-normal text-slate-600 uppercase tracking-wider">
+                                    TOTAL ({{ $summary['total_transactions'] }} transaksi):
+                                </td>
+                                <td class="px-4 py-3 text-right text-sm font-normal text-indigo-700">
+                                    Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="p-6 border-b border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-
-            <!-- Total Transaksi -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p class="text-sm text-blue-600 font-medium mb-1">Total Transaksi</p>
-                <p class="text-3xl font-bold text-blue-900">{{ $summary['total_transactions'] }}</p>
-            </div>
-
-            <!-- Total Omzet -->
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p class="text-sm text-green-600 font-medium mb-1">Total Omzet</p>
-                <p class="text-3xl font-bold text-green-900">Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}</p>
-            </div>
-
-            <!-- Total Pembulatan -->
-            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p class="text-sm text-slate-600 font-medium mb-1">Total Pembulatan</p>
-                <p class="text-2xl font-bold text-slate-900">
-                    {{ $summary['total_rounding'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($summary['total_rounding']), 2, ',', '.') }}
-                </p>
-                <p class="text-xs text-slate-600 mt-1">
-                    Sebelum bulat: Rp {{ number_format($summary['total_before_rounding'], 2, ',', '.') }}
-                </p>
-            </div>
-
-            <!-- Rata-rata per Transaksi -->
-            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <p class="text-sm text-purple-600 font-medium mb-1">Rata-rata Transaksi</p>
-                <p class="text-3xl font-bold text-purple-900">Rp {{ number_format($summary['avg_per_transaction'], 0, ',', '.') }}</p>
-            </div>
-
-            <!-- Cash vs Non-Cash -->
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <p class="text-sm text-orange-600 font-medium mb-1">Cash vs Non-Cash</p>
-                <p class="text-lg font-bold text-orange-900">
-                    Rp {{ number_format($summary['total_cash'], 0, ',', '.') }}
-                </p>
-                <p class="text-sm text-orange-700">
-                    Non-Cash: Rp {{ number_format($summary['total_non_cash'], 0, ',', '.') }}
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Detail Transactions -->
-    <div class="overflow-x-auto">
-        <table class="imperial-table w-full">
-            <thead>
-                @if(($viewMode ?? 'ringkas') === 'detail')
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">No Transaksi</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Qty</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Harga</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Diskon per item</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Subtotal</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pajak</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Service Charge</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pembulatan</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status Pembayaran</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Metode Pembayaran</th>
-                    </tr>
-                @else
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal & Jam</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Invoice</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kasir</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Pembayaran</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Pembulatan</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
-                    </tr>
-                @endif
-            </thead>
-            <tbody>
-                @if(($viewMode ?? 'ringkas') === 'detail')
-                    @forelse($detailRows as $row)
-                    <tr>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm font-mono text-gray-900">{{ $row->transaction_number }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ \Carbon\Carbon::parse($row->sale_date)->format('d M Y') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ $row->outlet_name }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{{ $row->product_name }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">{{ number_format($row->qty, 2, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->price, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-rose-700">Rp {{ number_format($row->item_discount, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->item_subtotal, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->tax_amount, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">Rp {{ number_format($row->service_charge_amount, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
-                            {{ $row->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs($row->rounding_amount), 2, ',', '.') }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">Rp {{ number_format($row->item_total ?? $row->item_subtotal, 0, ',', '.') }}</td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm">
-                            @if($row->payment_status === 'Lunas')
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Lunas</span>
-                            @elseif($row->payment_status === 'Parsial')
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">Parsial</span>
-                            @else
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">Belum Bayar</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ $row->payment_methods }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="15" class="px-6 py-12 text-center">
-                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <p class="text-gray-500">Tidak ada detail penjualan pada periode ini</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                @else
-                    @forelse($sales as $sale)
-                    <tr>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
-                            {{ $sale->created_at->format('d M Y, H:i') }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm font-mono text-gray-900">
-                            {{ $sale->invoice_number }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
-                            {{ $sale->outlet->name }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
-                            {{ $sale->user->name }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
-                            {{ $sale->payments->first()->paymentMethod->name ?? '-' }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm text-gray-900">
-                            {{ (float) $sale->rounding_amount >= 0 ? '+' : '-' }}Rp {{ number_format(abs((float) $sale->rounding_amount), 2, ',', '.') }}
-                        </td>
-                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
-                            Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center">
-                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <p class="text-gray-500">Tidak ada transaksi pada periode ini</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                @endif
-            </tbody>
-            @if(($viewMode ?? 'ringkas') !== 'detail' && $sales->count() > 0)
-            <tfoot>
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-right text-sm font-bold text-gray-900">
-                        TOTAL ({{ $summary['total_transactions'] }} transaksi):
-                    </td>
-                    <td class="px-6 py-4 text-right text-lg font-bold text-amber-700">
-                        Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}
-                    </td>
-                </tr>
-            </tfoot>
-            @endif
-        </table>
-    </div>
-</div>
-
-<!-- Print CSS -->
-<style>
-@media print {
-    .no-print {
-        display: none !important;
-    }
-    .print-only {
-        display: block !important;
-    }
-    body {
-        background: white;
-    }
-    .bg-gray-50 {
-        background: white !important;
-    }
-    aside {
-        display: none !important;
-    }
-    header {
-        display: none !important;
-    }
-    main {
-        padding: 0 !important;
-    }
-}
-</style>
+    @push('styles')
+        <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; }
+            aside, header { display: none !important; }
+            main { padding: 0 !important; }
+        }
+        </style>
+    @endpush
 @endsection

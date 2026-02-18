@@ -195,11 +195,11 @@
                                         <td class="px-4 py-3">
                                             <div class="relative">
                                                 <span class="absolute left-3 top-2 text-gray-500">Rp</span>
-                                                <input type="number"
+                                                <input type="text"
                                                        name="rows[{{ $i }}][amount]"
                                                        value="{{ $row['amount'] ?? '' }}"
-                                                       step="0.01"
-                                                       min="0.01"
+                                                       inputmode="decimal"
+                                                       data-currency-input="1"
                                                        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.amount') border-red-500 @enderror"
                                                        placeholder="0"
                                                        required>
@@ -279,12 +279,12 @@
                             <label for="purchase_amount" class="block text-sm font-medium text-gray-700 mb-2">
                                 Jumlah Pembayaran <span class="text-red-500">*</span>
                             </label>
-                            <input type="number"
+                            <input type="text"
                                    id="purchase_amount"
                                    name="purchase_amount"
                                    value="{{ old('purchase_amount') }}"
-                                   min="0.01"
-                                   step="0.01"
+                                   inputmode="decimal"
+                                   data-currency-input="1"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_amount') border-red-500 @enderror"
                                    placeholder="0">
                             @error('purchase_amount')
@@ -338,12 +338,12 @@
                             <label for="transfer_amount" class="block text-sm font-medium text-gray-700 mb-2">
                                 Jumlah Pindah Buku <span class="text-red-500">*</span>
                             </label>
-                            <input type="number"
+                            <input type="text"
                                    id="transfer_amount"
                                    name="transfer_amount"
                                    value="{{ old('transfer_amount') }}"
-                                   min="0.01"
-                                   step="0.01"
+                                   inputmode="decimal"
+                                   data-currency-input="1"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_amount') border-red-500 @enderror"
                                    placeholder="0">
                             @error('transfer_amount')
@@ -419,10 +419,10 @@
         <td class="px-4 py-3">
             <div class="relative">
                 <span class="absolute left-3 top-2 text-gray-500">Rp</span>
-                <input type="number"
+                <input type="text"
                        name="rows[__INDEX__][amount]"
-                       step="0.01"
-                       min="0.01"
+                       inputmode="decimal"
+                       data-currency-input="1"
                        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                        placeholder="0"
                        required>
@@ -462,6 +462,82 @@
 
         let nextIndex = 0;
 
+        function parseCurrencyInput(value) {
+            const raw = String(value ?? '').trim().replace(/[^\d,.\-]/g, '');
+            if (!raw) {
+                return 0;
+            }
+
+            let normalized = raw;
+            const hasComma = normalized.includes(',');
+            const dotCount = (normalized.match(/\./g) || []).length;
+
+            if (hasComma) {
+                normalized = normalized.replace(/\./g, '').replace(',', '.');
+            } else if (dotCount > 0) {
+                const dotParts = normalized.split('.');
+                const decimalLike = dotCount === 1
+                    && dotParts[1]
+                    && dotParts[1].length > 0
+                    && dotParts[1].length <= 2;
+
+                if (!decimalLike) {
+                    normalized = normalized.replace(/\./g, '');
+                }
+            }
+
+            normalized = normalized.replace(/(?!^)-/g, '');
+            const parsed = Number(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function formatCurrencyInput(value) {
+            const numeric = Number(value || 0);
+            if (!Number.isFinite(numeric)) {
+                return '';
+            }
+
+            return numeric.toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+            });
+        }
+
+        function sanitizeCurrencyInputValue(value) {
+            const raw = String(value ?? '').trim();
+            if (!raw) {
+                return '';
+            }
+
+            return String(parseCurrencyInput(raw));
+        }
+
+        function attachCurrencyInput(input, onChange) {
+            if (!input || input.dataset.currencyBound === '1') {
+                return;
+            }
+
+            input.dataset.currencyBound = '1';
+            const render = () => {
+                const raw = String(input.value ?? '').trim();
+                if (!raw) {
+                    if (typeof onChange === 'function') {
+                        onChange();
+                    }
+                    return;
+                }
+
+                input.value = formatCurrencyInput(parseCurrencyInput(raw));
+                if (typeof onChange === 'function') {
+                    onChange();
+                }
+            };
+
+            input.addEventListener('input', render);
+            input.addEventListener('blur', render);
+            render();
+        }
+
         function formatCurrency(amount) {
             return 'Rp ' + amount.toLocaleString('id-ID', {
                 minimumFractionDigits: 0,
@@ -486,7 +562,7 @@
                     return carry;
                 }
 
-                const parsed = parseFloat(input.value);
+                const parsed = parseCurrencyInput(input.value);
                 if (Number.isNaN(parsed) || parsed <= 0) {
                     return carry;
                 }
@@ -569,7 +645,7 @@
             purchaseRemainingInfoEl.textContent = 'Sisa hutang purchase: Rp ' + remaining.toLocaleString('id-ID');
 
             if (purchaseAmountEl && !purchaseAmountEl.value) {
-                purchaseAmountEl.value = remaining;
+                purchaseAmountEl.value = formatCurrencyInput(remaining);
             }
         }
 
@@ -600,6 +676,7 @@
 
             const amountInput = row.querySelector('input[name$="[amount]"]');
             if (amountInput) {
+                attachCurrencyInput(amountInput, refreshRowsSummary);
                 amountInput.addEventListener('input', refreshRowsSummary);
                 amountInput.addEventListener('change', refreshRowsSummary);
             }
@@ -635,11 +712,17 @@
             purchaseSelectEl.addEventListener('change', syncPurchaseRemainingInfo);
         }
 
+        attachCurrencyInput(purchaseAmountEl);
+        attachCurrencyInput(document.getElementById('transfer_amount'));
+
         const formEl = rowsEl ? rowsEl.closest('form') : null;
         const typeHiddenEl = document.getElementById('type_hidden');
         if (formEl && typeHiddenEl && typeEl) {
             formEl.addEventListener('submit', function () {
                 typeHiddenEl.value = typeEl.value || '';
+                formEl.querySelectorAll('[data-currency-input="1"]').forEach((input) => {
+                    input.value = sanitizeCurrencyInputValue(input.value);
+                });
             });
         }
 

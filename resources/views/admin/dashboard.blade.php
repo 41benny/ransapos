@@ -5,119 +5,127 @@
 @section('page-title', 'Dashboard Penjualan')
 
 @section('content')
-    <div class="dashboard-hero bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div class="flex flex-col lg:flex-row gap-4 lg:items-end lg:justify-between">
+    <div class="space-y-6 mb-8">
+        {{-- Modern Dashboard Header --}}
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-                <p class="text-sm text-orange-500 font-medium">Pantau omzet (near real-time)</p>
-                <h2 class="text-xl font-bold text-slate-900">Ringkasan Penjualan</h2>
+                <div class="text-[10px] font-bold uppercase tracking-widest text-orange-500 mb-1">Live Statistics</div>
+                <h2 class="text-3xl font-black text-slate-800">Ringkasan Penjualan</h2>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Outlet</label>
+            <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col px-3">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Outlet Selection</span>
                     <select id="outletId"
-                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400">
+                        class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
                         <option value="all">Semua Outlet</option>
                         @foreach ($outlets as $outlet)
                             <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
+                <div class="h-8 w-px bg-slate-100"></div>
+                <div class="flex flex-col px-3">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Date Range</span>
                     <input id="date" type="date" value="{{ $defaultDate }}"
-                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
+                        class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer" />
                 </div>
-                <div class="flex items-end gap-2">
-                    <button id="refreshBtn" type="button" class="btn btn-primary w-full justify-center">
-                        <i class="fas fa-rotate"></i>
-                        Refresh
-                    </button>
-                </div>
+                <button id="refreshBtn" type="button"
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                    <i class="fas fa-sync-alt text-xs"></i>
+                </button>
             </div>
         </div>
 
-        <div class="mt-4 flex items-center justify-between text-xs text-orange-500 font-medium">
-            <div id="statusText">Memuat data...</div>
-            <div>Last updated: <span id="lastUpdated">-</span></div>
+        <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <div id="statusText" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Data
+                    Synchronized</div>
+            </div>
+            <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Last updated: <span id="lastUpdated" class="text-slate-600">-</span>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-orange-50 rounded-xl">
-                    <i class="fas fa-coins text-orange-600"></i>
+    {{-- Row 1: KPI Stats --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {{-- Omzet KPI --}}
+        <div
+            class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                    <i class="fas fa-coins text-lg"></i>
                 </div>
-                <div class="relative group">
-                    <button type="button"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
-                        aria-label="Lihat breakdown omzet per outlet">
-                        <i class="fas fa-circle-info"></i>
-                    </button>
-                    <div
-                        class="pointer-events-none absolute right-0 top-full mt-2 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-3 text-xs text-slate-700 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
-                        <div class="font-semibold text-slate-900 mb-1">Breakdown Omzet per Outlet</div>
-                        <div id="outletBreakdownHint" class="text-slate-600">Pilih <span class="font-semibold">Semua
-                                Outlet</span> untuk melihat rinciannya.</div>
-                        <div id="outletBreakdownWrap" class="hidden mt-2">
-                            <div class="max-h-56 overflow-auto rounded-lg border border-slate-100">
-                                <table class="w-full">
-                                    <thead class="bg-slate-50 text-slate-600">
-                                        <tr>
-                                            <th class="text-left px-3 py-2 font-semibold">Outlet</th>
-                                            <th class="text-right px-3 py-2 font-semibold">Omzet</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="outletBreakdownRows" class="divide-y divide-slate-100"></tbody>
-                                </table>
-                            </div>
-                            <div class="mt-2 text-[11px] text-slate-500">Angka menghitung transaksi <span
-                                    class="font-semibold">completed</span>.</div>
-                        </div>
+                <div class="text-right">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Total Revenue</span>
+                    <span id="trendSalesPct" class="text-xs font-black text-emerald-500">-</span>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <h3 id="kpiTotalSales" class="text-3xl font-black text-slate-800 tracking-tight">-</h3>
+                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>vs Yesterday:</span>
+                    <span id="trendSales" class="text-slate-600">-</span>
+                </div>
+            </div>
+            <div class="absolute bottom-0 left-0 h-1 w-0 bg-indigo-600 transition-all duration-500 group-hover:w-full">
+            </div>
+        </div>
+
+        {{-- Avg Transaction KPI --}}
+        <div
+            class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+                    <i class="fas fa-chart-simple text-lg"></i>
+                </div>
+                <div class="text-right">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Performance
+                        Index</span>
+                    <span class="text-xs font-black text-slate-400">AVG</span>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <h3 id="kpiAvgTransaction" class="text-3xl font-black text-slate-800 tracking-tight">-</h3>
+                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>Bill Per Invoice</span>
+                </div>
+            </div>
+            <div class="absolute bottom-0 left-0 h-1 w-0 bg-amber-500 transition-all duration-500 group-hover:w-full"></div>
+        </div>
+
+        {{-- Growth KPI --}}
+        <div
+            class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+                <div
+                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
+                    <i class="fas fa-arrow-trend-up text-lg"></i>
+                </div>
+                <div class="text-right">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Daily
+                        Progress</span>
+                    <span class="text-xs font-black text-slate-400">TREND</span>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <div id="targetWrap" class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span id="targetPct" class="text-3xl font-black text-slate-800 tracking-tight">0%</span>
+                        <span id="targetValue"
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target: -</span>
+                    </div>
+                    <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div id="targetBar" class="h-full bg-rose-500 rounded-full transition-all duration-1000"
+                            style="width: 0%"></div>
                     </div>
                 </div>
             </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Omzet</p>
-            <p id="kpiTotalSales" class="text-2xl font-bold text-slate-900">-</p>
-            <div class="mt-2 text-xs text-slate-500 space-y-1">
-                <div>Status: completed</div>
-                <div>Vs kemarin: <span id="trendSales" class="font-semibold text-slate-700">-</span></div>
-            </div>
-            <div id="targetWrap" class="mt-3 hidden">
-                <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                    <div>Target harian</div>
-                    <div><span id="targetValue">-</span> (<span id="targetPct">-</span>)</div>
-                </div>
-                <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div id="targetBar" class="h-2 rounded-full bg-emerald-500/80" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#f59e0b;--dash-accent-2:#fbbf24;--dash-accent-soft:rgba(245,158,11,0.14);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-amber-50 rounded-xl">
-                    <i class="fas fa-chart-simple text-amber-600"></i>
-                </div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Rata-rata Transaksi</p>
-            <p id="kpiAvgTransaction" class="text-2xl font-bold text-slate-900">-</p>
-            <p class="text-xs text-slate-500 mt-2">Omzet / transaksi</p>
-        </div>
-
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#c2410c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(194,65,12,0.14);">
-            <div class="flex items-start justify-between mb-3">
-                <div class="p-3 bg-orange-50 rounded-xl">
-                    <i class="fas fa-arrow-trend-up text-orange-700"></i>
-                </div>
-            </div>
-            <p class="text-sm text-slate-500 font-medium mb-1">Trend vs Kemarin</p>
-            <p id="trendSalesPct" class="text-2xl font-bold text-slate-900">-</p>
-            <p class="text-xs text-slate-500 mt-2">Omzet & transaksi dibanding H-1</p>
+            <div class="absolute bottom-0 left-0 h-1 w-0 bg-rose-600 transition-all duration-500 group-hover:w-full"></div>
         </div>
     </div>
 
@@ -132,103 +140,93 @@
                 <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
             </div>
 
-            <div class="hourly-chart h-52 flex items-end gap-1.5 relative" id="hourlyBars"
-                aria-label="Sales per hour chart"></div>
-            <div id="hourlyEmpty" class="hidden mt-2 text-xs font-semibold text-orange-700">Data per jam belum tersedia
-                untuk filter ini.
-            </div>
-            <div class="mt-3 grid grid-cols-12 text-[10px] text-slate-400">
-                @for ($i = 0; $i < 24; $i += 2)
-                    <div class="col-span-1 text-left">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</div>
-                @endfor
-            </div>
+            <div class="h-64 w-full" id="hourlyBars"></div>
+            <div id="hourlyEmpty" class="hidden mt-2 text-xs font-semibold text-orange-700 text-center">Data per jam belum
+                tersedia untuk filter ini.</div>
         </div>
 
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#fb923c;--dash-accent-2:#fdba74;--dash-accent-soft:rgba(251,146,60,0.14);">
-            <div class="dash-card-head flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900">Per Kategori</h3>
-                    <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
+        {{-- Column 1: Per Kategori --}}
+            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="block text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Breakdown</span>
+                        <h3 class="text-lg font-black text-slate-800">Per Kategori</h3>
+                    </div>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                        <i class="fas fa-tags text-sm"></i>
+                    </div>
                 </div>
-            </div>
 
-            <div class="overflow-hidden rounded-xl border border-slate-100">
                 <div id="categoryList" class="space-y-5"></div>
+                <div id="categoryEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
             </div>
-
-            <div id="categoryEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#f97316;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(249,115,22,0.13);">
-            <div class="dash-card-head flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900">Metode Pembayaran</h3>
-                    <p class="text-xs text-slate-500">Komposisi pembayaran (completed)</p>
-                </div>
-            </div>
-            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col" style="max-height: 400px;">
-                <div class="overflow-y-auto overflow-x-hidden grow custom-scrollbar p-1">
-                    <div id="paymentList" class="space-y-3"></div>
-                </div>
-            </div>
-            <div id="paymentEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
         </div>
 
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#ec4913;--dash-accent-2:#f97316;--dash-accent-soft:rgba(236,73,19,0.14);">
-            <div class="dash-card-head flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-900">Top Produk</h3>
-                    <p class="text-xs text-slate-500">Top 10 (item subtotal)</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {{-- Column 1: Metode Pembayaran --}}
+            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="block text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Collection</span>
+                        <h3 class="text-lg font-black text-slate-800">Metode Pembayaran</h3>
+                    </div>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                        <i class="fas fa-credit-card text-sm"></i>
+                    </div>
                 </div>
+
+                <div id="paymentList" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar italic"></div>
+                <div id="paymentEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
             </div>
-            <div class="overflow-hidden rounded-xl border border-slate-100 flex flex-col" style="max-height: 400px;">
-                <div class="overflow-y-auto overflow-x-auto grow custom-scrollbar">
-                    <table class="w-full text-sm relative">
-                        <thead class="sticky top-0 z-10 table-head-accent text-slate-700 text-xs shadow-sm">
+
+            {{-- Column 2: Top Products --}}
+            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="block text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Best Sellers</span>
+                        <h3 class="text-lg font-black text-slate-800">Top Produk</h3>
+                    </div>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                        <i class="fas fa-crown text-sm"></i>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm italic">
+                        <thead class="bg-slate-50/50">
                             <tr>
-                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[50px]">
-                                    Pos</th>
-                                <th class="text-left px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[200px]">
-                                    Produk</th>
-                                <th class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[80px]">
-                                    Qty</th>
-                                <th
-                                    class="text-right px-3 py-3 font-semibold bg-slate-50/95 backdrop-blur-sm min-w-[120px] pr-4">
-                                    Omzet</th>
+                                <th class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Pos</th>
+                                <th class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Produk</th>
+                                <th class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Qty</th>
+                                <th class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Omzet</th>
                             </tr>
                         </thead>
                         <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
-            </div>
-            <div id="productEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-        </div>
-    </div>
-
-    <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-        style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
-        <div class="dash-card-head flex items-center justify-between mb-4">
-            <div>
-                <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
-                <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
+                <div id="productEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
             </div>
         </div>
 
-        <div id="outletBars" class="space-y-3"></div>
+        <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+            style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
+            <div class="dash-card-head flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
+                    <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
+                </div>
+            </div>
 
-        <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
-    </div>
+            <div id="outletBars" class="h-64 w-full"></div>
 
-    <noscript>
-        <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
-            Dashboard ini butuh JavaScript untuk update data otomatis.
+            <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
         </div>
-    </noscript>
+
+        <noscript>
+            <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
+                Dashboard ini butuh JavaScript untuk update data otomatis.
+            </div>
+        </noscript>
 
 @endsection
 
@@ -273,99 +271,8 @@
             background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236, 73, 19, 0.12)), rgba(248, 250, 252, 0.85));
         }
 
-        .hourly-chart {
-            border: 1px solid rgba(251, 146, 60, 0.28);
-            border-radius: 0.9rem;
-            padding: 0.85rem 0.5rem 0.35rem;
-            background:
-                linear-gradient(180deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.9) 100%),
-                repeating-linear-gradient(to top,
-                    rgba(251, 146, 60, 0.1) 0px,
-                    rgba(251, 146, 60, 0.1) 1px,
-                    transparent 1px,
-                    transparent 28px);
-            overflow: visible;
-        }
-
-        .hourly-col {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            flex: 1 1 0%;
-            min-width: 0;
-            align-self: stretch;
-            position: relative;
-        }
-
-        .hourly-bar {
-            width: 100%;
-            border-radius: 0.7rem 0.7rem 0.45rem 0.45rem;
-            background: linear-gradient(180deg, #fb923c 0%, #f97316 45%, #ea580c 100%);
-            position: relative;
-            transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
-            box-shadow: 0 8px 16px -10px rgba(194, 65, 12, 0.65);
-        }
-
-        .hourly-bar::after {
-            content: '';
-            position: absolute;
-            left: 20%;
-            top: 8%;
-            width: 60%;
-            height: 26%;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.23);
-            pointer-events: none;
-        }
-
-        .hourly-bar:hover {
-            transform: translateY(-2px);
-            filter: saturate(1.04);
-        }
-
-        .hourly-bar.is-peak {
-            background: linear-gradient(180deg, #fdba74 0%, #fb923c 40%, #ea580c 100%);
-            box-shadow: 0 14px 24px -12px rgba(194, 65, 12, 0.85);
-        }
-
-        .hourly-bar.is-empty {
-            background: rgba(251, 146, 60, 0.22);
-            box-shadow: none;
-        }
-
-        .hourly-bar.is-empty::after {
-            display: none;
-        }
-
-        .hourly-stack-shell {
-            width: 100%;
-            border-radius: 0.75rem 0.75rem 0.45rem 0.45rem;
-            background: rgba(255, 237, 213, 0.6);
-            overflow: hidden;
-            border: 1px solid rgba(251, 146, 60, 0.2);
-        }
-
-        .hourly-stack-shell:hover {
-            transform: translateY(-1px);
-        }
-
-        .hourly-cap {
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            background: #fdba74;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.92);
-        }
-
-        .hourly-cap.is-peak {
-            width: 8px;
-            height: 8px;
-            background: #f97316;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 6px rgba(249, 115, 22, 0.14);
+        .hourly-chart-container {
+            min-height: 250px;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -441,20 +348,40 @@
 
 
 @push('scripts')
-    <script>     (() => {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script>
+        (() => {
+            let hourlyChart = null;
             let outletChart = null;
             const endpoint = @json(route('admin.dashboard.summary'));
-            const outletIdEl = document.getElementById('outletId'); const dateEl = document.getElementById('date'); const refreshBtn = document.getElementById('refreshBtn');
-            const statusTextEl = document.getElementById('statusText'); const lastUpdatedEl = document.getElementById('lastUpdated');
-            const outletBreakdownHintEl = document.getElementById('outletBreakdownHint'); const outletBreakdownWrapEl = document.getElementById('outletBreakdownWrap'); const outletBreakdownRowsEl = document.getElementById('outletBreakdownRows');
-            const kpiTotalSalesEl = document.getElementById('kpiTotalSales'); const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');
-            const trendSalesEl = document.getElementById('trendSales'); const trendSalesPctEl = document.getElementById('trendSalesPct');
-            const targetWrapEl = document.getElementById('targetWrap'); const targetValueEl = document.getElementById('targetValue'); const targetPctEl = document.getElementById('targetPct'); const targetBarEl = document.getElementById('targetBar');
-            const hourlyBarsEl = document.getElementById('hourlyBars'); const hourlyEmptyEl = document.getElementById('hourlyEmpty');
-            const categoryListEl = document.getElementById('categoryList'); const categoryEmptyEl = document.getElementById('categoryEmpty');
-            const paymentListEl = document.getElementById('paymentList'); const paymentEmptyEl = document.getElementById('paymentEmpty');
-            const productRowsEl = document.getElementById('productRows'); const productEmptyEl = document.getElementById('productEmpty');
-            const outletPanelEl = document.getElementById('outletPanel'); const outletBarsEl = document.getElementById('outletBars'); const outletEmptyEl = document.getElementById('outletEmpty');
+            const outletIdEl = document.getElementById('outletId');
+            const dateEl = document.getElementById('date');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const statusTextEl = document.getElementById('statusText');
+            const lastUpdatedEl = document.getElementById('lastUpdated');
+
+            const kpiTotalSalesEl = document.getElementById('kpiTotalSales');
+            const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');
+            const trendSalesEl = document.getElementById('trendSales');
+            const trendSalesPctEl = document.getElementById('trendSalesPct');
+
+            const targetWrapEl = document.getElementById('targetWrap');
+            const targetValueEl = document.getElementById('targetValue');
+            const targetPctEl = document.getElementById('targetPct');
+            const targetBarEl = document.getElementById('targetBar');
+
+            const hourlyBarsEl = document.getElementById('hourlyBars');
+            const hourlyEmptyEl = document.getElementById('hourlyEmpty');
+            const categoryListEl = document.getElementById('categoryList');
+            const categoryEmptyEl = document.getElementById('categoryEmpty');
+            const paymentListEl = document.getElementById('paymentList');
+            const paymentEmptyEl = document.getElementById('paymentEmpty');
+            const productRowsEl = document.getElementById('productRows');
+            const productEmptyEl = document.getElementById('productEmpty');
+            const outletPanelEl = document.getElementById('outletPanel');
+            const outletBarsEl = document.getElementById('outletBars');
+            const outletEmptyEl = document.getElementById('outletEmpty');
             const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0, });
             const hourlyPalette = ['rgba(249, 115, 22, 0.86)', 'rgba(245, 158, 11, 0.84)', 'rgba(234, 88, 12, 0.86)', 'rgba(250, 204, 21, 0.84)', 'rgba(244, 63, 94, 0.8)',]; const hourlyOthersColor = 'rgba(253, 186, 116, 0.78)';
             let timer = null; let isLoading = false; let hourlyTooltipEl = null;
@@ -464,202 +391,92 @@
             }
             function setLoadingState(loading) { isLoading = loading; refreshBtn.disabled = loading; refreshBtn.classList.toggle('opacity-60', loading); refreshBtn.classList.toggle('cursor-not-allowed', loading); }
             function buildUrl() { const outletId = outletIdEl.value || 'all'; const date = dateEl.value || @json($defaultDate); const url = new URL(endpoint, window.location.origin); url.searchParams.set('outlet_id', outletId); url.searchParams.set('date', date); return url.toString(); }
-            function ensureHourlyTooltip() {
-                if (hourlyTooltipEl) return hourlyTooltipEl;
-                hourlyTooltipEl = document.createElement('div'); hourlyTooltipEl.style.cssText = 'position:absolute;z-index:20;display:none;min-width:14rem;max-width:24rem;border-radius:0.75rem;border:1px solid #e2e8f0;background:#fff;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);padding:0.75rem;font-size:0.75rem;color:#334155;'; hourlyTooltipEl.style.left = '0px'; hourlyTooltipEl.style.top = '0px'; hourlyBarsEl.appendChild(hourlyTooltipEl); return hourlyTooltipEl;
-            }
-            function showHourlyTooltip(html, clientX, clientY) {
-                const tip = ensureHourlyTooltip(); tip.innerHTML = html; tip.style.display = 'block';
-                const rect = hourlyBarsEl.getBoundingClientRect(); const padding = 12;
-                const desiredLeft = clientX - rect.left + 10; const desiredTop = clientY - rect.top + 10;
-                tip.style.left = `${Math.max(padding, Math.min(desiredLeft, rect.width - tip.offsetWidth - padding))}px`; tip.style.top = `${Math.max(padding, Math.min(desiredTop, rect.height - tip.offsetHeight - padding))}px`;
-            }
-            function hideHourlyTooltip() { if (!hourlyTooltipEl) return; hourlyTooltipEl.style.display = 'none'; }
-            function prepareHourlyContainer() { hourlyBarsEl.style.display = 'flex'; hourlyBarsEl.style.alignItems = 'flex-end'; hourlyBarsEl.style.gap = '0.35rem'; }
-            function getControlPoint(current, previous, next, reverse, smoothing = 0.15) {
-                const p = previous || current;
-                const n = next || current;
-                const o = {
-                    x: p.x - n.x,
-                    y: p.y - n.y
-                };
-                const angle = Math.atan2(o.y, o.x) + (reverse ? Math.PI : 0);
-                const length = Math.sqrt(Math.pow(o.x, 2) + Math.pow(o.y, 2)) * smoothing;
-                return {
-                    x: current.x + Math.cos(angle) * length,
-                    y: current.y + Math.sin(angle) * length
-                };
-            }
+            function renderVelocityChart({ series, labels }) {
+                const isStacked = series.length > 1;
+                const hasData = series.some(s => s.data.some(v => v > 0));
 
-            function getSplinePath(points, smoothing) {
-                if (points.length === 0) return '';
-                if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-                let d = `M ${points[0].x} ${points[0].y}`;
-                for (let i = 0; i < points.length - 1; i++) {
-                    const current = points[i];
-                    const next = points[i + 1];
-                    const cps = getControlPoint(current, i > 0 ? points[i - 1] : null, next, false, smoothing);
-                    const cpe = getControlPoint(next, current, i < points.length - 2 ? points[i + 2] : next, true, smoothing);
-                    d += ` C ${cps.x} ${cps.y} ${cpe.x} ${cpe.y} ${next.x} ${next.y}`;
-                }
-                return d;
-            }
+                hourlyEmptyEl.classList.toggle('hidden', hasData);
 
-            function renderVelocityChart(series) {
-                hourlyBarsEl.innerHTML = '';
-                hourlyBarsEl.style.display = 'block';
-                hourlyBarsEl.style.position = 'relative';
+                if (!hourlyChart) {
+                    const options = {
+                        series: series,
+                        chart: {
+                            type: 'area',
+                            height: 250,
+                            stacked: isStacked,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            fontFamily: 'Inter, sans-serif',
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 800,
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 2,
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.45,
+                                opacityTo: 0.05,
+                                stops: [20, 100],
+                            }
+                        },
+                        markers: {
+                            size: 0,
+                            strokeWidth: 2,
+                            hover: { size: 6 }
+                        },
+                        xaxis: {
+                            categories: labels,
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '10px' },
+                                rotate: 0,
+                                hideOverlappingLabels: true,
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                                    return val;
+                                },
+                                style: { colors: '#94a3b8', fontSize: '10px' }
+                            },
+                            tickAmount: 4,
+                        },
+                        grid: {
+                            borderColor: '#f1f5f9',
+                            strokeDashArray: 4,
+                            padding: { left: 10, right: 10 }
+                        },
+                        tooltip: {
+                            theme: 'light',
+                            x: { show: true },
+                            y: {
+                                formatter: (val) => idr.format(val)
+                            }
+                        },
+                        colors: isStacked ? ['#4f46e5', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'] : ['#4f46e5']
+                    };
 
-                // Remove previous flexibility classes if present
-                hourlyBarsEl.classList.remove('flex', 'items-end', 'gap-1.5');
-
-                const amounts = series.map(s => Number(s.amount || s.total || 0));
-                const maxVal = Math.max(...amounts, 0);
-                const hasPositive = amounts.some(a => a > 0);
-
-                if (!hasPositive) {
-                    renderVelocityEmpty();
-                    return;
-                }
-
-                hourlyEmptyEl.classList.add('hidden');
-
-                const width = hourlyBarsEl.offsetWidth || 800;
-                const height = 208; // h-52 is 13rem = 208px
-                const padding = { top: 20, right: 10, bottom: 5, left: 10 };
-                const graphWidth = width - padding.left - padding.right;
-                const graphHeight = height - padding.top - padding.bottom;
-
-                // SVG
-                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                svg.setAttribute("width", "100%");
-                svg.setAttribute("height", "100%");
-                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-                svg.style.overflow = "visible";
-
-                // Defs
-                const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-                const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-                gradient.setAttribute("id", "velocityGradient");
-                gradient.setAttribute("x1", "0");
-                gradient.setAttribute("y1", "0");
-                gradient.setAttribute("x2", "0");
-                gradient.setAttribute("y2", "1");
-                gradient.innerHTML = `
-                                                <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
-                                                <stop offset="100%" stop-color="#f97316" stop-opacity="0.0"/>
-                                            `;
-                defs.appendChild(gradient);
-                svg.appendChild(defs);
-
-                // Points
-                const points = series.map((s, i) => {
-                    const x = padding.left + (i / (series.length - 1)) * graphWidth;
-                    const val = Number(s.amount || s.total || 0);
-                    const ratio = maxVal > 0 ? val / maxVal : 0;
-                    const y = padding.top + graphHeight - (ratio * graphHeight);
-                    return { x: x, y: y, val: val, hour: s.hour };
-                });
-
-                // Paths
-                const linePathD = getSplinePath(points, 0.2);
-                const areaPathD = `${linePathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
-
-                // Draw Area
-                const area = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                area.setAttribute("d", areaPathD);
-                area.setAttribute("fill", "url(#velocityGradient)");
-                area.style.opacity = "0";
-                area.style.transition = "opacity 0.6s ease";
-                svg.appendChild(area);
-                setTimeout(() => area.style.opacity = "1", 50);
-
-                // Draw Line
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                line.setAttribute("d", linePathD);
-                line.setAttribute("fill", "none");
-                line.setAttribute("stroke", "#f97316"); // Orange-500
-                line.setAttribute("stroke-width", "3");
-                line.setAttribute("stroke-linecap", "round");
-                line.setAttribute("stroke-linejoin", "round");
-                line.style.filter = "drop-shadow(0 4px 6px rgba(249, 115, 22, 0.4))";
-                svg.appendChild(line);
-
-                // Overlay
-                const overlay = document.createElement('div');
-                overlay.className = 'absolute inset-0 z-10 flex';
-
-                series.forEach((s, i) => {
-                    const slice = document.createElement('div');
-                    slice.style.flex = '1';
-                    slice.style.height = '100%';
-                    slice.style.cursor = 'crosshair';
-
-                    const p = points[i];
-
-                    slice.addEventListener('mouseenter', (e) => {
-                        let dot = document.getElementById('v-dot');
-                        if (!dot) {
-                            dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                            dot.setAttribute("id", "v-dot");
-                            dot.setAttribute("r", "5");
-                            dot.setAttribute("fill", "#fff");
-                            dot.setAttribute("stroke", "#ea580c"); // Orange-600
-                            dot.setAttribute("stroke-width", "2.5");
-                            dot.style.filter = "drop-shadow(0 2px 4px rgba(0,0,0,0.1))";
-                            svg.appendChild(dot);
-                        }
-                        dot.setAttribute("cx", p.x);
-                        dot.setAttribute("cy", p.y);
-                        dot.style.display = 'block';
-
-                        const hourLabel = String(s.hour).padStart(2, '0') + ':00';
-                        const html = `
-                                                        <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
-                                                        <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
-                                                        <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(p.val)}</div>
-                                                    `;
-                        showHourlyTooltip(html, e.clientX, e.clientY);
+                    hourlyChart = new ApexCharts(document.querySelector("#hourlyBars"), options);
+                    hourlyChart.render();
+                } else {
+                    hourlyChart.updateOptions({
+                        chart: { stacked: isStacked },
+                        xaxis: { categories: labels },
+                        colors: isStacked ? ['#4f46e5', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'] : ['#4f46e5']
                     });
-
-                    slice.addEventListener('mousemove', (e) => {
-                        const hourLabel = String(s.hour).padStart(2, '0') + ':00';
-                        const html = `
-                                                        <div class="font-bold text-slate-900 mb-0.5" style="font-family:'Inter',sans-serif;">Velocity</div>
-                                                        <div class="text-xs text-slate-500 mb-1.5">${hourLabel}</div>
-                                                        <div class="text-xl font-bold text-orange-600 leading-none" style="font-feature-settings:'tnum';">${idr.format(points[i].val)}</div>
-                                                    `;
-                        showHourlyTooltip(html, e.clientX, e.clientY);
-                    });
-
-                    slice.addEventListener('mouseleave', () => {
-                        const dot = document.getElementById('v-dot');
-                        if (dot) dot.style.display = 'none';
-                        hideHourlyTooltip();
-                    });
-
-                    overlay.appendChild(slice);
-                });
-
-                hourlyBarsEl.appendChild(svg);
-                hourlyBarsEl.appendChild(overlay);
-            }
-
-            function renderVelocityEmpty() {
-                hourlyBarsEl.innerHTML = '';
-                hourlyBarsEl.style.display = 'flex';
-                hourlyBarsEl.style.alignItems = 'flex-end';
-                hourlyBarsEl.style.gap = '0.35rem';
-                hourlyEmptyEl.classList.remove('hidden');
-                for (let h = 0; h <= 23; h++) {
-                    const bar = document.createElement('div');
-                    bar.className = 'flex-1';
-                    bar.style.height = '6%';
-                    bar.style.minHeight = '3px';
-                    bar.style.flex = '1 1 0%';
-                    bar.style.borderRadius = '0.5rem 0.5rem 0.35rem 0.35rem';
-                    bar.style.background = 'rgba(253,186,116,0.2)';
-                    hourlyBarsEl.appendChild(bar);
+                    hourlyChart.updateSeries(series);
                 }
             }
 
@@ -687,15 +504,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                                                                <div class="flex items-end justify-between mb-1.5">
-                                                                                                                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                                                                    <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                                                                </div>
-                                                                                                                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                                                    <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            `;
+                                                                                                                                                        <div class="flex items-end justify-between mb-1.5">
+                                                                                                                                                            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                                                                                            <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
+                                                                                                                                                        </div>
+                                                                                                                                                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                                                                                            <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -727,14 +544,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                                                                                <div class="flex items-center gap-3">
-                                                                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                                                                        <i class="fas ${style.icon} text-lg ${style.text}"></i>
-                                                                                    </div>
-                                                                                    <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                                                                </div>
-                                                                                <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                                                            `;
+                                                                                                                        <div class="flex items-center gap-3">
+                                                                                                                            <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                                                                                                <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                                                                            </div>
+                                                                                                                            <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
+                                                                                                                        </div>
+                                                                                                                        <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                                                                                                    `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -777,23 +594,23 @@
                     }
 
                     tr.innerHTML = `
-                                                                                                        <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
-                                                                                                        <td class="px-3 py-3 text-slate-700">
-                                                                                                            <div class="flex items-center gap-4 min-w-max">
-                                                                                                                ${imageHtml}
-                                                                                                                <div class="flex-1">
-                                                                                                                    <div class="flex flex-col gap-0.5">
-                                                                                                                        <div class="flex items-center gap-2">
-                                                                                                                            <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                                                                            ${trendBadge}
-                                                                                                                        </div>
-                                                                                                                    </div>
-                                                                                                                </div>
-                                                                                                            </div>
-                                                                                                        </td>
-                                                                                                        <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                                                                        <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
-                                                                                                    `;
+                                                                                                                                                <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                                                                                                                <td class="px-3 py-3 text-slate-700">
+                                                                                                                                                    <div class="flex items-center gap-4 min-w-max">
+                                                                                                                                                        ${imageHtml}
+                                                                                                                                                        <div class="flex-1">
+                                                                                                                                                            <div class="flex flex-col gap-0.5">
+                                                                                                                                                                <div class="flex items-center gap-2">
+                                                                                                                                                                    <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                                                                                                    ${trendBadge}
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    </div>
+                                                                                                                                                </td>
+                                                                                                                                                <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                                                                                                                <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                                                                                                            `;
                     productRowsEl.appendChild(tr);
                 }
             }
@@ -802,38 +619,98 @@
                 outletPanelEl.classList.toggle('hidden', !isAllOutlets);
                 if (!isAllOutlets) return;
 
-                outletBarsEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    outletEmptyEl.classList.remove('hidden');
-                    return;
-                }
+                const amounts = rows.map(x => Number(x.amount || 0));
+                const labels = rows.map(x => x.outlet_name);
+                const hasData = amounts.some(a => a > 0);
 
-                outletEmptyEl.classList.add('hidden');
+                outletEmptyEl.classList.toggle('hidden', hasData);
 
-                const max = Math.max(...rows.map(x => Number(x.amount || 0)), 0);
-                for (const row of rows) {
-                    const amount = Number(row.amount || 0);
-                    const pct = max > 0 ? Math.max(4, Math.round((amount / max) * 100)) : 0;
-                    const transactions = Number(row.transactions || 0);
-                    const lastSaleAt = row.last_sale_at ? new Date(row.last_sale_at) : null;
+                if (!outletChart) {
+                    const options = {
+                        series: [{
+                            name: 'Omzet',
+                            data: amounts
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 250,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            fontFamily: 'Inter, sans-serif',
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 800,
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3,
+                            colors: ['#f97316']
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.45,
+                                opacityTo: 0.05,
+                                stops: [20, 100],
+                            }
+                        },
+                        markers: {
+                            size: 0,
+                            colors: ['#f97316'],
+                            strokeColors: '#fff',
+                            strokeWidth: 2,
+                            hover: { size: 6 }
+                        },
+                        xaxis: {
+                            categories: labels,
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '11px' },
+                                rotate: -45,
+                                rotateAlways: false,
+                                hideOverlappingLabels: true,
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                                    return val;
+                                },
+                                style: { colors: '#94a3b8', fontSize: '10px' }
+                            },
+                            tickAmount: 4,
+                        },
+                        grid: {
+                            borderColor: '#f1f5f9',
+                            strokeDashArray: 4,
+                            padding: { left: 10, right: 10 }
+                        },
+                        tooltip: {
+                            theme: 'light',
+                            x: { show: true },
+                            y: {
+                                formatter: (val) => idr.format(val)
+                            }
+                        },
+                        colors: ['#f97316']
+                    };
 
-                    const wrap = document.createElement('div');
-                    wrap.className = 'grid grid-cols-12 gap-3 items-center';
-                    wrap.innerHTML = `
-                            <div class="col-span-4 sm:col-span-3">
-                                <div class="text-sm text-slate-700 truncate" title="${escapeHtml(row.outlet_name)}">${escapeHtml(row.outlet_name)}</div>
-                                <div class="text-[11px] text-slate-500">
-                                    ${transactions} trx${lastSaleAt ? ` • last: ${lastSaleAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                                </div>
-                            </div>
-                            <div class="col-span-5 sm:col-span-7">
-                                <div class="h-3 rounded-full bg-slate-100 overflow-hidden">
-                                    <div class="h-3 rounded-full bg-orange-500/80" style="width: ${pct}%"></div>
-                                </div>
-                            </div>
-                            <div class="col-span-3 sm:col-span-2 text-right text-sm font-semibold text-slate-900">${idr.format(amount)}</div>
-                        `;
-                    outletBarsEl.appendChild(wrap);
+                    outletChart = new ApexCharts(document.querySelector("#outletBars"), options);
+                    outletChart.render();
+                } else {
+                    outletChart.updateOptions({
+                        xaxis: { categories: labels }
+                    });
+                    outletChart.updateSeries([{
+                        data: amounts
+                    }]);
                 }
             }
 
@@ -846,35 +723,7 @@
                 return `${sign}${n.toFixed(1)}%`;
             }
 
-            function renderOutletBreakdown(rows, isAllOutlets) {
-                outletBreakdownRowsEl.innerHTML = '';
-
-                if (!isAllOutlets) {
-                    outletBreakdownHintEl.classList.remove('hidden');
-                    outletBreakdownWrapEl.classList.add('hidden');
-                    return;
-                }
-
-                outletBreakdownHintEl.classList.add('hidden');
-                outletBreakdownWrapEl.classList.remove('hidden');
-
-                const safeRows = Array.isArray(rows) ? rows : [];
-                if (safeRows.length === 0) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="px-3 py-2 text-slate-500" colspan="2">Belum ada data.</td>`;
-                    outletBreakdownRowsEl.appendChild(tr);
-                    return;
-                }
-
-                for (const row of safeRows) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                                                                                                                                <td class="px-3 py-2 text-slate-700">${escapeHtml(row.outlet_name)}</td>
-                                                                                                                                <td class="px-3 py-2 text-right font-semibold text-slate-900">${idr.format(Number(row.amount || 0))}</td>
-                                                                                                                            `;
-                    outletBreakdownRowsEl.appendChild(tr);
-                }
-            }
+            // Removed renderOutletBreakdown
 
             function setTarget(target) {
                 const dailyTarget = Number(target?.daily_sales_target || 0);
@@ -914,16 +763,45 @@
                 setTarget(data?.target);
 
                 if (!data?.outlet_id && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
-                    // Normalize stacked data to straight velocity
-                    const normalized = data.hourly_stacked.map(x => ({ hour: x.hour, amount: x.total }));
-                    renderVelocityChart(normalized);
+                    const allOutletNames = new Set();
+                    let hasOthers = false;
+
+                    data.hourly_stacked.forEach(h => {
+                        if (Array.isArray(h.segments)) {
+                            h.segments.forEach(s => allOutletNames.add(s.outlet_name));
+                        }
+                        if (h.others && h.others.amount > 0) hasOthers = true;
+                    });
+
+                    const series = Array.from(allOutletNames).map(name => ({
+                        name: name,
+                        data: data.hourly_stacked.map(h => {
+                            const seg = h.segments ? h.segments.find(s => s.outlet_name === name) : null;
+                            return seg ? Number(seg.amount || 0) : 0;
+                        })
+                    }));
+
+                    if (hasOthers) {
+                        series.push({
+                            name: 'Others',
+                            data: data.hourly_stacked.map(h => Number(h.others?.amount || 0))
+                        });
+                    }
+
+                    const labels = data.hourly_stacked.map(h => String(h.hour).padStart(2, '0') + ':00');
+                    renderVelocityChart({ series, labels });
                 } else {
-                    renderVelocityChart(Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : []);
+                    const sales = Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : [];
+                    const series = [{
+                        name: 'Omzet',
+                        data: sales.map(s => Number(s.amount || s.total || 0))
+                    }];
+                    const labels = sales.map(s => String(s.hour).padStart(2, '0') + ':00');
+                    renderVelocityChart({ series, labels });
                 }
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
                 renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
-                renderOutletBreakdown(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
                 renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
 
                 const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;

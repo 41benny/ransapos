@@ -6,7 +6,7 @@
     <div class="container mx-auto px-4 py-6">
         <div class="mb-6">
             <div class="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-                <a href="{{ route('admin.cash-transactions.index') }}" class="hover:text-indigo-600">Transaksi</a>
+                <a href="{{ route('admin.cash-transactions.index', request()->query()) }}" class="hover:text-indigo-600">Transaksi</a>
                 <span>/</span>
                 <span class="text-gray-900">Edit Transaksi</span>
             </div>
@@ -38,7 +38,7 @@
         @endif
 
         <div class="bg-white rounded-lg shadow max-w-3xl">
-            <form action="{{ route('admin.cash-transactions.update', $cashTransaction) }}" method="POST">
+            <form action="{{ route('admin.cash-transactions.update', array_merge(['cashTransaction' => $cashTransaction], request()->query())) }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -80,8 +80,10 @@
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2 text-gray-500">Rp</span>
-                                <input type="number" id="amount" name="amount"
-                                    value="{{ old('amount', $cashTransaction->amount) }}" step="0.01" min="0.01"
+                                <input type="text" id="amount" name="amount"
+                                    value="{{ old('amount', $cashTransaction->amount) }}"
+                                    inputmode="decimal"
+                                    data-currency-input="1"
                                     class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('amount') border-red-500 @enderror"
                                     required>
                             </div>
@@ -133,7 +135,7 @@
                 </div>
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
-                    <a href="{{ route('admin.cash-transactions.index') }}"
+                    <a href="{{ route('admin.cash-transactions.index', request()->query()) }}"
                         class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                         Batal
                     </a>
@@ -145,4 +147,72 @@
             </form>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form[action*="cash-transactions"]');
+            const amountInput = document.getElementById('amount');
+            if (!form || !amountInput) {
+                return;
+            }
+
+            function parseCurrencyInput(value) {
+                const raw = String(value ?? '').trim().replace(/[^\d,.\-]/g, '');
+                if (!raw) {
+                    return 0;
+                }
+
+                let normalized = raw;
+                const hasComma = normalized.includes(',');
+                const dotCount = (normalized.match(/\./g) || []).length;
+
+                if (hasComma) {
+                    normalized = normalized.replace(/\./g, '').replace(',', '.');
+                } else if (dotCount > 0) {
+                    const dotParts = normalized.split('.');
+                    const decimalLike = dotCount === 1
+                        && dotParts[1]
+                        && dotParts[1].length > 0
+                        && dotParts[1].length <= 2;
+
+                    if (!decimalLike) {
+                        normalized = normalized.replace(/\./g, '');
+                    }
+                }
+
+                normalized = normalized.replace(/(?!^)-/g, '');
+                const parsed = Number(normalized);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function formatCurrencyInput(value) {
+                const numeric = Number(value || 0);
+                if (!Number.isFinite(numeric)) {
+                    return '';
+                }
+
+                return numeric.toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2,
+                });
+            }
+
+            function renderCurrency() {
+                const raw = String(amountInput.value ?? '').trim();
+                if (!raw) {
+                    return;
+                }
+
+                amountInput.value = formatCurrencyInput(parseCurrencyInput(raw));
+            }
+
+            amountInput.addEventListener('input', renderCurrency);
+            amountInput.addEventListener('blur', renderCurrency);
+            renderCurrency();
+
+            form.addEventListener('submit', function () {
+                const raw = String(amountInput.value ?? '').trim();
+                amountInput.value = raw ? String(parseCurrencyInput(raw)) : '';
+            });
+        });
+    </script>
 @endsection

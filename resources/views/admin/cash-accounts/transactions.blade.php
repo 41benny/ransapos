@@ -3,148 +3,210 @@
 @section('title', 'Transaksi Kas & Bank')
 
 @section('content')
-    <div class="w-full px-3 py-4">
-        <div class="flex justify-between items-center mb-6">
+    <div class="space-y-6">
+        {{-- Header Section --}}
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Transaksi Kas & Bank</h1>
-                <p class="text-gray-600 mt-1">Daftar semua transaksi kas masuk dan keluar</p>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Transaksi Kas & Bank</h1>
+                <p class="text-xs font-medium text-slate-500 mt-0.5">Kelola dan monitor semua arus kas masuk & keluar unit usaha</p>
             </div>
-            <a href="{{ route('admin.cash-transactions.create') }}" class="imperial-btn flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Catat Transaksi Baru</span>
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.cash-transactions.create') }}"
+                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-slate-800 hover:shadow-md active:scale-95">
+                    <i class="fas fa-plus text-[10px] transition-transform group-hover:rotate-90"></i>
+                    <span>Catat Transaksi</span>
+                    <div
+                        class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full">
+                    </div>
+                </a>
+            </div>
         </div>
 
+        {{-- KPI Overview --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {{-- Total Debit Card --}}
+            <div
+                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500">Total Arus Masuk</span>
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                        <i class="fas fa-arrow-down-left text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-800">Rp
+                        {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}
+                    </h3>
+                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Total Debit Terhitung</p>
+                </div>
+                <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-500 transition-all duration-500 group-hover:w-full">
+                </div>
+            </div>
+
+            {{-- Total Kredit Card --}}
+            <div
+                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-rose-500">Total Arus Keluar</span>
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
+                        <i class="fas fa-arrow-up-right text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-800">Rp
+                        {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}
+                    </h3>
+                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Total Kredit Terhitung</p>
+                </div>
+                <div class="absolute bottom-0 left-0 h-1 w-0 bg-rose-500 transition-all duration-500 group-hover:w-full">
+                </div>
+            </div>
+
+            {{-- Filter Summary --}}
+            <div
+                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md md:col-span-2 lg:col-span-1">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-500">Status Pencarian</span>
+                    <div
+                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                        <i class="fas fa-filter text-xs"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-800">{{ $transactions->total() }} Transaksi</h3>
+                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Menampilkan baris kriteria filter</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Alert Messages --}}
         @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline">{{ session('success') }}</span>
+            <div
+                class="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-emerald-800 shadow-sm flex items-center gap-3">
+                <i class="fas fa-check-circle text-lg"></i>
+                <span class="text-sm font-bold">{{ session('success') }}</span>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline">{{ session('error') }}</span>
+            <div class="rounded-xl border border-rose-100 bg-rose-50 p-4 text-rose-800 shadow-sm flex items-center gap-3">
+                <i class="fas fa-exclamation-circle text-lg"></i>
+                <span class="text-sm font-bold">{{ session('error') }}</span>
             </div>
         @endif
 
-        <div class="t6-card shadow overflow-hidden">
+        {{-- Main Table Section --}}
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Transaction History</h3>
+                <div class="flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Live Access</span>
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
-                <table class="imperial-table min-w-full" id="cashTransactionsTable" style="table-layout: fixed;">
+                <table class="min-w-full divide-y divide-slate-200 text-sm" id="cashTransactionsTable"
+                    style="table-layout: fixed;">
                     <colgroup id="cashTransactionsColgroup">
                         <col class="resizable-col" style="width: 140px;">
-                        <col class="resizable-col" style="width: 140px;">
-                        <col class="resizable-col" style="width: 220px;">
-                        <col class="resizable-col" style="width: 260px;">
-                        <col class="resizable-col" style="width: 120px;">
+                        <col class="resizable-col" style="width: 110px;">
                         <col class="resizable-col" style="width: 150px;">
-                        <col class="resizable-col" style="width: 170px;">
                         <col class="resizable-col" style="width: 220px;">
+                        <col class="resizable-col" style="width: 120px;">
+                        <col class="resizable-col" style="width: 120px;">
+                        <col class="resizable-col" style="width: 140px;">
+                        <col class="resizable-col" style="width: 200px;">
                         <col style="width: 120px;">
                     </colgroup>
-                    <thead class="cash-table-head">
-                        <tr class="cash-head-row">
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 140px; position: relative;">
-                                Nomor
+                    <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
+                        <tr>
+                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="120" style="position: relative;">
+                                Voucher Number
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 140px; position: relative;">
-                                Tanggal
+                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="100" style="position: relative;">
+                                Date
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 220px; position: relative;">
-                                Akun
+                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="140" style="position: relative;">
+                                Cash Account
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 260px; position: relative;">
-                                Deskripsi
+                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="200" style="position: relative;">
+                                Description
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 120px; position: relative;">
-                                Debit
+                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="100" style="position: relative;">
+                                Debit (In)
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 150px; position: relative;">
-                                Kredit
+                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="100" style="position: relative;">
+                                Kredit (Out)
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 170px; position: relative;">
-                                Saldo
+                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="120" style="position: relative;">
+                                Balance
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                style="min-width: 220px; position: relative;">
-                                COA
+                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                                data-min-width="180" style="position: relative;">
+                                COA Account
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            <th
+                                class="px-4 py-2.5 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                                Actions</th>
                         </tr>
-                        <tr class="filter-row bg-white/90">
-                            <th class="px-3 py-1">
-                                <input type="text"
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="transaction_number" value="{{ request('transaction_number') }}"
-                                    placeholder="Filter nomor voucher...">
+                        <tr class="bg-white/50 border-b border-slate-100">
+                            <th class="px-4 py-1.5">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="transaction_number" value="{{ request('transaction_number') }}" placeholder="Search #">
                             </th>
-                            <th class="px-3 py-1">
-                                <input type="date"
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="transaction_date" value="{{ request('transaction_date') }}">
+                            <th class="px-4 py-1.5">
+                                <input type="date" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="transaction_date" value="{{ request('transaction_date') }}">
                             </th>
-                            <th class="px-3 py-1">
-                                <select
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="cash_account_id">
-                                    <option value="">Semua Akun</option>
+                            <th class="px-4 py-1.5">
+                                <select class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="cash_account_id">
+                                    <option value="">All Accounts</option>
                                     @foreach($accounts as $account)
-                                        <option value="{{ $account->id }}" {{ request('cash_account_id') == $account->id ? 'selected' : '' }}>
-                                            {{ $account->name }}
-                                        </option>
+                                        <option value="{{ $account->id }}" {{ request('cash_account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
                                     @endforeach
                                 </select>
                             </th>
-                            <th class="px-3 py-1">
-                                <input type="text"
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="description" value="{{ request('description') }}"
-                                    placeholder="Filter deskripsi...">
+                            <th class="px-4 py-1.5">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="description" value="{{ request('description') }}" placeholder="Search desc...">
                             </th>
-                            <th class="px-3 py-1">
-                                <div class="text-[11px] text-gray-400 text-right">Auto</div>
+                            <th class="px-4 py-1.5 text-right">
+                                <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
                             </th>
-                            <th class="px-3 py-1">
-                                <div class="text-[11px] text-gray-400 text-right">Auto</div>
+                            <th class="px-4 py-1.5 text-right">
+                                <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
                             </th>
-                            <th class="px-3 py-1">
-                                <input type="text"
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Filter saldo...">
+                            <th class="px-4 py-1.5">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-right placeholder:text-slate-300" data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Balance">
                             </th>
-                            <th class="px-3 py-1">
-                                <select
-                                    class="filter-input w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    data-name="coa_account_id">
-                                    <option value="">Semua COA</option>
+                            <th class="px-4 py-1.5">
+                                <select class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="coa_account_id">
+                                    <option value="">All COA</option>
                                     @foreach($coaAccounts as $coaAccount)
-                                        <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>
-                                            {{ $coaAccount->code }}
-                                        </option>
+                                        <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>{{ $coaAccount->code }}</option>
                                     @endforeach
                                 </select>
                             </th>
-                            <th class="px-3 py-1">
+                            <th class="px-4 py-1.5 text-center">
                                 <button type="button" id="clearFilters"
-                                    class="w-full px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded transition-colors"
-                                    title="Clear all filters">
-                                    <i class="fas fa-times"></i>
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                    title="Reset Filters">
+                                    <i class="fas fa-undo-alt text-[10px]"></i>
                                 </button>
                             </th>
                         </tr>
@@ -215,84 +277,97 @@
                                     ?? $transaction->voucher_number
                                     ?? $transaction->transaction_number);
                             @endphp
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    <a href="{{ route('admin.cash-transactions.show', $transaction) }}" class="hover:text-indigo-600 hover:underline">
-                                        {{ $displayVoucherNumber }}
-                                    </a>
-                                    @if($isBatchRow)
-                                        <div class="text-xs text-gray-500 mt-0.5">{{ $displayRowCount }} baris digabung</div>
-                                    @endif
+                            <tr class="group hover:bg-slate-50/80 transition-colors">
+                                <td class="px-4 py-2 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <a href="{{ route('admin.cash-transactions.show', array_merge(['cashTransaction' => $transaction], request()->query())) }}"
+                                            class="text-[11.5px] font-medium text-slate-800 hover:text-indigo-600 transition-colors">
+                                            {{ $displayVoucherNumber }}
+                                        </a>
+                                        @if($isBatchRow)
+                                            <span class="inline-flex items-center gap-1 mt-0.5 text-[9px] font-medium text-slate-400">
+                                                <i class="fas fa-layer-group text-[8px]"></i>
+                                                {{ $displayRowCount }} Items Merged
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-2 whitespace-nowrap text-[11px] font-medium text-slate-600">
                                     {{ $transaction->transaction_date->format('d M Y') }}
                                 </td>
-                                <td class="px-6 py-2 text-sm text-gray-900">
-                                    <div class="truncate w-full" title="{{ $transaction->cashAccount->name }}">
+                                <td class="px-4 py-2 text-[11px] font-medium text-slate-700">
+                                    <div class="truncate max-w-[140px]" title="{{ $transaction->cashAccount->name }}">
                                         {{ $transaction->cashAccount->name }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-2 text-sm text-gray-900">
-                                    <div class="truncate w-full" title="{{ $transaction->display_description }}">
+                                <td class="px-4 py-2 text-[11px] font-medium text-slate-600">
+                                    <div class="truncate max-w-[220px]" title="{{ $transaction->display_description }}">
                                         {{ $transaction->display_description }}
                                     </div>
                                     @if($isBatchRow)
-                                        <div class="text-xs text-gray-500 mt-0.5">Nilai total dari input multi-baris</div>
+                                        <span class="text-[8px] font-medium uppercase tracking-tighter text-indigo-400 block mt-0.5 italic leading-none">Consolidated Entry</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <td class="px-4 py-2 whitespace-nowrap text-right">
                                     @if($transaction->type === 'in')
-                                        <span class="text-sm font-semibold text-green-600">
-                                            Rp {{ number_format($displayAmount, 0, ',', '.') }}
-                                        </span>
+                                        <div class="inline-flex items-center justify-end px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                                            <span class="text-[11px] font-medium">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
+                                        </div>
                                     @else
-                                        <span class="text-sm text-gray-300">-</span>
+                                        <span class="text-[11px] font-medium text-slate-200">--</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                <td class="px-4 py-2 whitespace-nowrap text-right">
                                     @if($transaction->type === 'out')
-                                        <span class="text-sm font-semibold text-red-600">
-                                            Rp {{ number_format($displayAmount, 0, ',', '.') }}
-                                        </span>
+                                        <div class="inline-flex items-center justify-end px-1.5 py-0.5 rounded bg-rose-50 text-rose-700">
+                                            <span class="text-[11px] font-medium">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
+                                        </div>
                                     @else
-                                        <span class="text-sm text-gray-300">-</span>
+                                        <span class="text-[11px] font-medium text-slate-200">--</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                <td class="px-4 py-2 whitespace-nowrap text-right text-[11.5px] font-medium text-slate-800 tracking-tight">
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                <td class="px-4 py-2 whitespace-nowrap text-[10px] font-medium text-slate-500">
                                     @if($isBatchRow)
-                                        <span class="text-gray-600">Multi COA ({{ $displayRowCount }} baris)</span>
+                                        <span class="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">Multi ({{ $displayRowCount }})</span>
                                     @elseif($transaction->coaAccount)
-                                        <span title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
-                                            {{ $transaction->coaAccount->code }} - {{ Str::limit($transaction->coaAccount->name, 28) }}
-                                        </span>
+                                        <div class="max-w-[180px] truncate" title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
+                                            <span class="text-slate-800 font-medium">{{ $transaction->coaAccount->code }}</span>
+                                            <span class="text-slate-400 ml-0.5">· {{ Str::limit($transaction->coaAccount->name, 18) }}</span>
+                                        </div>
                                     @else
-                                        -
+                                        <span class="text-slate-300">--</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <div class="flex items-center justify-center space-x-2">
-                                        <a href="{{ route('admin.cash-transactions.show', $transaction) }}"
-                                            class="text-indigo-600 hover:text-indigo-900" title="Detail">
-                                            <i class="fas fa-eye"></i>
+                                <td class="px-4 py-2 whitespace-nowrap text-center">
+                                    <div
+                                        class="flex items-center justify-center gap-1 transition-all duration-300">
+                                        <a href="{{ route('admin.cash-transactions.show', array_merge(['cashTransaction' => $transaction], request()->query())) }}"
+                                            class="inline-flex h-6 w-6 items-center justify-center rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            title="View">
+                                            <i class="fas fa-eye text-[10px]"></i>
                                         </a>
                                         <a href="{{ route('admin.cash-transactions.print', $transaction) }}" target="_blank"
-                                            class="text-gray-600 hover:text-gray-900" title="Cetak Voucher">
-                                            <i class="fas fa-print"></i>
+                                            class="inline-flex h-6 w-6 items-center justify-center rounded bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+                                            title="Print">
+                                            <i class="fas fa-print text-[10px]"></i>
                                         </a>
-                                        <a href="{{ route('admin.cash-transactions.edit', $transaction) }}"
-                                            class="text-amber-600 hover:text-amber-900" title="Edit">
-                                            <i class="fas fa-edit"></i>
+                                        <a href="{{ route('admin.cash-transactions.edit', array_merge(['cashTransaction' => $transaction], request()->query())) }}"
+                                            class="inline-flex h-6 w-6 items-center justify-center rounded bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+                                            title="Edit">
+                                            <i class="fas fa-edit text-[10px]"></i>
                                         </a>
-                                        <form action="{{ route('admin.cash-transactions.destroy', $transaction) }}" method="POST"
-                                            class="inline-block"
-                                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
+                                        <form action="{{ route('admin.cash-transactions.destroy', $transaction) }}"
+                                            method="POST" class="inline-block"
+                                            onsubmit="return confirm('Delete this transaction?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit"
+                                                class="inline-flex h-6 w-6 items-center justify-center rounded bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                title="Delete">
+                                                <i class="fas fa-trash text-[10px]"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -300,10 +375,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-20 text-center">
                                     <div class="flex flex-col items-center justify-center">
-                                        <i class="fas fa-file-invoice-dollar text-4xl text-gray-300 mb-3"></i>
-                                        <p>Tidak ada transaksi</p>
+                                        <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+                                            <i class="fas fa-cash-register text-2xl text-slate-200"></i>
+                                        </div>
+                                        <h4 class="text-sm font-bold text-slate-800">No Transactions Found</h4>
+                                        <p class="text-[10px] font-medium text-slate-400 mt-0.5 max-w-[200px] mx-auto italic">Adjust your filter or record a new transaction.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -312,18 +390,21 @@
                 </table>
             </div>
 
-            <div class="px-6 py-3 border-t border-gray-200 bg-gray-50">
-                <div class="flex flex-wrap items-center justify-end gap-6 text-sm">
-                    <div class="font-semibold text-green-700">
-                        Total Debit: Rp {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}
+            <div
+                class="px-4 py-3 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] font-medium uppercase tracking-widest text-emerald-500">Cumulative In</span>
+                        <span class="text-xs font-medium text-slate-800">Rp {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}</span>
                     </div>
-                    <div class="font-semibold text-red-700">
-                        Total Kredit: Rp {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}
+                    <div class="flex flex-col border-l border-slate-200 pl-6">
+                        <span class="text-[9px] font-medium uppercase tracking-widest text-rose-500">Cumulative Out</span>
+                        <span class="text-xs font-medium text-slate-800">Rp {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="px-4 py-2 border-t border-slate-100 bg-white">
                 {{ $transactions->links() }}
             </div>
         </div>
@@ -336,16 +417,18 @@
             position: absolute;
             top: 0;
             right: 0;
-            width: 8px;
+            width: 4px;
             height: 100%;
             cursor: col-resize;
             user-select: none;
             z-index: 10;
             touch-action: none;
+            transition: all 0.2s;
         }
 
         .resize-handle:hover {
-            background-color: rgba(59, 130, 246, 0.5);
+            background-color: #6366f1;
+            width: 6px;
         }
 
         .resizing {
@@ -353,25 +436,8 @@
             user-select: none;
         }
 
-        .filter-row th {
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .cash-head-row {
-            background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 45%, #fde68a 100%);
-        }
-
-        .cash-head-row th {
-            color: #9a3412;
-            border-bottom: 1px solid #fdba74;
-        }
-
-        /* Uniform row height/padding without touching each cell class */
-        #cashTransactionsTable tbody td {
-            padding-top: 0.5rem !important;
-            padding-bottom: 0.5rem !important;
-            line-height: 1.25rem;
-            vertical-align: middle;
+        .resizing * {
+            user-select: none !important;
         }
     </style>
 
@@ -398,9 +464,11 @@
                 const headers = table.querySelectorAll('th.resizable');
                 headers.forEach((th, index) => {
                     if (widths[index]) {
-                        th.style.width = widths[index] + 'px';
+                        const minWidth = parseInt(th.dataset.minWidth || '90', 10);
+                        const safeWidth = Math.max(minWidth, Number(widths[index]));
+                        th.style.width = safeWidth + 'px';
                         if (resizableCols[index]) {
-                            resizableCols[index].style.width = widths[index] + 'px';
+                            resizableCols[index].style.width = safeWidth + 'px';
                         }
                     }
                 });
@@ -445,7 +513,8 @@
 
                     function onMouseMove(moveEvent) {
                         const diff = moveEvent.pageX - startX;
-                        const newWidth = Math.max(90, startWidth + diff);
+                        const minWidth = parseInt(th.dataset.minWidth || '90', 10);
+                        const newWidth = Math.max(minWidth, startWidth + diff);
                         th.style.width = newWidth + 'px';
                         const headers = table.querySelectorAll('th.resizable');
                         const headerIndex = Array.from(headers).indexOf(th);

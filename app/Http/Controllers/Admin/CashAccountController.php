@@ -433,7 +433,7 @@ class CashAccountController extends Controller
             ]));
 
             return redirect()
-                ->route('admin.cash-transactions.index')
+                ->route('admin.cash-transactions.index', $request->query())
                 ->with('success', 'Transaksi berhasil diperbarui dan saldo telah dihitung ulang.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

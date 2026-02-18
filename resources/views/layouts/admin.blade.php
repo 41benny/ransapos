@@ -86,82 +86,80 @@
             onclick="toggleMobileSidebar()"></div>
 
         <!-- Sidebar -->
-        <aside class="sidebar w-64 sidebar-gradient text-white flex flex-col shrink-0 h-full">
-            <!-- Logo -->
-            <div class="h-16 flex items-center px-6 border-b border-white/10">
-                <i class="fas fa-bowl-food text-2xl text-blue-400 mr-3"></i>
-                <span class="logo-text font-bold text-lg tracking-wide">Moresto</span>
+        <aside
+            class="sidebar w-68 bg-[#0B0F1A] text-white flex flex-col shrink-0 h-full border-r border-white/5 relative z-50 shadow-2xl">
+            <!-- Logo area -->
+            <div class="h-20 flex items-center px-7 mb-4">
+                <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 ring-1 ring-indigo-400/30">
+                    <i class="fas fa-bowl-food text-xl"></i>
+                </div>
+                <div class="ml-4 logo-text">
+                    <span class="block text-sm font-black uppercase tracking-[0.2em] text-white/90">Moresto</span>
+                    <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Business
+                        Suite</span>
+                </div>
             </div>
 
             <!-- Nav -->
-            <nav class="flex-1 overflow-y-auto py-4 scrollbar-hide">
-                <div class="px-3 space-y-1">
+            <nav class="flex-1 overflow-y-auto px-4 py-2 scrollbar-hide space-y-8">
+                {{-- Group: Main Navigation --}}
+                <div class="space-y-1">
+                    <p class="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3 sidebar-text">
+                        General</p>
                     @php
                         $mainNav = [
                             [
                                 'label' => 'Dashboard',
-                                'icon' => 'fas fa-chart-line',
+                                'icon' => 'fas fa-grid-2',
+                                'alt_icon' => 'fas fa-chart-pie',
                                 'route' => 'admin.dashboard',
                                 'match' => 'admin.dashboard',
                             ],
                             [
                                 'label' => 'Master Data',
-                                'icon' => 'fas fa-database',
+                                'icon' => 'fas fa-layer-group',
                                 'route' => null,
-                                'match' => 'admin.products.*|admin.outlets.*|admin.suppliers.*|admin.customers.*|admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*',
+                                'match' => 'admin.products.*|admin.outlets.*|admin.suppliers.*|admin.customers.*|admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*|admin.users.*',
                                 'children' => [
                                     ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => 'admin.products.*'],
                                     ['label' => 'Outlet', 'route' => 'admin.outlets.index', 'match' => 'admin.outlets.*'],
                                     ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
                                     ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*'],
                                     ['label' => 'Customer', 'route' => 'admin.customers.index', 'match' => 'admin.customers.*'],
-                                    ['label' => 'Chart of Accounts', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*'],
-                                    ['label' => 'Akun Kas & Bank', 'route' => 'admin.cash-accounts.index', 'match' => 'admin.cash-accounts.*'],
-                                    ['label' => 'Kategori Biaya', 'route' => 'admin.expense-categories.index', 'match' => 'admin.expense-categories.*'],
+                                    ['label' => 'Finance Setup', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*'],
                                 ]
                             ],
                             [
-                                'label' => 'Produksi',
-                                'icon' => 'fas fa-industry',
-                                'route' => null,
-                                'match' => 'admin.boms.*',
-                                'children' => [
-                                    ['label' => 'Bill of Materials', 'route' => 'admin.boms.index', 'match' => 'admin.boms.*'],
-                                ]
-                            ],
-                            [
-                                'label' => 'Inventory & Stok',
-                                'icon' => 'fas fa-boxes',
+                                'label' => 'Inventory',
+                                'icon' => 'fas fa-box-archive',
+                                'alt_icon' => 'fas fa-boxes',
                                 'route' => 'admin.stocks.index',
-                                'match' => 'admin.stocks.*|admin.stock-transfers.*',
+                                'match' => 'admin.stocks.*|admin.stock-transfers.*|admin.boms.*',
                             ],
                             [
-                                'label' => 'Pembelian',
-                                'icon' => 'fas fa-shopping-cart',
+                                'label' => 'Purchasing',
+                                'icon' => 'fas fa-cart-shopping',
                                 'route' => 'admin.purchases.index',
                                 'match' => 'admin.purchases.*',
                             ],
                             [
-                                'label' => 'Promo & Voucher',
-                                'icon' => 'fas fa-tags',
+                                'label' => 'Finance',
+                                'icon' => 'fas fa-wallet',
+                                'route' => 'admin.cash-transactions.index',
+                                'match' => 'admin.cash-transactions.*|admin.expenses.*',
+                            ],
+                            [
+                                'label' => 'Marketing',
+                                'icon' => 'fas fa-bullhorn',
+                                'alt_icon' => 'fas fa-tags',
                                 'route' => 'admin.promo-vouchers.index',
                                 'match' => 'admin.promo-vouchers.*',
                             ],
                             [
-                                'label' => 'Keuangan',
-                                'icon' => 'fas fa-wallet',
-                                'route' => 'admin.cash-transactions.index',
-                                'match' => 'admin.cash-transactions.*',
-                            ],
-                            [
-                                'label' => 'Request Expense',
-                                'icon' => 'fas fa-receipt',
-                                'route' => 'admin.expenses.index',
-                                'match' => 'admin.expenses.*',
-                            ],
-                            [
-                                'label' => 'Laporan',
-                                'icon' => 'fas fa-file-invoice-dollar',
+                                'label' => 'Reports',
+                                'icon' => 'fas fa-chart-column',
+                                'alt_icon' => 'fas fa-file-invoice-dollar',
                                 'route' => 'admin.reports.index',
                                 'match' => 'admin.reports.*',
                             ],
@@ -174,32 +172,39 @@
                             $hasChildren = isset($item['children']) && count($item['children']) > 0;
                             $menuId = 'submenu-' . $index;
 
-                            $baseClass = "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150 group cursor-pointer";
-                            $activeClass = "bg-primary text-white shadow-md border border-white/10 shadow-orange-900/20";
-                            $inactiveClass = "text-slate-400 hover:text-white hover:bg-white/5";
+                            $baseClass = "flex items-center px-4 py-3 text-xs font-bold rounded-xl transition-all duration-200 group cursor-pointer relative overflow-hidden";
+                            $activeClass = "bg-indigo-600/10 text-indigo-400 ring-1 ring-indigo-500/20";
+                            $inactiveClass = "text-slate-500 hover:text-white hover:bg-white/[0.03]";
 
                             $linkClass = $isActive ? "$baseClass $activeClass" : "$baseClass $inactiveClass";
                         @endphp
 
                         @if($hasChildren)
-                            <div>
+                            <div class="space-y-1">
                                 <div class="{{ $linkClass }}" onclick="toggleSubmenu('{{ $menuId }}')">
-                                    <i class="{{ $item['icon'] }} w-5 text-center mr-3"></i>
-                                    <span class="sidebar-text flex-1">{{ $item['label'] }}</span>
-                                    <i id="arrow-{{ $menuId }}"
-                                        class="fas fa-chevron-down text-xs transition-transform duration-200 {{ $isActive ? 'rotate-180' : '' }} sidebar-text"></i>
+                                    <div class="relative z-10 flex items-center w-full">
+                                        <i
+                                            class="{{ $item['icon'] ?? $item['alt_icon'] }} w-5 text-center mr-3 scale-110 {{ $isActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400' }}"></i>
+                                        <span class="sidebar-text flex-1 uppercase tracking-wider">{{ $item['label'] }}</span>
+                                        <i id="arrow-{{ $menuId }}"
+                                            class="fas fa-chevron-down text-[10px] transition-transform duration-200 {{ $isActive ? 'rotate-180' : '' }} sidebar-text opacity-50"></i>
+                                    </div>
+                                    @if($isActive)
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                                    @endif
                                 </div>
                                 <div id="{{ $menuId }}"
-                                    class="overflow-hidden transition-all duration-300 ease-in-out space-y-1 mt-1"
+                                    class="overflow-hidden transition-all duration-300 ease-in-out pl-4 space-y-1"
                                     style="{{ $isActive ? 'max-height: 1000px;' : 'max-height: 0px;' }}">
                                     @foreach($item['children'] as $child)
                                         @php
                                             $isChildActive = $child['match'] ? request()->routeIs(explode('|', $child['match'])) : false;
                                             $childClass = $isChildActive
-                                                ? 'block pl-11 pr-3 py-2 text-sm font-medium text-primary'
-                                                : 'block pl-11 pr-3 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors';
+                                                ? 'flex items-center pl-8 pr-3 py-2 text-[11px] font-bold text-indigo-400 border-l border-indigo-500/50 bg-indigo-500/5'
+                                                : 'flex items-center pl-8 pr-3 py-2 text-[11px] font-bold text-slate-500 hover:text-white border-l border-white/5 hover:border-white/20 transition-all';
                                         @endphp
-                                        <a href="{{ route($child['route']) }}" class="{{ $childClass }} sidebar-text">
+                                        <a href="{{ route($child['route']) }}"
+                                            class="{{ $childClass }} sidebar-text uppercase tracking-widest">
                                             {{ $child['label'] }}
                                         </a>
                                     @endforeach
@@ -207,93 +212,134 @@
                             </div>
                         @else
                             <a href="{{ $item['route'] ? route($item['route']) : '#' }}" class="{{ $linkClass }}">
-                                <i class="{{ $item['icon'] }} w-5 text-center mr-3"></i>
-                                <span class="sidebar-text">{{ $item['label'] }}</span>
+                                <div class="relative z-10 flex items-center">
+                                    <i
+                                        class="{{ $item['icon'] ?? $item['alt_icon'] }} w-5 text-center mr-3 scale-110 {{ $isActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400' }}"></i>
+                                    <span class="sidebar-text uppercase tracking-wider">{{ $item['label'] }}</span>
+                                </div>
+                                @if($isActive)
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                                @endif
                             </a>
                         @endif
                     @endforeach
                 </div>
 
-                <div class="px-6 py-4 mt-4 border-t border-white/10">
-                    <p class="text-xs uppercase text-slate-500 font-semibold mb-2 sidebar-text">Kasir</p>
+                {{-- Group: System Utilities --}}
+                <div class="space-y-1">
+                    <p class="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3 sidebar-text">
+                        POS & Service</p>
                     <a href="{{ route('pos.dashboard') }}"
-                        class="flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-1">
-                        <i class="fas fa-cash-register w-5 text-center mr-3"></i>
+                        class="flex items-center px-4 py-3 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/[0.03] rounded-xl transition-all group uppercase tracking-wider">
+                        <i
+                            class="fas fa-cash-register w-5 text-center mr-3 scale-110 text-slate-600 group-hover:text-slate-400"></i>
                         <span class="sidebar-text">POS Kasir</span>
                     </a>
+
                     @php
-                        $posDeviceActive = request()->routeIs('admin.pos-devices.*');
-                        $posDeviceClass = $posDeviceActive
-                            ? 'flex items-center px-3 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors mb-1'
-                            : 'flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-1';
+                        $extras = [
+                            ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*'],
+                            ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*'],
+                        ];
                     @endphp
-                    <a href="{{ route('admin.pos-devices.index') }}" class="{{ $posDeviceClass }}">
-                        <i class="fas fa-tablet-screen-button w-5 text-center mr-3"></i>
-                        <span class="sidebar-text">Perangkat POS</span>
-                    </a>
-                    @php
-                        $voidTokenActive = request()->routeIs('admin.void-tokens.*');
-                        $voidTokenClass = $voidTokenActive
-                            ? 'flex items-center px-3 py-2 text-sm font-medium text-white bg-white/10 rounded-lg transition-colors mb-1'
-                            : 'flex items-center px-3 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors mb-1';
-                    @endphp
-                    <a href="{{ route('admin.void-tokens.index') }}" class="{{ $voidTokenClass }}">
-                        <i class="fas fa-key w-5 text-center mr-3"></i>
-                        <span class="sidebar-text">Token Void</span>
-                    </a>
+                    @foreach($extras as $extra)
+                        @php
+                            $isExtraActive = request()->routeIs(explode('|', $extra['match']));
+                            $extraClass = $isExtraActive
+                                ? 'flex items-center px-4 py-3 text-xs font-bold text-indigo-400 bg-indigo-600/10 ring-1 ring-indigo-500/20 rounded-xl transition-all group uppercase tracking-wider relative'
+                                : 'flex items-center px-4 py-3 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/[0.03] rounded-xl transition-all group uppercase tracking-wider';
+                        @endphp
+                        <a href="{{ route($extra['route']) }}" class="{{ $extraClass }}">
+                            <i
+                                class="{{ $extra['icon'] }} w-5 text-center mr-3 scale-110 {{ $isExtraActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400' }}"></i>
+                            <span class="sidebar-text">{{ $extra['label'] }}</span>
+                            @if($isExtraActive)
+                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                            @endif
+                        </a>
+                    @endforeach
                 </div>
             </nav>
 
-            <!-- User Profile -->
-            <div class="p-4 border-t border-white/10 bg-black/20">
-                <div class="flex items-center">
-                    <div
-                        class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                    </div>
-                    <div class="ml-3 sidebar-text overflow-hidden">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ auth()->user()->role?->display_name ?? 'Admin' }}
-                        </p>
+            <!-- User Profile (Bottom) -->
+            <div class="p-6">
+                <div class="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/5">
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-500/20 ring-2 ring-white/10">
+                                {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                            </div>
+                            <div
+                                class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#0B0F1A]">
+                            </div>
+                        </div>
+                        <div class="ml-3 sidebar-text overflow-hidden">
+                            <p class="text-xs font-black text-white truncate uppercase tracking-wider">
+                                {{ auth()->user()->name ?? 'User' }}
+                            </p>
+                            <p class="text-[9px] font-bold text-slate-500 truncate uppercase tracking-[0.1em] mt-0.5">
+                                {{ auth()->user()->role?->display_name ?? 'Administrator' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content Wrapper -->
-        <div class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative">
+        <div class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 relative">
 
             <!-- Header -->
-            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10 shrink-0">
+            <header
+                class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 z-40 shrink-0 sticky top-0">
                 <div class="flex items-center">
                     <button onclick="toggleSidebar()"
-                        class="hidden lg:flex text-slate-500 hover:text-blue-600 focus:outline-none mr-4">
-                        <i class="fas fa-bars text-lg"></i>
+                        class="hidden lg:flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all focus:outline-none mr-6 shadow-sm ring-1 ring-slate-200">
+                        <i class="fas fa-bars-staggered text-sm"></i>
                     </button>
                     <button onclick="toggleMobileSidebar()"
-                        class="lg:hidden text-slate-500 hover:text-blue-600 focus:outline-none mr-4">
-                        <i class="fas fa-bars text-lg"></i>
+                        class="lg:hidden h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all focus:outline-none mr-4 shadow-sm ring-1 ring-slate-200">
+                        <i class="fas fa-bars text-sm"></i>
                     </button>
-                    <h1 class="text-lg font-semibold text-slate-800">
-                        @yield('page-title', '')
-                    </h1>
+
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl font-black text-slate-800 tracking-tight">
+                                @yield('page-title', 'Dashboard')
+                            </h1>
+                            @hasSection('page-badge')
+                                @yield('page-badge')
+                            @endif
+                        </div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            @yield('page-subtitle', 'Overview & Business Insights')
+                        </p>
+                    </div>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <!-- Profile Dropdown or Actions could go here -->
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:flex flex-col items-end">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Server Time</p>
+                        <p class="text-xs font-bold text-slate-600">{{ now()->format('d M Y, H:i') }}</p>
+                    </div>
+                    <div class="h-8 w-px bg-slate-200"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                            class="text-sm text-slate-500 hover:text-red-600 font-medium transition-colors">
-                            Sign Out
+                            class="group flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm ring-1 ring-rose-200"
+                            title="Sign Out">
+                            <i class="fas fa-power-off text-sm"></i>
                         </button>
                     </form>
                 </div>
             </header>
 
             <!-- Content -->
-            <main class="flex-1 overflow-y-auto p-6 scrollbar-hide">
-                @yield('content')
+            <main class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+                <div class="animate-in fade-in duration-500">
+                    @yield('content')
+                </div>
             </main>
         </div>
     </div>

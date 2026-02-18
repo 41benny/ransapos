@@ -5,56 +5,84 @@
 @section('page-subtitle', 'Pusat laporan bisnis dan operasional')
 
 @section('content')
-<div class="mx-auto w-full max-w-7xl">
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 px-6 pt-6">
-            <div class="flex flex-wrap items-center gap-2">
-                @foreach($categories as $key => $category)
-                    <button type="button"
-                        class="report-tab-btn rounded-lg px-4 py-2 text-sm font-medium transition-colors {{ $loop->first ? 'bg-indigo-700 text-white' : 'text-slate-600 hover:bg-slate-100' }}"
-                        data-target="{{ $key }}">
-                        {{ $category['label'] }}
-                    </button>
-                @endforeach
-            </div>
+<div class="mx-auto w-full max-w-7xl space-y-8">
+    {{-- Header --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Pusat Informasi</div>
+            <h2 class="text-3xl font-normal text-slate-800">Katalog Laporan</h2>
         </div>
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-normal text-slate-400 uppercase tracking-wider">Total:</span>
+            <span class="rounded-full bg-indigo-600 px-3 py-1 text-xs font-normal text-white shadow-lg shadow-indigo-100">
+                {{ collect($categories)->sum(fn($c) => count($c['items'])) }} Laporan
+            </span>
+        </div>
+    </div>
 
-        <div class="p-6">
-            @foreach($categories as $key => $category)
-                <div class="report-tab-panel {{ $loop->first ? '' : 'hidden' }}" data-panel="{{ $key }}">
-                    <div class="mb-4 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-slate-800">{{ $category['label'] }}</h3>
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                            {{ count($category['items']) }} laporan
-                        </span>
-                    </div>
+    {{-- Tabs --}}
+    <div class="flex flex-wrap items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl w-fit border border-slate-200/60 shadow-sm">
+        @php
+            $catIcons = [
+                'ikhtisar' => 'fa-chart-pie',
+                'penjualan' => 'fa-shopping-cart',
+                'pembelian' => 'fa-truck',
+                'produk' => 'fa-box-open',
+                'lain' => 'fa-ellipsis-h',
+                'sdm' => 'fa-users'
+            ];
+        @endphp
+        @foreach($categories as $key => $category)
+            <button type="button"
+                class="report-tab-btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-normal uppercase tracking-wider transition-all {{ $loop->first ? 'bg-white text-indigo-600 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50' }}"
+                data-target="{{ $key }}">
+                <i class="fas {{ $catIcons[$key] ?? 'fa-file-alt' }} text-[10px] {{ $loop->first ? 'text-indigo-500' : 'text-slate-400' }}"></i>
+                {{ $category['label'] }}
+            </button>
+        @endforeach
+    </div>
 
-                    <div class="grid grid-cols-1 gap-x-12 gap-y-3 lg:grid-cols-2">
-                        @foreach($category['items'] as $slug)
-                            @php
-                                $report = $reports[$slug] ?? null;
-                            @endphp
+    {{-- Panels --}}
+    <div>
+        @foreach($categories as $key => $category)
+            <div class="report-tab-panel {{ $loop->first ? 'grid' : 'hidden' }} grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300" data-panel="{{ $key }}">
+                @foreach($category['items'] as $slug)
+                    @php
+                        $report = $reports[$slug] ?? null;
+                    @endphp
 
-                            @continue(!$report)
+                    @continue(!$report)
 
-                            <a href="{{ route('admin.reports.catalog.show', ['slug' => $slug, 'tab' => $key]) }}"
-                                class="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700">
-                                <span>{{ $report['title'] }}</span>
+                    <a href="{{ route('admin.reports.catalog.show', ['slug' => $slug, 'tab' => $key]) }}"
+                        class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-100">
+                        <div class="space-y-3">
+                            <div class="flex items-start justify-between">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-500">
+                                    <i class="fas {{ $catIcons[$key] ?? 'fa-file-invoice' }} text-sm"></i>
+                                </div>
                                 @if($report['implemented'] ?? false)
-                                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                                        Aktif
+                                    <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-normal uppercase tracking-wider text-emerald-600 border border-emerald-100">
+                                        Active
                                     </span>
                                 @else
-                                    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-normal uppercase tracking-wider text-amber-600 border border-amber-100">
                                         Draft
                                     </span>
                                 @endif
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            @endforeach
-        </div>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-normal text-slate-800 transition-colors group-hover:text-indigo-600">{{ $report['title'] }}</h4>
+                                <p class="mt-1 text-xs text-slate-400">Analisis data lengkap untuk {{ strtolower($report['title']) }}.</p>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex items-center justify-between pt-4 border-t border-slate-50 group-hover:border-indigo-50/50">
+                            <span class="text-[10px] font-normal uppercase tracking-widest text-slate-300 group-hover:text-indigo-300">Open Report</span>
+                            <i class="fas fa-arrow-right text-[10px] text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-indigo-500"></i>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endforeach
     </div>
 </div>
 @endsection
@@ -70,21 +98,37 @@
             if (!target) return;
 
             buttons.forEach(function (btn) {
-                btn.classList.remove('bg-indigo-700', 'text-white');
-                btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+                btn.classList.remove('bg-white', 'text-indigo-600', 'shadow-md', 'ring-1', 'ring-slate-200');
+                btn.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:bg-white/50');
+                
+                // Also handle icon color if needed, but let's keep it simple
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('text-indigo-500');
+                    icon.classList.add('text-slate-400');
+                }
             });
 
             panels.forEach(function (panel) {
                 panel.classList.add('hidden');
+                panel.classList.remove('grid');
             });
 
             const activeButton = document.querySelector(`.report-tab-btn[data-target="${target}"]`);
             const activePanel = document.querySelector(`.report-tab-panel[data-panel="${target}"]`);
             if (!activeButton || !activePanel) return;
 
-            activeButton.classList.add('bg-indigo-700', 'text-white');
-            activeButton.classList.remove('text-slate-600', 'hover:bg-slate-100');
+            activeButton.classList.add('bg-white', 'text-indigo-600', 'shadow-md', 'ring-1', 'ring-slate-200');
+            activeButton.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:bg-white/50');
+            
+            const activeIcon = activeButton.querySelector('i');
+            if (activeIcon) {
+                activeIcon.classList.remove('text-slate-400');
+                activeIcon.classList.add('text-indigo-500');
+            }
+
             activePanel.classList.remove('hidden');
+            activePanel.classList.add('grid');
         };
 
         if (initialTab) {

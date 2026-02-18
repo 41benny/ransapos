@@ -8,7 +8,7 @@
 <div class="page-fullwidth">
 <div class="mb-4 no-print flex justify-end">
     <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
-        class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        class="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-normal text-slate-700 hover:bg-slate-50">
         Kembali ke Katalog
     </a>
 </div>
@@ -21,21 +21,21 @@
 
             <!-- Date From -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                <label class="block text-sm font-normal text-gray-700 mb-1">Dari Tanggal</label>
                 <input type="date" name="date_from" value="{{ $dateFrom }}" required
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             </div>
 
             <!-- Date To -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                <label class="block text-sm font-normal text-gray-700 mb-1">Sampai Tanggal</label>
                 <input type="date" name="date_to" value="{{ $dateTo }}" required
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             </div>
 
             <!-- Outlet -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
+                <label class="block text-sm font-normal text-gray-700 mb-1">Outlet</label>
                 <select name="outlet_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">Semua Outlet</option>
                     @foreach($outlets as $outlet)
@@ -48,7 +48,7 @@
 
             <!-- Kasir -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Kasir</label>
+                <label class="block text-sm font-normal text-gray-700 mb-1">Kasir</label>
                 <select name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">Semua Kasir</option>
                     @foreach($users as $user)
@@ -61,7 +61,7 @@
 
             <!-- Status -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label class="block text-sm font-normal text-gray-700 mb-1">Status</label>
                 <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">Semua Status</option>
                     <option value="open" {{ ($filters['status'] ?? '') == 'open' ? 'selected' : '' }}>Open</option>
@@ -99,7 +99,7 @@
     <!-- Report Header (Print) -->
     <div class="p-6 border-b border-gray-100 print-only hidden">
         <div class="text-center mb-4">
-            <h1 class="text-2xl font-bold text-gray-900">LAPORAN SHIFT KASIR</h1>
+            <h1 class="text-2xl font-normal text-gray-900">LAPORAN SHIFT KASIR</h1>
             <p class="text-gray-600 mt-1">Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
             <p class="text-sm text-gray-500">Dicetak: {{ now()->format('d M Y, H:i') }}</p>
         </div>
@@ -111,28 +111,28 @@
 
             <!-- Total Shifts -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p class="text-sm text-blue-600 font-medium mb-1">Total Shift</p>
-                <p class="text-3xl font-bold text-blue-900">{{ $totals['total_shifts'] }}</p>
+                <p class="text-sm text-blue-600 font-normal mb-1">Total Shift</p>
+                <p class="text-3xl font-normal text-blue-900">{{ $totals['total_shifts'] }}</p>
             </div>
 
             <!-- Total Sales -->
             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p class="text-sm text-green-600 font-medium mb-1">Total Omzet</p>
-                <p class="text-2xl font-bold text-green-900">Rp {{ number_format($totals['total_sales'], 0, ',', '.') }}</p>
+                <p class="text-sm text-green-600 font-normal mb-1">Total Omzet</p>
+                <p class="text-2xl font-normal text-green-900">Rp {{ number_format($totals['total_sales'], 0, ',', '.') }}</p>
             </div>
 
             <!-- Total Difference -->
             <div class="bg-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-50 border border-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-200 rounded-lg p-4">
-                <p class="text-sm text-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-600 font-medium mb-1">Total Selisih</p>
-                <p class="text-2xl font-bold text-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-900">
+                <p class="text-sm text-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-600 font-normal mb-1">Total Selisih</p>
+                <p class="text-2xl font-normal text-{{ $totals['total_difference'] >= 0 ? 'green' : 'red' }}-900">
                     {{ $totals['total_difference'] >= 0 ? '+' : '' }} Rp {{ number_format(abs($totals['total_difference']), 0, ',', '.') }}
                 </p>
             </div>
 
             <!-- Issues -->
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <p class="text-sm text-orange-600 font-medium mb-1">Shift dengan Selisih</p>
-                <p class="text-xl font-bold text-orange-900">
+                <p class="text-sm text-orange-600 font-normal mb-1">Shift dengan Selisih</p>
+                <p class="text-xl font-normal text-orange-900">
                     {{ $totals['shifts_with_shortage'] }} kurang / {{ $totals['shifts_with_overage'] }} lebih
                 </p>
             </div>
@@ -144,15 +144,15 @@
         <table class="imperial-table w-full">
             <thead class="">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Session Number</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Outlet</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kasir</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Dibuka</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ditutup</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total Penjualan</th>
-                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Selisih</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase no-print">Aksi</th>
+                    <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Session Number</th>
+                    <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Outlet</th>
+                    <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Kasir</th>
+                    <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Dibuka</th>
+                    <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Ditutup</th>
+                    <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Total Penjualan</th>
+                    <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Selisih</th>
+                    <th class="px-6 py-3 text-center text-xs font-normal text-gray-600 uppercase">Status</th>
+                    <th class="px-6 py-3 text-center text-xs font-normal text-gray-600 uppercase no-print">Aksi</th>
                 </tr>
             </thead>
             <tbody class="">
@@ -172,10 +172,10 @@
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
                         {{ $session->closed_at ? $session->closed_at->format('d M Y, H:i') : '-' }}
                     </td>
-                    <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold text-gray-900">
+                    <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal text-gray-900">
                         Rp {{ number_format($session->total_sales, 0, ',', '.') }}
                     </td>
-                    <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-semibold">
+                    <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal">
                         @if($session->status === 'closed')
                             @if($session->difference > 0)
                                 <span class="text-green-600">+ Rp {{ number_format($session->difference, 0, ',', '.') }}</span>
@@ -190,14 +190,14 @@
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-center">
                         @if($session->status === 'open')
-                            <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Open</span>
+                            <span class="px-3 py-1 text-xs font-normal bg-green-100 text-green-800 rounded-full">Open</span>
                         @else
-                            <span class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Closed</span>
+                            <span class="px-3 py-1 text-xs font-normal bg-gray-100 text-gray-800 rounded-full">Closed</span>
                         @endif
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-center no-print">
                         <a href="{{ route('admin.reports.shifts.show', ['cashSession' => $session, 'tab' => request('tab', 'penjualan')]) }}"
-                           class="text-amber-700 hover:text-amber-800 text-sm font-medium">
+                           class="text-amber-700 hover:text-amber-800 text-sm font-normal">
                             Detail →
                         </a>
                     </td>

@@ -123,7 +123,7 @@
                         <!-- Pajak -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Pajak (Rp)</label>
-                            <input type="number" name="tax_amount" value="{{ old('tax_amount', 0) }}" min="0" step="0.01"
+                            <input type="text" name="tax_amount" value="{{ old('tax_amount', 0) }}" inputmode="decimal" data-currency-input="1"
                                    onchange="calculateTotal()" id="taxAmount"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
@@ -131,7 +131,7 @@
                         <!-- Diskon Global -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Diskon Global (Rp)</label>
-                            <input type="number" name="discount_amount" value="{{ old('discount_amount', 0) }}" min="0" step="0.01"
+                            <input type="text" name="discount_amount" value="{{ old('discount_amount', 0) }}" inputmode="decimal" data-currency-input="1"
                                    onchange="calculateTotal()" id="discountAmount"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
@@ -206,6 +206,82 @@ const productsBySku = new Map(
 
 function normalizeKeyword(value) {
     return String(value ?? '').trim().toLowerCase();
+}
+
+function parseCurrencyInput(value) {
+    const raw = String(value ?? '').trim().replace(/[^\d,.\-]/g, '');
+    if (!raw) {
+        return 0;
+    }
+
+    let normalized = raw;
+    const hasComma = normalized.includes(',');
+    const dotCount = (normalized.match(/\./g) || []).length;
+
+    if (hasComma) {
+        normalized = normalized.replace(/\./g, '').replace(',', '.');
+    } else if (dotCount > 0) {
+        const dotParts = normalized.split('.');
+        const decimalLike = dotCount === 1
+            && dotParts[1]
+            && dotParts[1].length > 0
+            && dotParts[1].length <= 2;
+
+        if (!decimalLike) {
+            normalized = normalized.replace(/\./g, '');
+        }
+    }
+
+    normalized = normalized.replace(/(?!^)-/g, '');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatCurrencyInput(value) {
+    const numeric = Number(value || 0);
+    if (!Number.isFinite(numeric)) {
+        return '';
+    }
+
+    return numeric.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+}
+
+function bindCurrencyInput(input, onAfterRender = null) {
+    if (!input || input.dataset.currencyBound === '1') {
+        return;
+    }
+
+    input.dataset.currencyBound = '1';
+    const render = () => {
+        const raw = String(input.value ?? '').trim();
+        if (!raw) {
+            if (typeof onAfterRender === 'function') {
+                onAfterRender();
+            }
+            return;
+        }
+
+        input.value = formatCurrencyInput(parseCurrencyInput(raw));
+        if (typeof onAfterRender === 'function') {
+            onAfterRender();
+        }
+    };
+
+    input.addEventListener('input', render);
+    input.addEventListener('blur', render);
+    render();
+}
+
+function sanitizeCurrencyInputValue(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+        return '';
+    }
+
+    return String(parseCurrencyInput(raw));
 }
 
 function escapeHtml(value) {
@@ -302,12 +378,12 @@ function addItem(initialData = {}) {
                    class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="qty-${currentIndex}">
         </td>
         <td class="px-4 py-3">
-            <input type="number" name="items[${currentIndex}][unit_price]" value="${unitPrice}" min="0" step="0.01" required
+            <input type="text" name="items[${currentIndex}][unit_price]" value="${unitPrice}" inputmode="decimal" data-currency-input="1" required
                    onchange="calculateItemSubtotal(${currentIndex})"
                    class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="price-${currentIndex}">
         </td>
         <td class="px-4 py-3">
-            <input type="number" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" min="0" step="0.01"
+            <input type="text" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" inputmode="decimal" data-currency-input="1"
                    onchange="calculateItemSubtotal(${currentIndex})"
                    class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="discount-${currentIndex}">
         </td>
@@ -325,6 +401,8 @@ function addItem(initialData = {}) {
     `;
 
     tbody.appendChild(row);
+    bindCurrencyInput(document.getElementById(`price-${currentIndex}`), () => calculateItemSubtotal(currentIndex));
+    bindCurrencyInput(document.getElementById(`discount-${currentIndex}`), () => calculateItemSubtotal(currentIndex));
     if (selectedProductId) {
         syncProductInput(currentIndex, true);
     }
@@ -360,7 +438,7 @@ function syncProductInput(index, allowPartial = false) {
     productIdInput.value = selectedProduct.id;
 
     if (priceInput && previousProductId !== selectedProduct.id) {
-        priceInput.value = selectedProduct.purchasePrice;
+        priceInput.value = formatCurrencyInput(selectedProduct.purchasePrice);
     }
 
     calculateItemSubtotal(index);
@@ -368,8 +446,8 @@ function syncProductInput(index, allowPartial = false) {
 
 function calculateItemSubtotal(index) {
     const qty = parseFloat(document.getElementById(`qty-${index}`).value) || 0;
-    const price = parseFloat(document.getElementById(`price-${index}`).value) || 0;
-    const discount = parseFloat(document.getElementById(`discount-${index}`).value) || 0;
+    const price = parseCurrencyInput(document.getElementById(`price-${index}`).value);
+    const discount = parseCurrencyInput(document.getElementById(`discount-${index}`).value);
 
     const subtotal = (qty * price) - discount;
     document.getElementById(`subtotal-${index}`).textContent = formatRupiah(subtotal);
@@ -397,14 +475,14 @@ function calculateTotal() {
 
         if (qtyInput && priceInput) {
             const qty = parseFloat(qtyInput.value) || 0;
-            const price = parseFloat(priceInput.value) || 0;
-            const discount = parseFloat(discountInput.value) || 0;
+            const price = parseCurrencyInput(priceInput.value);
+            const discount = parseCurrencyInput(discountInput.value);
             subtotal += (qty * price) - discount;
         }
     }
 
-    const tax = parseFloat(document.getElementById('taxAmount').value) || 0;
-    const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+    const tax = parseCurrencyInput(document.getElementById('taxAmount').value);
+    const discount = parseCurrencyInput(document.getElementById('discountAmount').value);
     const total = subtotal + tax - discount;
 
     document.getElementById('displaySubtotal').textContent = formatRupiah(subtotal);
@@ -440,6 +518,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     calculateTotal();
+    bindCurrencyInput(document.getElementById('taxAmount'), calculateTotal);
+    bindCurrencyInput(document.getElementById('discountAmount'), calculateTotal);
 
     form.addEventListener('submit', function(event) {
         const invalidInput = form.querySelector(':invalid');
@@ -488,6 +568,10 @@ document.addEventListener('DOMContentLoaded', function() {
             submitButton.classList.add('opacity-60', 'cursor-not-allowed');
             submitButton.textContent = 'Menyimpan...';
         }
+
+        form.querySelectorAll('[data-currency-input="1"]').forEach((input) => {
+            input.value = sanitizeCurrencyInputValue(input.value);
+        });
     });
 });
 </script>
