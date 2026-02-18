@@ -88,29 +88,45 @@ class PettyCashController extends Controller
                 'Akun biaya default petty cash belum tersedia. Hubungi admin untuk setup akun "Keperluan Outlet Lainnya".');
         }
 
-        $description = sprintf(
-            'Penerima: %s | %s',
-            trim((string) $validated['recipient_name']),
-            trim((string) $validated['description'])
-        );
-
         try {
-            $transaction = $this->cashAccountService->recordTransaction([
+            $rows = $validated['rows'] ?? [];
+            $mappedRows = array_map(function (array $row) use ($defaultExpenseAccount) {
+                $description = sprintf(
+                    'Penerima: %s | %s',
+                    trim((string) ($row['recipient_name'] ?? '')),
+                    trim((string) ($row['description'] ?? ''))
+                );
+
+                return [
+                    'coa_account_id' => $defaultExpenseAccount->id,
+                    'amount' => (float) ($row['amount'] ?? 0),
+                    'description' => $description,
+                ];
+            }, $rows);
+
+            $batchReferenceId = count($mappedRows) > 1
+                ? (int) round(microtime(true) * 1000000)
+                : null;
+
+            $transactions = $this->cashAccountService->recordTransactionsBulk([
                 'cash_account_id' => $pettyCashAccount->id,
                 'coa_account_id' => $defaultExpenseAccount->id,
                 'type' => 'out',
                 'transaction_date' => $validated['transaction_date'],
-                'amount' => (float) $validated['amount'],
-                'description' => $description,
                 'reference_type' => 'petty_cash_pos',
-                'reference_id' => null,
+                'reference_id' => $batchReferenceId,
                 'notes' => null,
                 'created_by' => auth()->id(),
-            ]);
+            ], $mappedRows);
+
+            $count = count($transactions);
+            $firstNumber = $transactions[0]->transaction_number ?? null;
 
             return redirect()
                 ->route('pos.petty-cash.index')
-                ->with('success', 'Pengeluaran petty cash berhasil disimpan. Nomor: ' . $transaction->transaction_number);
+                ->with('success', $count === 1
+                    ? 'Pengeluaran petty cash berhasil disimpan. Nomor: ' . $firstNumber
+                    : 'Pengeluaran petty cash berhasil disimpan. Total: ' . $count . ' baris.');
         } catch (Exception $e) {
             return back()
                 ->withInput()
