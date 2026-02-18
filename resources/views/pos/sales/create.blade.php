@@ -256,7 +256,10 @@
                                 <div class="flex items-center gap-3 bg-gray-100 rounded-lg px-2 py-1">
                                     <button @click="decreaseQty(index)"
                                         class="w-5 h-5 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-red-600 transition text-xs font-bold disabled:opacity-50">-</button>
-                                    <span class="text-xs font-bold w-4 text-center">@{{ item.quantity }}</span>
+                                    <input type="number" min="1" step="1" inputmode="numeric" :value="item.quantity"
+                                        @change="setQtyFromInput(index, $event.target.value)"
+                                        @blur="setQtyFromInput(index, $event.target.value)"
+                                        class="w-12 h-7 text-xs font-bold text-center rounded border border-gray-200 bg-white text-gray-700 focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none">
                                     <button @click="increaseQty(index)"
                                         class="w-5 h-5 flex items-center justify-center bg-red-600 rounded shadow-sm text-white hover:bg-red-700 transition text-xs font-bold">+</button>
                                 </div>
@@ -815,6 +818,26 @@
                     getProductById(productId) {
                         return this.productById[Number(productId)] || null;
                     },
+                    normalizeQuantity(value, fallback = 1) {
+                        const parsed = Number.parseInt(String(value ?? '').replace(',', '.'), 10);
+                        if (Number.isFinite(parsed) && parsed > 0) {
+                            return parsed;
+                        }
+
+                        const safeFallback = Number.parseInt(String(fallback ?? '1'), 10);
+                        return Number.isFinite(safeFallback) && safeFallback > 0 ? safeFallback : 1;
+                    },
+                    setQtyFromInput(index, rawValue) {
+                        const item = this.cart[index];
+                        if (!item) return;
+
+                        const normalizedQty = this.normalizeQuantity(rawValue, item.quantity);
+                        if (normalizedQty === item.quantity) return;
+
+                        item.quantity = normalizedQty;
+                        this.recalculateCartItem(item);
+                        this.refreshAppliedVoucher();
+                    },
                     getPromotionDiscountPercent(categoryId) {
                         if (!this.selectedPromotion || !Array.isArray(this.selectedPromotion.rules)) {
                             return 0;
@@ -829,12 +852,13 @@
                         return Number(rule.discount_percent || 0);
                     },
                     recalculateCartItem(item) {
-                        const qty = Number(item.quantity || 0);
+                        const qty = this.normalizeQuantity(item.quantity, 1);
                         const unitPrice = Number(item.unit_price || 0);
                         const baseAmount = qty * unitPrice;
                         const promoPercent = this.getPromotionDiscountPercent(item.category_id);
                         const promoDiscount = Math.min(baseAmount, Number((baseAmount * (promoPercent / 100)).toFixed(2)));
 
+                        item.quantity = qty;
                         item.promo_discount_percent = promoPercent;
                         item.discount_amount = promoDiscount;
                         item.subtotal = baseAmount - promoDiscount;
@@ -959,7 +983,7 @@
                         const price = this.getProductPrice(product);
 
                         if (existing) {
-                            existing.quantity++;
+                            existing.quantity = this.normalizeQuantity(Number(existing.quantity || 0) + 1, 1);
                             existing.unit_price = price;
                             this.recalculateCartItem(existing);
                         } else {
@@ -989,14 +1013,18 @@
                     },
                     increaseQty(index) {
                         const item = this.cart[index];
-                        item.quantity++;
+                        if (!item) return;
+                        item.quantity = this.normalizeQuantity(Number(item.quantity || 0) + 1, 1);
                         this.recalculateCartItem(item);
                         this.refreshAppliedVoucher();
                     },
                     decreaseQty(index) {
                         const item = this.cart[index];
-                        if (item.quantity > 1) {
-                            item.quantity--;
+                        if (!item) return;
+
+                        const currentQty = this.normalizeQuantity(item.quantity, 1);
+                        if (currentQty > 1) {
+                            item.quantity = currentQty - 1;
                             this.recalculateCartItem(item);
                         } else {
                             this.cart.splice(index, 1);
@@ -1056,7 +1084,7 @@
                             discount_value: this.appliedVoucher ? Number(this.appliedVoucher.discount_value || 0) : 0,
                             items: this.cart.map(i => ({
                                 product_id: i.product_id,
-                                quantity: i.quantity,
+                                quantity: this.normalizeQuantity(i.quantity, 1),
                                 unit_price: i.unit_price,
                                 discount_amount: Number(i.discount_amount || 0),
                                 notes: i.notes || null
