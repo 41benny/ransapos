@@ -204,10 +204,19 @@ class CashAccountService
 
             $account = CashAccount::findOrFail($header['cash_account_id']);
             $transactions = [];
+            $isBatchTransaction = count($rows) > 1;
+            $batchReferenceId = $isBatchTransaction
+                ? (int) round(microtime(true) * 1000000)
+                : null;
 
             foreach ($rows as $row) {
                 $data = array_merge($header, $row);
                 unset($data['rows']);
+
+                if ($isBatchTransaction && empty($data['reference_type'])) {
+                    $data['reference_type'] = 'general_batch';
+                    $data['reference_id'] = $batchReferenceId;
+                }
 
                 $transactions[] = $this->applyTransaction($account, $data)
                     ->fresh(['cashAccount', 'creator', 'coaAccount']);

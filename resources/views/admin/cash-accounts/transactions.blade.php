@@ -150,12 +150,47 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($transactions as $transaction)
+                        @php
+                            $displayTransactions = $transactions->getCollection()
+                                ->groupBy(function ($transaction) {
+                                    if ($transaction->reference_type === 'general_batch' && !empty($transaction->reference_id)) {
+                                        return 'batch:' . $transaction->reference_id;
+                                    }
+
+                                    return 'single:' . $transaction->id;
+                                })
+                                ->map(function ($group) {
+                                    $representative = $group->first();
+                                    $rowCount = $group->count();
+                                    $isBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
+
+                                    $representative->setAttribute('display_amount', (float) $group->sum('amount'));
+                                    $representative->setAttribute('display_row_count', $rowCount);
+                                    $representative->setAttribute('display_is_batch', $isBatch);
+                                    $representative->setAttribute(
+                                        'display_description',
+                                        $isBatch ? 'Transaksi Umum (' . $rowCount . ' baris)' : $representative->description
+                                    );
+
+                                    return $representative;
+                                })
+                                ->values();
+                        @endphp
+
+                        @forelse($displayTransactions as $transaction)
+                            @php
+                                $displayAmount = (float) ($transaction->display_amount ?? $transaction->amount);
+                                $displayRowCount = (int) ($transaction->display_row_count ?? 1);
+                                $isBatchRow = (bool) ($transaction->display_is_batch ?? false);
+                            @endphp
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     <a href="{{ route('admin.cash-transactions.show', $transaction) }}" class="hover:text-indigo-600 hover:underline">
                                         {{ $transaction->transaction_number }}
                                     </a>
+                                    @if($isBatchRow)
+                                        <div class="text-xs text-gray-500 mt-0.5">{{ $displayRowCount }} baris digabung</div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $transaction->transaction_date->format('d M Y') }}
@@ -166,14 +201,17 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-2 text-sm text-gray-900">
-                                    <div class="truncate w-full" title="{{ $transaction->description }}">
-                                        {{ $transaction->description }}
+                                    <div class="truncate w-full" title="{{ $transaction->display_description }}">
+                                        {{ $transaction->display_description }}
                                     </div>
+                                    @if($isBatchRow)
+                                        <div class="text-xs text-gray-500 mt-0.5">Nilai total dari input multi-baris</div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     @if($transaction->type === 'in')
                                         <span class="text-sm font-semibold text-green-600">
-                                            Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                                            Rp {{ number_format($displayAmount, 0, ',', '.') }}
                                         </span>
                                     @else
                                         <span class="text-sm text-gray-300">-</span>
@@ -182,7 +220,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     @if($transaction->type === 'out')
                                         <span class="text-sm font-semibold text-red-600">
-                                            Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                                            Rp {{ number_format($displayAmount, 0, ',', '.') }}
                                         </span>
                                     @else
                                         <span class="text-sm text-gray-300">-</span>
@@ -192,7 +230,9 @@
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                    @if($transaction->coaAccount)
+                                    @if($isBatchRow)
+                                        <span class="text-gray-600">Multi COA ({{ $displayRowCount }} baris)</span>
+                                    @elseif($transaction->coaAccount)
                                         <span title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
                                             {{ $transaction->coaAccount->code }} - {{ Str::limit($transaction->coaAccount->name, 28) }}
                                         </span>

@@ -222,6 +222,19 @@
                         </table>
                     </div>
 
+                    <div class="flex justify-end">
+                        <div class="w-full max-w-md rounded-lg border border-indigo-100 bg-indigo-50/40 px-4 py-3">
+                            <div class="flex items-center justify-between text-sm text-gray-600">
+                                <span>Total Baris</span>
+                                <span id="rows-count-summary" class="font-semibold text-gray-800">{{ count($rows) }} baris</span>
+                            </div>
+                            <div class="mt-1 flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Total Jumlah</span>
+                                <span id="rows-total-amount" class="text-lg font-bold text-indigo-700">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Catatan Global</label>
                         <textarea id="notes"
@@ -442,10 +455,19 @@
         const rowsEl = document.getElementById('transaction-rows');
         const addBtn = document.getElementById('add-row');
         const clearBtn = document.getElementById('clear-rows');
+        const rowsCountSummaryEl = document.getElementById('rows-count-summary');
+        const rowsTotalAmountEl = document.getElementById('rows-total-amount');
         const template = document.getElementById('row-template').innerHTML.trim();
         const coaByType = @json($coaByType);
 
         let nextIndex = 0;
+
+        function formatCurrency(amount) {
+            return 'Rp ' + amount.toLocaleString('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+            });
+        }
 
         function refreshRowNumbers() {
             rowsEl.querySelectorAll('tr').forEach((row, idx) => {
@@ -454,6 +476,30 @@
                     numEl.textContent = idx + 1;
                 }
             });
+        }
+
+        function refreshRowsSummary() {
+            const rows = rowsEl.querySelectorAll('tr');
+            const totalAmount = Array.from(rows).reduce((carry, row) => {
+                const input = row.querySelector('input[name$="[amount]"]');
+                if (!input) {
+                    return carry;
+                }
+
+                const parsed = parseFloat(input.value);
+                if (Number.isNaN(parsed) || parsed <= 0) {
+                    return carry;
+                }
+
+                return carry + parsed;
+            }, 0);
+
+            if (rowsCountSummaryEl) {
+                rowsCountSummaryEl.textContent = rows.length + ' baris';
+            }
+            if (rowsTotalAmountEl) {
+                rowsTotalAmountEl.textContent = formatCurrency(totalAmount);
+            }
         }
 
         function fillCoaOptions(select, type, selectedValue) {
@@ -536,10 +582,12 @@
                         row.querySelectorAll('input').forEach((input) => input.value = '');
                         const coa = row.querySelector('[data-role="coa"]');
                         fillCoaOptions(coa, typeEl.value, '');
+                        refreshRowsSummary();
                         return;
                     }
                     row.remove();
                     refreshRowNumbers();
+                    refreshRowsSummary();
                 });
             }
 
@@ -548,6 +596,12 @@
             fillCoaOptions(coa, typeEl.value, selected);
             if (coa) {
                 coa.removeAttribute('data-selected');
+            }
+
+            const amountInput = row.querySelector('input[name$="[amount]"]');
+            if (amountInput) {
+                amountInput.addEventListener('input', refreshRowsSummary);
+                amountInput.addEventListener('change', refreshRowsSummary);
             }
         }
 
@@ -565,6 +619,7 @@
             bindRow(row);
         });
         refreshRowNumbers();
+        refreshRowsSummary();
         syncCategoryUI();
         syncPurchaseRemainingInfo();
 
@@ -594,6 +649,7 @@
                 rowsEl.appendChild(newRow);
                 bindRow(newRow);
                 refreshRowNumbers();
+                refreshRowsSummary();
             });
         }
 
@@ -604,6 +660,7 @@
                 rowsEl.appendChild(newRow);
                 bindRow(newRow);
                 refreshRowNumbers();
+                refreshRowsSummary();
             });
         }
     });
