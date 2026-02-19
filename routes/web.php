@@ -45,11 +45,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->name('products.create-bundle')
         ->middleware('permission:products.create');
     Route::resource('products', ProductController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:products.view');
-    Route::resource('products', ProductController::class)
         ->only(['create', 'store'])
         ->middleware('permission:products.create');
+    Route::resource('products', ProductController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:products.view');
     Route::resource('products', ProductController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:products.update');
@@ -58,11 +58,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->middleware('permission:products.delete');
 
     Route::resource('outlets', OutletController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:outlets.view');
-    Route::resource('outlets', OutletController::class)
         ->only(['create', 'store'])
         ->middleware('permission:outlets.create');
+    Route::resource('outlets', OutletController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:outlets.view');
     Route::resource('outlets', OutletController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:outlets.update');
@@ -93,11 +93,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Purchases
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:purchases.view');
-    Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->only(['create', 'store'])
         ->middleware('permission:purchases.create');
+    Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:purchases.view');
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:purchases.update');
@@ -187,22 +187,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Bank Transfers
     Route::resource('bank-transfers', \App\Http\Controllers\Admin\BankTransferController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:bank-transfers.view');
-    Route::resource('bank-transfers', \App\Http\Controllers\Admin\BankTransferController::class)
         ->only(['create', 'store'])
         ->middleware('permission:bank-transfers.create');
+    Route::resource('bank-transfers', \App\Http\Controllers\Admin\BankTransferController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:bank-transfers.view');
 
     // COA (Chart of Accounts)
     Route::post('coa-accounts/generate-balance-template', [\App\Http\Controllers\Admin\CoaAccountController::class, 'generateBalanceTemplate'])
         ->name('coa-accounts.generate-balance-template')
         ->middleware('permission:coa-accounts.balance-template.generate');
     Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:coa-accounts.view');
-    Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class)
         ->only(['create', 'store'])
         ->middleware('permission:coa-accounts.create');
+    Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:coa-accounts.view');
     Route::resource('coa-accounts', \App\Http\Controllers\Admin\CoaAccountController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:coa-accounts.update');
@@ -212,11 +212,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Bill of Materials (BOM)
     Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:boms.view');
-    Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
         ->only(['create', 'store'])
         ->middleware('permission:boms.create');
+    Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:boms.view');
     Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:boms.update');
@@ -249,11 +249,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Stock Transfers
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:stock-transfers.view');
-    Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
         ->only(['create', 'store'])
         ->middleware('permission:stock-transfers.create');
+    Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:stock-transfers.view');
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:stock-transfers.update');
@@ -278,11 +278,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Expense Management
     Route::resource('expense-categories', \App\Http\Controllers\Admin\ExpenseCategoryController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:expense-categories.view');
-    Route::resource('expense-categories', \App\Http\Controllers\Admin\ExpenseCategoryController::class)
         ->only(['create', 'store'])
         ->middleware('permission:expense-categories.create');
+    Route::resource('expense-categories', \App\Http\Controllers\Admin\ExpenseCategoryController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:expense-categories.view');
     Route::resource('expense-categories', \App\Http\Controllers\Admin\ExpenseCategoryController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:expense-categories.update');
@@ -291,11 +291,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->middleware('permission:expense-categories.delete');
 
     Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:expenses.view');
-    Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
         ->only(['create', 'store'])
         ->middleware('permission:expenses.create');
+    Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:expenses.view');
     Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:expenses.update');
@@ -317,11 +317,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Customer Management (CRM)
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:customers.view');
-    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
         ->only(['create', 'store'])
         ->middleware('permission:customers.create');
+    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:customers.view');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:customers.update');
