@@ -127,7 +127,8 @@
                                     ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
                                     ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*'],
                                     ['label' => 'Customer', 'route' => 'admin.customers.index', 'match' => 'admin.customers.*'],
-                                    ['label' => 'Finance Setup', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*'],
+                                    ['label' => 'Kas & Bank', 'route' => 'admin.cash-accounts.index', 'match' => 'admin.cash-accounts.*'],
+                                    ['label' => 'Akunting & Biaya', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*|admin.expense-categories.*'],
                                 ]
                             ],
                             [
