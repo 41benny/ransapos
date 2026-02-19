@@ -1,181 +1,193 @@
 @extends('layouts.admin')
 
 @section('title', 'Buat Pembelian Baru')
-@section('page-title', 'Buat Pembelian Baru')
-@section('page-subtitle', 'Isi form untuk membuat pembelian barang dari supplier')
+@section('page-title', 'Buat Pembelian')
+@section('page-subtitle', 'Buat pesanan pembelian baru untuk pengadaan stok barang')
 
 @section('content')
-<form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm">
-    @csrf
-
-    <div class="max-w-6xl space-y-6">
-        @if(session('error'))
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <div class="font-semibold">Gagal menyimpan pembelian</div>
-                <div class="mt-1">{{ session('error') }}</div>
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <div class="font-semibold">Form belum valid</div>
-                <ul class="mt-1 list-disc pl-5 space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <div id="purchaseClientDebug" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"></div>
-
-        <!-- Info Pembelian -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-900">Informasi Pembelian</h3>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Outlet -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Outlet Tujuan <span class="text-red-500">*</span>
-                    </label>
-                    <select name="outlet_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror">
-                        <option value="">Pilih outlet...</option>
-                        @foreach($outlets as $outlet)
-                            <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
-                                {{ $outlet->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('outlet_id')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Supplier -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Supplier <span class="text-red-500">*</span>
-                    </label>
-                    <select name="supplier_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 @error('supplier_id') border-red-500 @enderror">
-                        <option value="">Pilih supplier...</option>
-                        @foreach($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                {{ $supplier->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('supplier_id')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Tanggal -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Tanggal Pembelian <span class="text-red-500">*</span>
-                    </label>
-                    <input type="date" name="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 @error('purchase_date') border-red-500 @enderror">
-                    @error('purchase_date')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
+<div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    {{-- Header Section --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Buat Pembelian</h1>
+            <p class="text-xs font-normal text-slate-500 mt-0.5">Isi detail pesanan pembelian untuk sinkronisasi inventaris</p>
         </div>
-
-        <!-- Items Pembelian -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">Item Pembelian</h3>
-                <button type="button" onclick="addItem()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition">
-                    + Tambah Item
-                </button>
-            </div>
-            <div class="p-6">
-                <div class="overflow-x-auto">
-                    <table class="imperial-table w-full" id="itemsTable">
-                        <thead class="bg-gray-50 border-b">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produk</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Qty</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Harga Satuan</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Diskon</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Subtotal</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="itemsBody">
-                            <!-- Items will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-sm text-gray-500 mt-4">* Klik "Tambah Item" untuk menambahkan produk</p>
-            </div>
-        </div>
-
-        <!-- Summary -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <!-- Pajak -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Pajak (Rp)</label>
-                            <input type="text" name="tax_amount" value="{{ old('tax_amount', 0) }}" inputmode="decimal" data-currency-input="1"
-                                   onchange="calculateTotal()" id="taxAmount"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-
-                        <!-- Diskon Global -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Diskon Global (Rp)</label>
-                            <input type="text" name="discount_amount" value="{{ old('discount_amount', 0) }}" inputmode="decimal" data-currency-input="1"
-                                   onchange="calculateTotal()" id="discountAmount"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        </div>
-
-                        <!-- Catatan -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Catatan</label>
-                            <textarea name="notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">{{ old('notes') }}</textarea>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 bg-gray-50 p-6 rounded-lg">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Subtotal Items:</span>
-                            <span class="font-semibold" id="displaySubtotal">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Pajak:</span>
-                            <span class="font-semibold" id="displayTax">Rp 0</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Diskon:</span>
-                            <span class="font-semibold text-red-600" id="displayDiscount">Rp 0</span>
-                        </div>
-                        <div class="border-t border-gray-300 pt-3 flex justify-between">
-                            <span class="text-lg font-semibold text-gray-900">Total:</span>
-                            <span class="text-xl font-bold text-indigo-600" id="displayTotal">Rp 0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="flex items-center justify-end space-x-3">
-            <a href="{{ route('admin.purchases.index') }}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
-                Batal
+        <div class="flex items-center gap-3 no-print">
+            <a href="{{ route('admin.purchases.index') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                <i class="fas fa-arrow-left text-[10px]"></i>
+                <span>Kembali</span>
             </a>
-            <button type="submit" id="submitPurchaseBtn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">
-                Simpan Pembelian
-            </button>
         </div>
     </div>
-</form>
+
+    @if(session('error'))
+        <div class="mb-6 rounded-xl bg-rose-50 border border-rose-100 p-4 flex items-start gap-3 text-rose-600 animate-in slide-in-from-top-2">
+            <i class="fas fa-circle-exclamation mt-0.5"></i>
+            <div>
+                <p class="text-xs font-normal font-semibold">Gagal menyimpan pembelian</p>
+                <p class="text-[11px] font-normal mt-0.5">{{ session('error') }}</p>
+            </div>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mb-6 rounded-xl bg-amber-50 border border-amber-100 p-4 flex flex-col gap-2 text-amber-700 animate-in slide-in-from-top-2 text-xs">
+            <div class="flex items-center gap-2 font-normal">
+                <i class="fas fa-circle-exclamation"></i>
+                <span class="font-semibold">Mohon periksa kembali formulir Anda:</span>
+            </div>
+            <ul class="list-disc list-inside pl-2 space-y-1 font-normal opacity-90">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div id="purchaseClientDebug" class="hidden mb-6 rounded-xl bg-amber-50 border border-amber-100 p-4 text-[11px] font-normal text-amber-700 italic animate-in slide-in-from-top-2"></div>
+
+    <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm" class="space-y-6">
+        @csrf
+
+        {{-- Info Card --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-info-circle text-indigo-500 text-[10px]"></i>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Informasi Transaksi</h3>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet Tujuan <span class="text-rose-500">*</span></label>
+                        <select name="outlet_id" required class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            <option value="">Pilih outlet...</option>
+                            @foreach($outlets as $outlet)
+                                <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                    {{ $outlet->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Supplier <span class="text-rose-500">*</span></label>
+                        <select name="supplier_id" required class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            <option value="">Pilih supplier...</option>
+                            @foreach($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                    {{ $supplier->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tanggal Pembelian <span class="text-rose-500">*</span></label>
+                        <input type="date" name="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" required
+                               class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Item Card --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-shopping-basket text-indigo-500 text-[10px]"></i>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Daftar Item Pembelian</h3>
+                </div>
+                <button type="button" onclick="addItem()" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    <i class="fas fa-plus"></i>
+                    <span>TAMBAH ITEM</span>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200" id="itemsTable">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">Pilih Produk</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-28">Qty</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">Harga Satuan</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">Diskon (Item)</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">Subtotal</th>
+                            <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-400 w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody" class="divide-y divide-slate-100 bg-white">
+                        {{-- Items injected by JS --}}
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-slate-50/50 border-t border-slate-100">
+                <p class="text-[9px] text-slate-400 italic font-normal uppercase tracking-wider">* Klik tombol "Tambah Item" untuk menambah baris produk baru.</p>
+            </div>
+        </div>
+
+        {{-- Summary Grid --}}
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {{-- Notes & Adjustments --}}
+            <div class="md:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pajak (Tax Rp)</label>
+                        <input type="text" name="tax_amount" value="{{ old('tax_amount', 0) }}" inputmode="decimal" data-currency-input="1"
+                               onchange="calculateTotal()" id="taxAmount"
+                               class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Diskon Global (Rp)</label>
+                        <input type="text" name="discount_amount" value="{{ old('discount_amount', 0) }}" inputmode="decimal" data-currency-input="1"
+                               onchange="calculateTotal()" id="discountAmount"
+                               class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan Tambahan</label>
+                    <textarea name="notes" rows="3" placeholder="Contoh: Pembayaran tempo 30 hari..."
+                              class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes') }}</textarea>
+                </div>
+            </div>
+
+            {{-- Calculations --}}
+            <div class="md:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center text-[11px] font-normal text-slate-500">
+                        <span class="uppercase tracking-widest">Subtotal Item</span>
+                        <span class="text-slate-700 tabular-nums" id="displaySubtotal">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] font-normal text-slate-500">
+                        <span class="uppercase tracking-widest">Pajak (Tax)</span>
+                        <span class="text-slate-700 tabular-nums" id="displayTax">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] font-normal text-slate-500">
+                        <span class="uppercase tracking-widest">Diskon Global</span>
+                        <span class="text-rose-500 tabular-nums" id="displayDiscount">Rp 0</span>
+                    </div>
+                </div>
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-end">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] font-normal text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">Total Bayar</span>
+                        <span class="text-2xl font-normal text-indigo-600 tracking-tight leading-none tabular-nums" id="displayTotal">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Action Bar --}}
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+            <a href="{{ route('admin.purchases.index') }}" class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest mr-2">Batalkan</a>
+            <button type="submit" id="submitPurchaseBtn"
+                class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-10 py-3.5 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
+                <i class="fas fa-check text-[10px]"></i>
+                <span>Simpan Transaksi Pembelian</span>
+            </button>
+        </div>
+    </form>
+</div>
 
 <script>
 let itemIndex = 0;
@@ -349,7 +361,7 @@ function addItem(initialData = {}) {
     const currentIndex = itemIndex;
     const tbody = document.getElementById('itemsBody');
     const row = document.createElement('tr');
-    row.className = 'border-b';
+    row.className = 'group hover:bg-slate-50/50 transition-colors';
     row.id = `item-${currentIndex}`;
 
     const selectedProductId = String(initialData?.product_id ?? '');
@@ -360,42 +372,40 @@ function addItem(initialData = {}) {
     const discountAmount = initialData?.discount_amount ?? 0;
 
     row.innerHTML = `
-        <td class="px-4 py-3">
-            <div class="space-y-1">
+        <td class="px-5 py-4">
+            <div class="flex flex-col gap-1.5">
                 <input type="text" id="product-input-${currentIndex}" list="${productMasterListId}"
                        value="${escapeHtml(selectedProductLabel)}"
-                       placeholder="Ketik nama / SKU produk..."
+                       placeholder="Ketik nama atau SKU..."
                        oninput="syncProductInput(${currentIndex})"
                        onchange="syncProductInput(${currentIndex}, true)"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                       class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                 <input type="hidden" name="items[${currentIndex}][product_id]" id="product-id-${currentIndex}" value="${escapeHtml(selectedProductId)}">
-                <p class="text-xs text-gray-500">Ketik item lalu pilih dari suggestion master produk</p>
+                <p class="text-[9px] text-slate-400 font-normal italic tracking-wider ml-1">Suggestion master produk otomatis muncul saat mengetik.</p>
             </div>
         </td>
-        <td class="px-4 py-3">
+        <td class="px-5 py-4">
             <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="qty-${currentIndex}">
+                   class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="qty-${currentIndex}">
         </td>
-        <td class="px-4 py-3">
+        <td class="px-5 py-4">
             <input type="text" name="items[${currentIndex}][unit_price]" value="${unitPrice}" inputmode="decimal" data-currency-input="1" required
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="price-${currentIndex}">
+                   class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="price-${currentIndex}">
         </td>
-        <td class="px-4 py-3">
+        <td class="px-5 py-4">
             <input type="text" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" inputmode="decimal" data-currency-input="1"
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm" id="discount-${currentIndex}">
+                   class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="discount-${currentIndex}">
         </td>
-        <td class="px-4 py-3">
-            <span class="font-semibold text-gray-900" id="subtotal-${currentIndex}">Rp 0</span>
+        <td class="px-5 py-4 text-right">
+            <span class="text-[12px] font-normal text-slate-800 tabular-nums" id="subtotal-${currentIndex}">Rp 0</span>
         </td>
-        <td class="px-4 py-3 text-center">
+        <td class="px-5 py-4 text-center">
             <button type="button" onclick="removeItem(${currentIndex})"
-                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
+                    class="h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-95">
+                <i class="fas fa-times text-[10px]"></i>
             </button>
         </td>
     `;
@@ -533,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const itemRows = document.querySelectorAll('#itemsBody tr').length;
         const productIdInputs = Array.from(
-            document.querySelectorAll('#itemsBody input[name*=\"[product_id]\"]')
+            document.querySelectorAll('#itemsBody input[name*="[product_id]"]')
         );
         const selectedProducts = productIdInputs.filter((inputEl) => inputEl.value);
 
@@ -554,15 +564,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        console.info('Purchase submit debug', {
-            outlet_id: form.querySelector('select[name=\"outlet_id\"]')?.value ?? null,
-            supplier_id: form.querySelector('select[name=\"supplier_id\"]')?.value ?? null,
-            purchase_date: form.querySelector('input[name=\"purchase_date\"]')?.value ?? null,
-            item_rows: itemRows,
-            selected_products: selectedProducts.length,
-            total: document.getElementById('displayTotal')?.textContent ?? null,
-        });
-
         if (submitButton) {
             submitButton.disabled = true;
             submitButton.classList.add('opacity-60', 'cursor-not-allowed');
@@ -576,4 +577,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
-
