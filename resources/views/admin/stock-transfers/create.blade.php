@@ -1,29 +1,57 @@
 @extends('layouts.admin')
 
 @section('title', 'Buat Transfer Stok')
+@section('page-title', 'Buat Transfer Stok')
+@section('page-subtitle', 'Buat pengiriman stok barang antar outlet cabang')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
-    <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Buat Transfer Stok Baru</h1>
-            <p class="text-sm text-gray-600 mt-1">Transfer stok antar outlet</p>
+<div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    {{-- Header Section --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Buat Transfer Baru</h1>
+            <p class="text-xs font-normal text-slate-500 mt-0.5">Lakukan pemindahan stok produk antar outlet dengan aman</p>
         </div>
+        <div class="flex items-center gap-3 no-print">
+            <a href="{{ route('admin.stock-transfers.index') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                <i class="fas fa-arrow-left text-[10px]"></i>
+                <span>Kembali ke Daftar</span>
+            </a>
+        </div>
+    </div>
 
-        <!-- Form -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <form method="POST" action="{{ route('admin.stock-transfers.store') }}" id="transferForm">
-                @csrf
+    @if($errors->any())
+        <div class="mb-6 rounded-xl bg-rose-50 border border-rose-100 p-4 flex flex-col gap-2 text-rose-600 animate-in slide-in-from-top-2 text-xs">
+            <div class="flex items-center gap-2 font-normal">
+                <i class="fas fa-circle-exclamation"></i>
+                <span>Mohon periksa kembali formulir Anda:</span>
+            </div>
+            <ul class="list-disc list-inside pl-2 space-y-1 font-normal opacity-90">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-                <!-- Transfer Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label for="from_outlet_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Dari Outlet <span class="text-red-500">*</span>
-                        </label>
+    <form method="POST" action="{{ route('admin.stock-transfers.store') }}" id="transferForm" class="space-y-6">
+        @csrf
+
+        {{-- Route Info Card --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-route text-indigo-500 text-[10px]"></i>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Rute Pengiriman</h3>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="flex flex-col gap-1.5 lg:col-span-1">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Asal (From) <span class="text-rose-500">*</span></label>
                         <select name="from_outlet_id" id="from_outlet_id" required
-                                class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500">
+                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Pengirim</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('from_outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -31,17 +59,12 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('from_outlet_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
-                    <div>
-                        <label for="to_outlet_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Ke Outlet <span class="text-red-500">*</span>
-                        </label>
+                    <div class="flex flex-col gap-1.5 lg:col-span-1">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tujuan (To) <span class="text-rose-500">*</span></label>
                         <select name="to_outlet_id" id="to_outlet_id" required
-                                class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500">
+                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Penerima</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('to_outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -49,70 +72,57 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('to_outlet_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 lg:col-span-1">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tanggal <span class="text-rose-500">*</span></label>
+                        <input type="date" name="transfer_date" id="transfer_date" required value="{{ old('transfer_date', date('Y-m-d')) }}"
+                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 lg:col-span-1">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan</label>
+                        <input type="text" name="notes" id="notes" value="{{ old('notes') }}" placeholder="Opsional..."
+                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label for="transfer_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            Tanggal Transfer <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="transfer_date" id="transfer_date" required
-                               value="{{ old('transfer_date', date('Y-m-d')) }}"
-                               class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500">
-                        @error('transfer_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-                            Catatan
-                        </label>
-                        <input type="text" name="notes" id="notes" value="{{ old('notes') }}"
-                               placeholder="Catatan opsional..."
-                               class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500">
-                        @error('notes')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <!-- Items Section -->
-                <div class="border-t pt-6 mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Produk yang Ditransfer</h3>
-                        <button type="button" id="addItemBtn"
-                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
-                            <i class="fas fa-plus mr-2"></i>Tambah Produk
-                        </button>
-                    </div>
-
-                    <div id="itemsContainer" class="space-y-3">
-                        <!-- Items will be added here dynamically -->
-                    </div>
-
-                    @error('items')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Submit Buttons -->
-                <div class="flex gap-3 pt-6 border-t">
-                    <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition font-semibold">
-                        <i class="fas fa-check mr-2"></i>Simpan Transfer
-                    </button>
-                    <a href="{{ route('admin.stock-transfers.index') }}" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
-                        Batal
-                    </a>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+
+        {{-- Items Card --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-shopping-basket text-indigo-500 text-[10px]"></i>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Item Produk yang Di-transfer</h3>
+                </div>
+                <button type="button" id="addItemBtn"
+                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    <i class="fas fa-plus"></i>
+                    <span>TAMBAH PRODUK</span>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div id="itemsContainer" class="space-y-4">
+                    {{-- Rows injected by JS --}}
+                </div>
+            </div>
+
+            <div class="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end items-center">
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.stock-transfers.index') }}" class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest">Batalkan</a>
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
+                        <i class="fas fa-check text-[10px]"></i>
+                        <span>SIMPAN & PROSES TRANSFER</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -130,34 +140,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function addItem() {
         const itemHtml = `
-            <div class="flex gap-3 items-start bg-gray-50 p-4 rounded-lg item-row" data-index="${itemIndex}">
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Produk</label>
-                    <select name="items[${itemIndex}][product_id]" class="product-select w-full border-gray-300 rounded-lg" required>
-                        <option value="">Pilih Produk</option>
-                        ${products.map(p => `<option value="${p.id}">${p.name} - ${p.sku || 'No SKU'}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="w-32">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                    <input type="number" name="items[${itemIndex}][quantity]" step="0.01" min="0.01" required
-                           class="quantity-input w-full border-gray-300 rounded-lg" placeholder="0">
-                </div>
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stok Tersedia</label>
-                    <div class="available-stock text-sm text-gray-600 bg-white border border-gray-300 rounded-lg px-3 py-2">
-                        -
+            <div class="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md item-row animate-in zoom-in-95 duration-200" data-index="${itemIndex}">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+                    <div class="md:col-span-5">
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Produk</label>
+                        <select name="items[${itemIndex}][product_id]" class="product-select w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" required>
+                            <option value="">Pilih Produk yang akan dikirim</option>
+                            ${products.map(p => `<option value="${p.id}">${p.name} ${p.sku ? '('+p.sku+')' : ''}</option>`).join('')}
+                        </select>
                     </div>
-                </div>
-                <div class="w-24">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                    <input type="text" name="items[${itemIndex}][notes]"
-                           class="w-full border-gray-300 rounded-lg" placeholder="Opsional">
-                </div>
-                <div class="pt-6">
-                    <button type="button" class="remove-item-btn text-red-600 hover:text-red-800 p-2">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Tersedia</label>
+                        <div class="available-stock text-[12px] font-normal text-slate-800 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 min-h-[40px] flex items-center">
+                            -
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Qty Kirim</label>
+                        <input type="number" name="items[${itemIndex}][quantity]" step="0.01" min="0.01" required
+                               class="quantity-input w-full px-4 py-2 text-[12px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" placeholder="0.00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Catatan Item</label>
+                        <input type="text" name="items[${itemIndex}][notes]"
+                               class="w-full px-4 py-2 text-[11px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" placeholder="Catatan kecil...">
+                    </div>
+                    <div class="md:col-span-1 flex justify-center pb-1">
+                        <button type="button" class="remove-item-btn h-9 w-9 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90 p-2">
+                            <i class="fas fa-times text-[10px]"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -176,9 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listener for remove button
         removeBtn.addEventListener('click', function() {
             if (itemsContainer.children.length > 1) {
-                newRow.remove();
-            } else {
-                alert('Minimal harus ada 1 produk');
+                newRow.classList.add('zoom-out-95', 'opacity-0');
+                setTimeout(() => newRow.remove(), 200);
             }
         });
 
@@ -196,21 +207,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        availableStockDiv.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px] text-indigo-400"></i>';
+
         fetch(`/admin/stock-transfers/available-stock?product_id=${productId}&outlet_id=${outletId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     availableStockDiv.textContent = `${data.available_stock} ${data.unit}`;
-                    availableStockDiv.classList.remove('text-red-600');
-                    availableStockDiv.classList.add('text-gray-600');
+                    availableStockDiv.classList.remove('text-rose-600');
+                    availableStockDiv.classList.add('text-slate-800');
 
                     if (data.available_stock <= 0) {
-                        availableStockDiv.classList.remove('text-gray-600');
-                        availableStockDiv.classList.add('text-red-600');
+                        availableStockDiv.classList.remove('text-slate-800');
+                        availableStockDiv.classList.add('text-rose-600');
                     }
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                availableStockDiv.textContent = 'Error';
+            });
     }
 
     // Refresh stock when from outlet changes
@@ -225,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fromOutlet = document.getElementById('from_outlet_id').value;
         const toOutlet = document.getElementById('to_outlet_id').value;
 
-        if (fromOutlet === toOutlet) {
+        if (fromOutlet && toOutlet && fromOutlet === toOutlet) {
             e.preventDefault();
             alert('Outlet pengirim dan penerima tidak boleh sama!');
             return false;
@@ -234,11 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const items = document.querySelectorAll('.item-row');
         if (items.length === 0) {
             e.preventDefault();
-            alert('Minimal harus ada 1 produk!');
+            alert('Minimal harus ada 1 produk untuk melakukan transfer!');
             return false;
         }
     });
 });
 </script>
 @endpush
-@endsection

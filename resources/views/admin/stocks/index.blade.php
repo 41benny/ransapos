@@ -1,262 +1,281 @@
 @extends('layouts.admin')
 
 @section('title', 'Manajemen Stok')
+@section('page-title', 'Manajemen Stok')
+@section('page-subtitle', 'Monitoring stok produk per outlet dan mutasi barang')
 
 @section('content')
-    <div class="page-fullwidth px-0">
-        <div class="px-6 py-6 page-card-fill">
-            <!-- Header -->
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Manajemen Stok</h1>
-                    <p class="text-sm text-gray-600 mt-1">Monitoring stok produk per outlet</p>
-                </div>
-                <div class="flex gap-2">
-                    <a href="{{ route('admin.stocks.adjustment') }}"
-                        class="btn btn-secondary text-indigo-700 border-indigo-200 hover:bg-indigo-50">
-                        <i class="fas fa-adjust"></i>Stock Adjustment
-                    </a>
-                    <a href="{{ route('admin.stock-transfers.create') }}" class="btn btn-primary">
-                        <i class="fas fa-exchange-alt"></i>Transfer Stok
-                    </a>
-                </div>
-            </div>
+<div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    {{-- Header Section --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Manajemen Stok</h1>
+            <p class="text-xs font-normal text-slate-500 mt-0.5">Monitoring stok produk per outlet dan mutasi barang</p>
+        </div>
+        <div class="flex items-center gap-3 no-print">
+            <a href="{{ route('admin.stocks.adjustment') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                <i class="fas fa-adjust text-[10px] text-indigo-500"></i>
+                <span>Stock Adjustment</span>
+            </a>
+            <a href="{{ route('admin.stock-transfers.create') }}"
+                class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                <i class="fas fa-exchange-alt text-[10px]"></i>
+                <span>Transfer Stok</span>
+            </a>
+        </div>
+    </div>
 
-            <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Total Produk</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ $stats['total_products'] }}</p>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-box text-blue-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Nilai Stok</p>
-                            <p class="text-2xl font-bold text-gray-900">Rp
-                                {{ number_format($stats['total_value'], 0, ',', '.') }}</p>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-full">
-                            <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Stok Minimum</p>
-                            <p class="text-2xl font-bold text-yellow-600">{{ $stats['low_stock_count'] }}</p>
-                        </div>
-                        <div class="bg-yellow-100 p-3 rounded-full">
-                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Stok Habis</p>
-                            <p class="text-2xl font-bold text-red-600">{{ $stats['out_of_stock'] }}</p>
-                        </div>
-                        <div class="bg-red-100 p-3 rounded-full">
-                            <i class="fas fa-times-circle text-red-600 text-xl"></i>
-                        </div>
-                    </div>
+    {{-- Summary Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {{-- Total Produk --}}
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-slate-500">Total Produk</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                    <i class="fas fa-box text-xs"></i>
                 </div>
             </div>
-
-            <!-- Filters -->
-            <div class="bg-white rounded-lg shadow p-4 mb-6">
-                <form method="GET" action="{{ route('admin.stocks.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
-                        <select name="outlet_id" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="">Semua Outlet</option>
-                            @foreach($outlets as $outlet)
-                                <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
-                                    {{ $outlet->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-                        <select name="category_id" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="">Semua Kategori</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cari Produk</label>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama atau SKU..."
-                            class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Filter</label>
-                        <select name="low_stock" class="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                            <option value="">Semua Stok</option>
-                            <option value="1" {{ request('low_stock') == '1' ? 'selected' : '' }}>Stok Minimum</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-end gap-2">
-                        <button type="submit" class="flex-1 btn btn-primary h-9 justify-center">
-                            <i class="fas fa-search"></i>Filter
-                        </button>
-                        <a href="{{ route('admin.stocks.index') }}"
-                            class="btn btn-secondary h-9 w-9 justify-center p-0">
-                            <i class="fas fa-redo"></i>
-                        </a>
-                    </div>
-                </form>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ number_format($stats['total_products'], 0, ',', '.') }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Item Terdaftar</p>
             </div>
+        </div>
 
-            <!-- Stock Table -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Outlet</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stok Saat Ini
-                                </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stok Min</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Nilai (HPP)
-                                </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($stocks as $stock)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <div class="font-medium text-gray-900">{{ $stock->product->name }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $stock->product->sku ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $stock->product->category->name ?? '-' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $stock->outlet->name }}
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <span
-                                            class="font-semibold text-gray-900">{{ number_format($stock->quantity, 2) }}</span>
-                                        <span class="text-xs text-gray-500 ml-1">{{ $stock->product->unit ?? 'pcs' }}</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right text-sm text-gray-600">
-                                        {{ number_format($stock->product->min_stock ?? 0, 2) }}
-                                    </td>
-                                    <td class="px-6 py-4 text-right text-sm text-gray-900">
-                                        Rp
-                                        {{ number_format($stock->quantity * ($stock->product->purchase_price ?? 0), 0, ',', '.') }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($stock->quantity <= 0)
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                                Habis
-                                            </span>
-                                        @elseif($stock->quantity < ($stock->product->min_stock ?? 0))
-                                            <span
-                                                class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                Minimum
-                                            </span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                Normal
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('admin.stocks.card', ['product_id' => $stock->product_id, 'outlet_id' => $stock->outlet_id]) }}"
-                                            class="text-indigo-600 hover:text-indigo-900 text-sm">
-                                            <i class="fas fa-history mr-1"></i>Kartu Stok
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
-                                        <i class="fas fa-box-open text-4xl mb-3 text-gray-300"></i>
-                                        <p>Tidak ada data stok</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+        {{-- Nilai Stok --}}
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Nilai Stok (HPP)</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                    <i class="fas fa-dollar-sign text-xs"></i>
                 </div>
-
-                <!-- Pagination -->
-                @if($stocks->hasPages())
-                    <div class="px-6 py-4 border-t">
-                        {{ $stocks->links() }}
-                    </div>
-                @endif
             </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($stats['total_value'], 0, ',', '.') }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Total Kapitalisir</p>
+            </div>
+        </div>
 
-            <!-- Quick Links -->
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="{{ route('admin.stocks.mutations') }}"
-                    class="bg-white rounded-lg shadow p-4 hover:shadow-lg transition">
-                    <div class="flex items-center">
-                        <div class="bg-blue-100 p-3 rounded-full mr-4">
-                            <i class="fas fa-list text-blue-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900">History Mutasi</h3>
-                            <p class="text-sm text-gray-600">Lihat riwayat perubahan stok</p>
-                        </div>
-                    </div>
-                </a>
+        {{-- Stok Minimum --}}
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-amber-500">Stok Minimum</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+                    <i class="fas fa-exclamation-triangle text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ $stats['low_stock_count'] }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Perlu Reorder</p>
+            </div>
+        </div>
 
-                <a href="{{ route('admin.stock-transfers.index') }}"
-                    class="bg-white rounded-lg shadow p-4 hover:shadow-lg transition">
-                    <div class="flex items-center">
-                        <div class="bg-green-100 p-3 rounded-full mr-4">
-                            <i class="fas fa-exchange-alt text-green-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900">Transfer Stok</h3>
-                            <p class="text-sm text-gray-600">Transfer antar outlet</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="{{ route('admin.purchases.index') }}"
-                    class="bg-white rounded-lg shadow p-4 hover:shadow-lg transition">
-                    <div class="flex items-center">
-                        <div class="bg-purple-100 p-3 rounded-full mr-4">
-                            <i class="fas fa-shopping-cart text-purple-600 text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-900">Pembelian</h3>
-                            <p class="text-sm text-gray-600">Tambah stok via pembelian</p>
-                        </div>
-                    </div>
-                </a>
+        {{-- Stok Habis --}}
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-rose-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-rose-500">Stok Habis</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
+                    <i class="fas fa-times-circle text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ $stats['out_of_stock'] }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Status Kosong</p>
             </div>
         </div>
     </div>
+
+    {{-- Filter Section --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-filter text-indigo-500 text-[10px]"></i>
+                <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Data Stok</h3>
+            </div>
+        </div>
+        <div class="p-5">
+            <form method="GET" action="{{ route('admin.stocks.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
+                    <select name="outlet_id" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Outlet</option>
+                        @foreach($outlets as $outlet)
+                            <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                {{ $outlet->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kategori</label>
+                    <select name="category_id" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Cari Produk</label>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama atau SKU..."
+                        class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kondisi Stok</label>
+                    <select name="low_stock" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Stok</option>
+                        <option value="1" {{ request('low_stock') == '1' ? 'selected' : '' }}>Stok Limit / Habis</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                        <i class="fas fa-search text-[10px]"></i>
+                        <span>Filter</span>
+                    </button>
+                    <a href="{{ route('admin.stocks.index') }}" class="inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                        <i class="fas fa-redo text-[10px]"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Stock Table --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Produk</th>
+                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Stok Saat Ini</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Stok Min</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nilai (HPP)</th>
+                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
+                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    @forelse($stocks as $stock)
+                        <tr class="group hover:bg-slate-50/50 transition-colors">
+                            <td class="px-5 py-3.5">
+                                <div class="flex flex-col">
+                                    <span class="text-[11.5px] font-normal text-slate-800 leading-tight">{{ $stock->product->name }}</span>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[9px] font-mono text-slate-400 uppercase tracking-tighter bg-slate-100 px-1 rounded">{{ $stock->product->sku ?? 'NO-SKU' }}</span>
+                                        <span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest">{{ $stock->product->category->name ?? '-' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-1.5">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                                    <span class="text-[11px] font-normal text-slate-600 tracking-tight">{{ $stock->outlet->name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <div class="flex flex-col items-end">
+                                    <span class="text-[11.5px] font-normal text-slate-800">{{ number_format($stock->quantity, 2, ',', '.') }}</span>
+                                    <span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest">{{ $stock->product->unit ?? 'pcs' }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <span class="text-[11px] font-normal text-slate-500 italic">{{ number_format($stock->product->min_stock ?? 0, 2, ',', '.') }}</span>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <span class="text-[11.5px] font-normal text-slate-800 tracking-tight">Rp {{ number_format($stock->quantity * ($stock->product->purchase_price ?? 0), 0, ',', '.') }}</span>
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                @if($stock->quantity <= 0)
+                                    <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-[9px] font-normal text-rose-600 ring-1 ring-inset ring-rose-200">
+                                        HABIS
+                                    </span>
+                                @elseif($stock->quantity < ($stock->product->min_stock ?? 0))
+                                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[9px] font-normal text-amber-600 ring-1 ring-inset ring-amber-200">
+                                        LIMIT
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-normal text-emerald-600 ring-1 ring-inset ring-emerald-200">
+                                        NORMAL
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
+                                <a href="{{ route('admin.stocks.card', ['product_id' => $stock->product_id, 'outlet_id' => $stock->outlet_id]) }}"
+                                    class="inline-flex items-center gap-1.5 text-[10px] font-normal text-indigo-500 hover:text-indigo-700 transition-colors uppercase tracking-widest">
+                                    <i class="fas fa-history text-[9px]"></i>
+                                    <span>Kartu Stok</span>
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center opacity-40">
+                                    <i class="fas fa-box-open text-4xl mb-4 text-slate-300"></i>
+                                    <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Tidak ada data stok ditemukan</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Pagination --}}
+        @if($stocks->hasPages())
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+                {{ $stocks->links() }}
+            </div>
+        @endif
+    </div>
+
+    {{-- Quick Links / Utility Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 no-print">
+        <a href="{{ route('admin.stocks.mutations') }}"
+            class="group bg-white rounded-xl border border-slate-100 p-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-list-ul text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-normal text-slate-800 uppercase tracking-wider leading-none mb-1">History Mutasi</h3>
+                    <p class="text-[10px] font-normal text-slate-400">Lacak setiap perubahan stok</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ route('admin.stock-transfers.index') }}"
+            class="group bg-white rounded-xl border border-slate-100 p-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-truck-moving text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-normal text-slate-800 uppercase tracking-wider leading-none mb-1">Data Transfer</h3>
+                    <p class="text-[10px] font-normal text-slate-400">Monitoring pengiriman barang</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ route('admin.purchases.index') }}"
+            class="group bg-white rounded-xl border border-slate-100 p-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                    <i class="fas fa-shopping-basket text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-normal text-slate-800 uppercase tracking-wider leading-none mb-1">Purchase Order</h3>
+                    <p class="text-[10px] font-normal text-slate-400">Pengadaan barang & supplier</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
 @endsection

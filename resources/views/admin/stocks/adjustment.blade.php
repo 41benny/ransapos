@@ -1,30 +1,43 @@
 @extends('layouts.admin')
 
 @section('title', 'Stock Adjustment')
+@section('page-title', 'Stock Adjustment')
+@section('page-subtitle', 'Penyesuaian stok manual (opname) untuk sinkronisasi inventaris')
 
 @section('content')
-    <div class="max-w-6xl mx-auto space-y-6">
-        <div class="flex items-center justify-between gap-3">
+    <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {{-- Header Section --}}
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-                <p class="text-sm text-slate-500">Penyesuaian stok manual (opname)</p>
-                <h1 class="text-2xl font-semibold text-slate-900">Stock Adjustment</h1>
+                <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Stock Adjustment</h1>
+                <p class="text-xs font-normal text-slate-500 mt-0.5">Sinkronisasi stok fisik dengan data sistem melalui
+                    opname manual</p>
             </div>
-            <a href="{{ route('admin.stocks.index') }}"
-                class="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
-                <i class="fas fa-arrow-left"></i> Kembali
-            </a>
+            <div class="flex items-center gap-3 no-print">
+                <a href="{{ route('admin.stocks.index') }}"
+                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    <i class="fas fa-arrow-left text-[10px]"></i>
+                    <span>Kembali ke Stok</span>
+                </a>
+            </div>
         </div>
 
         @if(session('error'))
-            <div class="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4">
-                {{ session('error') }}
+            <div
+                class="mb-6 rounded-xl bg-rose-50 border border-rose-100 p-4 flex items-start gap-3 text-rose-600 animate-in slide-in-from-top-2">
+                <i class="fas fa-circle-exclamation mt-0.5"></i>
+                <p class="text-xs font-normal">{{ session('error') }}</p>
             </div>
         @endif
 
         @if($errors->any())
-            <div class="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4">
-                <div class="font-semibold mb-2">Periksa formulir:</div>
-                <ul class="list-disc list-inside space-y-1 text-sm">
+            <div
+                class="mb-6 rounded-xl bg-rose-50 border border-rose-100 p-4 flex flex-col gap-2 text-rose-600 animate-in slide-in-from-top-2 text-xs">
+                <div class="flex items-center gap-2 font-normal">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span>Mohon periksa kembali formulir Anda:</span>
+                </div>
+                <ul class="list-disc list-inside pl-2 space-y-1 font-normal opacity-90">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -32,82 +45,111 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('admin.stocks.adjustment.store') }}" id="bulkAdjustmentForm"
-            class="space-y-6">
+        <form method="POST" action="{{ route('admin.stocks.adjustment.store') }}" id="bulkAdjustmentForm" class="space-y-6">
             @csrf
 
-            <div class="bg-white rounded-2xl shadow-premium border border-slate-200 p-6 space-y-6">
-                <div class="grid gap-5 md:grid-cols-3">
-                    <div class="md:col-span-1">
-                        <label for="outlet_id" class="block text-sm font-medium text-slate-700 mb-1">
-                            Outlet <span class="text-rose-500">*</span>
-                        </label>
-                        <select name="outlet_id" id="outlet_id" required
-                            class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors">
-                            <option value="">Pilih Outlet</option>
-                            @foreach($outlets as $outlet)
-                                <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
-                                    {{ $outlet->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label for="notes" class="block text-sm font-medium text-slate-700 mb-1">
-                            Catatan/Alasan <span class="text-rose-500">*</span>
-                        </label>
-                        <input type="text" name="notes" id="notes" required maxlength="500"
-                            value="{{ old('notes') }}"
-                            class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-colors"
-                            placeholder="Contoh: Stok awal per 2026-02-05 / hasil stock opname...">
-                        <p class="text-xs text-slate-500 mt-1">Satu catatan ini akan dipakai untuk semua baris penyesuaian.</p>
+            {{-- General Info Card --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-info-circle text-indigo-500 text-[10px]"></i>
+                        <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Informasi
+                            Penyesuaian</h3>
                     </div>
                 </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="flex flex-col gap-1.5 md:col-span-1">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pilih Outlet
+                                <span class="text-rose-500">*</span></label>
+                            <select name="outlet_id" id="outlet_id" required
+                                class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                                <option value="">Pilih Outlet Tujuan</option>
+                                @foreach($outlets as $outlet)
+                                    <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                        {{ $outlet->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="text-xs uppercase tracking-wide text-amber-600 font-semibold">Detail</p>
-                        <h2 class="text-lg font-semibold text-slate-900">Daftar Penyesuaian</h2>
+                        <div class="flex flex-col gap-1.5 md:col-span-2">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan /
+                                Alasan <span class="text-rose-500">*</span></label>
+                            <input type="text" name="notes" id="notes" required maxlength="500" value="{{ old('notes') }}"
+                                placeholder="Contoh: Hasil Stock Opname Bulanan - Februari 2026"
+                                class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            <p class="text-[9px] text-slate-400 mt-1 italic">* Catatan ini akan diterapkan untuk semua item
+                                yang disesuaikan dalam form ini.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Items Card --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-list text-indigo-500 text-[10px]"></i>
+                        <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Daftar
+                            Item Penyesuaian</h3>
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" id="add-row"
-                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
-                            <i class="fas fa-plus"></i> Tambah Baris
+                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            <i class="fas fa-plus"></i>
+                            <span>TAMBAH BARIS</span>
                         </button>
                         <button type="button" id="clear-rows"
-                            class="px-3 py-1.5 bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
-                            <i class="fas fa-times"></i> Hapus Semua
+                            class="inline-flex items-center gap-2 rounded-lg bg-white border border-rose-100 px-4 py-2 text-[10px] font-normal text-rose-500 shadow-sm transition-all hover:bg-rose-50 active:scale-95">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>RESET SEMUA</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-full bg-white text-sm">
-                        <thead class="bg-slate-50 text-slate-600">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50">
                             <tr>
-                                <th class="px-4 py-3 text-left font-semibold w-12">#</th>
-                                <th class="px-4 py-3 text-left font-semibold min-w-[320px]">Produk</th>
-                                <th class="px-4 py-3 text-right font-semibold w-40">Qty di Sistem</th>
-                                <th class="px-4 py-3 text-right font-semibold w-40">Qty Aktual</th>
-                                <th class="px-4 py-3 text-right font-semibold w-40">Perubahan</th>
-                                <th class="px-4 py-3 text-right font-semibold w-16"></th>
+                                <th
+                                    class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400 w-12 text-center">
+                                    No</th>
+                                <th
+                                    class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400 min-w-[300px]">
+                                    Produk</th>
+                                <th
+                                    class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">
+                                    Qty Sistem</th>
+                                <th
+                                    class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">
+                                    Qty Aktual</th>
+                                <th
+                                    class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400 w-32">
+                                    Selisih</th>
+                                <th
+                                    class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-400 w-16">
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="rows" class="divide-y divide-slate-200">
+                        <tbody id="rows" class="divide-y divide-slate-100 bg-white">
                             {{-- Rows injected by JS --}}
                         </tbody>
                     </table>
                 </div>
 
-                <p class="text-xs text-slate-500">
-                    Tips: pilih outlet dulu, lalu ketik nama/SKU produk. Qty di sistem akan ter-load otomatis per baris.
-                </p>
-
-                <div class="flex justify-end gap-3 pt-2">
+                <div class="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
+                            <i class="fas fa-lightbulb text-[10px]"></i>
+                        </div>
+                        <p class="text-[10px] font-normal text-slate-400 italic uppercase tracking-wider">Pilih outlet
+                            terlebih dahulu, lalu masukkan nama atau SKU produk.</p>
+                    </div>
                     <button type="submit"
-                        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md transition-all flex items-center gap-2">
-                        <i class="fas fa-save"></i> Simpan Penyesuaian
+                        class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
+                        <i class="fas fa-save text-[10px]"></i>
+                        <span>SIMPAN DATA PENYESUAIAN</span>
                     </button>
                 </div>
             </div>
@@ -117,7 +159,7 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const outletSelect = document.getElementById('outlet_id');
             const rowsEl = document.getElementById('rows');
             const addBtn = document.getElementById('add-row');
@@ -125,7 +167,6 @@
             const form = document.getElementById('bulkAdjustmentForm');
 
             const products = @json($productsPayload);
-
             const idByLabel = new Map(products.map(p => [p.label, p.id]));
 
             function escapeHtml(value) {
@@ -140,14 +181,14 @@
             function fmt(n) {
                 const x = Number(n);
                 if (!Number.isFinite(x)) return '0.00';
-                return x.toFixed(2);
+                return x.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
             function syncSelection(input, hidden) {
                 const mapped = idByLabel.get(input.value) || '';
                 hidden.value = mapped;
                 if (input.value && !mapped) {
-                    input.setCustomValidity('Pilih produk dari daftar.');
+                    input.setCustomValidity('Pilih produk dari daftar yang tersedia.');
                 } else {
                     input.setCustomValidity('');
                 }
@@ -162,11 +203,12 @@
                     const results = query
                         ? products.filter(p => p.search.includes(query)).slice(0, 40)
                         : products.slice(0, 40);
+
                     panel.innerHTML = results.length
                         ? results.map(p =>
-                            `<button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-100" data-id="${p.id}">${escapeHtml(p.label)}</button>`
+                            `<button type="button" class="w-full text-left px-4 py-2.5 text-[11px] font-normal hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0" data-id="${p.id}">${escapeHtml(p.label)}</button>`
                         ).join('')
-                        : '<div class="px-3 py-2 text-slate-500">Tidak ada hasil.</div>';
+                        : '<div class="px-4 py-3 text-[10px] text-slate-400 italic">Produk tidak ditemukan.</div>';
                     panel.classList.remove('hidden');
                 }
 
@@ -175,16 +217,16 @@
                 }
 
                 input.addEventListener('focus', renderList);
-                input.addEventListener('input', function() {
+                input.addEventListener('input', function () {
                     renderList();
                     syncSelection(input, hidden);
                 });
-                input.addEventListener('blur', function() {
-                    setTimeout(hideList, 150);
+                input.addEventListener('blur', function () {
+                    setTimeout(hideList, 200);
                     syncSelection(input, hidden);
                 });
 
-                panel.addEventListener('mousedown', function(event) {
+                panel.addEventListener('mousedown', function (event) {
                     const target = event.target.closest('[data-id]');
                     if (!target) return;
                     const picked = products.find(p => p.id === target.dataset.id);
@@ -193,14 +235,14 @@
                     hidden.value = picked.id;
                     input.setCustomValidity('');
                     hideList();
-                    input.dispatchEvent(new Event('change', {bubbles: true}));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 });
             }
 
             async function fetchCurrentStock(productId, outletId) {
                 const url = `{{ route('admin.stocks.current') }}?product_id=${encodeURIComponent(productId)}&outlet_id=${encodeURIComponent(outletId)}`;
-                const res = await fetch(url, {headers: {'Accept': 'application/json'}});
-                if (!res.ok) throw new Error('Gagal load stok');
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('Gagal memuat data stok.');
                 return await res.json();
             }
 
@@ -210,10 +252,11 @@
                 const diffEl = row.querySelector('[data-diff]');
                 const actual = Number(actualInput?.value || '0');
                 const diff = actual - sys;
-                diffEl.textContent = fmt(diff);
-                if (diff > 0) diffEl.className = 'px-4 py-3 text-right font-semibold text-emerald-700';
-                else if (diff < 0) diffEl.className = 'px-4 py-3 text-right font-semibold text-rose-700';
-                else diffEl.className = 'px-4 py-3 text-right font-semibold text-slate-600';
+                diffEl.textContent = (diff >= 0 ? '+' : '') + fmt(diff);
+
+                if (diff > 0) diffEl.className = 'px-5 py-3.5 text-right font-normal text-emerald-600 tracking-tight tabular-nums';
+                else if (diff < 0) diffEl.className = 'px-5 py-3.5 text-right font-normal text-rose-600 tracking-tight tabular-nums';
+                else diffEl.className = 'px-5 py-3.5 text-right font-normal text-slate-400 tracking-tight tabular-nums';
             }
 
             function renumber() {
@@ -230,33 +273,37 @@
             function createRow() {
                 const tr = document.createElement('tr');
                 tr.dataset.systemQty = '0';
+                tr.className = 'group transition-colors hover:bg-slate-50/50';
                 tr.innerHTML = `
-                    <td class="px-4 py-3 text-slate-600" data-no>1</td>
-                    <td class="px-4 py-3">
-                        <div class="relative" data-autocomplete-wrap>
-                            <input type="text"
-                                class="w-full h-11 rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                                placeholder="Ketik nama/SKU..." data-product-input required>
-                            <input type="hidden" data-product-id value="">
-                            <div class="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm hidden"
-                                data-panel></div>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1" data-unit></p>
-                    </td>
-                    <td class="px-4 py-3 text-right text-slate-700 tabular-nums" data-system>0.00</td>
-                    <td class="px-4 py-3 text-right">
-                        <input type="number" step="0.01" min="0"
-                            class="w-32 h-11 text-right rounded-lg border-2 border-slate-300 bg-white px-3 text-base focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                            value="0" data-actual required>
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold text-slate-600 tabular-nums" data-diff>0.00</td>
-                    <td class="px-4 py-3 text-right">
-                        <button type="button" class="h-10 w-10 inline-flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm" data-remove
-                            title="Hapus baris">
-                            <i class="fas fa-trash text-sm"></i>
-                        </button>
-                    </td>
-                `;
+                        <td class="px-5 py-3.5 text-center text-[11px] font-normal text-slate-400 tabular-nums" data-no>1</td>
+                        <td class="px-5 py-3.5">
+                            <div class="relative" data-autocomplete-wrap>
+                                <input type="text"
+                                    class="w-full h-10 px-4 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                                    placeholder="Cari nama atau SKU produk..." data-product-input required autocomplete="off">
+                                <input type="hidden" data-product-id value="">
+                                <div class="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl text-sm hidden py-1"
+                                    data-panel></div>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-1 ml-1">
+                                <i class="fas fa-tag text-[8px] text-slate-300"></i>
+                                <span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest" data-unit>-</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 text-right text-[11.5px] font-normal text-slate-500 tabular-nums" data-system>0,00</td>
+                        <td class="px-5 py-3.5 text-right">
+                            <input type="number" step="0.01" min="0"
+                                class="w-32 h-10 px-4 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums"
+                                value="0" data-actual required>
+                        </td>
+                        <td class="px-5 py-3.5 text-right font-normal text-slate-400 tracking-tight tabular-nums" data-diff>0,00</td>
+                        <td class="px-5 py-3.5 text-center">
+                            <button type="button" class="h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90" data-remove
+                                title="Hapus item">
+                                <i class="fas fa-times text-[10px]"></i>
+                            </button>
+                        </td>
+                    `;
 
                 const input = tr.querySelector('[data-product-input]');
                 const hidden = tr.querySelector('[data-product-id]');
@@ -268,57 +315,86 @@
                 initAutocomplete(input, hidden, panel);
                 syncSelection(input, hidden);
 
-                input.addEventListener('change', async function() {
+                input.addEventListener('change', async function () {
                     syncSelection(input, hidden);
                     const outletId = outletSelect.value;
-                    if (!hidden.value || !outletId) return;
+                    if (!hidden.value || !outletId) {
+                        sysEl.textContent = '0,00';
+                        unitEl.textContent = '-';
+                        return;
+                    }
+
+                    input.disabled = true;
+                    input.classList.add('opacity-50');
+
                     try {
                         const data = await fetchCurrentStock(hidden.value, outletId);
                         if (data?.success) {
                             const sysQty = Number(data.current_stock || 0);
                             tr.dataset.systemQty = String(sysQty);
                             sysEl.textContent = fmt(sysQty);
-                            unitEl.textContent = data.unit ? `Satuan: ${data.unit}` : '';
+                            unitEl.textContent = data.unit ? `Satuan: ${data.unit}` : '-';
                             updateDiff(tr);
                         }
                     } catch (e) {
-                        // keep silent, user can retry by reselecting
+                        console.error(e);
+                    } finally {
+                        input.disabled = false;
+                        input.classList.remove('opacity-50');
                     }
                 });
 
                 actual.addEventListener('input', () => updateDiff(tr));
 
-                tr.querySelector('[data-remove]')?.addEventListener('click', function() {
-                    tr.remove();
-                    renumber();
+                tr.querySelector('[data-remove]')?.addEventListener('click', function () {
+                    if (rowsEl.querySelectorAll('tr').length > 1) {
+                        tr.remove();
+                        renumber();
+                    } else {
+                        // Reset the only remaining row instead of deleting
+                        input.value = '';
+                        hidden.value = '';
+                        actual.value = '0';
+                        sysEl.textContent = '0,00';
+                        unitEl.textContent = '-';
+                        tr.dataset.systemQty = '0';
+                        updateDiff(tr);
+                    }
                 });
 
                 return tr;
             }
 
-            addBtn.addEventListener('click', function() {
+            addBtn.addEventListener('click', function () {
                 rowsEl.appendChild(createRow());
                 renumber();
+                // Focus newly added input
+                rowsEl.lastElementChild.querySelector('[data-product-input]').focus();
             });
 
-            clearBtn.addEventListener('click', function() {
-                rowsEl.innerHTML = '';
-                rowsEl.appendChild(createRow());
-                renumber();
+            clearBtn.addEventListener('click', function () {
+                if (confirm('Apakah Anda yakin ingin menghapus semua baris data?')) {
+                    rowsEl.innerHTML = '';
+                    rowsEl.appendChild(createRow());
+                    renumber();
+                }
             });
 
-            outletSelect.addEventListener('change', async function() {
-                // Reload system qty for all rows when outlet changes
+            outletSelect.addEventListener('change', async function () {
                 const outletId = outletSelect.value;
-                rowsEl.querySelectorAll('tr').forEach(async tr => {
+                const rows = rowsEl.querySelectorAll('tr');
+
+                for (const tr of rows) {
                     const productId = tr.querySelector('[data-product-id]')?.value;
                     const sysEl = tr.querySelector('[data-system]');
+
                     if (!productId || !outletId) {
                         tr.dataset.systemQty = '0';
-                        if (sysEl) sysEl.textContent = '0.00';
+                        if (sysEl) sysEl.textContent = '0,00';
                         updateDiff(tr);
-                        return;
+                        continue;
                     }
+
                     try {
                         const data = await fetchCurrentStock(productId, outletId);
                         if (data?.success) {
@@ -327,11 +403,13 @@
                             if (sysEl) sysEl.textContent = fmt(sysQty);
                             updateDiff(tr);
                         }
-                    } catch (e) {}
-                });
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
             });
 
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 let firstInvalid = null;
                 rowsEl.querySelectorAll('tr').forEach(tr => {
                     const input = tr.querySelector('[data-product-input]');
