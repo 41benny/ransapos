@@ -145,11 +145,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 
     // Cash Accounts & Transactions
     Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class)
-        ->only(['index', 'show'])
-        ->middleware('permission:cash-accounts.view');
-    Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class)
         ->only(['create', 'store'])
         ->middleware('permission:cash-accounts.create');
+    Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:cash-accounts.view');
     Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class)
         ->only(['edit', 'update'])
         ->middleware('permission:cash-accounts.update');
