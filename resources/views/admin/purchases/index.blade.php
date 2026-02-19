@@ -48,7 +48,7 @@
             <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
-                    <select name="outlet_id" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="outlet_id" class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Outlet</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Supplier</label>
-                    <select name="supplier_id" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="supplier_id" class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Supplier</option>
                         @foreach($suppliers as $supplier)
                             <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Status</label>
-                    <select name="status" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="status" class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Status</option>
                         <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft (PO)</option>
                         <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received (Diterima)</option>
@@ -78,10 +78,10 @@
                     </select>
                 </div>
                 <div class="flex items-end gap-2">
-                    <button type="submit" class="flex-1 inline-flex items-center justify-center h-[34px] rounded-lg bg-slate-900 border border-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95 text-xs font-normal">
+                    <button type="submit" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95 text-xs font-normal">
                         <i class="fas fa-search mr-2 text-[10px]"></i>Filter
                     </button>
-                    <a href="{{ route('admin.purchases.index') }}" class="inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                    <a href="{{ route('admin.purchases.index') }}" class="inline-flex items-center justify-center px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                         <i class="fas fa-redo text-[10px]"></i>
                     </a>
                 </div>
