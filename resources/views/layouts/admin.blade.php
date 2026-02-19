@@ -109,7 +109,7 @@
                         General</p>
                     @php
                         $currentUser = auth()->user();
-                        $currentUser?->loadMissing('role.permissions');
+                        $currentUser?->loadMissing('role.permissions', 'customPermissions');
 
                         $canAccess = function (?string $permission) use ($currentUser): bool {
                             if (!$permission) {

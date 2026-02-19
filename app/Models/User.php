@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'uses_custom_permissions',
         'outlet_id',
         'is_active',
         'attendance_pin',
@@ -50,6 +52,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'uses_custom_permissions' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
@@ -73,6 +76,14 @@ class User extends Authenticatable
     public function activePosDevice(): BelongsTo
     {
         return $this->belongsTo(PosDevice::class, 'active_pos_device_id');
+    }
+
+    /**
+     * Relasi permission khusus user (override dari role).
+     */
+    public function customPermissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions')->withTimestamps();
     }
 
     /**
@@ -177,6 +188,18 @@ class User extends Authenticatable
         $permissionKeys = is_array($permissions) ? $permissions : [$permissions];
         if (count($permissionKeys) === 0) {
             return true;
+        }
+
+        if ($this->uses_custom_permissions) {
+            if ($this->relationLoaded('customPermissions')) {
+                $ownedPermissions = $this->customPermissions->pluck('key')->all();
+
+                return count(array_intersect($permissionKeys, $ownedPermissions)) > 0;
+            }
+
+            return $this->customPermissions()
+                ->whereIn('key', $permissionKeys)
+                ->exists();
         }
 
         if ($role && $role->relationLoaded('permissions')) {

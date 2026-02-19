@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -122,8 +123,17 @@ class UserController extends Controller
     {
         $roles = Role::orderBy('name')->get();
         $outlets = Outlet::active()->orderBy('name')->get();
+        $permissionsByModule = Permission::query()
+            ->orderBy('module')
+            ->orderBy('label')
+            ->get()
+            ->groupBy('module');
 
-        return view('admin.users.edit', compact('user', 'roles', 'outlets'));
+        $assignedPermissionIds = $user->uses_custom_permissions
+            ? $user->customPermissions()->pluck('permissions.id')->all()
+            : $user->role?->permissions()->pluck('permissions.id')->all();
+
+        return view('admin.users.edit', compact('user', 'roles', 'outlets', 'permissionsByModule', 'assignedPermissionIds'));
     }
 
     /**
@@ -143,6 +153,8 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'outlet_id' => 'nullable|exists:outlets,id',
             'is_active' => 'nullable|boolean',
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
         $role = Role::find($data['role_id']);
@@ -179,6 +191,15 @@ class UserController extends Controller
         }
 
         $user->update($payload);
+
+        if ($role?->name === 'manager') {
+            $user->customPermissions()->sync([]);
+            $user->update(['uses_custom_permissions' => false]);
+        } else {
+            $permissionIds = array_map('intval', $data['permissions'] ?? []);
+            $user->customPermissions()->sync($permissionIds);
+            $user->update(['uses_custom_permissions' => true]);
+        }
 
         return redirect()
             ->route('admin.users.index')

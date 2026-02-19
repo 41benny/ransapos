@@ -112,6 +112,68 @@
                         </div>
                     </div>
 
+                    @php
+                        $selectedPermissionIds = collect(old('permissions', $assignedPermissionIds ?? []))
+                            ->map(fn ($id) => (int) $id)
+                            ->all();
+                    @endphp
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <div>
+                                <h4 class="text-[12px] font-normal text-slate-900 uppercase tracking-widest">Checklist Akses User</h4>
+                                <p class="text-[10px] font-normal text-slate-500 mt-1">
+                                    Role adalah akses dasar. Di sini Anda bisa ubah akses khusus user ini.
+                                </p>
+                            </div>
+                            <div id="managerPermissionHint"
+                                class="hidden px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px]">
+                                Role manager selalu full akses, checklist tidak bisa diubah.
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="checkAllUserPermissions"
+                                class="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] text-slate-600 hover:border-indigo-100 hover:text-indigo-600 transition-all">
+                                Ceklis Semua
+                            </button>
+                            <button type="button" id="uncheckAllUserPermissions"
+                                class="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] text-slate-600 hover:border-rose-100 hover:text-rose-600 transition-all">
+                                Hapus Semua
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            @foreach($permissionsByModule as $module => $permissions)
+                                <div class="rounded-xl border border-slate-200 overflow-hidden">
+                                    <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[11px] text-slate-900">{{ ucfirst(str_replace(['-', '_'], ' ', $module)) }}</p>
+                                            <p class="text-[9px] uppercase tracking-widest text-slate-400 mt-0.5">{{ $module }}</p>
+                                        </div>
+                                        <button type="button" class="module-toggle text-[10px] text-indigo-600" data-module="{{ $module }}">
+                                            Toggle
+                                        </button>
+                                    </div>
+                                    <div class="p-4 space-y-2">
+                                        @foreach($permissions as $permission)
+                                            <label class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                                                <input type="checkbox"
+                                                    class="user-permission-checkbox module-{{ $module }} mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                                                    name="permissions[]" value="{{ $permission->id }}" @checked(in_array($permission->id, $selectedPermissionIds, true))>
+                                                <div class="flex flex-col">
+                                                    <span class="text-[11px] text-slate-700 leading-tight">{{ $permission->label }}</span>
+                                                    <span class="text-[9px] uppercase tracking-widest text-slate-400">{{ $permission->key }}</span>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('permissions') <p class="text-[10px] text-rose-500 italic">{{ $message }}</p> @enderror
+                        @error('permissions.*') <p class="text-[10px] text-rose-500 italic">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="flex items-center gap-3 py-2 px-1">
                         <div class="flex items-center h-5">
                             <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $user->is_active) ? 'checked' : '' }}
@@ -238,6 +300,75 @@
             if (roleSelect && emailInput) {
                 roleSelect.addEventListener('change', applyRoleRules);
                 applyRoleRules();
+            }
+
+            const permissionCheckboxes = document.querySelectorAll('.user-permission-checkbox');
+            const checkAllPermissionsBtn = document.getElementById('checkAllUserPermissions');
+            const uncheckAllPermissionsBtn = document.getElementById('uncheckAllUserPermissions');
+            const moduleToggleButtons = document.querySelectorAll('.module-toggle');
+            const managerPermissionHint = document.getElementById('managerPermissionHint');
+
+            function applyPermissionRulesByRole() {
+                const isManager = selectedRoleName() === 'manager';
+
+                permissionCheckboxes.forEach((checkbox) => {
+                    checkbox.disabled = isManager;
+                });
+
+                if (checkAllPermissionsBtn) {
+                    checkAllPermissionsBtn.disabled = isManager;
+                    checkAllPermissionsBtn.classList.toggle('opacity-50', isManager);
+                    checkAllPermissionsBtn.classList.toggle('cursor-not-allowed', isManager);
+                }
+
+                if (uncheckAllPermissionsBtn) {
+                    uncheckAllPermissionsBtn.disabled = isManager;
+                    uncheckAllPermissionsBtn.classList.toggle('opacity-50', isManager);
+                    uncheckAllPermissionsBtn.classList.toggle('cursor-not-allowed', isManager);
+                }
+
+                moduleToggleButtons.forEach((button) => {
+                    button.disabled = isManager;
+                    button.classList.toggle('opacity-50', isManager);
+                    button.classList.toggle('cursor-not-allowed', isManager);
+                });
+
+                if (managerPermissionHint) {
+                    managerPermissionHint.classList.toggle('hidden', !isManager);
+                }
+            }
+
+            if (checkAllPermissionsBtn) {
+                checkAllPermissionsBtn.addEventListener('click', function () {
+                    permissionCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = true;
+                    });
+                });
+            }
+
+            if (uncheckAllPermissionsBtn) {
+                uncheckAllPermissionsBtn.addEventListener('click', function () {
+                    permissionCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = false;
+                    });
+                });
+            }
+
+            moduleToggleButtons.forEach((button) => {
+                button.addEventListener('click', function () {
+                    const module = button.dataset.module;
+                    const moduleCheckboxes = document.querySelectorAll(`.module-${module}`);
+                    const hasUnchecked = Array.from(moduleCheckboxes).some((checkbox) => !checkbox.checked);
+
+                    moduleCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = hasUnchecked;
+                    });
+                });
+            });
+
+            if (roleSelect) {
+                roleSelect.addEventListener('change', applyPermissionRulesByRole);
+                applyPermissionRulesByRole();
             }
 
             const pinInput = document.getElementById('attendance_pin');
