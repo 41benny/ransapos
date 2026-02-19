@@ -15,8 +15,7 @@ class CatalogReportController extends Controller
     public function __construct(
         private readonly BalanceSheetReportService $balanceSheetReportService,
         private readonly ProfitLossReportService $profitLossReportService
-    ) {
-    }
+    ) {}
 
     /**
      * Konfigurasi daftar laporan per kategori.
@@ -125,7 +124,7 @@ class CatalogReportController extends Controller
             'sales-modifier' => ['title' => 'Penjualan Modifier', 'implemented' => false],
             'sales-vs-hpp' => ['title' => 'Penjualan Vs HPP', 'implemented' => true],
             'waiter-performance' => ['title' => 'Kinerja Pelayan Berdasarkan Penjualan', 'implemented' => false],
-            'sales-discount' => ['title' => 'Laporan Diskon Penjualan', 'implemented' => false],
+            'sales-discount' => ['title' => 'Laporan Diskon Penjualan', 'implemented' => true],
             'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => true, 'existing_route' => 'admin.reports.shifts.index'],
             'sales-custom-item' => ['title' => 'Penjualan per Custom Item', 'implemented' => false],
             'receivables' => ['title' => 'Piutang', 'implemented' => false],
@@ -466,6 +465,128 @@ class CatalogReportController extends Controller
             ];
         }
 
+        // Implementasi: Laporan Diskon Penjualan (Compliment / Meal Karyawan / dll)
+        if ($slug === 'sales-discount') {
+            $viewType = 'sales-discount';
+            $viewMode = $request->input('view_mode', 'summary'); // summary | detail
+            $filterType = $request->input('filter_type', 'all'); // all | compliment | meal_karyawan
+
+            $salesQuery = \App\Models\Sale::query()
+                ->with(['items.product', 'outlet', 'user', 'customer'])
+                ->where('status', 'completed')
+                ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $salesQuery->where('outlet_id', $outletId);
+            }
+
+            // Optional: Filter by specific sales types if needed, but report typically shows all "discounted" transactions
+            if ($filterType !== 'all') {
+                $salesQuery->where('sales_type', $filterType);
+            }
+
+            $allSales = $salesQuery->orderByDesc('sale_date')->orderByDesc('created_at')->get();
+
+            // Process data to calculate "Real Value" vs "Paid Value"
+            $processedData = $allSales->map(function ($sale) {
+                $grossValue = 0;
+                $totalDiscount = 0;
+
+                foreach ($sale->items as $item) {
+                    // Estimate normal price from product master if item price is 0 (compliment)
+                    // Or use item subtotal + item discount if available
+                    // Use product selling price as baseline for value
+                    $normalPrice = $item->product ? (float) $item->product->selling_price : (float) $item->unit_price;
+
+                    // If unit_price is 0, we assume it's a full discount/compliment
+                    // If unit_price > 0, we trust it, but check if discount_amount exists
+
+                    // Logic: Value = Quantity * Normal Price (Highest logic)
+                    // But product price might have changed.
+                    // Fallback: If unit_price > 0, Value = (Unit Price * Qty). If Unit Price == 0, Value = (Product Price * Qty).
+
+                    $itemPrice = (float) $item->unit_price;
+                    $isSpecialType = in_array($sale->sales_type, ['compliment', 'meal_karyawan']);
+
+                    // If it's a special type or price is 0, use master price to show full value
+                    if (($isSpecialType || $itemPrice == 0) && $item->product) {
+                        $itemGross = ($item->quantity * $item->product->selling_price);
+                    } else {
+                        // Regular sales: respect historical price snapshot (subtotal + discount)
+                        $itemGross = ((float) $item->subtotal) + ((float) $item->discount_amount);
+                    }
+
+                    $paidAmount = (float) $item->subtotal;
+                    // Safety check
+                    if ($itemGross < $paidAmount) {
+                        $itemGross = $paidAmount;
+                    }
+
+                    $grossValue += $itemGross;
+                }
+
+                // Add global discount from header if any (already deducted from items? No, SaleService splits it? No, SaleService discount_amount is global)
+                // SaleService structure:
+                // Subtotal (sum of item subtotals)
+                // Discount Amount (Global)
+                // Tax Base = Subtotal - Discount Amount
+
+                // So Total Discount = (Sum of (Item Value - Item Paid)) + Global Discount Amount
+                // Item Paid = Item Subtotal.
+
+                $itemsPaid = $sale->items->sum('subtotal');
+                $itemsPotentialValue = $grossValue;
+                $itemLevelDiscount = $itemsPotentialValue - $itemsPaid;
+
+                $totalDiscount = $itemLevelDiscount + (float) $sale->discount_amount;
+
+                return [
+                    'id' => $sale->id,
+                    'invoice_number' => $sale->invoice_number,
+                    'sale_date' => $sale->sale_date->format('Y-m-d'),
+                    'outlet_name' => $sale->outlet->name ?? '-',
+                    'sales_type' => $sale->sales_type ?? 'regular', // compliment, meal_karyawan, etc
+                    'customer_name' => $sale->customer_name ?? '-',
+                    'gross_value' => $itemsPotentialValue, // Nilai seharusnya (Normal Price)
+                    'net_sales' => (float) $sale->total_amount, // Yang dibayar
+                    'total_discount' => $totalDiscount, // Selisih
+                    'notes' => $sale->notes,
+                    'items_count' => $sale->items->count(),
+                ];
+            });
+
+            // Filter only transactions with discount or specific types
+            $filteredData = $processedData->filter(function ($row) use ($filterType) {
+                if ($filterType !== 'all') {
+                    return $row['sales_type'] === $filterType;
+                }
+                // Show if there is discount OR sales_type is special
+                return $row['total_discount'] > 0 || in_array($row['sales_type'], ['compliment', 'meal_karyawan']);
+            });
+
+            if ($viewMode === 'summary') {
+                $rows = $filteredData->groupBy('sales_type')->map(function ($group, $type) {
+                    return [
+                        'sales_type' => $type,
+                        'transaction_count' => $group->count(),
+                        'gross_value' => $group->sum('gross_value'),
+                        'net_sales' => $group->sum('net_sales'),
+                        'total_discount' => $group->sum('total_discount'),
+                    ];
+                })->values();
+            } else {
+                $rows = $filteredData->values();
+            }
+
+            $summary = [
+                'total_transactions' => $filteredData->count(),
+                'total_gross_value' => $filteredData->sum('gross_value'),
+                'total_net_sales' => $filteredData->sum('net_sales'),
+                'total_discount' => $filteredData->sum('total_discount'),
+                'view_mode' => $viewMode,
+            ];
+        }
+
         if ($slug === 'cash-bank') {
             $viewType = 'cash-bank-summary';
             $rows = $this->cashAccountSnapshots($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
@@ -603,7 +724,20 @@ class CatalogReportController extends Controller
                 ['key' => 'hpp_amount', 'label' => 'Hpp', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'gross_profit', 'label' => 'Laba Kotor', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'margin_percent', 'label' => 'Margin', 'type' => 'number', 'decimals' => 2],
-            ], $rowsCollection->map(fn ($row) => (array) $row)->all()];
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'sales-discount') {
+            return [[
+                ['key' => 'sales_type', 'label' => 'Tipe Penjualan', 'type' => 'text'],
+                ['key' => 'invoice_number', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'gross_value', 'label' => 'Nilai Jual (Gross)', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'net_sales', 'label' => 'Total Bayar', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($rowsCollection->isNotEmpty()) {
@@ -618,7 +752,7 @@ class CatalogReportController extends Controller
                 ];
             })->all();
 
-            return [$columns, $rowsCollection->map(fn ($row) => (array) $row)->all()];
+            return [$columns, $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         $fallbackRows = collect($summary)->map(function ($value, $key) {
