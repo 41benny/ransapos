@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
+use App\Models\Product;
 use App\Support\ReportExport;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
@@ -137,10 +138,10 @@ class CatalogReportController extends Controller
             'purchase-by-product' => ['title' => 'Pembelian per Produk', 'implemented' => false],
             'purchase-by-category' => ['title' => 'Pembelian per Kategori', 'implemented' => false],
             'purchase-unpaid' => ['title' => 'Pembelian Belum Lunas', 'implemented' => false],
-            'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => false],
+            'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => true],
             'top-products' => ['title' => 'Produk Terlaris', 'implemented' => false],
             'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
-            'inventory-value' => ['title' => 'Nilai Persediaan', 'implemented' => false],
+            'inventory-value' => ['title' => 'Nilai Persediaan', 'implemented' => true],
             'other-income-expense' => ['title' => 'Pendapatan Lain-Lain', 'implemented' => false],
             'attendance-recap' => ['title' => 'Rekap Absensi Karyawan', 'implemented' => true, 'existing_route' => 'admin.reports.attendance.index'],
         ];
@@ -209,7 +210,7 @@ class CatalogReportController extends Controller
         }
 
         $report = $reports[$slug];
-        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary'];
+        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary', 'stock-movement', 'inventory-value'];
         $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
         $defaultDateTo = in_array($slug, $financeSlugs, true) ? now()->endOfMonth()->toDateString() : now()->toDateString();
 
@@ -217,6 +218,14 @@ class CatalogReportController extends Controller
         $dateTo = $request->input('date_to', $defaultDateTo);
         $outletId = $request->input('outlet_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
+        $selectedProductId = $request->input('product_id');
+        $products = collect();
+        if ($slug === 'stock-movement') {
+            $products = Product::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'sku']);
+        }
 
         $rows = collect();
         $summary = [];
@@ -465,6 +474,35 @@ class CatalogReportController extends Controller
             ];
         }
 
+        if ($slug === 'stock-movement') {
+            $viewType = 'stock-movement';
+            $selectedProductId = $request->filled('product_id') ? (int) $request->input('product_id') : null;
+
+            [$rows, $summary] = $this->stockMovementReport(
+                dateFrom: $dateFrom,
+                dateTo: $dateTo,
+                outletId: !empty($outletId) ? (int) $outletId : null,
+                productId: $selectedProductId,
+            );
+
+            $meta = [
+                'notes' => [
+                    'Nominal mutasi memakai snapshot total_cost; jika kosong akan fallback ke avg_cost outlet atau purchase_price produk.',
+                    'Kolom Penjualan Keluar (Nominal) dapat dipakai untuk rekonsiliasi HPP dengan laporan Laba Rugi pada filter tanggal/outlet yang sama.',
+                    'Metrik HPP eksplisit: hpp_penjualan_kotor (out sale), hpp_reversal_void (in sale_cancellation), hpp_penjualan_bersih (kotor - reversal).',
+                ],
+            ];
+        }
+
+        if ($slug === 'inventory-value') {
+            $viewType = 'inventory-reconciliation';
+            [$rows, $summary, $meta] = $this->inventoryReconciliationReport(
+                dateFrom: $dateFrom,
+                dateTo: $dateTo,
+                outletId: !empty($outletId) ? (int) $outletId : null,
+            );
+        }
+
         // Implementasi: Laporan Diskon Penjualan (Compliment / Meal Karyawan / dll)
         if ($slug === 'sales-discount') {
             $viewType = 'sales-discount';
@@ -701,7 +739,9 @@ class CatalogReportController extends Controller
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'outletId' => $outletId,
+            'selectedProductId' => $selectedProductId,
             'outlets' => $outlets,
+            'products' => $products,
             'rows' => $rows,
             'summary' => $summary,
             'meta' => $meta,
@@ -740,6 +780,58 @@ class CatalogReportController extends Controller
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
+        if ($viewType === 'stock-movement') {
+            return [[
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'product_sku', 'label' => 'SKU', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'opening_qty', 'label' => 'Stok Awal Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'opening_value', 'label' => 'Stok Awal Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'purchase_in_qty', 'label' => 'Pembelian Masuk Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'purchase_in_value', 'label' => 'Pembelian Masuk Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'sale_return_in_qty', 'label' => 'Retur Penjualan Masuk Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'sale_return_in_value', 'label' => 'Retur Penjualan Masuk Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'transfer_in_qty', 'label' => 'Mutasi In Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'transfer_in_value', 'label' => 'Mutasi In Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'adjustment_in_qty', 'label' => 'Adjustment Plus Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'adjustment_in_value', 'label' => 'Adjustment Plus Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'sale_out_qty', 'label' => 'Penjualan Keluar Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'sale_out_value', 'label' => 'Penjualan Keluar Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'hpp_penjualan_kotor', 'label' => 'HPP Penjualan Kotor', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'hpp_reversal_void', 'label' => 'HPP Reversal Void', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'hpp_penjualan_bersih', 'label' => 'HPP Penjualan Bersih', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'transfer_out_qty', 'label' => 'Mutasi Out Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'transfer_out_value', 'label' => 'Mutasi Out Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'adjustment_out_qty', 'label' => 'Adjustment Minus Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'adjustment_out_value', 'label' => 'Adjustment Minus Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'other_in_qty', 'label' => 'Lainnya Masuk Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'other_in_value', 'label' => 'Lainnya Masuk Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'other_out_qty', 'label' => 'Lainnya Keluar Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'other_out_value', 'label' => 'Lainnya Keluar Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_in_qty', 'label' => 'Total Masuk Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_in_value', 'label' => 'Total Masuk Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_out_qty', 'label' => 'Total Keluar Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_out_value', 'label' => 'Total Keluar Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'closing_qty', 'label' => 'Stok Akhir Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'closing_value', 'label' => 'Stok Akhir Nominal', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'current_avg_cost', 'label' => 'Avg Cost Saat Ini', 'type' => 'number', 'decimals' => 4],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'inventory-reconciliation') {
+            return [[
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'mutation_inventory_value', 'label' => 'Nilai Mutasi Persediaan', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'neraca_inventory_value', 'label' => 'Nilai Persediaan Neraca', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'gap_value', 'label' => 'Selisih', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'is_balanced', 'label' => 'Balance', 'type' => 'text'],
+            ], $rowsCollection->map(function ($row) {
+                $arr = (array) $row;
+                $arr['is_balanced'] = !empty($arr['is_balanced']) ? 'YES' : 'NO';
+                return $arr;
+            })->all()];
+        }
+
         if ($rowsCollection->isNotEmpty()) {
             $first = (array) $rowsCollection->first();
             $columns = collect(array_keys($first))->map(function ($key) use ($first) {
@@ -763,6 +855,356 @@ class CatalogReportController extends Controller
             ['key' => 'metric', 'label' => 'Metric', 'type' => 'text'],
             ['key' => 'value', 'label' => 'Value', 'type' => 'text'],
         ], $fallbackRows];
+    }
+
+    private function stockMovementReport(string $dateFrom, string $dateTo, ?int $outletId = null, ?int $productId = null): array
+    {
+        $dateFrom = \Carbon\Carbon::parse($dateFrom)->toDateString();
+        $dateTo = \Carbon\Carbon::parse($dateTo)->toDateString();
+
+        $effectiveUnitCostExpr = "CASE
+            WHEN COALESCE(stock_mutations.unit_cost, 0) > 0 THEN stock_mutations.unit_cost
+            WHEN COALESCE(product_costs.avg_cost, 0) > 0 THEN product_costs.avg_cost
+            ELSE COALESCE(products.purchase_price, 0)
+        END";
+
+        $effectiveTotalCostExpr = "CASE
+            WHEN ABS(COALESCE(stock_mutations.total_cost, 0)) > 0 THEN ABS(stock_mutations.total_cost)
+            ELSE ABS(stock_mutations.quantity) * ({$effectiveUnitCostExpr})
+        END";
+
+        $signedValueExpr = "CASE
+            WHEN stock_mutations.quantity >= 0 THEN {$effectiveTotalCostExpr}
+            ELSE -{$effectiveTotalCostExpr}
+        END";
+
+        $inPeriod = "stock_mutations.mutation_date >= '{$dateFrom}' AND stock_mutations.mutation_date <= '{$dateTo}'";
+
+        $purchaseInCond = "stock_mutations.reference_type = 'purchase' AND stock_mutations.quantity > 0";
+        $saleReturnInCond = "stock_mutations.reference_type = 'sale_cancellation' AND stock_mutations.quantity > 0";
+        $transferInCond = "(stock_mutations.mutation_type = 'transfer_in' OR (stock_mutations.reference_type = 'stock_transfer' AND stock_mutations.quantity > 0 AND stock_mutations.mutation_type <> 'adjustment'))";
+        $adjustmentInCond = "stock_mutations.mutation_type = 'adjustment' AND stock_mutations.quantity > 0";
+
+        $saleOutCond = "stock_mutations.reference_type = 'sale' AND stock_mutations.quantity < 0";
+        $transferOutCond = "(stock_mutations.mutation_type = 'transfer_out' OR (stock_mutations.reference_type = 'stock_transfer' AND stock_mutations.quantity < 0 AND stock_mutations.mutation_type <> 'adjustment'))";
+        $adjustmentOutCond = "stock_mutations.mutation_type = 'adjustment' AND stock_mutations.quantity < 0";
+
+        $otherInCond = "stock_mutations.quantity > 0 AND NOT (($purchaseInCond) OR ($saleReturnInCond) OR ($transferInCond) OR ($adjustmentInCond))";
+        $otherOutCond = "stock_mutations.quantity < 0 AND NOT (($saleOutCond) OR ($transferOutCond) OR ($adjustmentOutCond))";
+
+        $query = DB::table('stock_mutations')
+            ->join('products', 'stock_mutations.product_id', '=', 'products.id')
+            ->join('outlets', 'stock_mutations.outlet_id', '=', 'outlets.id')
+            ->leftJoin('product_costs', function ($join) {
+                $join->on('product_costs.product_id', '=', 'stock_mutations.product_id')
+                    ->on('product_costs.outlet_id', '=', 'stock_mutations.outlet_id');
+            })
+            ->whereDate('stock_mutations.mutation_date', '<=', $dateTo);
+
+        if (!empty($outletId)) {
+            $query->where('stock_mutations.outlet_id', $outletId);
+        }
+
+        if (!empty($productId)) {
+            $query->where('stock_mutations.product_id', $productId);
+        }
+
+        $rows = $query
+            ->select(
+                'stock_mutations.product_id',
+                'products.name as product_name',
+                'products.sku as product_sku',
+                'products.unit as product_unit',
+                'stock_mutations.outlet_id',
+                'outlets.name as outlet_name'
+            )
+            ->selectRaw('COALESCE(product_costs.avg_cost, 0) as current_avg_cost')
+            ->selectRaw("SUM(CASE WHEN stock_mutations.mutation_date < '{$dateFrom}' THEN stock_mutations.quantity ELSE 0 END) as opening_qty")
+            ->selectRaw("SUM(CASE WHEN stock_mutations.mutation_date < '{$dateFrom}' THEN {$signedValueExpr} ELSE 0 END) as opening_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$purchaseInCond} THEN stock_mutations.quantity ELSE 0 END) as purchase_in_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$purchaseInCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as purchase_in_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$saleReturnInCond} THEN stock_mutations.quantity ELSE 0 END) as sale_return_in_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$saleReturnInCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as sale_return_in_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$transferInCond} THEN stock_mutations.quantity ELSE 0 END) as transfer_in_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$transferInCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as transfer_in_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$adjustmentInCond} THEN stock_mutations.quantity ELSE 0 END) as adjustment_in_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$adjustmentInCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as adjustment_in_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$saleOutCond} THEN ABS(stock_mutations.quantity) ELSE 0 END) as sale_out_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$saleOutCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as sale_out_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$transferOutCond} THEN ABS(stock_mutations.quantity) ELSE 0 END) as transfer_out_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$transferOutCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as transfer_out_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$adjustmentOutCond} THEN ABS(stock_mutations.quantity) ELSE 0 END) as adjustment_out_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$adjustmentOutCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as adjustment_out_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$otherInCond} THEN stock_mutations.quantity ELSE 0 END) as other_in_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$otherInCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as other_in_value")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$otherOutCond} THEN ABS(stock_mutations.quantity) ELSE 0 END) as other_out_qty")
+            ->selectRaw("SUM(CASE WHEN {$inPeriod} AND {$otherOutCond} THEN {$effectiveTotalCostExpr} ELSE 0 END) as other_out_value")
+            ->groupBy(
+                'stock_mutations.product_id',
+                'products.name',
+                'products.sku',
+                'products.unit',
+                'stock_mutations.outlet_id',
+                'outlets.name',
+                'product_costs.avg_cost'
+            )
+            ->orderBy('products.name')
+            ->orderBy('outlets.name')
+            ->get()
+            ->map(function ($row) {
+                $toQty = static fn($value): float => round((float) ($value ?? 0), 4);
+                $toMoney = static fn($value): float => round((float) ($value ?? 0), 2);
+
+                $openingQty = $toQty($row->opening_qty);
+                $openingValue = $toMoney($row->opening_value);
+
+                $purchaseInQty = $toQty($row->purchase_in_qty);
+                $purchaseInValue = $toMoney($row->purchase_in_value);
+                $saleReturnInQty = $toQty($row->sale_return_in_qty);
+                $saleReturnInValue = $toMoney($row->sale_return_in_value);
+                $transferInQty = $toQty($row->transfer_in_qty);
+                $transferInValue = $toMoney($row->transfer_in_value);
+                $adjustmentInQty = $toQty($row->adjustment_in_qty);
+                $adjustmentInValue = $toMoney($row->adjustment_in_value);
+                $otherInQty = $toQty($row->other_in_qty);
+                $otherInValue = $toMoney($row->other_in_value);
+
+                $saleOutQty = $toQty($row->sale_out_qty);
+                $saleOutValue = $toMoney($row->sale_out_value);
+                $transferOutQty = $toQty($row->transfer_out_qty);
+                $transferOutValue = $toMoney($row->transfer_out_value);
+                $adjustmentOutQty = $toQty($row->adjustment_out_qty);
+                $adjustmentOutValue = $toMoney($row->adjustment_out_value);
+                $otherOutQty = $toQty($row->other_out_qty);
+                $otherOutValue = $toMoney($row->other_out_value);
+
+                $totalInQty = round($purchaseInQty + $saleReturnInQty + $transferInQty + $adjustmentInQty + $otherInQty, 4);
+                $totalInValue = round($purchaseInValue + $saleReturnInValue + $transferInValue + $adjustmentInValue + $otherInValue, 2);
+                $totalOutQty = round($saleOutQty + $transferOutQty + $adjustmentOutQty + $otherOutQty, 4);
+                $totalOutValue = round($saleOutValue + $transferOutValue + $adjustmentOutValue + $otherOutValue, 2);
+                $closingQty = round($openingQty + $totalInQty - $totalOutQty, 4);
+                $closingValue = round($openingValue + $totalInValue - $totalOutValue, 2);
+                $hppPenjualanKotor = $saleOutValue;
+                $hppReversalVoid = $saleReturnInValue;
+                $hppPenjualanBersih = round($hppPenjualanKotor - $hppReversalVoid, 2);
+
+                return (object) [
+                    'product_id' => (int) $row->product_id,
+                    'product_name' => $row->product_name,
+                    'product_sku' => $row->product_sku,
+                    'product_unit' => $row->product_unit ?: 'pcs',
+                    'outlet_id' => (int) $row->outlet_id,
+                    'outlet_name' => $row->outlet_name,
+                    'current_avg_cost' => round((float) ($row->current_avg_cost ?? 0), 4),
+                    'opening_qty' => $openingQty,
+                    'opening_value' => $openingValue,
+                    'purchase_in_qty' => $purchaseInQty,
+                    'purchase_in_value' => $purchaseInValue,
+                    'sale_return_in_qty' => $saleReturnInQty,
+                    'sale_return_in_value' => $saleReturnInValue,
+                    'transfer_in_qty' => $transferInQty,
+                    'transfer_in_value' => $transferInValue,
+                    'adjustment_in_qty' => $adjustmentInQty,
+                    'adjustment_in_value' => $adjustmentInValue,
+                    'sale_out_qty' => $saleOutQty,
+                    'sale_out_value' => $saleOutValue,
+                    'hpp_penjualan_kotor' => $hppPenjualanKotor,
+                    'hpp_reversal_void' => $hppReversalVoid,
+                    'hpp_penjualan_bersih' => $hppPenjualanBersih,
+                    'transfer_out_qty' => $transferOutQty,
+                    'transfer_out_value' => $transferOutValue,
+                    'adjustment_out_qty' => $adjustmentOutQty,
+                    'adjustment_out_value' => $adjustmentOutValue,
+                    'other_in_qty' => $otherInQty,
+                    'other_in_value' => $otherInValue,
+                    'other_out_qty' => $otherOutQty,
+                    'other_out_value' => $otherOutValue,
+                    'total_in_qty' => $totalInQty,
+                    'total_in_value' => $totalInValue,
+                    'total_out_qty' => $totalOutQty,
+                    'total_out_value' => $totalOutValue,
+                    'closing_qty' => $closingQty,
+                    'closing_value' => $closingValue,
+                ];
+            });
+
+        $summary = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'outlet_id' => $outletId,
+            'product_id' => $productId,
+            'selected_product_name' => $productId ? Product::query()->whereKey($productId)->value('name') : null,
+            'row_count' => $rows->count(),
+            'opening_qty' => (float) $rows->sum('opening_qty'),
+            'opening_value' => (float) $rows->sum('opening_value'),
+            'purchase_in_qty' => (float) $rows->sum('purchase_in_qty'),
+            'purchase_in_value' => (float) $rows->sum('purchase_in_value'),
+            'sale_return_in_qty' => (float) $rows->sum('sale_return_in_qty'),
+            'sale_return_in_value' => (float) $rows->sum('sale_return_in_value'),
+            'transfer_in_qty' => (float) $rows->sum('transfer_in_qty'),
+            'transfer_in_value' => (float) $rows->sum('transfer_in_value'),
+            'adjustment_in_qty' => (float) $rows->sum('adjustment_in_qty'),
+            'adjustment_in_value' => (float) $rows->sum('adjustment_in_value'),
+            'sale_out_qty' => (float) $rows->sum('sale_out_qty'),
+            'sale_out_value' => (float) $rows->sum('sale_out_value'),
+            'hpp_penjualan_kotor' => (float) $rows->sum('hpp_penjualan_kotor'),
+            'hpp_reversal_void' => (float) $rows->sum('hpp_reversal_void'),
+            'hpp_penjualan_bersih' => (float) $rows->sum('hpp_penjualan_bersih'),
+            'transfer_out_qty' => (float) $rows->sum('transfer_out_qty'),
+            'transfer_out_value' => (float) $rows->sum('transfer_out_value'),
+            'adjustment_out_qty' => (float) $rows->sum('adjustment_out_qty'),
+            'adjustment_out_value' => (float) $rows->sum('adjustment_out_value'),
+            'other_in_qty' => (float) $rows->sum('other_in_qty'),
+            'other_in_value' => (float) $rows->sum('other_in_value'),
+            'other_out_qty' => (float) $rows->sum('other_out_qty'),
+            'other_out_value' => (float) $rows->sum('other_out_value'),
+            'total_in_qty' => (float) $rows->sum('total_in_qty'),
+            'total_in_value' => (float) $rows->sum('total_in_value'),
+            'total_out_qty' => (float) $rows->sum('total_out_qty'),
+            'total_out_value' => (float) $rows->sum('total_out_value'),
+            'closing_qty' => (float) $rows->sum('closing_qty'),
+            'closing_value' => (float) $rows->sum('closing_value'),
+        ];
+
+        return [$rows, $summary];
+    }
+
+    private function inventoryReconciliationReport(string $dateFrom, string $dateTo, ?int $outletId = null): array
+    {
+        [$stockRows, $stockSummary] = $this->stockMovementReport($dateFrom, $dateTo, $outletId, null);
+
+        $inventoryAccounts = DB::table('coa_accounts')
+            ->where('is_active', true)
+            ->where('type', 'asset')
+            ->where(function ($q) {
+                $q->whereRaw('LOWER(name) like ?', ['%persedia%'])
+                    ->orWhereRaw('LOWER(name) like ?', ['%inventory%'])
+                    ->orWhereRaw('LOWER(`group`) like ?', ['%persedia%'])
+                    ->orWhere('code', 'like', '1-13%');
+            })
+            ->orderBy('code')
+            ->get(['id', 'code', 'name', 'group']);
+
+        $inventoryAccountIds = $inventoryAccounts->pluck('id')->map(fn($id) => (int) $id)->all();
+
+        $neracaByOutlet = collect();
+        $neracaByAccount = collect();
+
+        if (!empty($inventoryAccountIds)) {
+            $neracaBase = DB::table('cash_transactions')
+                ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+                ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+                ->whereIn('cash_transactions.coa_account_id', $inventoryAccountIds)
+                ->whereDate('cash_transactions.transaction_date', '<=', $dateTo);
+
+            if (!empty($outletId)) {
+                $neracaBase->where('cash_accounts.outlet_id', $outletId);
+            }
+
+            $neracaByOutlet = (clone $neracaBase)
+                ->leftJoin('outlets', 'cash_accounts.outlet_id', '=', 'outlets.id')
+                ->select(
+                    'cash_accounts.outlet_id',
+                    DB::raw('COALESCE(outlets.name, "Tanpa Outlet") as outlet_name')
+                )
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END) as neraca_inventory_value")
+                ->groupBy('cash_accounts.outlet_id', 'outlets.name')
+                ->get();
+
+            $neracaByAccount = (clone $neracaBase)
+                ->select(
+                    'coa_accounts.id as coa_account_id',
+                    'coa_accounts.code as coa_code',
+                    'coa_accounts.name as coa_name',
+                    'coa_accounts.group as coa_group'
+                )
+                ->selectRaw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END) as balance")
+                ->groupBy('coa_accounts.id', 'coa_accounts.code', 'coa_accounts.name', 'coa_accounts.group')
+                ->orderBy('coa_accounts.code')
+                ->get();
+        }
+
+        $stockByOutlet = $stockRows
+            ->groupBy(fn($row) => (string) $row->outlet_id)
+            ->map(function ($group) {
+                $first = $group->first();
+                return (object) [
+                    'outlet_key' => (string) $first->outlet_id,
+                    'outlet_id' => (int) $first->outlet_id,
+                    'outlet_name' => $first->outlet_name,
+                    'mutation_inventory_value' => round((float) $group->sum('closing_value'), 2),
+                ];
+            });
+
+        $neracaByOutletMapped = $neracaByOutlet
+            ->mapWithKeys(function ($row) {
+                $key = (string) ($row->outlet_id ?? 'null');
+                return [$key => (object) [
+                    'outlet_key' => $key,
+                    'outlet_id' => $row->outlet_id !== null ? (int) $row->outlet_id : null,
+                    'outlet_name' => $row->outlet_name ?: 'Tanpa Outlet',
+                    'neraca_inventory_value' => round((float) ($row->neraca_inventory_value ?? 0), 2),
+                ]];
+            });
+
+        $outletKeys = $stockByOutlet->keys()->merge($neracaByOutletMapped->keys())->unique()->values();
+        $rows = $outletKeys->map(function ($key) use ($stockByOutlet, $neracaByOutletMapped) {
+            $stock = $stockByOutlet->get($key);
+            $neraca = $neracaByOutletMapped->get($key);
+
+            $mutationValue = (float) ($stock->mutation_inventory_value ?? 0);
+            $neracaValue = (float) ($neraca->neraca_inventory_value ?? 0);
+            $gap = round($mutationValue - $neracaValue, 2);
+
+            return (object) [
+                'outlet_id' => $stock->outlet_id ?? $neraca->outlet_id ?? null,
+                'outlet_name' => $stock->outlet_name ?? $neraca->outlet_name ?? 'Tanpa Outlet',
+                'mutation_inventory_value' => $mutationValue,
+                'neraca_inventory_value' => $neracaValue,
+                'gap_value' => $gap,
+                'is_balanced' => abs($gap) < 0.01,
+            ];
+        })->sortBy('outlet_name')->values();
+
+        $mutationTotal = round((float) ($stockSummary['closing_value'] ?? 0), 2);
+        $neracaTotal = round((float) $rows->sum('neraca_inventory_value'), 2);
+        $gapTotal = round($mutationTotal - $neracaTotal, 2);
+
+        $summary = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'outlet_id' => $outletId,
+            'inventory_mutation_value' => $mutationTotal,
+            'inventory_neraca_value' => $neracaTotal,
+            'gap_value' => $gapTotal,
+            'is_balanced' => abs($gapTotal) < 0.01,
+            'inventory_account_count' => count($inventoryAccountIds),
+            'stock_row_count' => (int) ($stockSummary['row_count'] ?? 0),
+            'outlet_row_count' => (int) $rows->count(),
+            'inventory_accounts_rows' => $neracaByAccount->map(function ($row) {
+                return [
+                    'coa_account_id' => (int) $row->coa_account_id,
+                    'coa_code' => $row->coa_code,
+                    'coa_name' => $row->coa_name,
+                    'coa_group' => $row->coa_group,
+                    'balance' => round((float) ($row->balance ?? 0), 2),
+                ];
+            })->all(),
+        ];
+
+        $meta = [
+            'notes' => [
+                'Nilai Mutasi Persediaan dihitung dari nilai stok akhir (closing value) per produk-outlet pada cut-off tanggal.',
+                'Nilai Persediaan Neraca diambil dari saldo akun COA aset yang terindikasi persediaan (nama/group mengandung persedia/inventory atau kode 1-13x).',
+                'Selisih harus 0 untuk syarat rekonsiliasi bulanan; jika tidak 0, lakukan audit transaksi persediaan dan posting COA.',
+            ],
+        ];
+
+        if (empty($inventoryAccountIds)) {
+            $meta['notes'][] = 'Belum ada akun COA persediaan aktif terdeteksi. Buat/aktifkan akun seperti 1-130 Persediaan agar rekonsiliasi neraca dapat berjalan.';
+        }
+
+        return [$rows, $summary, $meta];
     }
 
     private function cashAccountSnapshots(string $dateFrom, string $dateTo, ?int $outletId = null)

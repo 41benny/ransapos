@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Services\CostService;
 use App\Services\PurchaseService;
 use App\Services\SaleService;
+use App\Services\StockService;
 
 class MovingAverageCostTest extends TestCase
 {
@@ -269,6 +270,45 @@ class MovingAverageCostTest extends TestCase
         $saleItem = $sale->items->first();
         // COGS = avg_cost × qty = 18000 × 3 = 54000 (bukan 15000 × 3 = 45000)
         $this->assertEquals(54000, (float) $saleItem->cogs, 'Sale COGS should use avg_cost (18000), not master purchase_price (15000)');
+    }
+
+    /** @test */
+    public function stock_adjustment_records_cost_snapshot_for_nominal_reporting()
+    {
+        $product = $this->createProduct('Minyak', 10000);
+
+        Stock::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outlet->id,
+            'quantity' => 10,
+            'last_mutation_at' => now(),
+        ]);
+
+        ProductCost::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outlet->id,
+            'avg_cost' => 12500,
+            'last_calculated_at' => now(),
+        ]);
+
+        $this->actingAs($this->user);
+        app(StockService::class)->adjustStock(
+            productId: $product->id,
+            outletId: $this->outlet->id,
+            newQuantity: 7,
+            notes: 'Opname koreksi',
+            userId: $this->user->id
+        );
+
+        $mutation = StockMutation::where('product_id', $product->id)
+            ->where('outlet_id', $this->outlet->id)
+            ->where('mutation_type', 'adjustment')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertEquals(-3.0, (float) $mutation->quantity);
+        $this->assertEquals(12500.0, (float) $mutation->unit_cost);
+        $this->assertEquals(37500.0, (float) $mutation->total_cost);
     }
 
     private function createProduct(string $name, float $purchasePrice): Product

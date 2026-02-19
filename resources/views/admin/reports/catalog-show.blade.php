@@ -21,6 +21,9 @@
                 </a>
             </div>
 
+            @php
+                $isStockMovement = $viewType === 'stock-movement';
+            @endphp
             <form method="GET" class="mt-8 grid grid-cols-1 items-end gap-4 md:grid-cols-12">
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
                 <div class="md:col-span-2">
@@ -58,7 +61,26 @@
                             class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
                     </div>
                 </div>
-                <div class="md:col-span-5 flex items-center gap-2">
+                @if($isStockMovement)
+                    <div class="md:col-span-3">
+                        <label
+                            class="mb-1.5 block text-[10px] font-normal uppercase tracking-widest text-slate-400">Produk</label>
+                        <div class="relative">
+                            <select name="product_id"
+                                class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                                <option value="">Semua Produk</option>
+                                @foreach(($products ?? collect()) as $product)
+                                    <option value="{{ $product->id }}" @selected((string) ($selectedProductId ?? '') === (string) $product->id)>
+                                        {{ $product->name }}{{ !empty($product->sku) ? ' - ' . $product->sku : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+                        </div>
+                    </div>
+                @endif
+                <div class="{{ $isStockMovement ? 'md:col-span-2' : 'md:col-span-5' }} flex items-center gap-2">
                     <button type="submit"
                         class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
                         <i class="fas fa-sync-alt text-[10px]"></i>
@@ -1173,6 +1195,388 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        @elseif($viewType === 'stock-movement')
+            @php
+                $qty = fn($value) => number_format((float) $value, 2, ',', '.');
+                $nominal = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+                $stockAuditBase = array_filter([
+                    'start_date' => $dateFrom,
+                    'end_date' => $dateTo,
+                    'outlet_id' => $outletId,
+                    'product_id' => $selectedProductId ?? null,
+                ]);
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-6">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Awal (Nominal)</div>
+                        <div class="mt-2 text-xl font-normal text-slate-900">
+                            {{ $nominal($summary['opening_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['opening_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Masuk</div>
+                        <div class="mt-2 text-xl font-normal text-emerald-700">
+                            {{ $nominal($summary['total_in_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['total_in_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Keluar</div>
+                        <div class="mt-2 text-xl font-normal text-rose-700">
+                            {{ $nominal($summary['total_out_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['total_out_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Penjualan Keluar (HPP)</div>
+                        <div class="mt-2 text-xl font-normal text-rose-700">
+                            {{ $nominal($summary['hpp_penjualan_kotor'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['sale_out_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Reversal Void</div>
+                        <div class="mt-2 text-xl font-normal text-amber-700">
+                            {{ $nominal($summary['hpp_reversal_void'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Ref: sale_cancellation</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">HPP Penjualan Bersih</div>
+                        <div class="mt-2 text-xl font-normal text-rose-700">
+                            {{ $nominal($summary['hpp_penjualan_bersih'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Kotor - Reversal</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Akhir (Nominal)</div>
+                        <div class="mt-2 text-xl font-normal text-indigo-700">
+                            {{ $nominal($summary['closing_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['closing_qty'] ?? 0) }}</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                        href="{{ route('admin.stocks.mutations', array_filter(array_merge($stockAuditBase, ['reference_scope' => 'sales_cogs']))) }}">
+                        <i class="fas fa-percent text-[10px]"></i>
+                        Audit HPP Penjualan (Kotor+Reversal)
+                    </a>
+                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                        href="{{ route('admin.stocks.mutations', $stockAuditBase) }}">
+                        <i class="fas fa-list-ul text-[10px]"></i>
+                        Audit Mutasi Stok
+                    </a>
+                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                        href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'sales-vs-hpp'], $auditBase))) }}">
+                        <i class="fas fa-balance-scale text-[10px]"></i>
+                        Audit Sales vs HPP
+                    </a>
+                    @if(!empty($summary['selected_product_name']))
+                        <span class="rounded-lg bg-indigo-50 px-3 py-1.5 text-indigo-700">
+                            Produk: {{ $summary['selected_product_name'] }}
+                        </span>
+                    @endif
+                    <span class="rounded-lg bg-slate-100 px-3 py-1.5 text-slate-600">
+                        Baris: {{ number_format($summary['row_count'] ?? 0) }}
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-[3200px] text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">No</th>
+                                <th class="px-4 py-3">Produk</th>
+                                <th class="px-4 py-3">Outlet</th>
+                                <th class="px-4 py-3 text-right">Stok Awal Qty</th>
+                                <th class="px-4 py-3 text-right">Stok Awal Nominal</th>
+                                <th class="px-4 py-3 text-right">Pembelian In Qty</th>
+                                <th class="px-4 py-3 text-right">Pembelian In Nominal</th>
+                                <th class="px-4 py-3 text-right">Retur Jual In Qty</th>
+                                <th class="px-4 py-3 text-right">Retur Jual In Nominal</th>
+                                <th class="px-4 py-3 text-right">Mutasi In Qty</th>
+                                <th class="px-4 py-3 text-right">Mutasi In Nominal</th>
+                                <th class="px-4 py-3 text-right">Adjustment + Qty</th>
+                                <th class="px-4 py-3 text-right">Adjustment + Nominal</th>
+                                <th class="px-4 py-3 text-right">Penjualan Out Qty</th>
+                                <th class="px-4 py-3 text-right">Penjualan Out Nominal</th>
+                                <th class="px-4 py-3 text-right">Mutasi Out Qty</th>
+                                <th class="px-4 py-3 text-right">Mutasi Out Nominal</th>
+                                <th class="px-4 py-3 text-right">Adjustment - Qty</th>
+                                <th class="px-4 py-3 text-right">Adjustment - Nominal</th>
+                                <th class="px-4 py-3 text-right">Lainnya In Qty</th>
+                                <th class="px-4 py-3 text-right">Lainnya In Nominal</th>
+                                <th class="px-4 py-3 text-right">Lainnya Out Qty</th>
+                                <th class="px-4 py-3 text-right">Lainnya Out Nominal</th>
+                                <th class="px-4 py-3 text-right">Total In Qty</th>
+                                <th class="px-4 py-3 text-right">Total In Nominal</th>
+                                <th class="px-4 py-3 text-right">Total Out Qty</th>
+                                <th class="px-4 py-3 text-right">Total Out Nominal</th>
+                                <th class="px-4 py-3 text-right">Stok Akhir Qty</th>
+                                <th class="px-4 py-3 text-right">Stok Akhir Nominal</th>
+                                <th class="px-4 py-3 text-right">Avg Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-500">{{ $loop->iteration }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-normal text-slate-800">{{ $row->product_name }}</div>
+                                        <div class="text-xs text-slate-500">
+                                            {{ $row->product_sku ?: '-' }} | {{ strtoupper($row->product_unit ?? 'pcs') }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ $qty($row->opening_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-900">{{ $nominal($row->opening_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->purchase_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->purchase_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->sale_return_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->sale_return_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->transfer_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->transfer_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->adjustment_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->adjustment_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->sale_out_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->sale_out_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->transfer_out_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->transfer_out_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->adjustment_out_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->adjustment_out_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->other_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->other_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->other_out_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->other_out_value) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-emerald-700">{{ $qty($row->total_in_qty) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-emerald-700">{{ $nominal($row->total_in_value) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-rose-700">{{ $qty($row->total_out_qty) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-rose-700">{{ $nominal($row->total_out_value) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-indigo-700">{{ $qty($row->closing_qty) }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-indigo-700">{{ $nominal($row->closing_value) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->current_avg_cost, 4, ',', '.') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="30" class="px-4 py-8 text-center text-slate-500">
+                                        Belum ada data pergerakan stok untuk filter yang dipilih.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        @if(($summary['row_count'] ?? 0) > 0)
+                            <tfoot class="bg-slate-50 text-xs font-normal uppercase tracking-wide text-slate-600">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3">Total</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['opening_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['opening_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['purchase_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['purchase_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['sale_return_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['sale_return_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['transfer_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['transfer_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['adjustment_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['adjustment_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['sale_out_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['sale_out_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['transfer_out_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['transfer_out_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['adjustment_out_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['adjustment_out_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['other_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['other_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['other_out_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['other_out_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['total_in_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['total_in_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['total_out_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['total_out_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $qty($summary['closing_qty'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['closing_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">-</td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+
+                @if(!empty($meta['notes']))
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Catatan Valuasi</div>
+                        <ul class="mt-2 space-y-1 text-sm text-slate-700">
+                            @foreach($meta['notes'] as $note)
+                                <li>{{ $note }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
+        @elseif($viewType === 'inventory-reconciliation')
+            @php
+                $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+                $reconGap = (float) ($summary['gap_value'] ?? 0);
+                $reconIsBalanced = (bool) ($summary['is_balanced'] ?? false);
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Nilai Mutasi Persediaan</div>
+                        <div class="mt-2 text-2xl font-normal text-indigo-700">
+                            {{ $money($summary['inventory_mutation_value'] ?? 0) }}
+                        </div>
+                        <a class="mt-2 inline-flex text-xs font-normal text-indigo-700 hover:text-indigo-900"
+                            href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'stock-movement'], $auditBase, ['tab' => request('tab')]))) }}">
+                            Audit Laporan Pergerakan Stok
+                        </a>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Nilai Persediaan Neraca</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            {{ $money($summary['inventory_neraca_value'] ?? 0) }}
+                        </div>
+                        <a class="mt-2 inline-flex text-xs font-normal text-indigo-700 hover:text-indigo-900"
+                            href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'balance-sheet'], $auditBase, ['tab' => 'ikhtisar']))) }}">
+                            Audit Neraca
+                        </a>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Selisih Rekonsiliasi</div>
+                        <div class="mt-2 text-2xl font-normal {{ abs($reconGap) < 0.01 ? 'text-emerald-700' : 'text-rose-700' }}">
+                            {{ $money($reconGap) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">
+                            Target: 0
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Status Rekonsiliasi</div>
+                        <div class="mt-2">
+                            @if($reconIsBalanced)
+                                <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-normal text-emerald-700">
+                                    BALANCED
+                                </span>
+                            @else
+                                <span class="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-normal text-rose-700">
+                                    SELISIH
+                                </span>
+                            @endif
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500">
+                            Akun persediaan terdeteksi: {{ number_format($summary['inventory_account_count'] ?? 0) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">Outlet</th>
+                                <th class="px-4 py-3 text-right">Mutasi Persediaan</th>
+                                <th class="px-4 py-3 text-right">Neraca Persediaan</th>
+                                <th class="px-4 py-3 text-right">Selisih</th>
+                                <th class="px-4 py-3 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-800">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-3 text-right text-indigo-700">
+                                        {{ $money($row->mutation_inventory_value) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-900">
+                                        {{ $money($row->neraca_inventory_value) }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 text-right font-normal {{ abs((float) $row->gap_value) < 0.01 ? 'text-emerald-700' : 'text-rose-700' }}">
+                                        {{ $money($row->gap_value) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span
+                                            class="inline-flex rounded-full px-2.5 py-1 text-xs {{ !empty($row->is_balanced) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                                            {{ !empty($row->is_balanced) ? 'Balance' : 'Selisih' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">
+                                        Belum ada data rekonsiliasi untuk filter yang dipilih.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        @if(($summary['outlet_row_count'] ?? 0) > 0)
+                            <tfoot class="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+                                <tr>
+                                    <td class="px-4 py-3">Total</td>
+                                    <td class="px-4 py-3 text-right">{{ $money($summary['inventory_mutation_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $money($summary['inventory_neraca_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-right">{{ $money($summary['gap_value'] ?? 0) }}</td>
+                                    <td class="px-4 py-3 text-center">
+                                        {{ !empty($summary['is_balanced']) ? 'Balance' : 'Selisih' }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        @endif
+                    </table>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">Akun Persediaan (COA)</th>
+                                <th class="px-4 py-3">Grup</th>
+                                <th class="px-4 py-3 text-right">Saldo s/d {{ $dateTo }}</th>
+                                <th class="px-4 py-3 text-right">Audit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse(($summary['inventory_accounts_rows'] ?? []) as $accountRow)
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-800">
+                                        {{ $accountRow['coa_code'] }} - {{ $accountRow['coa_name'] }}
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-600">{{ $accountRow['coa_group'] }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-slate-900">
+                                        {{ $money($accountRow['balance']) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <a class="inline-flex text-xs font-normal text-indigo-700 hover:text-indigo-900"
+                                            href="{{ route('admin.cash-transactions.index', array_filter(array_merge($auditBase, ['coa_account_id' => $accountRow['coa_account_id']]))) }}">
+                                            Lihat Transaksi
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center text-slate-500">
+                                        Belum ada akun COA persediaan yang terdeteksi.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if(!empty($meta['notes']))
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Catatan Rekonsiliasi</div>
+                        <ul class="mt-2 space-y-1 text-sm text-slate-700">
+                            @foreach($meta['notes'] as $note)
+                                <li>{{ $note }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
         @elseif($viewType === 'sales-vs-hpp')
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

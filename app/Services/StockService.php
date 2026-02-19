@@ -246,6 +246,8 @@ class StockService
 
             // Hitung selisih
             $difference = $newQuantity - $stockBefore;
+            $unitCost = app(CostService::class)->getAvgCost($productId, $outletId);
+            $totalCost = abs($difference) * $unitCost;
 
             // Update stok
             $stock->quantity = $newQuantity;
@@ -258,6 +260,8 @@ class StockService
                 'outlet_id' => $outletId,
                 'mutation_type' => 'adjustment',
                 'quantity' => $difference,
+                'unit_cost' => $unitCost,
+                'total_cost' => $totalCost,
                 'stock_before' => $stockBefore,
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'stock_opname',

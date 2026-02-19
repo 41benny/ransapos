@@ -237,6 +237,8 @@ class StockTransferService
                             'outlet_id' => $transfer->from_outlet_id,
                             'mutation_type' => 'adjustment',
                             'quantity' => $difference,
+                            'unit_cost' => $unitCost,
+                            'total_cost' => abs($difference) * $unitCost,
                             'stock_before' => $senderStock->quantity,
                             'stock_after' => $senderStock->quantity,
                             'reference_type' => 'stock_transfer',
