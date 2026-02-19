@@ -12,7 +12,8 @@
                 <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Edit Pembelian</h1>
                 <p
                     class="text-[11px] font-mono text-slate-500 mt-1 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded w-fit border border-slate-200">
-                    {{ $purchase->purchase_number }}</p>
+                    {{ $purchase->purchase_number }}
+                </p>
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.purchases.show', $purchase) }}"
@@ -157,9 +158,9 @@
             </div>
 
             {{-- Summary Grid --}}
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div class="flex flex-col lg:flex-row gap-6">
                 {{-- Notes & Adjustments --}}
-                <div class="md:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pajak (Tax
@@ -180,14 +181,14 @@
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan
                             Tambahan</label>
-                        <textarea name="notes" rows="3" placeholder="Masukkan catatan jika ada..."
+                        <textarea name="notes" rows="3" placeholder="Contoh: Pembayaran tempo 30 hari..."
                             class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes', $purchase->notes) }}</textarea>
                     </div>
                 </div>
 
                 {{-- Calculations --}}
                 <div
-                    class="md:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
+                    class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center text-[11px] font-normal text-slate-500">
                             <span class="uppercase tracking-widest">Subtotal Item</span>
@@ -379,42 +380,42 @@
             const discountAmount = initialData?.discount_amount ?? 0;
 
             row.innerHTML = `
-            <td class="px-5 py-4">
-                <div class="flex flex-col gap-1.5">
-                    <input type="text" id="product-input-${currentIndex}" list="${productMasterListId}"
-                           value="${escapeHtml(selectedProductLabel)}"
-                           placeholder="Ketik nama atau SKU..."
-                           oninput="syncProductInput(${currentIndex})"
-                           onchange="syncProductInput(${currentIndex}, true)"
-                           class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
-                    <input type="hidden" name="items[${currentIndex}][product_id]" id="product-id-${currentIndex}" value="${escapeHtml(selectedProductId)}">
-                </div>
-            </td>
-            <td class="px-5 py-4">
-                <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
-                       onchange="calculateItemSubtotal(${currentIndex})"
-                       class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="qty-${currentIndex}">
-            </td>
-            <td class="px-5 py-4">
-                <input type="text" name="items[${currentIndex}][unit_price]" value="${unitPrice}" inputmode="decimal" data-currency-input="1" required
-                       onchange="calculateItemSubtotal(${currentIndex})"
-                       class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="price-${currentIndex}">
-            </td>
-            <td class="px-5 py-4">
-                <input type="text" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" inputmode="decimal" data-currency-input="1"
-                       onchange="calculateItemSubtotal(${currentIndex})"
-                       class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="discount-${currentIndex}">
-            </td>
-            <td class="px-5 py-4 text-right">
-                <span class="text-[12px] font-normal text-slate-800 tabular-nums" id="subtotal-${currentIndex}">Rp 0</span>
-            </td>
-            <td class="px-5 py-4 text-center">
-                <button type="button" onclick="removeItem(${currentIndex})"
-                        class="h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-95">
-                    <i class="fas fa-times text-[10px]"></i>
-                </button>
-            </td>
-        `;
+                <td class="px-5 py-4">
+                    <div class="flex flex-col gap-1.5">
+                        <input type="text" id="product-input-${currentIndex}" list="${productMasterListId}"
+                               value="${escapeHtml(selectedProductLabel)}"
+                               placeholder="Ketik nama atau SKU..."
+                               oninput="syncProductInput(${currentIndex})"
+                               onchange="syncProductInput(${currentIndex}, true)"
+                               class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                        <input type="hidden" name="items[${currentIndex}][product_id]" id="product-id-${currentIndex}" value="${escapeHtml(selectedProductId)}">
+                    </div>
+                </td>
+                <td class="px-5 py-4">
+                    <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
+                           onchange="calculateItemSubtotal(${currentIndex})"
+                           class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="qty-${currentIndex}">
+                </td>
+                <td class="px-5 py-4">
+                    <input type="text" name="items[${currentIndex}][unit_price]" value="${unitPrice}" inputmode="decimal" data-currency-input="1" required
+                           onchange="calculateItemSubtotal(${currentIndex})"
+                           class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="price-${currentIndex}">
+                </td>
+                <td class="px-5 py-4">
+                    <input type="text" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" inputmode="decimal" data-currency-input="1"
+                           onchange="calculateItemSubtotal(${currentIndex})"
+                           class="w-full h-10 px-3 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="discount-${currentIndex}">
+                </td>
+                <td class="px-5 py-4 text-right">
+                    <span class="text-[12px] font-normal text-slate-800 tabular-nums" id="subtotal-${currentIndex}">Rp 0</span>
+                </td>
+                <td class="px-5 py-4 text-center">
+                    <button type="button" onclick="removeItem(${currentIndex})"
+                            class="h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-95">
+                        <i class="fas fa-times text-[10px]"></i>
+                    </button>
+                </td>
+            `;
 
             tbody.appendChild(row);
             bindCurrencyInput(document.getElementById(`price-${currentIndex}`), () => calculateItemSubtotal(currentIndex));

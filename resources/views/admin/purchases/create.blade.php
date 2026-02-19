@@ -128,9 +128,9 @@
         </div>
 
         {{-- Summary Grid --}}
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div class="flex flex-col lg:flex-row gap-6">
             {{-- Notes & Adjustments --}}
-            <div class="md:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div class="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pajak (Tax Rp)</label>
@@ -153,7 +153,7 @@
             </div>
 
             {{-- Calculations --}}
-            <div class="md:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
+            <div class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
                 <div class="space-y-4">
                     <div class="flex justify-between items-center text-[11px] font-normal text-slate-500">
                         <span class="uppercase tracking-widest">Subtotal Item</span>
