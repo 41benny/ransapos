@@ -99,7 +99,7 @@
                         </a>
                     @endif
 
-                    @if(auth()->user()->hasRole(['admin', 'manager']))
+                    @if(auth()->user()->hasRole(['admin', 'manager', 'superadmin']))
                         <a href="{{ route('admin.dashboard') }}"
                             class="h-11 w-11 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-lg text-white transition border border-white/10" title="Back Office">
                             <span class="material-symbols-outlined text-[20px]">space_dashboard</span>

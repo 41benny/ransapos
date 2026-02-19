@@ -288,7 +288,7 @@
                             ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
                         ];
 
-                        if ($currentUser?->hasRole('manager')) {
+                        if ($currentUser?->hasRole('superadmin')) {
                             $extras[] = [
                                 'label' => 'Hak Akses',
                                 'icon' => 'fas fa-user-shield',

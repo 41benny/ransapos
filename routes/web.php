@@ -29,7 +29,7 @@ Route::post('/pos/pin', [PosPinLoginController::class, 'login'])->name('pos.pin.
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Back Office (Admin) Routes
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,superadmin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard')
         ->middleware('permission:dashboard.view');
@@ -401,8 +401,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager'
         ->name('void-tokens.store')
         ->middleware('permission:void-tokens.create');
 
-    // Role Permission Management (khusus manager/superadmin)
-    Route::prefix('permissions')->name('permissions.')->middleware(['role:manager', 'permission:permissions.manage'])->group(function () {
+    // Role Permission Management (khusus superadmin)
+    Route::prefix('permissions')->name('permissions.')->middleware(['role:superadmin', 'permission:permissions.manage'])->group(function () {
         Route::get('/', [PermissionController::class, 'index'])->name('index');
         Route::get('/{role}/edit', [PermissionController::class, 'edit'])->name('edit');
         Route::put('/{role}', [PermissionController::class, 'update'])->name('update');

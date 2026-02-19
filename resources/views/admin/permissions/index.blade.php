@@ -49,7 +49,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h3 class="text-[13px] font-normal text-slate-900 leading-none">Matriks Role</h3>
-                        <p class="text-[10px] font-normal text-slate-500 mt-1 uppercase tracking-widest">Khusus role `manager` memiliki akses penuh otomatis</p>
+                        <p class="text-[10px] font-normal text-slate-500 mt-1 uppercase tracking-widest">Khusus role `superadmin` memiliki akses penuh otomatis</p>
                     </div>
                 </div>
             </div>
@@ -77,7 +77,7 @@
                                     <span class="text-[11px] font-normal text-slate-600 italic">{{ $role->description ?: 'Tidak ada deskripsi' }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($role->name === 'manager')
+                                    @if($role->name === 'superadmin')
                                         <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[9px] font-normal text-indigo-600 ring-1 ring-inset ring-indigo-200 uppercase tracking-widest italic">Full Access (Superadmin)</span>
                                     @else
                                         <span class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-0.5 text-[9px] font-normal text-slate-600 ring-1 ring-inset ring-slate-200 uppercase tracking-widest bold">
@@ -86,7 +86,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($role->name === 'manager')
+                                    @if($role->name === 'superadmin')
                                         <span class="text-[10px] text-slate-400 italic">Otomatis Terbuka</span>
                                     @else
                                         <a href="{{ route('admin.permissions.edit', $role) }}"

@@ -125,9 +125,9 @@
                                     Role adalah akses dasar. Di sini Anda bisa ubah akses khusus user ini.
                                 </p>
                             </div>
-                            <div id="managerPermissionHint"
+                            <div id="superadminPermissionHint"
                                 class="hidden px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px]">
-                                Role manager selalu full akses, checklist tidak bisa diubah.
+                                Role superadmin selalu full akses, checklist tidak bisa diubah.
                             </div>
                         </div>
 
@@ -306,35 +306,35 @@
             const checkAllPermissionsBtn = document.getElementById('checkAllUserPermissions');
             const uncheckAllPermissionsBtn = document.getElementById('uncheckAllUserPermissions');
             const moduleToggleButtons = document.querySelectorAll('.module-toggle');
-            const managerPermissionHint = document.getElementById('managerPermissionHint');
+            const superadminPermissionHint = document.getElementById('superadminPermissionHint');
 
             function applyPermissionRulesByRole() {
-                const isManager = selectedRoleName() === 'manager';
+                const isSuperAdmin = selectedRoleName() === 'superadmin';
 
                 permissionCheckboxes.forEach((checkbox) => {
-                    checkbox.disabled = isManager;
+                    checkbox.disabled = isSuperAdmin;
                 });
 
                 if (checkAllPermissionsBtn) {
-                    checkAllPermissionsBtn.disabled = isManager;
-                    checkAllPermissionsBtn.classList.toggle('opacity-50', isManager);
-                    checkAllPermissionsBtn.classList.toggle('cursor-not-allowed', isManager);
+                    checkAllPermissionsBtn.disabled = isSuperAdmin;
+                    checkAllPermissionsBtn.classList.toggle('opacity-50', isSuperAdmin);
+                    checkAllPermissionsBtn.classList.toggle('cursor-not-allowed', isSuperAdmin);
                 }
 
                 if (uncheckAllPermissionsBtn) {
-                    uncheckAllPermissionsBtn.disabled = isManager;
-                    uncheckAllPermissionsBtn.classList.toggle('opacity-50', isManager);
-                    uncheckAllPermissionsBtn.classList.toggle('cursor-not-allowed', isManager);
+                    uncheckAllPermissionsBtn.disabled = isSuperAdmin;
+                    uncheckAllPermissionsBtn.classList.toggle('opacity-50', isSuperAdmin);
+                    uncheckAllPermissionsBtn.classList.toggle('cursor-not-allowed', isSuperAdmin);
                 }
 
                 moduleToggleButtons.forEach((button) => {
-                    button.disabled = isManager;
-                    button.classList.toggle('opacity-50', isManager);
-                    button.classList.toggle('cursor-not-allowed', isManager);
+                    button.disabled = isSuperAdmin;
+                    button.classList.toggle('opacity-50', isSuperAdmin);
+                    button.classList.toggle('cursor-not-allowed', isSuperAdmin);
                 });
 
-                if (managerPermissionHint) {
-                    managerPermissionHint.classList.toggle('hidden', !isManager);
+                if (superadminPermissionHint) {
+                    superadminPermissionHint.classList.toggle('hidden', !isSuperAdmin);
                 }
             }
 

@@ -167,7 +167,7 @@ class PinLoginController extends Controller
             return redirect()->route('login');
         }
 
-        if ($user->hasRole(['admin', 'manager'])) {
+        if ($user->hasRole(['admin', 'manager', 'superadmin'])) {
             return redirect()->intended(route('admin.dashboard'));
         }
 

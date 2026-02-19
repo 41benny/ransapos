@@ -313,8 +313,8 @@ class SaleController extends Controller
      */
     public function print(Sale $sale)
     {
-        // Pastikan user punya akses ke outlet ini (kecuali super admin)
-        if (!auth()->user()->hasRole('admin') && $sale->outlet_id !== auth()->user()->outlet_id) {
+        // Pastikan user punya akses ke outlet ini (kecuali admin/superadmin).
+        if (!auth()->user()->hasRole(['admin', 'superadmin']) && $sale->outlet_id !== auth()->user()->outlet_id) {
             abort(403, 'Unauthorized action.');
         }
 

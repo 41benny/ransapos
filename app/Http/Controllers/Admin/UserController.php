@@ -192,7 +192,7 @@ class UserController extends Controller
 
         $user->update($payload);
 
-        if ($role?->name === 'manager') {
+        if ($role?->name === 'superadmin') {
             $user->customPermissions()->sync([]);
             $user->update(['uses_custom_permissions' => false]);
         } else {
@@ -213,6 +213,10 @@ class UserController extends Controller
     {
         if ($user->id === auth()->id()) {
             return back()->with('error', 'Tidak bisa menghapus akun sendiri.');
+        }
+
+        if ($user->hasRole('superadmin')) {
+            return back()->with('error', 'Akun dengan role SuperAdmin tidak dapat dinonaktifkan.');
         }
 
         $user->update(['is_active' => false]);

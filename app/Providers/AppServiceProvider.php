@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
-            if ($user->hasRole(['admin', 'manager'])) {
+            if ($user->hasRole(['admin', 'manager', 'superadmin'])) {
                 return route('admin.dashboard');
             }
 

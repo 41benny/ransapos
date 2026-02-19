@@ -170,7 +170,7 @@ class User extends Authenticatable
 
     /**
      * Cek apakah user memiliki permission tertentu.
-     * Role manager diperlakukan sebagai superadmin (full access).
+     * Role superadmin diperlakukan sebagai full access.
      */
     public function hasPermission(string|array $permissions): bool
     {
@@ -181,7 +181,7 @@ class User extends Authenticatable
             return false;
         }
 
-        if ($roleName === 'manager') {
+        if ($roleName === 'superadmin') {
             return true;
         }
 
@@ -235,5 +235,13 @@ class User extends Authenticatable
     public function isManager(): bool
     {
         return $this->role?->name === 'manager';
+    }
+
+    /**
+     * Cek apakah user adalah superadmin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role?->name === 'superadmin';
     }
 }

@@ -104,7 +104,7 @@ class CashSessionController extends Controller
     public function print(CashSession $cashSession)
     {
         // Pastikan user punya akses ke session outlet ini
-        if ($cashSession->outlet_id !== auth()->user()->outlet_id && !auth()->user()->hasRole(['admin', 'manager'])) {
+        if ($cashSession->outlet_id !== auth()->user()->outlet_id && !auth()->user()->hasRole(['admin', 'manager', 'superadmin'])) {
             abort(403);
         }
 

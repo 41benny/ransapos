@@ -35,10 +35,10 @@ class PermissionController extends Controller
      */
     public function edit(Role $role): View|RedirectResponse
     {
-        if ($role->name === 'manager') {
+        if ($role->name === 'superadmin') {
             return redirect()
                 ->route('admin.permissions.index')
-                ->with('error', 'Role manager adalah superadmin dan tidak perlu checklist permission.');
+                ->with('error', 'Role superadmin memiliki full akses bawaan sistem dan tidak perlu checklist permission.');
         }
 
         $permissionsByModule = Permission::query()
@@ -72,10 +72,10 @@ class PermissionController extends Controller
      */
     public function update(Request $request, Role $role): RedirectResponse
     {
-        if ($role->name === 'manager') {
+        if ($role->name === 'superadmin') {
             return redirect()
                 ->route('admin.permissions.index')
-                ->with('error', 'Role manager adalah superadmin dan tidak dapat diubah dari checklist.');
+                ->with('error', 'Role superadmin memiliki full akses bawaan sistem dan tidak dapat diubah dari checklist.');
         }
 
         $validated = $request->validate([
@@ -96,10 +96,10 @@ class PermissionController extends Controller
      */
     public function duplicate(Request $request, Role $role): RedirectResponse
     {
-        if ($role->name === 'manager') {
+        if ($role->name === 'superadmin') {
             return redirect()
                 ->route('admin.permissions.index')
-                ->with('error', 'Role manager adalah superadmin dan tidak dapat diubah dari checklist.');
+                ->with('error', 'Role superadmin memiliki full akses bawaan sistem dan tidak dapat diubah dari checklist.');
         }
 
         $validated = $request->validate([

@@ -148,7 +148,7 @@ class AuthController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('manager')) {
+        if ($user->hasRole('superadmin')) {
             return redirect()->intended(route('admin.dashboard'));
         }
 
@@ -165,7 +165,7 @@ class AuthController extends Controller
             }
 
             return redirect()->route('login')->withErrors([
-                'email' => 'Akun admin belum memiliki hak akses back office. Hubungi manager.',
+                'email' => 'Akun admin belum memiliki hak akses back office. Hubungi superadmin.',
             ]);
         }
 
