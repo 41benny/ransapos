@@ -133,6 +133,14 @@
                                 <label class="form-label">Catatan</label>
                                 <input type="text" name="notes" class="form-input" value="{{ old('notes') }}" placeholder="Promo anniversary all day">
                             </div>
+                            <div class="md:col-span-2">
+                                <input type="hidden" name="is_active" value="0">
+                                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                    <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-primary focus:ring-primary"
+                                        @checked((int) old('is_active', 1) === 1)>
+                                    <span>Aktifkan promo ini</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="rounded-xl border border-gray-200 p-4 bg-gray-50/60">
@@ -223,6 +231,14 @@
                                 <label class="form-label">Catatan</label>
                                 <input type="text" name="notes" class="form-input" value="{{ old('notes') }}" placeholder="Voucher khusus member baru">
                             </div>
+                            <div class="md:col-span-2">
+                                <input type="hidden" name="is_active" value="0">
+                                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                    <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-primary focus:ring-primary"
+                                        @checked((int) old('is_active', 1) === 1)>
+                                    <span>Aktifkan voucher ini</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="flex justify-end">
@@ -275,20 +291,21 @@
                                             </div>
                                         </td>
                                         <td class="px-5 py-3 text-center align-top">
-                                            @if($promotion->is_active)
-                                                <span class="badge badge-success">Aktif</span>
-                                            @else
-                                                <span class="badge badge-gray">Nonaktif</span>
-                                            @endif
+                                            <form method="POST" action="{{ route('admin.promo-vouchers.promotions.toggle', $promotion) }}">
+                                                @csrf
+                                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox"
+                                                        class="rounded border-gray-300 text-primary focus:ring-primary"
+                                                        @checked($promotion->is_active)
+                                                        onchange="this.form.submit()">
+                                                    <span class="text-xs {{ $promotion->is_active ? 'text-emerald-700' : 'text-gray-500' }}">
+                                                        {{ $promotion->is_active ? 'Aktif' : 'Nonaktif' }}
+                                                    </span>
+                                                </label>
+                                            </form>
                                         </td>
                                         <td class="px-5 py-3 align-top">
                                             <div class="flex justify-end gap-2">
-                                                <form method="POST" action="{{ route('admin.promo-vouchers.promotions.toggle', $promotion) }}">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-secondary btn-sm">
-                                                        {{ $promotion->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                                    </button>
-                                                </form>
                                                 <form method="POST" action="{{ route('admin.promo-vouchers.promotions.destroy', $promotion) }}" onsubmit="return confirm('Hapus promo ini?')">
                                                     @csrf
                                                     @method('DELETE')
@@ -352,20 +369,21 @@
                                             </div>
                                         </td>
                                         <td class="px-5 py-3 text-center align-top">
-                                            @if($voucher->is_active)
-                                                <span class="badge badge-success">Aktif</span>
-                                            @else
-                                                <span class="badge badge-gray">Nonaktif</span>
-                                            @endif
+                                            <form method="POST" action="{{ route('admin.promo-vouchers.vouchers.toggle', $voucher) }}">
+                                                @csrf
+                                                <label class="inline-flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox"
+                                                        class="rounded border-gray-300 text-primary focus:ring-primary"
+                                                        @checked($voucher->is_active)
+                                                        onchange="this.form.submit()">
+                                                    <span class="text-xs {{ $voucher->is_active ? 'text-emerald-700' : 'text-gray-500' }}">
+                                                        {{ $voucher->is_active ? 'Aktif' : 'Nonaktif' }}
+                                                    </span>
+                                                </label>
+                                            </form>
                                         </td>
                                         <td class="px-5 py-3 align-top">
                                             <div class="flex justify-end gap-2">
-                                                <form method="POST" action="{{ route('admin.promo-vouchers.vouchers.toggle', $voucher) }}">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-secondary btn-sm">
-                                                        {{ $voucher->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                                    </button>
-                                                </form>
                                                 <form method="POST" action="{{ route('admin.promo-vouchers.vouchers.destroy', $voucher) }}" onsubmit="return confirm('Hapus voucher ini?')">
                                                     @csrf
                                                     @method('DELETE')

@@ -300,8 +300,8 @@
                         class="w-full bg-transparent border-b border-gray-300 focus:border-primary py-2 text-sm focus:outline-none placeholder-gray-400 transition">
                 </div>
 
-                <div class="mb-4 space-y-3">
-                    <div>
+                <div v-if="hasPromotionSelector || hasVoucherInput" class="mb-4 space-y-3">
+                    <div v-if="hasPromotionSelector">
                         <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Promo Kategori</label>
                         <select v-model="selectedPromotionId"
                             class="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5">
@@ -315,7 +315,7 @@
                         </p>
                     </div>
 
-                    <div>
+                    <div v-if="hasVoucherInput">
                         <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Voucher</label>
                         <div class="flex items-center gap-2">
                             <input type="text" v-model="voucherCodeInput" placeholder="Contoh: MEMBER10"
@@ -739,6 +739,12 @@
                         const method = this.paymentMethods.find(m => Number(m.id) === Number(this.selectedPaymentMethod));
                         return method ? method.name : '';
                     },
+                    hasPromotionSelector() {
+                        return Array.isArray(this.activePromotions) && this.activePromotions.length > 0;
+                    },
+                    hasVoucherInput() {
+                        return Array.isArray(this.activeVouchers) && this.activeVouchers.length > 0;
+                    },
                     selectedPromotion() {
                         if (!this.selectedPromotionId) return null;
                         return this.activePromotions.find(p => Number(p.id) === Number(this.selectedPromotionId)) || null;
@@ -791,6 +797,14 @@
                         product.image_url || 'https://via.placeholder.com/150'
                     ]));
                     this.filteredProducts = this.products;
+
+                    if (!this.hasPromotionSelector) {
+                        this.selectedPromotionId = '';
+                    }
+
+                    if (!this.hasVoucherInput) {
+                        this.clearVoucher();
+                    }
                 },
                 methods: {
                     // ... Existing Methods ...
@@ -1059,7 +1073,7 @@
                             return;
                         }
 
-                        if (this.voucherCodeInput && !this.appliedVoucher) {
+                        if (this.hasVoucherInput && this.voucherCodeInput && !this.appliedVoucher) {
                             this.applyVoucherCode();
                             if (!this.appliedVoucher) {
                                 alert(this.voucherErrorMessage || 'Voucher belum valid.');

@@ -158,6 +158,39 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah user memiliki permission tertentu.
+     * Role manager diperlakukan sebagai superadmin (full access).
+     */
+    public function hasPermission(string|array $permissions): bool
+    {
+        $role = $this->role;
+        $roleName = $role?->name;
+
+        if (!$roleName) {
+            return false;
+        }
+
+        if ($roleName === 'manager') {
+            return true;
+        }
+
+        $permissionKeys = is_array($permissions) ? $permissions : [$permissions];
+        if (count($permissionKeys) === 0) {
+            return true;
+        }
+
+        if ($role && $role->relationLoaded('permissions')) {
+            $ownedPermissions = $role->permissions->pluck('key')->all();
+
+            return count(array_intersect($permissionKeys, $ownedPermissions)) > 0;
+        }
+
+        return $role?->permissions()
+            ->whereIn('key', $permissionKeys)
+            ->exists() ?? false;
+    }
+
+    /**
      * Cek apakah user adalah admin
      */
     public function isAdmin(): bool

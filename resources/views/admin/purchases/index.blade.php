@@ -9,8 +9,8 @@
     {{-- Header Section --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Daftar Pembelian</h1>
-            <p class="text-xs font-normal text-slate-500 mt-0.5">Kelola pesanan pembelian (PO) dan stok masuk dari supplier</p>
+            <h1 class="text-2xl font-normal text-slate-900 tracking-tight">Daftar Pembelian</h1>
+            <p class="text-xs font-normal text-slate-700 mt-0.5">Kelola pesanan pembelian (PO) dan stok masuk dari supplier</p>
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.purchases.create') }}"
@@ -47,7 +47,7 @@
         <div class="p-5">
             <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="flex flex-col gap-1.5">
-                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
+                    <label class="text-[10px] font-normal text-slate-600 uppercase tracking-wider ml-1">Outlet</label>
                     <select name="outlet_id" class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Outlet</option>
                         @foreach($outlets as $outlet)
@@ -58,7 +58,7 @@
                     </select>
                 </div>
                 <div class="flex flex-col gap-1.5">
-                    <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Supplier</label>
+                    <label class="text-[10px] font-normal text-slate-600 uppercase tracking-wider ml-1">Supplier</label>
                     <select name="supplier_id" class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Supplier</option>
                         @foreach($suppliers as $supplier)
@@ -95,11 +95,11 @@
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
-                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">No. Purchase / Tgl</th>
-                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet & Supplier</th>
-                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Total Transaksi</th>
-                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
-                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Aksi</th>
+                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-600">No. Purchase / Tgl</th>
+                        <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-600">Outlet & Supplier</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-600">Total Transaksi</th>
+                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-600">Status</th>
+                        <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-600">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -114,12 +114,12 @@
                             <td class="px-5 py-3.5">
                                 <div class="flex flex-col gap-0.5">
                                     <div class="flex items-center gap-1.5">
-                                        <i class="fas fa-store text-[8px] text-slate-300"></i>
-                                        <span class="text-[11.5px] font-normal text-slate-700">{{ $purchase->outlet->name }}</span>
+                                        <i class="fas fa-store text-[8px] text-slate-400"></i>
+                                        <span class="text-[11.5px] font-normal text-slate-800">{{ $purchase->outlet->name }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5">
-                                        <i class="fas fa-truck text-[8px] text-slate-300"></i>
-                                        <span class="text-[10px] font-normal text-slate-400 italic">Sup: {{ $purchase->supplier->name }}</span>
+                                        <i class="fas fa-truck text-[8px] text-slate-400"></i>
+                                        <span class="text-[10px] font-normal text-slate-600 italic">Sup: {{ $purchase->supplier->name }}</span>
                                     </div>
                                 </div>
                             </td>

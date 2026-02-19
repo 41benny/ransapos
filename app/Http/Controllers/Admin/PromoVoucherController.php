@@ -143,6 +143,7 @@ class PromoVoucherController extends Controller
             'outlet_id' => ['nullable', 'exists:outlets,id'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'category_discounts' => ['required', 'array'],
         ]);
@@ -185,14 +186,14 @@ class PromoVoucherController extends Controller
                 ->with('error', 'Minimal isi satu diskon kategori dengan nilai 0.01% - 100%.');
         }
 
-        DB::transaction(function () use ($validated, $rules) {
+        DB::transaction(function () use ($validated, $rules, $request) {
             $promotion = Promotion::create([
                 'name' => $validated['name'],
                 'code' => !empty($validated['code']) ? strtoupper(trim($validated['code'])) : null,
                 'outlet_id' => $validated['outlet_id'] ?? null,
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
-                'is_active' => true,
+                'is_active' => $request->boolean('is_active', true),
                 'notes' => $validated['notes'] ?? null,
                 'created_by' => auth()->id(),
             ]);
@@ -238,6 +239,7 @@ class PromoVoucherController extends Controller
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
+            'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -257,7 +259,7 @@ class PromoVoucherController extends Controller
             'end_date' => $validated['end_date'],
             'usage_limit' => $validated['usage_limit'] ?? null,
             'used_count' => 0,
-            'is_active' => true,
+            'is_active' => $request->boolean('is_active', true),
             'notes' => $validated['notes'] ?? null,
             'created_by' => auth()->id(),
         ]);

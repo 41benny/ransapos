@@ -22,7 +22,6 @@ class AuthController extends Controller
      */
     public function showLogin(Request $request)
     {
-        // Jika sudah login, redirect berdasarkan role
         if (Auth::check()) {
             return $this->redirectByRole();
         }
@@ -57,11 +56,9 @@ class AuthController extends Controller
 
         $remember = $request->boolean('remember');
 
-        // Cek kredensial dan user aktif
         if (Auth::attempt(array_merge($credentials, ['is_active' => true]), $remember)) {
             $request->session()->regenerate();
 
-            // Cek status outlet (jika user terikat dengan outlet)
             $user = Auth::user();
             if ($user->outlet_id && $user->outlet && !$user->outlet->is_active) {
                 Auth::logout();
@@ -101,7 +98,6 @@ class AuthController extends Controller
 
             if ($user && $device && $user->hasRole(self::SINGLE_DEVICE_ROLES)
                 && (int) $user->active_pos_device_id !== (int) $device->id) {
-                // Device baru langsung mengambil alih sesi aktif user.
                 $user->forceFill(['active_pos_device_id' => $device->id])->save();
             }
 
@@ -109,7 +105,6 @@ class AuthController extends Controller
 
             RateLimiter::clear($throttleKey);
 
-            // Redirect berdasarkan role
             return $this->redirectByRole();
         }
 
@@ -147,23 +142,37 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirect berdasarkan role user
+     * Redirect berdasarkan role user.
      */
     protected function redirectByRole()
     {
         $user = Auth::user();
 
-        // Admin & Manager → Admin Dashboard
-        if ($user->hasRole(['admin', 'manager'])) {
+        if ($user->hasRole('manager')) {
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // Kasir → POS Dashboard
+        if ($user->hasRole('admin')) {
+            $landingRoute = $this->resolveAdminLandingRoute($user);
+            if ($landingRoute !== null) {
+                return redirect()->intended(route($landingRoute));
+            }
+
+            Auth::logout();
+            if (request()->hasSession()) {
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+            }
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun admin belum memiliki hak akses back office. Hubungi manager.',
+            ]);
+        }
+
         if ($user->hasRole('kasir')) {
             return redirect()->intended(route('pos.dashboard'));
         }
 
-        // Kitchen → Kitchen Display
         if ($user->hasRole('kitchen')) {
             return redirect()->intended(route('pos.kitchen.index'));
         }
@@ -189,6 +198,38 @@ class AuthController extends Controller
         return redirect()->route('login')->withErrors([
             'email' => 'Role akun tidak dikenali. Hubungi admin.',
         ]);
+    }
+
+    /**
+     * Tentukan landing page admin berdasarkan permission pertama yang dimiliki.
+     */
+    private function resolveAdminLandingRoute(User $user): ?string
+    {
+        $routePermissions = [
+            'admin.dashboard' => 'dashboard.view',
+            'admin.products.index' => 'products.view',
+            'admin.outlets.index' => 'outlets.view',
+            'admin.suppliers.index' => 'suppliers.view',
+            'admin.customers.index' => 'customers.view',
+            'admin.cash-accounts.index' => 'cash-accounts.view',
+            'admin.coa-accounts.index' => 'coa-accounts.view',
+            'admin.stocks.index' => 'stocks.view',
+            'admin.boms.index' => 'boms.view',
+            'admin.purchases.index' => 'purchases.view',
+            'admin.cash-transactions.index' => 'cash-transactions.view',
+            'admin.promo-vouchers.index' => 'promo-vouchers.view',
+            'admin.reports.index' => 'reports.view',
+            'admin.pos-devices.index' => 'pos-devices.view',
+            'admin.void-tokens.index' => 'void-tokens.view',
+        ];
+
+        foreach ($routePermissions as $routeName => $permissionKey) {
+            if ($user->hasPermission($permissionKey)) {
+                return $routeName;
+            }
+        }
+
+        return null;
     }
 
     /**

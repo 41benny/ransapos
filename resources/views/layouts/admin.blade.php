@@ -108,6 +108,17 @@
                     <p class="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3 sidebar-text">
                         General</p>
                     @php
+                        $currentUser = auth()->user();
+                        $currentUser?->loadMissing('role.permissions');
+
+                        $canAccess = function (?string $permission) use ($currentUser): bool {
+                            if (!$permission) {
+                                return true;
+                            }
+
+                            return (bool) ($currentUser && $currentUser->hasPermission($permission));
+                        };
+
                         $mainNav = [
                             [
                                 'label' => 'Dashboard',
@@ -115,6 +126,7 @@
                                 'alt_icon' => 'fas fa-chart-pie',
                                 'route' => 'admin.dashboard',
                                 'match' => 'admin.dashboard',
+                                'permission' => 'dashboard.view',
                             ],
                             [
                                 'label' => 'Master Data',
@@ -122,13 +134,13 @@
                                 'route' => null,
                                 'match' => 'admin.products.*|admin.outlets.*|admin.suppliers.*|admin.customers.*|admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*|admin.users.*',
                                 'children' => [
-                                    ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => 'admin.products.*'],
-                                    ['label' => 'Outlet', 'route' => 'admin.outlets.index', 'match' => 'admin.outlets.*'],
-                                    ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
-                                    ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*'],
-                                    ['label' => 'Customer', 'route' => 'admin.customers.index', 'match' => 'admin.customers.*'],
-                                    ['label' => 'Kas & Bank', 'route' => 'admin.cash-accounts.index', 'match' => 'admin.cash-accounts.*'],
-                                    ['label' => 'Akunting & Biaya', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*|admin.expense-categories.*'],
+                                    ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => 'admin.products.*', 'permission' => 'products.view'],
+                                    ['label' => 'Outlet', 'route' => 'admin.outlets.index', 'match' => 'admin.outlets.*', 'permission' => 'outlets.view'],
+                                    ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'permission' => 'users.view'],
+                                    ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*', 'permission' => 'suppliers.view'],
+                                    ['label' => 'Customer', 'route' => 'admin.customers.index', 'match' => 'admin.customers.*', 'permission' => 'customers.view'],
+                                    ['label' => 'Kas & Bank', 'route' => 'admin.cash-accounts.index', 'match' => 'admin.cash-accounts.*', 'permission' => 'cash-accounts.view'],
+                                    ['label' => 'Akunting & Biaya', 'route' => 'admin.coa-accounts.index', 'match' => 'admin.coa-accounts.*|admin.expense-categories.*', 'permission' => 'coa-accounts.view'],
                                 ]
                             ],
                             [
@@ -136,19 +148,29 @@
                                 'icon' => 'fas fa-box-archive',
                                 'alt_icon' => 'fas fa-boxes',
                                 'route' => 'admin.stocks.index',
-                                'match' => 'admin.stocks.*|admin.stock-transfers.*|admin.boms.*',
+                                'match' => 'admin.stocks.*|admin.stock-transfers.*',
+                                'permission' => 'stocks.view',
+                            ],
+                            [
+                                'label' => 'Produksi',
+                                'icon' => 'fas fa-flask',
+                                'route' => 'admin.boms.index',
+                                'match' => 'admin.boms.*',
+                                'permission' => 'boms.view',
                             ],
                             [
                                 'label' => 'Purchasing',
                                 'icon' => 'fas fa-cart-shopping',
                                 'route' => 'admin.purchases.index',
                                 'match' => 'admin.purchases.*',
+                                'permission' => 'purchases.view',
                             ],
                             [
                                 'label' => 'Finance',
                                 'icon' => 'fas fa-wallet',
                                 'route' => 'admin.cash-transactions.index',
                                 'match' => 'admin.cash-transactions.*|admin.expenses.*',
+                                'permission' => 'cash-transactions.view',
                             ],
                             [
                                 'label' => 'Marketing',
@@ -156,6 +178,7 @@
                                 'alt_icon' => 'fas fa-tags',
                                 'route' => 'admin.promo-vouchers.index',
                                 'match' => 'admin.promo-vouchers.*',
+                                'permission' => 'promo-vouchers.view',
                             ],
                             [
                                 'label' => 'Reports',
@@ -163,8 +186,30 @@
                                 'alt_icon' => 'fas fa-file-invoice-dollar',
                                 'route' => 'admin.reports.index',
                                 'match' => 'admin.reports.*',
+                                'permission' => 'reports.view',
                             ],
                         ];
+
+                        $mainNav = collect($mainNav)
+                            ->map(function (array $item) use ($canAccess) {
+                                $children = $item['children'] ?? null;
+                                if (is_array($children)) {
+                                    $item['children'] = array_values(array_filter($children, function (array $child) use ($canAccess): bool {
+                                        return $canAccess($child['permission'] ?? null);
+                                    }));
+
+                                    if (count($item['children']) === 0 && !$canAccess($item['permission'] ?? null)) {
+                                        return null;
+                                    }
+                                } elseif (!$canAccess($item['permission'] ?? null)) {
+                                    return null;
+                                }
+
+                                return $item;
+                            })
+                            ->filter()
+                            ->values()
+                            ->all();
                     @endphp
 
                     @foreach ($mainNav as $index => $item)
@@ -239,9 +284,23 @@
 
                     @php
                         $extras = [
-                            ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*'],
-                            ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*'],
+                            ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*', 'permission' => 'pos-devices.view'],
+                            ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
                         ];
+
+                        if ($currentUser?->hasRole('manager')) {
+                            $extras[] = [
+                                'label' => 'Hak Akses',
+                                'icon' => 'fas fa-user-shield',
+                                'route' => 'admin.permissions.index',
+                                'match' => 'admin.permissions.*',
+                                'permission' => 'permissions.manage',
+                            ];
+                        }
+
+                        $extras = array_values(array_filter($extras, function (array $extra) use ($canAccess): bool {
+                            return $canAccess($extra['permission'] ?? null);
+                        }));
                     @endphp
                     @foreach($extras as $extra)
                         @php

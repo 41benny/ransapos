@@ -5,275 +5,429 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voucher - {{ $voucherNumber }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            color: #333;
-            line-height: 1.5;
-            margin: 0;
-            padding: 20px;
+        :root {
+            --brand-in: #10b981;
+            --brand-out: #f43f5e;
+            --slate-900: #0f172a;
+            --slate-700: #334155;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
         }
 
-        .container {
-            max-width: 900px;
+        @page {
+            size: 215mm 165mm;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            color: var(--slate-900);
+            background: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            font-size: 11px;
+        }
+
+        .voucher-sheet {
+            width: 215mm;
+            height: 145mm;
             margin: 0 auto;
-            border: 1px solid #ccc;
-            padding: 24px;
+            background: #fff;
             position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            display: flex;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Side Branding */
+        .side-bar {
+            width: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            text-align: center;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 12px;
-        }
-
-        .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .voucher-title {
-            font-size: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-top: 10px;
-            display: inline-block;
-            border: 1px solid #333;
-            padding: 5px 20px;
-        }
-
-        .voucher-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 30px;
         }
 
-        .info-group {
-            width: 50%;
+        .company-brand h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--slate-900);
+            letter-spacing: -0.5px;
         }
 
-        .row {
-            display: flex;
-            margin-bottom: 8px;
-        }
-
-        .label {
-            width: 130px;
-            font-weight: bold;
-        }
-
-        .value {
-            flex: 1;
-            border-bottom: 1px dotted #ccc;
-        }
-
-        .lines-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 16px;
-        }
-
-        .lines-table th,
-        .lines-table td {
-            border: 1px solid #d1d5db;
-            padding: 8px 10px;
-            vertical-align: top;
-        }
-
-        .lines-table th {
-            background: #f8fafc;
-            text-align: left;
-            font-weight: bold;
-        }
-
-        .text-right {
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .amount-box {
-            background-color: #f9f9f9;
-            border: 2px solid #333;
-            padding: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .signatures {
-            margin-top: 44px;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 10px;
-        }
-
-        .signature-box {
-            text-align: center;
-            width: 30%;
-        }
-
-        .signature-line {
-            margin-top: 60px;
-            border-top: 1px solid #333;
-            padding-top: 5px;
-        }
-
-        .footer {
-            margin-top: 26px;
+        .company-brand p {
+            margin: 2px 0 0;
+            color: var(--slate-500);
             font-size: 10px;
-            text-align: center;
-            color: #777;
+            font-weight: 400;
         }
 
-        .print-btn {
+        .voucher-meta {
+            text-align: right;
+        }
+
+        .voucher-meta .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--slate-400);
+            font-weight: 600;
+        }
+
+        .voucher-meta .number {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--slate-900);
+            font-family: monospace;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Info Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+            background: var(--slate-50);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--slate-100);
+        }
+
+        .dash-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dash-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--slate-400);
+            font-weight: 700;
+        }
+
+        .dash-value {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--slate-700);
+        }
+
+        /* Table Style */
+        .items-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--slate-400);
+            padding: 0 12px;
+            font-weight: 600;
+        }
+
+        .items-table td {
+            background: #fff;
+            border-top: 1px solid var(--slate-100);
+            border-bottom: 1px solid var(--slate-100);
+            padding: 12px;
+            font-size: 11px;
+            color: var(--slate-700);
+        }
+
+        .items-table td:first-child {
+            border-left: 1px solid var(--slate-100);
+            border-radius: 8px 0 0 8px;
+            color: var(--slate-400);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .items-table td:last-child {
+            border-right: 1px solid var(--slate-100);
+            border-radius: 0 8px 8px 0;
+            font-weight: 700;
+            text-align: right;
+            color: var(--slate-900);
+        }
+
+        /* Bottom Section */
+        .footer-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+        }
+
+        .notes-and-ref {
+            max-width: 60%;
+        }
+
+        .mini-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            color: var(--slate-400);
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .mini-text {
+            font-size: 10px;
+            color: var(--slate-500);
+            font-style: italic;
+        }
+
+        .total-container {
+            text-align: right;
+        }
+
+        .total-display {
+            background: var(--slate-50);
+            padding: 10px 20px;
+            border-radius: 12px;
+            color: var(--slate-900);
+            border: 1px solid var(--slate-200);
+        }
+
+        .total-display .t-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .total-display .t-amount {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        /* Signatures */
+        .signatures {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .sign-box {
+            text-align: center;
+        }
+
+        .sign-name {
+            margin-top: 40px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--slate-900);
+            border-top: 1px solid var(--slate-200);
+            padding-top: 4px;
+        }
+
+        .sign-title {
+            font-size: 8px;
+            text-transform: uppercase;
+            color: var(--slate-400);
+            font-weight: 700;
+        }
+
+        /* UI Buttons */
+        .controls {
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #4f46e5;
-            color: white;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
             padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-print {
+            background: var(--slate-900);
+            color: #fff;
+        }
+
+        .btn-back {
+            background: #fff;
+            color: var(--slate-900);
+            border: 1px solid var(--slate-200);
         }
 
         @media print {
-            .print-btn {
-                display: none;
-            }
-
-            .container {
-                border: none;
-                padding: 0;
-                width: 100%;
-                max-width: 100%;
-            }
-
             body {
+                background: #fff;
                 padding: 0;
+            }
+
+            .voucher-sheet {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .controls {
+                display: none;
             }
         }
     </style>
 </head>
 
 <body>
-    <button class="print-btn" onclick="window.print()">Cetak Voucher</button>
-
     @php
         $firstLine = $voucherTransactions->first() ?? $cashTransaction;
-        $notesList = $voucherTransactions
-            ->pluck('notes')
-            ->filter(fn ($note) => trim((string) $note) !== '')
-            ->unique()
-            ->values();
-        $lineCount = $voucherTransactions->count();
+        $isIncome = $firstLine->type == 'in';
+        $brandColor = $isIncome ? 'var(--brand-in)' : 'var(--brand-out)';
     @endphp
 
-    <div class="container">
-        <div class="header">
-            <div class="company-name">MORESTO</div>
-            <div>Jalan Raya Sekincau, Lampung Barat</div>
-            <div class="voucher-title">
-                {{ $firstLine->type == 'in' ? 'BUKTI KAS MASUK' : 'BUKTI KAS KELUAR' }}
-            </div>
+    <div class="controls">
+        <a href="javascript:history.back()" class="btn btn-back">← Kembali</a>
+        <button onclick="window.print()" class="btn btn-print">Cetak Voucher</button>
+    </div>
+
+    <div class="voucher-sheet">
+        <div class="side-bar" style="background: {{ $brandColor }}">
+            {{ $isIncome ? 'Cash Reciept' : 'Payment Voucher' }}
         </div>
 
-        <div class="voucher-info">
-            <div class="info-group">
-                <div class="row">
-                    <span class="label">No. Voucher</span>
-                    <span class="value">: {{ $voucherNumber }}</span>
+        <div class="main-content">
+            <header class="header">
+                <div class="company-brand">
+                    <h1>MORESTO</h1>
+                    <p>Modern Resto Management System • Sekincau, Lampung</p>
                 </div>
-                <div class="row">
-                    <span class="label">Jumlah Baris</span>
-                    <span class="value">: {{ $lineCount }} baris</span>
+                <div class="voucher-meta">
+                    <span class="label">Dokumen Nomor</span>
+                    <span class="number">{{ $voucherNumber }}</span>
                 </div>
-            </div>
-            <div class="info-group">
-                <div class="row">
-                    <span class="label">Tanggal</span>
-                    <span class="value">: {{ optional($firstLine->transaction_date)->format('d M Y') }}</span>
-                </div>
-                <div class="row">
-                    <span class="label">Akun Kas/Bank</span>
-                    <span class="value">: {{ $firstLine->cashAccount->name ?? '-' }}
-                        ({{ $firstLine->cashAccount->code ?? '-' }})</span>
-                </div>
-            </div>
-        </div>
+            </header>
 
-        <table class="lines-table">
-            <thead>
-                <tr>
-                    <th style="width: 52px;">No</th>
-                    <th>Keterangan</th>
-                    <th style="width: 220px;">Akun Lawan (COA)</th>
-                    <th style="width: 150px;" class="text-right">Jumlah</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($voucherTransactions as $index => $line)
+            <section class="dashboard">
+                <div class="dash-item">
+                    <span class="dash-label">Tanggal Transaksi</span>
+                    <span class="dash-value">{{ optional($firstLine->transaction_date)->format('d F Y') }}</span>
+                </div>
+                <div class="dash-item">
+                    <span class="dash-label">Sumber Dana</span>
+                    <span class="dash-value">{{ $firstLine->cashAccount->name }}</span>
+                </div>
+                <div class="dash-item">
+                    <span class="dash-label">Ref. Sistem</span>
+                    <span
+                        class="dash-value">{{ $firstLine->reference_type ? ucfirst($firstLine->reference_type) : 'Manual Entry' }}</span>
+                </div>
+            </section>
+
+            <table class="items-table">
+                <thead>
                     <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $line->description }}</td>
-                        <td>{{ $line->coaAccount->code ?? '-' }} - {{ $line->coaAccount->name ?? '-' }}</td>
-                        <td class="text-right">Rp {{ number_format((float) $line->amount, 2, ',', '.') }}</td>
+                        <th style="width: 40px;">#</th>
+                        <th>Deskripsi Transaksi</th>
+                        <th style="width: 150px;">COA / Kategori</th>
+                        <th style="width: 120px;" class="text-right">Jumlah</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($voucherTransactions as $index => $line)
+                        <tr>
+                            <td>{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
+                            <td>{{ $line->description }}</td>
+                            <td>{{ $line->coaAccount->code ?? '-' }} <span
+                                    style="font-size: 8px; color: var(--slate-400)">{{ Str::limit($line->coaAccount->name ?? '', 15) }}</span>
+                            </td>
+                            <td class="text-right">Rp {{ number_format($line->amount, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
 
-        <div style="margin-bottom: 14px;">
-            <div class="row">
-                <span class="label">Keterangan</span>
-                <span class="value">:
-                    {{ $firstLine->reference_type ? ucfirst($firstLine->reference_type) . (filled($firstLine->reference_id) ? ' #' . $firstLine->reference_id : '') : '-' }}
-                </span>
-            </div>
-            <div class="row">
-                <span class="label">Catatan</span>
-                <span class="value">:
-                    @if($notesList->isEmpty())
-                        -
-                    @else
-                        {{ $notesList->implode(' | ') }}
-                    @endif
-                </span>
-            </div>
-        </div>
+            <div class="footer-action">
+                <div class="notes-and-ref">
+                    <span class="mini-label">Informasi Tambahan / Catatan</span>
+                    <p class="mini-text">
+                        {{ $firstLine->notes ?? 'Transaksi tervalidasi oleh sistem keuangan Moresto. Saldo akun telah diperbarui secara otomatis.' }}
+                    </p>
+                </div>
 
-        <div class="amount-box">
-            TOTAL: Rp {{ number_format((float) $totalAmount, 2, ',', '.') }}
-        </div>
+                <div class="total-container">
+                    <div class="total-display" style="border-left: 4px solid {{ $brandColor }}">
+                        <span class="t-label">Total {{ $isIncome ? 'Diterima' : 'Dibayarkan' }}</span>
+                        <span class="t-amount">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="signatures">
-            <div class="signature-box">
-                <div>Disetujui Oleh,</div>
-                <div class="signature-line">Manager/Keuangan</div>
+            <div class="signatures">
+                <div class="sign-box">
+                    <span class="sign-title">Otorisasi</span>
+                    <div class="sign-name">Manager Finance</div>
+                </div>
+                <div class="sign-box">
+                    <span class="sign-title">Verifikasi</span>
+                    <div class="sign-name">Accounting</div>
+                </div>
+                <div class="sign-box">
+                    <span class="sign-title">Pelaksana</span>
+                    <div class="sign-name">Cashier</div>
+                </div>
+                <div class="sign-box">
+                    <span class="sign-title">{{ $isIncome ? 'Penyetor' : 'Penerima' }}</span>
+                    <div class="sign-name">Pihak Luar</div>
+                </div>
             </div>
-            <div class="signature-box">
-                <div>Dibayar/Diterima Oleh,</div>
-                <div class="signature-line">Kasir</div>
-            </div>
-            <div class="signature-box">
-                <div>Penerima/Penyetor,</div>
-                <div class="signature-line">(.....................................)</div>
-            </div>
-        </div>
-
-        <div class="footer">
-            Dicetak pada: {{ now()->format('d M Y H:i:s') }} oleh {{ auth()->user()->name ?? 'System' }} | Voucher:
-            {{ $voucherNumber }}
         </div>
     </div>
 </body>
