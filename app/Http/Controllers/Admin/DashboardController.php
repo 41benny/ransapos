@@ -258,8 +258,10 @@ class DashboardController extends Controller
                 ])
                 ->values();
 
+            $showBreakdown = $isAllOutlets || (is_array($selectedOutletIds) && count($selectedOutletIds) > 1);
+
             $outletSales = collect();
-            if ($isAllOutlets) {
+            if ($showBreakdown) {
                 $outletSalesBase = Sale::query()
                     ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
                     ->where('sales.sale_date', $date)
@@ -287,7 +289,7 @@ class DashboardController extends Controller
             $hourlyStacked = null;
             $hourlyStackedMeta = null;
 
-            if ($isAllOutlets) {
+            if ($showBreakdown) {
                 $topOutlets = $outletSales->take(5)->values();
                 $topOutletIds = $topOutlets->pluck('outlet_id')->all();
 
@@ -375,6 +377,7 @@ class DashboardController extends Controller
                 'outlet_id' => $singleOutletId,
                 'outlet_ids' => $selectedOutletIds ?? [],
                 'is_all_outlets' => $isAllOutlets,
+                'show_breakdown' => $showBreakdown,
                 'kpis' => [
                     'total_sales' => $totalSales,
                     'total_transactions' => $totalTransactions,

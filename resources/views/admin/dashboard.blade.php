@@ -853,9 +853,9 @@
 
                 setTarget(data?.target);
 
-                const isAllOutlets = Boolean(data?.is_all_outlets);
+                const showBreakdown = Boolean(data?.show_breakdown);
 
-                if (isAllOutlets && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
+                if (showBreakdown && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
                     const allOutletNames = new Set();
                     let hasOthers = false;
 
@@ -895,7 +895,7 @@
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
                 renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
-                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], isAllOutlets);
+                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], showBreakdown);
 
                 const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
                 lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
