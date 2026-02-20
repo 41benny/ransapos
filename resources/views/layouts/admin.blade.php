@@ -52,6 +52,7 @@
                 display: block;
             }
         }
+    </style>
     @stack('styles')
 </head>
 
