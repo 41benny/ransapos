@@ -362,8 +362,13 @@
             animation: topRankNewFlash 900ms ease-out;
         }
 
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.05) transparent;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -371,8 +376,17 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
+            background-color: rgba(0, 0, 0, 0.05);
             border-radius: 20px;
+            border: 1px solid transparent;
+        }
+
+        .custom-scrollbar:hover {
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
