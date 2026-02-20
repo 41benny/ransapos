@@ -53,17 +53,33 @@
 
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
-                            <div class="max-h-24 overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 space-y-1">
-                                @foreach($outlets as $outlet)
-                                    <label class="flex items-center gap-2 text-[11.5px] text-slate-700">
-                                        <input type="checkbox"
-                                            name="outlet_ids[]"
-                                            value="{{ $outlet->id }}"
-                                            {{ in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
-                                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                        <span>{{ $outlet->name }}</span>
+                            <div class="relative" id="salesProductOutletFilterWrap">
+                                <button type="button" id="salesProductOutletDropdownBtn"
+                                    class="w-full px-3 py-1.5 text-left text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
+                                    <span id="salesProductOutletDropdownLabel">Semua Outlet</span>
+                                    <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                                </button>
+                                <div id="salesProductOutletDropdownMenu"
+                                    class="hidden absolute top-full left-0 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg p-2 z-20">
+                                    <label class="flex items-center gap-2 text-[11.5px] text-slate-700 pb-1 mb-1 border-b border-slate-100">
+                                        <input type="checkbox" id="salesProductOutletAllCheckbox"
+                                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
+                                        <span>Semua Outlet</span>
                                     </label>
-                                @endforeach
+                                    <div style="max-height: 9rem; overflow-y: auto;" class="space-y-1 pr-1">
+                                        @foreach($outlets as $outlet)
+                                            <label class="flex items-center gap-2 text-[11.5px] text-slate-700">
+                                                <input type="checkbox"
+                                                    name="outlet_ids[]"
+                                                    value="{{ $outlet->id }}"
+                                                    {{ in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
+                                                    class="sales-product-outlet-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                                <span class="truncate">{{ $outlet->name }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
                             </div>
                             <p class="text-[9px] text-slate-400 ml-1">Kosong = semua outlet</p>
                         </div>
@@ -247,4 +263,59 @@
             }
         }
     </style>
+    @push('scripts')
+        <script>
+            (() => {
+                const wrap = document.getElementById('salesProductOutletFilterWrap');
+                if (!wrap) return;
+
+                const dropdownBtn = document.getElementById('salesProductOutletDropdownBtn');
+                const dropdownLabel = document.getElementById('salesProductOutletDropdownLabel');
+                const dropdownMenu = document.getElementById('salesProductOutletDropdownMenu');
+                const allCheckbox = document.getElementById('salesProductOutletAllCheckbox');
+                const itemCheckboxes = Array.from(document.querySelectorAll('.sales-product-outlet-checkbox'));
+
+                const updateLabel = () => {
+                    const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
+                    if (allCheckbox.checked || checkedItems.length === 0) {
+                        dropdownLabel.textContent = 'Semua Outlet';
+                        return;
+                    }
+
+                    if (checkedItems.length === 1) {
+                        dropdownLabel.textContent = checkedItems[0].parentElement?.textContent?.trim() || '1 Outlet Dipilih';
+                        return;
+                    }
+
+                    dropdownLabel.textContent = `${checkedItems.length} Outlet Dipilih`;
+                };
+
+                dropdownBtn.addEventListener('click', () => {
+                    dropdownMenu.classList.toggle('hidden');
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (wrap.contains(event.target)) return;
+                    dropdownMenu.classList.add('hidden');
+                });
+
+                allCheckbox.addEventListener('change', () => {
+                    if (allCheckbox.checked) {
+                        itemCheckboxes.forEach((checkbox) => { checkbox.checked = false; });
+                    }
+                    updateLabel();
+                });
+
+                itemCheckboxes.forEach((checkbox) => {
+                    checkbox.addEventListener('change', () => {
+                        const hasCheckedItems = itemCheckboxes.some((item) => item.checked);
+                        allCheckbox.checked = !hasCheckedItems;
+                        updateLabel();
+                    });
+                });
+
+                updateLabel();
+            })();
+        </script>
+    @endpush
 @endsection
