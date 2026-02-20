@@ -511,10 +511,11 @@
 
 
         <!-- Print Settings Modal -->
-        <div v-if="showPrintSettingsModal"
-            class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            style="display: none;" :style="{ display: showPrintSettingsModal ? 'flex' : 'none' }">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6">
+        <teleport to="body">
+            <div v-if="showPrintSettingsModal"
+                class="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                style="display: none; z-index: 2147483000;" :style="{ display: showPrintSettingsModal ? 'flex' : 'none' }">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-start justify-between gap-3 mb-6">
                     <div>
                         <h3 class="text-xl font-bold text-gray-900">Setting Print POS</h3>
@@ -620,7 +621,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </teleport>
 
         <div v-if="showSuccessModal"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
