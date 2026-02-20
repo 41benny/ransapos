@@ -154,7 +154,7 @@ class AuthController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole(['admin', 'manager'])) {
             $landingRoute = $this->resolveAdminLandingRoute($user);
             if ($landingRoute !== null) {
                 return redirect()->intended(route($landingRoute));
