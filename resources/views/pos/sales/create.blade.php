@@ -66,16 +66,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                            ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                            : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -146,8 +146,17 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                                                                                Best Seller
-                                                                                                                                                            </span> -->
+                                                                                                                                                                        Best Seller
+                                                                                                                                                                    </span> -->
+
+                                <!-- Floating Add Button (Small Grid Only) -->
+                                <button v-if="gridSize === 'small'"
+                                    class="absolute bottom-1 right-1 w-7 h-7 bg-white/90 backdrop-blur text-primary rounded-lg shadow-sm flex items-center justify-center hover:bg-primary hover:text-white transition z-10">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
                             </div>
 
                             <!-- Content -->
@@ -160,15 +169,15 @@
                                     product.description || product.sku }}
                                 </p>
 
-                                <div class="mt-auto flex items-center justify-between">
-                                    <span :class="['font-bold text-primary', gridSize === 'small' ? 'text-sm' : 'text-lg']">
+                                <div class="mt-auto flex items-end justify-between gap-1">
+                                    <span
+                                        :class="['font-bold text-primary', gridSize === 'small' ? 'text-xs w-full truncate' : 'text-lg']">
                                         <span class="text-xs text-primary/70 align-top mr-0.5">Rp</span>@{{
                                         formatNumber(getProductPrice(product)) }}
                                     </span>
-                                    <button
-                                        :class="['rounded-full bg-red-50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition shadow-sm', gridSize === 'small' ? 'w-7 h-7' : 'w-8 h-8']">
-                                        <svg :class="gridSize === 'small' ? 'w-4 h-4' : 'w-5 h-5'" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
+                                    <button v-if="gridSize !== 'small'"
+                                        class="w-8 h-8 rounded-full bg-red-50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition shadow-sm shrink-0">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 4v16m8-8H4"></path>
                                         </svg>
@@ -437,8 +446,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                                                    : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="w-full h-14 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 px-4">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
                             }}</span>
@@ -481,8 +490,8 @@
                     <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
                         @click="selectPaymentMethod(method.id)"
                         :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                                            ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
-                                                                            : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                                                    ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                         class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
                         <span>@{{ method.name }}</span>
                         <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
