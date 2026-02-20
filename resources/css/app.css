@@ -220,11 +220,17 @@ body {
 .table-modern th {
   padding: 0.75rem 1rem;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
+  /* Bold */
   color: var(--secondary-600);
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
+}
+
+/* Global table header bold enforcement */
+th {
+  font-weight: 700 !important;
 }
 
 .table-modern td {
@@ -349,7 +355,7 @@ body {
 .imperial-table th {
   padding: 0.625rem 0.75rem;
   text-align: left;
-  font-weight: 500;
+  font-weight: 700;
   color: #475569;
   font-size: 0.75rem;
   letter-spacing: 0.025em;
@@ -464,4 +470,4 @@ body {
   }
 }
 
-/ *     F o r c e     u p d a t e     t i m e s t a m p :     % D A T E %     % T I M E %     * /     
+/* End of file */
