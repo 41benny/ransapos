@@ -464,10 +464,4 @@ th {
   background: #94a3b8;
 }
 
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    background: #4a2b2b;
-  }
-}
-
 /* End of file */
