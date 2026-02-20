@@ -210,6 +210,7 @@ class AuthController extends Controller
             'admin.products.index' => 'products.view',
             'admin.outlets.index' => 'outlets.view',
             'admin.suppliers.index' => 'suppliers.view',
+            'admin.payment-methods.index' => 'payment-methods.view',
             'admin.customers.index' => 'customers.view',
             'admin.cash-accounts.index' => 'cash-accounts.view',
             'admin.coa-accounts.index' => 'coa-accounts.view',

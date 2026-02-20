@@ -135,6 +135,7 @@ class PermissionController extends Controller
             'products' => 'Produk',
             'outlets' => 'Outlet',
             'suppliers' => 'Supplier',
+            'payment-methods' => 'Metode Pembayaran',
             'customers' => 'Customer',
             'users' => 'User',
             'cash-accounts' => 'Kas & Bank',
