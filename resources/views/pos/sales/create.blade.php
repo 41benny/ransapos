@@ -548,9 +548,13 @@
                         <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                             <div class="flex items-center justify-between gap-3">
                                 <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Status Bridge</p>
-                                <span :class="printerBridgeConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                <span :class="printEngine === 'browser'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : (printerBridgeConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')"
                                     class="text-[10px] px-2 py-1 rounded-full font-bold uppercase">
-                                    @{{ printerBridgeConnected ? 'Terhubung' : 'Belum Tersambung' }}
+                                    @{{ printEngine === 'browser'
+                                        ? 'Mode Browser'
+                                        : (printerBridgeConnected ? 'Terhubung' : 'Belum Tersambung') }}
                                 </span>
                             </div>
                             <p class="text-xs text-gray-600 mt-2">@{{ printerStatusMessage ||
@@ -558,13 +562,16 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
-                            <button @click="refreshAvailablePrinters" :disabled="isLoadingPrinters"
-                                :class="isLoadingPrinters ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-hover'"
+                            <button @click="refreshAvailablePrinters" :disabled="isLoadingPrinters || printEngine !== 'bridge'"
+                                :class="isLoadingPrinters || printEngine !== 'bridge'
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-primary text-white hover:bg-primary-hover'"
                                 class="px-4 py-2 rounded-lg text-sm font-semibold transition">
-                                @{{ isLoadingPrinters ? 'Mencari...' : 'Cari Printer' }}
+                                @{{ isLoadingPrinters ? 'Mencari...' : 'Cari Printer (Bridge)' }}
                             </button>
-                            <button @click="runSmartDetectPrinter" :disabled="isLoadingPrinters || availablePrinters.length === 0"
-                                :class="isLoadingPrinters || availablePrinters.length === 0
+                            <button @click="runSmartDetectPrinter"
+                                :disabled="isLoadingPrinters || printEngine !== 'bridge' || availablePrinters.length === 0"
+                                :class="isLoadingPrinters || printEngine !== 'bridge' || availablePrinters.length === 0
                                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                     : 'bg-gray-900 text-white hover:bg-gray-800'"
                                 class="px-4 py-2 rounded-lg text-sm font-semibold transition">
@@ -576,7 +583,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Printer Terdeteksi</label>
-                            <select v-model="selectedPrinterName"
+                            <select v-model="selectedPrinterName" :disabled="printEngine !== 'bridge'"
                                 class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
                                 <option value="">-- Pilih printer --</option>
                                 <option v-for="printer in availablePrinters" :key="'printer-' + printer" :value="printer">
@@ -587,16 +594,21 @@
 
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Keyword Smart Detect</label>
-                            <input v-model.trim="printerKeyword" type="text"
+                            <input v-model.trim="printerKeyword" type="text" :disabled="printEngine !== 'bridge'"
                                 placeholder="Contoh: POS, TM, Receipt, XP-58"
                                 class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
                             <p class="text-xs text-gray-500 mt-2">Sistem prioritaskan printer yang namanya mengandung
                                 keyword ini.</p>
                         </div>
 
-                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                            <p class="text-xs text-amber-800 font-medium">
+                        <div :class="printEngine === 'bridge'
+                            ? 'rounded-xl border border-amber-200 bg-amber-50 p-3'
+                            : 'rounded-xl border border-blue-200 bg-blue-50 p-3'">
+                            <p v-if="printEngine === 'bridge'" class="text-xs text-amber-800 font-medium">
                                 Jika daftar kosong, install dan jalankan QZ Tray di device kasir, lalu klik Cari Printer.
+                            </p>
+                            <p v-else class="text-xs text-blue-800 font-medium">
+                                Mode Browser tidak bisa membaca nama printer. Gunakan print dialog browser (seperti saat selesai bayar).
                             </p>
                         </div>
                     </div>
@@ -1072,6 +1084,8 @@
 
                         if (this.printEngine === 'bridge') {
                             this.refreshAvailablePrinters();
+                        } else {
+                            this.printerStatusMessage = 'Mode Browser aktif: printer terdeteksi saat dialog print browser muncul.';
                         }
                     },
                     closePrintSettings() {
@@ -1124,6 +1138,13 @@
                         }
                     },
                     async refreshAvailablePrinters() {
+                        if (this.printEngine !== 'bridge') {
+                            this.availablePrinters = [];
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'Mode Browser aktif: daftar printer tidak bisa dibaca. Print akan mengikuti printer default browser.';
+                            return;
+                        }
+
                         this.isLoadingPrinters = true;
 
                         try {
@@ -1196,6 +1217,11 @@
                         return bestPrinter;
                     },
                     runSmartDetectPrinter() {
+                        if (this.printEngine !== 'bridge') {
+                            this.printerStatusMessage = 'Smart detect hanya tersedia untuk mode Bridge.';
+                            return;
+                        }
+
                         if (!Array.isArray(this.availablePrinters) || this.availablePrinters.length === 0) {
                             this.printerStatusMessage = 'Belum ada printer untuk dianalisis.';
                             return;
