@@ -31,6 +31,9 @@
             <div class="p-5">
                 <form method="GET" action="{{ route('admin.reports.sales.index') }}" class="space-y-4">
                     <input type="hidden" name="tab" value="{{ request('tab', 'penjualan') }}">
+                    @php
+                        $selectedOutletIds = collect($filters['outlet_ids'] ?? [])->map(fn($id) => (int) $id)->all();
+                    @endphp
 
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <!-- Date From -->
@@ -50,15 +53,19 @@
                         <!-- Outlet -->
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
-                            <select name="outlet_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                <option value="">Semua Outlet</option>
+                            <div class="max-h-24 overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 space-y-1">
                                 @foreach($outlets as $outlet)
-                                    <option value="{{ $outlet->id }}" {{ ($filters['outlet_id'] ?? '') == $outlet->id ? 'selected' : '' }}>
-                                        {{ $outlet->name }}
-                                    </option>
+                                    <label class="flex items-center gap-2 text-[11.5px] text-slate-700">
+                                        <input type="checkbox"
+                                            name="outlet_ids[]"
+                                            value="{{ $outlet->id }}"
+                                            {{ in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
+                                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span>{{ $outlet->name }}</span>
+                                    </label>
                                 @endforeach
-                            </select>
+                            </div>
+                            <p class="text-[9px] text-slate-400 ml-1">Kosong = semua outlet</p>
                         </div>
 
                         <!-- Kasir -->

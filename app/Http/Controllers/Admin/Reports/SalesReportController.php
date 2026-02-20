@@ -21,6 +21,7 @@ class SalesReportController extends Controller
         // Default date range: hari ini
         $dateFrom = $request->input('date_from', now()->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
         $viewMode = in_array($request->input('view_mode'), ['ringkas', 'detail'], true)
             ? $request->input('view_mode')
             : 'ringkas';
@@ -31,8 +32,8 @@ class SalesReportController extends Controller
             ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
         // Filter outlet
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
+        if (!empty($outletIds)) {
+            $query->whereIn('outlet_id', $outletIds);
         }
 
         // Filter kasir
@@ -89,8 +90,8 @@ class SalesReportController extends Controller
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
-            if ($request->filled('outlet_id')) {
-                $detailQuery->where('sales.outlet_id', $request->outlet_id);
+            if (!empty($outletIds)) {
+                $detailQuery->whereIn('sales.outlet_id', $outletIds);
             }
 
             if ($request->filled('user_id')) {
@@ -145,7 +146,9 @@ class SalesReportController extends Controller
         })->get();
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
-        $filters = $request->only(['date_from', 'date_to', 'outlet_id', 'user_id', 'payment_method_id', 'view_mode']);
+        $filters = $request->only(['date_from', 'date_to', 'user_id', 'payment_method_id', 'view_mode']);
+        $filters['outlet_ids'] = $outletIds;
+        $filters['outlet_id'] = count($outletIds) === 1 ? $outletIds[0] : null;
 
         return view('admin.reports.sales.index', compact(
             'sales', 
@@ -169,6 +172,7 @@ class SalesReportController extends Controller
         // Default date range: hari ini
         $dateFrom = $request->input('date_from', now()->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
 
         // Build query dengan agregasi
         $query = DB::table('sale_items')
@@ -178,8 +182,8 @@ class SalesReportController extends Controller
             ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
         // Filter outlet
-        if ($request->filled('outlet_id')) {
-            $query->where('sales.outlet_id', $request->outlet_id);
+        if (!empty($outletIds)) {
+            $query->whereIn('sales.outlet_id', $outletIds);
         }
 
         // Filter kasir
@@ -211,7 +215,9 @@ class SalesReportController extends Controller
             $query->whereIn('name', ['kasir', 'admin']);
         })->get();
 
-        $filters = $request->only(['date_from', 'date_to', 'outlet_id', 'user_id']);
+        $filters = $request->only(['date_from', 'date_to', 'user_id']);
+        $filters['outlet_ids'] = $outletIds;
+        $filters['outlet_id'] = count($outletIds) === 1 ? $outletIds[0] : null;
 
         return view('admin.reports.sales.products', compact(
             'products',
@@ -228,6 +234,7 @@ class SalesReportController extends Controller
     {
         $dateFrom = $request->input('date_from', now()->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
         $viewMode = in_array($request->input('view_mode'), ['ringkas', 'detail'], true)
             ? $request->input('view_mode')
             : 'ringkas';
@@ -236,8 +243,8 @@ class SalesReportController extends Controller
             ->where('status', 'completed')
             ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
+        if (!empty($outletIds)) {
+            $query->whereIn('outlet_id', $outletIds);
         }
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
@@ -268,8 +275,8 @@ class SalesReportController extends Controller
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
-            if ($request->filled('outlet_id')) {
-                $detailQuery->where('sales.outlet_id', $request->outlet_id);
+            if (!empty($outletIds)) {
+                $detailQuery->whereIn('sales.outlet_id', $outletIds);
             }
             if ($request->filled('user_id')) {
                 $detailQuery->where('sales.user_id', $request->user_id);
@@ -354,6 +361,7 @@ class SalesReportController extends Controller
     {
         $dateFrom = $request->input('date_from', now()->toDateString());
         $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
 
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -361,8 +369,8 @@ class SalesReportController extends Controller
             ->where('sales.status', 'completed')
             ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
-        if ($request->filled('outlet_id')) {
-            $query->where('sales.outlet_id', $request->outlet_id);
+        if (!empty($outletIds)) {
+            $query->whereIn('sales.outlet_id', $outletIds);
         }
         if ($request->filled('user_id')) {
             $query->where('sales.user_id', $request->user_id);
@@ -395,5 +403,30 @@ class SalesReportController extends Controller
         }
 
         return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $products);
+    }
+
+    private function resolveOutletIds(Request $request): array
+    {
+        if ($request->has('outlet_ids')) {
+            $rawOutletIds = $request->input('outlet_ids', []);
+            if (!is_array($rawOutletIds)) {
+                return [];
+            }
+
+            return collect($rawOutletIds)
+                ->filter(fn($id) => $id !== null && $id !== '')
+                ->map(fn($id) => is_numeric($id) ? (int) $id : null)
+                ->filter(fn($id) => is_int($id) && $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if ($request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
+            $outletId = (int) $request->input('outlet_id');
+            return $outletId > 0 ? [$outletId] : [];
+        }
+
+        return [];
     }
 }

@@ -40,28 +40,63 @@ class DashboardController extends Controller
 
         $prevDate = Carbon::createFromFormat('Y-m-d', $date)->subDay()->toDateString();
 
-        $outletIdRaw = $request->input('outlet_id', 'all');
-        $outletId = null;
-
-        if ($outletIdRaw !== null && $outletIdRaw !== '' && $outletIdRaw !== 'all') {
-            if (!is_numeric($outletIdRaw) || (int) $outletIdRaw <= 0) {
-                return response()->json(['message' => 'Invalid outlet_id. Use "all" or a positive integer.'], 422);
+        $selectedOutletIds = null;
+        if ($request->has('outlet_ids')) {
+            $rawOutletIds = $request->input('outlet_ids', []);
+            if (!is_array($rawOutletIds)) {
+                return response()->json(['message' => 'Invalid outlet_ids. Use array of positive integers.'], 422);
             }
 
-            $outletId = (int) $outletIdRaw;
+            $normalizedOutletIds = collect($rawOutletIds)
+                ->filter(fn($id) => $id !== null && $id !== '')
+                ->map(function ($id) {
+                    if (!is_numeric($id) || (int) $id <= 0) {
+                        return null;
+                    }
 
-            if (!Outlet::query()->whereKey($outletId)->exists()) {
+                    return (int) $id;
+                });
+
+            if ($normalizedOutletIds->contains(null)) {
+                return response()->json(['message' => 'Invalid outlet_ids. Use array of positive integers.'], 422);
+            }
+
+            $selectedOutletIds = $normalizedOutletIds->unique()->sort()->values()->all();
+
+            if (empty($selectedOutletIds)) {
+                $selectedOutletIds = null;
+            }
+        } else {
+            $outletIdRaw = $request->input('outlet_id', 'all');
+            if ($outletIdRaw !== null && $outletIdRaw !== '' && $outletIdRaw !== 'all') {
+                if (!is_numeric($outletIdRaw) || (int) $outletIdRaw <= 0) {
+                    return response()->json(['message' => 'Invalid outlet_id. Use "all" or a positive integer.'], 422);
+                }
+
+                $selectedOutletIds = [(int) $outletIdRaw];
+            }
+        }
+
+        if ($selectedOutletIds !== null) {
+            $outletsCount = Outlet::query()->whereIn('id', $selectedOutletIds)->count();
+            if ($outletsCount !== count($selectedOutletIds)) {
                 return response()->json(['message' => 'Outlet not found.'], 404);
             }
         }
 
-        $cacheKey = 'admin.dashboard.summary:' . $date . ':' . ($outletId ?? 'all');
+        $isAllOutlets = $selectedOutletIds === null;
+        $singleOutletId = $selectedOutletIds !== null && count($selectedOutletIds) === 1
+            ? (int) $selectedOutletIds[0]
+            : null;
+        $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($date, $outletId) {
+        $cacheKey = 'admin.dashboard.summary:' . $date . ':' . $outletScopeKey;
+
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($date, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
             $salesBase = Sale::query()
                 ->where('sale_date', $date)
                 ->where('status', 'completed')
-                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
             $kpis = (clone $salesBase)
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales, COUNT(*) as total_transactions, COALESCE(SUM(discount_amount), 0) as discount_total')
@@ -76,7 +111,7 @@ class DashboardController extends Controller
             $cancelledBase = Sale::query()
                 ->where('sale_date', $date)
                 ->where('status', 'cancelled')
-                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
             $cancelledKpis = (clone $cancelledBase)
                 ->selectRaw('COUNT(*) as cancelled_transactions, COALESCE(SUM(total_amount), 0) as cancelled_amount')
@@ -103,7 +138,7 @@ class DashboardController extends Controller
                 ->join('products', 'sale_items.product_id', '=', 'products.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('sale_items.product_id', 'sale_items.product_name', 'products.thumbnail_path', 'products.image_path')
                 ->selectRaw('sale_items.product_id as product_id, sale_items.product_name as product_name, products.thumbnail_path, products.image_path, COALESCE(SUM(sale_items.quantity), 0) as qty, COALESCE(SUM(sale_items.subtotal), 0) as amount')
                 ->orderByDesc('amount')
@@ -120,7 +155,7 @@ class DashboardController extends Controller
                 ])
                 ->values();
 
-            $topStateKey = 'dashboard.top_products.state.' . ($outletId ?? 'all');
+            $topStateKey = 'dashboard.top_products.state.' . $outletScopeKey;
             $stateRaw = Setting::getValue($topStateKey, null);
             $state = is_string($stateRaw) ? json_decode($stateRaw, true) : null;
 
@@ -194,7 +229,7 @@ class DashboardController extends Controller
                 ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('product_categories.id', 'product_categories.name')
                 ->selectRaw("COALESCE(product_categories.name, 'Uncategorized') as category, COALESCE(SUM(sale_items.subtotal), 0) as amount")
                 ->orderByDesc('amount')
@@ -211,7 +246,7 @@ class DashboardController extends Controller
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
                 ->where('sales.sale_date', $date)
                 ->where('sales.status', 'completed')
-                ->when($outletId, fn($q) => $q->where('sales.outlet_id', $outletId))
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('payment_methods.id', 'payment_methods.name')
                 ->selectRaw('payment_methods.id as payment_method_id, payment_methods.name as payment_method_name, COALESCE(SUM(payments.amount), 0) as amount')
                 ->orderByDesc('amount')
@@ -224,11 +259,14 @@ class DashboardController extends Controller
                 ->values();
 
             $outletSales = collect();
-            if (!$outletId) {
-                $outletSales = Sale::query()
+            if ($isAllOutlets) {
+                $outletSalesBase = Sale::query()
                     ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
                     ->where('sales.sale_date', $date)
                     ->where('sales.status', 'completed')
+                    ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds));
+
+                $outletSales = $outletSalesBase
                     ->groupBy('outlets.id', 'outlets.name')
                     ->selectRaw('outlets.id as outlet_id, outlets.name as outlet_name, COALESCE(SUM(sales.total_amount), 0) as amount, COUNT(*) as transactions, MAX(sales.created_at) as last_sale_at')
                     ->orderByDesc('amount')
@@ -249,7 +287,7 @@ class DashboardController extends Controller
             $hourlyStacked = null;
             $hourlyStackedMeta = null;
 
-            if (!$outletId) {
+            if ($isAllOutlets) {
                 $topOutlets = $outletSales->take(5)->values();
                 $topOutletIds = $topOutlets->pluck('outlet_id')->all();
 
@@ -260,6 +298,7 @@ class DashboardController extends Controller
                 $hourOutletRows = Sale::query()
                     ->where('sale_date', $date)
                     ->where('status', 'completed')
+                    ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds))
                     ->selectRaw('outlet_id as outlet_id, HOUR(created_at) as hour, COALESCE(SUM(total_amount), 0) as amount')
                     ->groupBy('outlet_id', 'hour')
                     ->get();
@@ -333,7 +372,9 @@ class DashboardController extends Controller
 
             return [
                 'date' => $date,
-                'outlet_id' => $outletId,
+                'outlet_id' => $singleOutletId,
+                'outlet_ids' => $selectedOutletIds ?? [],
+                'is_all_outlets' => $isAllOutlets,
                 'kpis' => [
                     'total_sales' => $totalSales,
                     'total_transactions' => $totalTransactions,
@@ -357,12 +398,12 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev:' . $prevDate . ':' . ($outletId ?? 'all');
-        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDate, $outletId) {
+        $prevCacheKey = 'admin.dashboard.summary.prev:' . $prevDate . ':' . $outletScopeKey;
+        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDate, $selectedOutletIds) {
             $base = Sale::query()
                 ->where('sale_date', $prevDate)
                 ->where('status', 'completed')
-                ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
             $kpis = (clone $base)
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales, COUNT(*) as total_transactions')

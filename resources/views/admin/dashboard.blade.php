@@ -14,15 +14,30 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-                <div class="flex flex-col px-3">
+                <div class="relative flex flex-col px-3" id="outletFilterWrap">
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Outlet Selection</span>
-                    <select id="outletId"
-                        class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
-                        <option value="all">Semua Outlet</option>
-                        @foreach ($outlets as $outlet)
-                            <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
-                        @endforeach
-                    </select>
+                    <button id="outletDropdownBtn" type="button"
+                        class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
+                        <span id="outletDropdownLabel">Semua Outlet</span>
+                        <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                    </button>
+
+                    <div id="outletDropdownMenu"
+                        class="hidden absolute top-full left-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-lg p-3 z-50">
+                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 pb-2 mb-2 border-b border-slate-100 cursor-pointer">
+                            <input type="checkbox" id="outletAllCheckbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                            Semua Outlet
+                        </label>
+                        <div class="max-h-56 overflow-y-auto pr-1 space-y-1">
+                            @foreach ($outlets as $outlet)
+                                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                                    <input type="checkbox" class="outlet-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        value="{{ $outlet->id }}">
+                                    {{ $outlet->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
                 <div class="h-8 w-px bg-slate-100"></div>
                 <div class="flex flex-col px-3">
@@ -355,7 +370,12 @@
             let hourlyChart = null;
             let outletChart = null;
             const endpoint = @json(route('admin.dashboard.summary'));
-            const outletIdEl = document.getElementById('outletId');
+            const outletFilterWrapEl = document.getElementById('outletFilterWrap');
+            const outletDropdownBtnEl = document.getElementById('outletDropdownBtn');
+            const outletDropdownLabelEl = document.getElementById('outletDropdownLabel');
+            const outletDropdownMenuEl = document.getElementById('outletDropdownMenu');
+            const outletAllCheckboxEl = document.getElementById('outletAllCheckbox');
+            const outletCheckboxEls = Array.from(document.querySelectorAll('.outlet-checkbox'));
             const dateEl = document.getElementById('date');
             const refreshBtn = document.getElementById('refreshBtn');
             const statusTextEl = document.getElementById('statusText');
@@ -390,7 +410,65 @@
                 if (type === 'error') { statusTextEl.classList.add('text-red-600'); } else if (type === 'success') { statusTextEl.classList.add('text-green-600'); } else { statusTextEl.classList.add('text-slate-500'); }
             }
             function setLoadingState(loading) { isLoading = loading; refreshBtn.disabled = loading; refreshBtn.classList.toggle('opacity-60', loading); refreshBtn.classList.toggle('cursor-not-allowed', loading); }
-            function buildUrl() { const outletId = outletIdEl.value || 'all'; const date = dateEl.value || @json($defaultDate); const url = new URL(endpoint, window.location.origin); url.searchParams.set('outlet_id', outletId); url.searchParams.set('date', date); return url.toString(); }
+            function getSelectedOutletIds() {
+                return outletCheckboxEls
+                    .filter((checkbox) => checkbox.checked)
+                    .map((checkbox) => Number(checkbox.value))
+                    .filter((id) => Number.isInteger(id) && id > 0);
+            }
+            function updateOutletLabel() {
+                const selectedNames = outletCheckboxEls
+                    .filter((checkbox) => checkbox.checked)
+                    .map((checkbox) => checkbox.parentElement?.textContent?.trim() || '');
+
+                if (outletAllCheckboxEl.checked || selectedNames.length === 0) {
+                    outletDropdownLabelEl.textContent = 'Semua Outlet';
+                    return;
+                }
+
+                if (selectedNames.length === 1) {
+                    outletDropdownLabelEl.textContent = selectedNames[0];
+                    return;
+                }
+
+                outletDropdownLabelEl.textContent = `${selectedNames.length} Outlet Dipilih`;
+            }
+            function normalizeOutletSelection(source) {
+                if (source === 'all') {
+                    if (outletAllCheckboxEl.checked) {
+                        outletCheckboxEls.forEach((checkbox) => {
+                            checkbox.checked = false;
+                        });
+                    } else if (getSelectedOutletIds().length === 0) {
+                        outletAllCheckboxEl.checked = true;
+                    }
+                } else {
+                    if (getSelectedOutletIds().length > 0) {
+                        outletAllCheckboxEl.checked = false;
+                    } else {
+                        outletAllCheckboxEl.checked = true;
+                    }
+                }
+
+                updateOutletLabel();
+            }
+            function buildUrl() {
+                const date = dateEl.value || @json($defaultDate);
+                const url = new URL(endpoint, window.location.origin);
+                url.searchParams.set('date', date);
+
+                const selectedOutletIds = getSelectedOutletIds();
+                if (outletAllCheckboxEl.checked || selectedOutletIds.length === 0) {
+                    url.searchParams.set('outlet_id', 'all');
+                    return url.toString();
+                }
+
+                selectedOutletIds.forEach((outletId) => {
+                    url.searchParams.append('outlet_ids[]', String(outletId));
+                });
+
+                return url.toString();
+            }
             function renderVelocityChart({ series, labels }) {
                 const isStacked = series.length > 1;
                 const hasData = series.some(s => s.data.some(v => v > 0));
@@ -762,7 +840,9 @@
 
                 setTarget(data?.target);
 
-                if (!data?.outlet_id && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
+                const isAllOutlets = Boolean(data?.is_all_outlets);
+
+                if (isAllOutlets && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
                     const allOutletNames = new Set();
                     let hasOthers = false;
 
@@ -802,7 +882,7 @@
                 renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
                 renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
                 renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
-                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], !data?.outlet_id);
+                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], isAllOutlets);
 
                 const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
                 lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
@@ -846,9 +926,29 @@
             }
 
             refreshBtn.addEventListener('click', () => fetchSummary(true));
-            outletIdEl.addEventListener('change', () => fetchSummary(true));
+            outletDropdownBtnEl.addEventListener('click', () => {
+                outletDropdownMenuEl.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (event) => {
+                if (outletFilterWrapEl.contains(event.target)) {
+                    return;
+                }
+
+                outletDropdownMenuEl.classList.add('hidden');
+            });
+            outletAllCheckboxEl.addEventListener('change', () => {
+                normalizeOutletSelection('all');
+                fetchSummary(true);
+            });
+            outletCheckboxEls.forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    normalizeOutletSelection('item');
+                    fetchSummary(true);
+                });
+            });
             dateEl.addEventListener('change', () => fetchSummary(true));
 
+            updateOutletLabel();
             fetchSummary(false);
             startAutoRefresh();
         })();
