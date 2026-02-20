@@ -24,15 +24,18 @@
 
                     <div id="outletDropdownMenu"
                         class="hidden absolute top-full left-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-lg p-3 z-50">
-                        <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 pb-2 mb-2 border-b border-slate-100 cursor-pointer">
-                            <input type="checkbox" id="outletAllCheckbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                        <label
+                            class="flex items-center gap-2 text-xs font-semibold text-slate-700 pb-2 mb-2 border-b border-slate-100 cursor-pointer">
+                            <input type="checkbox" id="outletAllCheckbox"
+                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
                             Semua Outlet
                         </label>
                         <div class="max-h-56 overflow-y-auto pr-1 space-y-1">
                             @foreach ($outlets as $outlet)
                                 <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-                                    <input type="checkbox" class="outlet-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        value="{{ $outlet->id }}">
+                                    <input type="checkbox"
+                                        class="outlet-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        value="{{ $outlet->id }}" checked>
                                     {{ $outlet->name }}
                                 </label>
                             @endforeach
@@ -161,87 +164,104 @@
         </div>
 
         {{-- Column 1: Per Kategori --}}
-            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <span class="block text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Breakdown</span>
-                        <h3 class="text-lg font-black text-slate-800">Per Kategori</h3>
-                    </div>
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-                        <i class="fas fa-tags text-sm"></i>
-                    </div>
-                </div>
-
-                <div id="categoryList" class="space-y-5"></div>
-                <div id="categoryEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {{-- Column 1: Metode Pembayaran --}}
-            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <span class="block text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Collection</span>
-                        <h3 class="text-lg font-black text-slate-800">Metode Pembayaran</h3>
-                    </div>
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-                        <i class="fas fa-credit-card text-sm"></i>
-                    </div>
-                </div>
-
-                <div id="paymentList" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar italic"></div>
-                <div id="paymentEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
-            </div>
-
-            {{-- Column 2: Top Products --}}
-            <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <span class="block text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Best Sellers</span>
-                        <h3 class="text-lg font-black text-slate-800">Top Produk</h3>
-                    </div>
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-                        <i class="fas fa-crown text-sm"></i>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm italic">
-                        <thead class="bg-slate-50/50">
-                            <tr>
-                                <th class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Pos</th>
-                                <th class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Produk</th>
-                                <th class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Qty</th>
-                                <th class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">Omzet</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-                <div id="productEmpty" class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data recorded</div>
-            </div>
-        </div>
-
-        <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
-            <div class="dash-card-head flex items-center justify-between mb-4">
+        <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+            <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
-                    <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
+                    <span
+                        class="block text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Breakdown</span>
+                    <h3 class="text-lg font-black text-slate-800">Per Kategori</h3>
+                </div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                    <i class="fas fa-tags text-sm"></i>
                 </div>
             </div>
 
-            <div id="outletBars" class="h-64 w-full"></div>
+            <div id="categoryList" class="space-y-5"></div>
+            <div id="categoryEmpty"
+                class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data
+                recorded</div>
+        </div>
+    </div>
 
-            <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {{-- Column 1: Metode Pembayaran --}}
+        <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <span
+                        class="block text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Collection</span>
+                    <h3 class="text-lg font-black text-slate-800">Metode Pembayaran</h3>
+                </div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                    <i class="fas fa-credit-card text-sm"></i>
+                </div>
+            </div>
+
+            <div id="paymentList" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar italic"></div>
+            <div id="paymentEmpty"
+                class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data
+                recorded</div>
         </div>
 
-        <noscript>
-            <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
-                Dashboard ini butuh JavaScript untuk update data otomatis.
+        {{-- Column 2: Top Products --}}
+        <div class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Best
+                        Sellers</span>
+                    <h3 class="text-lg font-black text-slate-800">Top Produk</h3>
+                </div>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                    <i class="fas fa-crown text-sm"></i>
+                </div>
             </div>
-        </noscript>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm italic">
+                    <thead class="bg-slate-50/50">
+                        <tr>
+                            <th
+                                class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
+                                Pos</th>
+                            <th
+                                class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
+                                Produk</th>
+                            <th
+                                class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
+                                Qty</th>
+                            <th
+                                class="text-right px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
+                                Omzet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <div id="productEmpty"
+                class="hidden text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 py-12">No data
+                recorded</div>
+        </div>
+    </div>
+
+    <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+        style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
+        <div class="dash-card-head flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
+                <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
+            </div>
+        </div>
+
+        <div id="outletBars" class="h-64 w-full"></div>
+
+        <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
+    </div>
+
+    <noscript>
+        <div class="mt-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4">
+            Dashboard ini butuh JavaScript untuk update data otomatis.
+        </div>
+    </noscript>
 
 @endsection
 
@@ -435,19 +455,12 @@
             }
             function normalizeOutletSelection(source) {
                 if (source === 'all') {
-                    if (outletAllCheckboxEl.checked) {
-                        outletCheckboxEls.forEach((checkbox) => {
-                            checkbox.checked = false;
-                        });
-                    } else if (getSelectedOutletIds().length === 0) {
-                        outletAllCheckboxEl.checked = true;
-                    }
+                    outletCheckboxEls.forEach((checkbox) => {
+                        checkbox.checked = outletAllCheckboxEl.checked;
+                    });
                 } else {
-                    if (getSelectedOutletIds().length > 0) {
-                        outletAllCheckboxEl.checked = false;
-                    } else {
-                        outletAllCheckboxEl.checked = true;
-                    }
+                    const allChecked = outletCheckboxEls.every((item) => item.checked);
+                    outletAllCheckboxEl.checked = allChecked;
                 }
 
                 updateOutletLabel();
@@ -582,15 +595,15 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                                                                                                        <div class="flex items-end justify-between mb-1.5">
-                                                                                                                                                            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                                                                                                            <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                                                                                                        </div>
-                                                                                                                                                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                                                                                            <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                            <div class="flex items-end justify-between mb-1.5">
+                                                                                                                                                                <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                                                                                                <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
                                                                                                                                                             </div>
-                                                                                                                                                        </div>
-                                                                                                                                                    `;
+                                                                                                                                                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                                                                                                <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                                </div>
+                                                                                                                                                            </div>
+                                                                                                                                                        `;
                     categoryListEl.appendChild(item);
                 }
             }
@@ -622,14 +635,14 @@
                     const item = document.createElement('div');
                     item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
                     item.innerHTML = `
-                                                                                                                        <div class="flex items-center gap-3">
-                                                                                                                            <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                                                                                                                <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                                                                            <div class="flex items-center gap-3">
+                                                                                                                                <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                                                                                                    <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                                                                                </div>
+                                                                                                                                <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
                                                                                                                             </div>
-                                                                                                                            <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                                                                                                        </div>
-                                                                                                                        <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                                                                                                    `;
+                                                                                                                            <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                                                                                                        `;
                     paymentListEl.appendChild(item);
                 }
             }
@@ -672,23 +685,23 @@
                     }
 
                     tr.innerHTML = `
-                                                                                                                                                <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
-                                                                                                                                                <td class="px-3 py-3 text-slate-700">
-                                                                                                                                                    <div class="flex items-center gap-4 min-w-max">
-                                                                                                                                                        ${imageHtml}
-                                                                                                                                                        <div class="flex-1">
-                                                                                                                                                            <div class="flex flex-col gap-0.5">
-                                                                                                                                                                <div class="flex items-center gap-2">
-                                                                                                                                                                    <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                                                                                                                                    ${trendBadge}
+                                                                                                                                                    <td class="px-3 py-3 text-slate-500 font-semibold text-center whitespace-nowrap">${rank}</td>
+                                                                                                                                                    <td class="px-3 py-3 text-slate-700">
+                                                                                                                                                        <div class="flex items-center gap-4 min-w-max">
+                                                                                                                                                            ${imageHtml}
+                                                                                                                                                            <div class="flex-1">
+                                                                                                                                                                <div class="flex flex-col gap-0.5">
+                                                                                                                                                                    <div class="flex items-center gap-2">
+                                                                                                                                                                        <span class="font-semibold text-slate-800 text-sm" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                                                                                                                                        ${trendBadge}
+                                                                                                                                                                    </div>
                                                                                                                                                                 </div>
                                                                                                                                                             </div>
                                                                                                                                                         </div>
-                                                                                                                                                    </div>
-                                                                                                                                                </td>
-                                                                                                                                                <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                                                                                                                                                <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
-                                                                                                                                            `;
+                                                                                                                                                    </td>
+                                                                                                                                                    <td class="px-3 py-3 text-right text-slate-600 whitespace-nowrap">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                                                                                                                                    <td class="px-3 py-3 text-right font-bold text-slate-900 pr-4 whitespace-nowrap">${idr.format(Number(row.amount || 0))}</td>
+                                                                                                                                                `;
                     productRowsEl.appendChild(tr);
                 }
             }
