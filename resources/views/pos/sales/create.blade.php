@@ -66,16 +66,16 @@
                 class="flex-none px-6 py-4 overflow-x-auto scrollbar-hide flex gap-3 bg-background-light/50 backdrop-blur-sm sticky top-0 z-10">
                 <button @click="selectedCategory = null"
                     :class="selectedCategory === null 
-                                                                                                                                                ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                    ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                    : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                     class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                     All Items
                 </button>
                 @foreach($categories as $category)
                     <button @click="selectedCategory = {{ $category['id'] }}"
                         :class="Number(selectedCategory) === {{ $category['id'] }} 
-                                                                                                                                                                                                                                                                             ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
-                                                                                                                                                                                                                                                                             : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
+                                                                                                                                                                                                                                                                                     ? 'bg-primary text-white shadow-lg shadow-red-600/30' 
+                                                                                                                                                                                                                                                                                     : 'bg-surface-light text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'"
                         class="px-6 py-2.5 rounded-full whitespace-nowrap transition font-semibold text-sm flex-shrink-0">
                         {{ $category['name'] }}
                     </button>
@@ -90,16 +90,49 @@
                     <h2 class="text-2xl font-bold text-gray-800">
                         @{{ currentCategoryName }}
                     </h2>
-                    <span class="text-sm text-gray-500 font-medium">showing @{{ filteredProducts.length }} items</span>
+
+                    <div class="flex items-center gap-4">
+                        <!-- View Toggles -->
+                        <div class="bg-gray-100 p-1 rounded-lg flex gap-1">
+                            <button @click="gridSize = 'small'"
+                                :class="gridSize === 'small' ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'text-gray-400 hover:text-gray-600'"
+                                class="p-1.5 rounded-md transition" title="Small Grid">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                </svg>
+                            </button>
+                            <button @click="gridSize = 'medium'"
+                                :class="gridSize === 'medium' ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'text-gray-400 hover:text-gray-600'"
+                                class="p-1.5 rounded-md transition" title="Medium Grid">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z" />
+                                </svg>
+                            </button>
+                            <button @click="gridSize = 'large'"
+                                :class="gridSize === 'large' ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'text-gray-400 hover:text-gray-600'"
+                                class="p-1.5 rounded-md transition" title="Large Grid">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="4" y="4" width="7" height="7" rx="1" stroke-width="2"></rect>
+                                    <rect x="13" y="4" width="7" height="7" rx="1" stroke-width="2"></rect>
+                                    <rect x="4" y="13" width="7" height="7" rx="1" stroke-width="2"></rect>
+                                    <rect x="13" y="13" width="7" height="7" rx="1" stroke-width="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="text-sm text-gray-500 font-medium">@{{ filteredProducts.length }} items</span>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                <div :class="gridClasses">
                     <template v-for="product in filteredProducts" :key="product.id">
-                        <div class="bg-surface-light rounded-2xl p-4 shadow-sm border border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col h-full cursor-pointer"
+                        <div :class="['bg-surface-light rounded-2xl shadow-sm border border-transparent hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group flex flex-col h-full cursor-pointer', gridSize === 'small' ? 'p-3' : 'p-4']"
                             @click="addToCart(product)">
 
                             <!-- Image -->
-                            <div class="aspect-[4/3] rounded-xl overflow-hidden mb-4 relative bg-gray-50">
+                            <div
+                                :class="['rounded-xl overflow-hidden relative bg-gray-50', gridSize === 'small' ? 'aspect-square mb-2' : 'aspect-[4/3] mb-4']">
                                 <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="lazy"
                                     decoding="async" fetchpriority="low"
                                     class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
@@ -113,27 +146,29 @@
 
                                 <!-- Tags (Optional) -->
                                 <!-- <span class="absolute top-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-bold text-gray-800 shadow-sm uppercase tracking-wide">
-                                                                                                                                                            Best Seller
-                                                                                                                                                        </span> -->
+                                                                                                                                                                Best Seller
+                                                                                                                                                            </span> -->
                             </div>
 
                             <!-- Content -->
                             <div class="flex-1 flex flex-col">
                                 <h3
-                                    class="text-base font-bold text-gray-800 group-hover:text-red-600 transition mb-1 leading-snug">
+                                    :class="['font-bold text-gray-800 group-hover:text-red-600 transition mb-1 leading-snug', gridSize === 'small' ? 'text-sm' : 'text-base']">
                                     @{{ product.name }}</h3>
                                 <!-- SKU/Desc -->
-                                <p class="text-xs text-gray-400 mb-3 line-clamp-2">@{{ product.description || product.sku }}
+                                <p v-if="gridSize !== 'small'" class="text-xs text-gray-400 mb-3 line-clamp-2">@{{
+                                    product.description || product.sku }}
                                 </p>
 
                                 <div class="mt-auto flex items-center justify-between">
-                                    <span class="text-lg font-bold text-primary">
+                                    <span :class="['font-bold text-primary', gridSize === 'small' ? 'text-sm' : 'text-lg']">
                                         <span class="text-xs text-primary/70 align-top mr-0.5">Rp</span>@{{
                                         formatNumber(getProductPrice(product)) }}
                                     </span>
                                     <button
-                                        class="w-8 h-8 rounded-full bg-red-50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition shadow-sm">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        :class="['rounded-full bg-red-50 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition shadow-sm', gridSize === 'small' ? 'w-7 h-7' : 'w-8 h-8']">
+                                        <svg :class="gridSize === 'small' ? 'w-4 h-4' : 'w-5 h-5'" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M12 4v16m8-8H4"></path>
                                         </svg>
@@ -248,7 +283,8 @@
                                 <div class="min-w-0">
                                     <p class="text-xs text-gray-400">@ @{{ formatNumber(item.unit_price) }}</p>
                                     <p v-if="item.discount_amount > 0" class="text-[10px] text-red-500">
-                                        Promo @{{ formatNumber(item.promo_discount_percent, 2) }}% (-Rp @{{ formatNumber(item.discount_amount, 2) }})
+                                        Promo @{{ formatNumber(item.promo_discount_percent, 2) }}% (-Rp @{{
+                                        formatNumber(item.discount_amount, 2) }})
                                     </p>
                                 </div>
 
@@ -302,7 +338,8 @@
 
                 <div v-if="hasPromotionSelector || hasVoucherInput" class="mb-4 space-y-3">
                     <div v-if="hasPromotionSelector">
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Promo Kategori</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Promo
+                            Kategori</label>
                         <select v-model="selectedPromotionId"
                             class="w-full bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5">
                             <option value="">Tanpa Promo</option>
@@ -316,7 +353,8 @@
                     </div>
 
                     <div v-if="hasVoucherInput">
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Voucher</label>
+                        <label
+                            class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Voucher</label>
                         <div class="flex items-center gap-2">
                             <input type="text" v-model="voucherCodeInput" placeholder="Contoh: MEMBER10"
                                 class="flex-1 bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5 uppercase">
@@ -399,8 +437,8 @@
 
                     <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                                                                        : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                                                                                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                                                            : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="w-full h-14 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 px-4">
                         <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
                             }}</span>
@@ -443,8 +481,8 @@
                     <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
                         @click="selectPaymentMethod(method.id)"
                         :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                                        ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
-                                                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                                                                            ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                                                            : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                         class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
                         <span>@{{ method.name }}</span>
                         <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
@@ -684,6 +722,8 @@
                         productById: {},
                         productImageById: {},
 
+                        gridSize: 'large',
+
                         cart: [],
                         isCartOpen: true, // Toggle Cart State
                         searchQuery: '',
@@ -725,6 +765,17 @@
                     }
                 },
                 computed: {
+                    gridClasses() {
+                        switch (this.gridSize) {
+                            case 'small':
+                                return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3';
+                            case 'medium':
+                                return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4';
+                            case 'large':
+                            default:
+                                return 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6';
+                        }
+                    },
                     currentCategoryName() {
                         if (!this.selectedCategory) return 'All Items';
                         const category = this.categories.find(c => c.id == this.selectedCategory);
