@@ -6,6 +6,19 @@
     <title>Cetak Struk</title>
 </head>
 <body>
+<div class="no-print print-tools">
+    <button type="button" id="printNowBtn" class="tool-btn">Cetak Sekarang</button>
+    <button type="button" id="closeWindowBtn" class="tool-btn secondary">Kembali</button>
+</div>
+<div class="no-print print-help">
+    <p><strong>Jika printer tidak muncul:</strong></p>
+    <ol>
+        <li>Pastikan printer thermal online dan jadi default printer di OS.</li>
+        <li>Izinkan popup/print dialog untuk domain POS ini.</li>
+        <li>Tutup dialog print lalu klik <em>Cetak Sekarang</em>.</li>
+    </ol>
+    <p id="printStatus" class="print-status" aria-live="polite"></p>
+</div>
 <div class="receipt-container">
     <div class="header">
         <h2>{{ $sale->outlet->name }}</h2>
@@ -138,6 +151,44 @@
         background: #fff;
     }
 
+    .print-tools {
+        width: 58mm;
+        margin: 8px auto 6px;
+        display: flex;
+        gap: 6px;
+    }
+    .tool-btn {
+        flex: 1;
+        border: 1px solid #111;
+        background: #111;
+        color: #fff;
+        border-radius: 4px;
+        padding: 6px 8px;
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .tool-btn.secondary {
+        background: #fff;
+        color: #111;
+    }
+    .print-help {
+        width: 58mm;
+        margin: 0 auto 8px;
+        border: 1px dashed #999;
+        border-radius: 4px;
+        padding: 6px;
+        font-size: 10px;
+        color: #333;
+    }
+    .print-help ol {
+        margin: 4px 0 0;
+        padding-left: 14px;
+    }
+    .print-status {
+        margin-top: 6px;
+        font-size: 10px;
+    }
+
     /* Receipt Container (58mm width aprox 220px-240px safe area) */
     .receipt-container {
         width: 58mm; /* Standard thermal paper */
@@ -214,11 +265,71 @@
 </style>
 
 <script>
-    window.onload = function() {
-        window.print();
-        // Optional: window.close() after print?
-        // window.onafterprint = function() { window.close(); }
-    }
+    (function () {
+        function setPrintStatus(message, isError) {
+            var statusElement = document.getElementById('printStatus');
+            if (!statusElement) return;
+
+            statusElement.textContent = message || '';
+            statusElement.style.color = isError ? '#B91C1C' : '#374151';
+        }
+
+        function triggerPrint() {
+            if (typeof window.print !== 'function') {
+                setPrintStatus('Browser ini tidak mendukung fitur print.', true);
+                return;
+            }
+
+            try {
+                window.focus();
+                window.print();
+                setPrintStatus('Dialog print dibuka. Pilih printer struk lalu klik Print.', false);
+            } catch (error) {
+                var message = error && error.message ? error.message : 'Terjadi kesalahan saat membuka dialog print.';
+                setPrintStatus(message, true);
+            }
+        }
+
+        function shouldAutoPrint() {
+            var params = new URLSearchParams(window.location.search || '');
+            return params.get('autoprint') !== '0';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var printNowButton = document.getElementById('printNowBtn');
+            if (printNowButton) {
+                printNowButton.addEventListener('click', triggerPrint);
+            }
+
+            var closeWindowButton = document.getElementById('closeWindowBtn');
+            if (closeWindowButton) {
+                closeWindowButton.addEventListener('click', function () {
+                    if (window.opener && !window.opener.closed) {
+                        window.close();
+                        return;
+                    }
+
+                    if (window.history.length > 1) {
+                        window.history.back();
+                        return;
+                    }
+
+                    window.location.href = '{{ route('pos.sales.create') }}';
+                });
+            }
+
+            if (!shouldAutoPrint()) {
+                return;
+            }
+
+            setPrintStatus('Menyiapkan dialog print...', false);
+            setTimeout(triggerPrint, 350);
+        });
+
+        window.addEventListener('afterprint', function () {
+            setPrintStatus('Cetak selesai. Jika struk belum keluar, cek koneksi printer di perangkat ini.', false);
+        });
+    })();
 </script>
 </body>
 </html>

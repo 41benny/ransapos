@@ -416,6 +416,15 @@
             }
         },
         methods: {
+            openReceiptPrintWindow(saleId) {
+                const normalizedSaleId = Number(saleId);
+                if (!Number.isFinite(normalizedSaleId) || normalizedSaleId <= 0) {
+                    alert('ID transaksi tidak valid untuk dicetak.');
+                    return;
+                }
+
+                window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
+            },
             openHistoryWithSale(saleId) {
                 this.showHistoryModal = true;
                 this.fetchHistory().then(() => {
@@ -475,7 +484,7 @@
                 return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             },
             printReceiptFromHistory(sale) {
-                window.open(`/pos/sales/${sale.id}/print`, '_blank', 'width=400,height=600');
+                this.openReceiptPrintWindow(sale && sale.id ? sale.id : null);
             },
             openVoidModal() {
                 this.voidReason = '';

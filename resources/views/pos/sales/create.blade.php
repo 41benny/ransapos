@@ -880,6 +880,15 @@
 
                         throw new Error('Terjadi kesalahan sistem.');
                     },
+                    openReceiptPrintWindow(saleId) {
+                        const normalizedSaleId = Number(saleId);
+                        if (!Number.isFinite(normalizedSaleId) || normalizedSaleId <= 0) {
+                            alert('ID transaksi tidak valid untuk dicetak.');
+                            return;
+                        }
+
+                        window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
+                    },
                     getProductById(productId) {
                         return this.productById[Number(productId)] || null;
                     },
@@ -1205,7 +1214,7 @@
                     },
                     printReceipt() {
                         if (this.lastSale) {
-                            window.open(`/pos/sales/${this.lastSale.sale_id}/print`, '_blank', 'width=400,height=600');
+                            this.openReceiptPrintWindow(this.lastSale.sale_id);
                         }
                     },
                     closeSuccessModal() {
@@ -1263,7 +1272,7 @@
                         this.selectedSale = sale;
                     },
                     printReceiptFromHistory(sale) {
-                        window.open(`/pos/sales/${sale.id}/print`, '_blank', 'width=400,height=600');
+                        this.openReceiptPrintWindow(sale && sale.id ? sale.id : null);
                     },
 
                     // --- Void Methods ---
