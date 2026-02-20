@@ -1047,10 +1047,14 @@
                         const userKey = this.userId ? `user_${this.userId}` : 'user_unknown';
                         return `morest_pos_print_settings_${outletKey}_${userKey}`;
                     },
+                    getBrowserVirtualPrinterName() {
+                        return 'Default Printer (Browser/OS)';
+                    },
                     loadPrintSettings() {
                         try {
                             const raw = localStorage.getItem(this.getPrintSettingsStorageKey());
                             if (!raw) {
+                                this.selectedPrinterName = this.getBrowserVirtualPrinterName();
                                 return;
                             }
 
@@ -1064,11 +1068,21 @@
                             this.printerKeyword = typeof parsed.printerKeyword === 'string' && parsed.printerKeyword.trim() !== ''
                                 ? parsed.printerKeyword.trim()
                                 : 'POS';
+
+                            if (this.printEngine === 'browser') {
+                                this.availablePrinters = [this.getBrowserVirtualPrinterName()];
+                                this.selectedPrinterName = this.getBrowserVirtualPrinterName();
+                            }
                         } catch (error) {
                             console.warn('Gagal membaca setting print POS:', error);
+                            this.selectedPrinterName = this.getBrowserVirtualPrinterName();
                         }
                     },
                     savePrintSettings() {
+                        if (this.printEngine === 'browser') {
+                            this.selectedPrinterName = this.getBrowserVirtualPrinterName();
+                        }
+
                         const payload = {
                             printEngine: this.printEngine,
                             selectedPrinterName: String(this.selectedPrinterName || ''),
@@ -1085,6 +1099,8 @@
                         if (this.printEngine === 'bridge') {
                             this.refreshAvailablePrinters();
                         } else {
+                            this.availablePrinters = [this.getBrowserVirtualPrinterName()];
+                            this.selectedPrinterName = this.getBrowserVirtualPrinterName();
                             this.printerStatusMessage = 'Mode Browser aktif: printer terdeteksi saat dialog print browser muncul.';
                         }
                     },
@@ -1139,7 +1155,8 @@
                     },
                     async refreshAvailablePrinters() {
                         if (this.printEngine !== 'bridge') {
-                            this.availablePrinters = [];
+                            this.availablePrinters = [this.getBrowserVirtualPrinterName()];
+                            this.selectedPrinterName = this.getBrowserVirtualPrinterName();
                             this.printerBridgeConnected = false;
                             this.printerStatusMessage = 'Mode Browser aktif: daftar printer tidak bisa dibaca. Print akan mengikuti printer default browser.';
                             return;
@@ -1791,6 +1808,14 @@
                     printEngine(newValue) {
                         if (newValue === 'bridge' && this.showPrintSettingsModal) {
                             this.refreshAvailablePrinters();
+                            return;
+                        }
+
+                        if (newValue === 'browser') {
+                            this.availablePrinters = [this.getBrowserVirtualPrinterName()];
+                            this.selectedPrinterName = this.getBrowserVirtualPrinterName();
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'Mode Browser aktif: printer mengikuti default browser/OS.';
                         }
                     }
                 }
