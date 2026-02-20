@@ -20,7 +20,7 @@
         }
 
         @page {
-            size: 215mm 165mm;
+            size: portrait;
             margin: 0;
         }
 
@@ -40,8 +40,10 @@
         }
 
         .voucher-sheet {
-            width: 215mm;
-            height: 145mm;
+            width: 100%;
+            max-width: 210mm;
+            height: auto;
+            min-height: 145mm;
             margin: 0 auto;
             background: #fff;
             position: relative;
@@ -69,7 +71,7 @@
         /* Main Content */
         .main-content {
             flex: 1;
-            padding: 30px 40px;
+            padding: 20px 30px;
             display: flex;
             flex-direction: column;
         }
@@ -78,7 +80,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .company-brand h1 {
@@ -122,9 +124,9 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             background: var(--slate-50);
-            padding: 15px 20px;
+            padding: 10px 15px;
             border-radius: 12px;
             border: 1px solid var(--slate-100);
         }
@@ -152,9 +154,8 @@
         /* Table Style */
         .items-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
-            margin-bottom: 20px;
+            border-collapse: collapse;
+            margin-bottom: 10px;
         }
 
         .items-table th {
@@ -163,30 +164,26 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--slate-400);
-            padding: 0 12px;
+            padding: 0 4px 6px 4px;
             font-weight: 600;
+            border-bottom: 2px solid var(--slate-100);
         }
 
         .items-table td {
-            background: #fff;
-            border-top: 1px solid var(--slate-100);
-            border-bottom: 1px solid var(--slate-100);
-            padding: 12px;
+            padding: 3px 4px;
             font-size: 11px;
             color: var(--slate-700);
+            border: none;
         }
 
         .items-table td:first-child {
-            border-left: 1px solid var(--slate-100);
-            border-radius: 8px 0 0 8px;
             color: var(--slate-400);
             font-weight: 500;
             text-align: center;
+            width: 30px;
         }
 
         .items-table td:last-child {
-            border-right: 1px solid var(--slate-100);
-            border-radius: 0 8px 8px 0;
             font-weight: 700;
             text-align: right;
             color: var(--slate-900);
@@ -316,7 +313,7 @@
                 box-shadow: none;
                 margin: 0;
                 width: 100%;
-                height: 100%;
+                height: auto;
             }
 
             .controls {
@@ -347,7 +344,7 @@
             <header class="header">
                 <div class="company-brand">
                     <h1>MORESTO</h1>
-                    <p>Modern Resto Management System • Sekincau, Lampung</p>
+                    <p>Modern Resto Management System</p>
                 </div>
                 <div class="voucher-meta">
                     <span class="label">Dokumen Nomor</span>
