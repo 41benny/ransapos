@@ -450,10 +450,19 @@
                     .map((checkbox) => Number(checkbox.value))
                     .filter((id) => Number.isInteger(id) && id > 0);
             }
+            function simplifyOutletName(name) {
+                if (!name) return '';
+                let clean = name.replace(/moresto/gi, '').trim();
+                if (clean.toLowerCase() === 'ciplaz') return 'Cplz';
+                if (clean.length > 10 && clean.includes(' ')) {
+                    return clean.split(/\s+/).map(w => w[0].toUpperCase()).join('');
+                }
+                return clean;
+            }
             function updateOutletLabel() {
                 const selectedNames = outletCheckboxEls
                     .filter((checkbox) => checkbox.checked)
-                    .map((checkbox) => checkbox.parentElement?.textContent?.trim() || '');
+                    .map((checkbox) => simplifyOutletName(checkbox.parentElement?.textContent?.trim()));
 
                 if (outletAllCheckboxEl.checked || selectedNames.length === 0) {
                     outletDropdownLabelEl.textContent = 'Semua Outlet';
@@ -609,375 +618,375 @@
                     const item = document.createElement('div');
                     item.className = 'group';
                     item.innerHTML = `
-                                                                                                                                                                <div class="flex items-end justify-between mb-1.5">
-                                                                                                                                                                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
-                                                                                                                                                                    <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
-                                                                                                                                                                </div>
-                                                                                                                                                                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                                                                                                    <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                                    <div class="flex items-end justify-between mb-1.5">
+                                                                                                                                                                        <span class="text-xs font-semibold text-slate-600 uppercase tracking-wide">${escapeHtml(row.category)}</span>
+                                                                                                                                                                        <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
                                                                                                                                                                     </div>
-                                                                                                                                                                </div>
-                                                                                                                                                        `;
-                                  categoryListEl.appendChild(item);
-                    }
+                                                                                                                                                                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                                                                                                                                                        <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                                        </div>
+                                                                                                                                                                    </div>
+                                                                                                                                                            `;
+                    categoryListEl.appendChild(item);
+                }
+            }
+
+            function getPaymentIcon(name) {
+                const n = (name || '').toLowerCase();
+                if (n.includes('cash') || n.includes('tunai')) return { icon: 'fa-money-bill-wave', bg: 'bg-emerald-50', text: 'text-emerald-500' };
+                if (n.includes('qris')) return { icon: 'fa-qrcode', bg: 'bg-slate-100', text: 'text-slate-600' };
+                if (n.includes('debit') || n.includes('credit') || n.includes('card') || n.includes('kartu')) return { icon: 'fa-credit-card', bg: 'bg-blue-50', text: 'text-blue-500' };
+                if (n.includes('transfer')) return { icon: 'fa-money-bill-transfer', bg: 'bg-indigo-50', text: 'text-indigo-500' };
+                if (n.includes('shopee')) return { icon: 'fa-wallet', bg: 'bg-orange-50', text: 'text-orange-500' };
+                if (n.includes('gopay')) return { icon: 'fa-wallet', bg: 'bg-sky-50', text: 'text-sky-500' };
+                if (n.includes('ovo')) return { icon: 'fa-wallet', bg: 'bg-violet-50', text: 'text-violet-500' };
+                if (n.includes('dana')) return { icon: 'fa-wallet', bg: 'bg-blue-50', text: 'text-blue-500' };
+                return { icon: 'fa-wallet', bg: 'bg-slate-50', text: 'text-slate-500' };
+            }
+
+            function renderPaymentRows(rows) {
+                paymentListEl.innerHTML = '';
+                if (!rows || rows.length === 0) {
+                    paymentEmptyEl.classList.remove('hidden');
+                    return;
                 }
 
-                function getPaymentIcon(name) {
-                    const n = (name || '').toLowerCase();
-                    if (n.includes('cash') || n.includes('tunai')) return { icon: 'fa-money-bill-wave', bg: 'bg-emerald-50', text: 'text-emerald-500' };
-                    if (n.includes('qris')) return { icon: 'fa-qrcode', bg: 'bg-slate-100', text: 'text-slate-600' };
-                    if (n.includes('debit') || n.includes('credit') || n.includes('card') || n.includes('kartu')) return { icon: 'fa-credit-card', bg: 'bg-blue-50', text: 'text-blue-500' };
-                    if (n.includes('transfer')) return { icon: 'fa-money-bill-transfer', bg: 'bg-indigo-50', text: 'text-indigo-500' };
-                    if (n.includes('shopee')) return { icon: 'fa-wallet', bg: 'bg-orange-50', text: 'text-orange-500' };
-                    if (n.includes('gopay')) return { icon: 'fa-wallet', bg: 'bg-sky-50', text: 'text-sky-500' };
-                    if (n.includes('ovo')) return { icon: 'fa-wallet', bg: 'bg-violet-50', text: 'text-violet-500' };
-                    if (n.includes('dana')) return { icon: 'fa-wallet', bg: 'bg-blue-50', text: 'text-blue-500' };
-                    return { icon: 'fa-wallet', bg: 'bg-slate-50', text: 'text-slate-500' };
-                }
+                paymentEmptyEl.classList.add('hidden');
+                for (const row of rows) {
+                    const style = getPaymentIcon(row.payment_method_name);
 
-                function renderPaymentRows(rows) {
-                    paymentListEl.innerHTML = '';
-                    if (!rows || rows.length === 0) {
-                        paymentEmptyEl.classList.remove('hidden');
-                        return;
-                    }
-
-                    paymentEmptyEl.classList.add('hidden');
-                    for (const row of rows) {
-                        const style = getPaymentIcon(row.payment_method_name);
-
-                        const item = document.createElement('div');
-                        item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
-                        item.innerHTML = `
-                                                                                                                                <div class="flex items-center gap-3">
-                                                                                                                                    <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
-                                                                                                                                        <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-colors group mr-1';
+                    item.innerHTML = `
+                                                                                                                                    <div class="flex items-center gap-3">
+                                                                                                                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg ${style.bg} transition-transform group-hover:scale-110">
+                                                                                                                                            <i class="fas ${style.icon} text-lg ${style.text}"></i>
+                                                                                                                                        </div>
+                                                                                                                                        <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
                                                                                                                                     </div>
-                                                                                                                                    <span class="font-semibold text-slate-700">${escapeHtml(row.payment_method_name)}</span>
-                                                                                                                                </div>
-                                                                                                                                <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
-                                                                                                                            `;
-                        paymentListEl.appendChild(item);
-                    }
+                                                                                                                                    <span class="font-bold text-slate-900">${idr.format(Number(row.amount || 0))}</span>
+                                                                                                                                `;
+                    paymentListEl.appendChild(item);
+                }
+            }
+
+            function renderTopProducts(rows) {
+                productRowsEl.innerHTML = '';
+                if (!rows || rows.length === 0) {
+                    productEmptyEl.classList.remove('hidden');
+                    return;
                 }
 
-                function renderTopProducts(rows) {
-                    productRowsEl.innerHTML = '';
-                    if (!rows || rows.length === 0) {
-                        productEmptyEl.classList.remove('hidden');
-                        return;
+                productEmptyEl.classList.add('hidden');
+                for (const row of rows) {
+                    const rank = productRowsEl.children.length + 1;
+                    let trendBadge = '';
+                    let movementClass = '';
+
+                    const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
+                    const movementDir = movement?.direction === 'up' || movement?.direction === 'down' ? movement.direction : null;
+                    const movementDelta = Number(movement?.delta || 0);
+
+                    if (movementDir === 'up' && movementDelta > 0) {
+                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${movementDelta}</span>`;
+                        movementClass = 'top-rank-up';
+                    } else if (movementDir === 'down' && movementDelta > 0) {
+                        trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
+                        movementClass = 'top-rank-down';
                     }
 
-                    productEmptyEl.classList.add('hidden');
-                    for (const row of rows) {
-                        const rank = productRowsEl.children.length + 1;
-                        let trendBadge = '';
-                        let movementClass = '';
+                    const tr = document.createElement('tr');
+                    if (movementClass) {
+                        tr.classList.add(movementClass);
+                    }
 
-                        const movement = row?.movement && typeof row.movement === 'object' ? row.movement : null;
-                        const movementDir = movement?.direction === 'up' || movement?.direction === 'down' ? movement.direction : null;
-                        const movementDelta = Number(movement?.delta || 0);
+                    let imageHtml = '';
+                    if (row.image_url) {
+                        imageHtml = `<img src="${row.image_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-100 bg-white shrink-0" alt="img" onerror="this.src='https://via.placeholder.com/48?text=IMG'"/>`;
+                    } else {
+                        imageHtml = `<div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-sm text-slate-400 shrink-0"><i class="fas fa-image"></i></div>`;
+                    }
 
-                        if (movementDir === 'up' && movementDelta > 0) {
-                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"><i class="fas fa-arrow-up"></i> +${movementDelta}</span>`;
-                            movementClass = 'top-rank-up';
-                        } else if (movementDir === 'down' && movementDelta > 0) {
-                            trendBadge = `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"><i class="fas fa-arrow-down"></i> -${movementDelta}</span>`;
-                            movementClass = 'top-rank-down';
-                        }
-
-                        const tr = document.createElement('tr');
-                        if (movementClass) {
-                            tr.classList.add(movementClass);
-                        }
-
-                        let imageHtml = '';
-                        if (row.image_url) {
-                            imageHtml = `<img src="${row.image_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-100 bg-white shrink-0" alt="img" onerror="this.src='https://via.placeholder.com/48?text=IMG'"/>`;
-                        } else {
-                            imageHtml = `<div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-sm text-slate-400 shrink-0"><i class="fas fa-image"></i></div>`;
-                        }
-
-                        tr.innerHTML = `
-                            <td class="px-2 py-3 text-slate-500 font-semibold text-center whitespace-nowrap text-[11px]">${rank}</td>
-                            <td class="px-2 py-3 text-slate-700">
-                                <div class="flex items-center gap-3">
-                                    ${imageHtml}
-                                    <div class="min-w-0">
-                                        <div class="flex flex-col">
-                                            <div class="flex flex-wrap items-center gap-1.5">
-                                                <span class="font-bold text-slate-800 text-[12px] leading-tight break-words" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
-                                                ${trendBadge}
+                    tr.innerHTML = `
+                                <td class="px-2 py-3 text-slate-500 font-semibold text-center whitespace-nowrap text-[11px]">${rank}</td>
+                                <td class="px-2 py-3 text-slate-700">
+                                    <div class="flex items-center gap-3">
+                                        ${imageHtml}
+                                        <div class="min-w-0">
+                                            <div class="flex flex-col">
+                                                <div class="flex flex-wrap items-center gap-1.5">
+                                                    <span class="font-bold text-slate-800 text-[12px] leading-tight break-words" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</span>
+                                                    ${trendBadge}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-2 py-3 text-right text-slate-600 whitespace-nowrap text-[11px]">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
-                            <td class="px-2 py-3 text-right font-black text-slate-900 pr-2 whitespace-nowrap text-[12px]">${idr.format(Number(row.amount || 0))}</td>
-                        `;
-                        productRowsEl.appendChild(tr);
-                    }
+                                </td>
+                                <td class="px-2 py-3 text-right text-slate-600 whitespace-nowrap text-[11px]">${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(row.qty || 0))}</td>
+                                <td class="px-2 py-3 text-right font-black text-slate-900 pr-2 whitespace-nowrap text-[12px]">${idr.format(Number(row.amount || 0))}</td>
+                            `;
+                    productRowsEl.appendChild(tr);
                 }
+            }
 
-                function renderOutletRows(rows, isAllOutlets) {
-                    outletPanelEl.classList.toggle('hidden', !isAllOutlets);
-                    if (!isAllOutlets) return;
+            function renderOutletRows(rows, isAllOutlets) {
+                outletPanelEl.classList.toggle('hidden', !isAllOutlets);
+                if (!isAllOutlets) return;
 
-                    const amounts = rows.map(x => Number(x.amount || 0));
-                    const labels = rows.map(x => x.outlet_name);
-                    const hasData = amounts.some(a => a > 0);
+                const amounts = rows.map(x => Number(x.amount || 0));
+                const labels = rows.map(x => simplifyOutletName(x.outlet_name));
+                const hasData = amounts.some(a => a > 0);
 
-                    outletEmptyEl.classList.toggle('hidden', hasData);
+                outletEmptyEl.classList.toggle('hidden', hasData);
 
-                    if (!outletChart) {
-                        const options = {
-                            series: [{
-                                name: 'Omzet',
-                                data: amounts
-                            }],
-                            chart: {
-                                type: 'area',
-                                height: 250,
-                                toolbar: { show: false },
-                                zoom: { enabled: false },
-                                fontFamily: 'Inter, sans-serif',
-                                animations: {
-                                    enabled: true,
-                                    easing: 'easeinout',
-                                    speed: 800,
-                                }
-                            },
-                            dataLabels: { enabled: false },
-                            stroke: {
-                                curve: 'smooth',
-                                width: 3,
-                                colors: ['#f97316']
-                            },
-                            fill: {
-                                type: 'gradient',
-                                gradient: {
-                                    shadeIntensity: 1,
-                                    opacityFrom: 0.45,
-                                    opacityTo: 0.05,
-                                    stops: [20, 100],
-                                }
-                            },
-                            markers: {
-                                size: 0,
-                                colors: ['#f97316'],
-                                strokeColors: '#fff',
-                                strokeWidth: 2,
-                                hover: { size: 6 }
-                            },
-                            xaxis: {
-                                categories: labels,
-                                labels: {
-                                    style: { colors: '#94a3b8', fontSize: '11px' },
-                                    rotate: -45,
-                                    rotateAlways: false,
-                                    hideOverlappingLabels: true,
-                                },
-                                axisBorder: { show: false },
-                                axisTicks: { show: false }
-                            },
-                            yaxis: {
-                                labels: {
-                                    formatter: (val) => {
-                                        if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-                                        if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
-                                        return val;
-                                    },
-                                    style: { colors: '#94a3b8', fontSize: '10px' }
-                                },
-                                tickAmount: 4,
-                            },
-                            grid: {
-                                borderColor: '#f1f5f9',
-                                strokeDashArray: 4,
-                                padding: { left: 10, right: 10 }
-                            },
-                            tooltip: {
-                                theme: 'light',
-                                x: { show: true },
-                                y: {
-                                    formatter: (val) => idr.format(val)
-                                }
-                            },
-                            colors: ['#f97316']
-                        };
-
-                        outletChart = new ApexCharts(document.querySelector("#outletBars"), options);
-                        outletChart.render();
-                    } else {
-                        outletChart.updateOptions({
-                            xaxis: { categories: labels }
-                        });
-                        outletChart.updateSeries([{
-                            data: amounts
-                        }]);
-                    }
-                }
-
-
-                function formatSignedPct(value) {
-                    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-                    const raw = Number(value);
-                    const n = Math.abs(raw) < 0.05 ? 0 : raw;
-                    const sign = n > 0 ? '+' : '';
-                    return `${sign}${n.toFixed(1)}%`;
-                }
-
-                // Removed renderOutletBreakdown
-
-                function setTarget(target) {
-                    const dailyTarget = Number(target?.daily_sales_target || 0);
-                    const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
-
-                    if (!dailyTarget || dailyTarget <= 0 || pct === null) {
-                        targetWrapEl.classList.add('hidden');
-                        return;
-                    }
-
-                    targetWrapEl.classList.remove('hidden');
-                    targetValueEl.textContent = idr.format(dailyTarget);
-                    targetPctEl.textContent = `${pct.toFixed(0)}%`;
-                    targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-                }
-
-                function escapeHtml(value) {
-                    return String(value ?? '')
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#039;');
-                }
-
-                function render(data) {
-                    kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
-                    kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
-
-                    const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
-                    const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
-                    const trendPrev = data?.trend_vs_prev_day?.prev_total_sales ?? null;
-
-                    trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
-                    trendSalesPctEl.textContent = formatSignedPct(trendPct);
-
-                    setTarget(data?.target);
-
-                    const showBreakdown = Boolean(data?.show_breakdown);
-
-                    if (showBreakdown && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
-                        const allOutletNames = new Set();
-                        let hasOthers = false;
-
-                        data.hourly_stacked.forEach(h => {
-                            if (Array.isArray(h.segments)) {
-                                h.segments.forEach(s => allOutletNames.add(s.outlet_name));
-                            }
-                            if (h.others && h.others.amount > 0) hasOthers = true;
-                        });
-
-                        const series = Array.from(allOutletNames).map(name => ({
-                            name: name,
-                            data: data.hourly_stacked.map(h => {
-                                const seg = h.segments ? h.segments.find(s => s.outlet_name === name) : null;
-                                return seg ? Number(seg.amount || 0) : 0;
-                            })
-                        }));
-
-                        if (hasOthers) {
-                            series.push({
-                                name: 'Others',
-                                data: data.hourly_stacked.map(h => Number(h.others?.amount || 0))
-                            });
-                        }
-
-                        const labels = data.hourly_stacked.map(h => String(h.hour).padStart(2, '0') + ':00');
-                        renderVelocityChart({ series, labels });
-                    } else {
-                        const sales = Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : [];
-                        const series = [{
+                if (!outletChart) {
+                    const options = {
+                        series: [{
                             name: 'Omzet',
-                            data: sales.map(s => Number(s.amount || s.total || 0))
-                        }];
-                        const labels = sales.map(s => String(s.hour).padStart(2, '0') + ':00');
-                        renderVelocityChart({ series, labels });
-                    }
-                    renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
-                    renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
-                    renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
-                    renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], showBreakdown);
-
-                    const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
-                    lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
-                }
-
-                async function fetchSummary(showSuccess = false) {
-                    if (isLoading) return;
-
-                    setLoadingState(true);
-                    setStatus('Memuat data...', 'info');
-
-                    try {
-                        const res = await fetch(buildUrl(), {
-                            headers: {
-                                'Accept': 'application/json',
+                            data: amounts
+                        }],
+                        chart: {
+                            type: 'area',
+                            height: 250,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            fontFamily: 'Inter, sans-serif',
+                            animations: {
+                                enabled: true,
+                                easing: 'easeinout',
+                                speed: 800,
                             }
-                        });
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3,
+                            colors: ['#f97316']
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.45,
+                                opacityTo: 0.05,
+                                stops: [20, 100],
+                            }
+                        },
+                        markers: {
+                            size: 0,
+                            colors: ['#f97316'],
+                            strokeColors: '#fff',
+                            strokeWidth: 2,
+                            hover: { size: 6 }
+                        },
+                        xaxis: {
+                            categories: labels,
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '11px' },
+                                rotate: -45,
+                                rotateAlways: false,
+                                hideOverlappingLabels: true,
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                                    return val;
+                                },
+                                style: { colors: '#94a3b8', fontSize: '10px' }
+                            },
+                            tickAmount: 4,
+                        },
+                        grid: {
+                            borderColor: '#f1f5f9',
+                            strokeDashArray: 4,
+                            padding: { left: 10, right: 10 }
+                        },
+                        tooltip: {
+                            theme: 'light',
+                            x: { show: true },
+                            y: {
+                                formatter: (val) => idr.format(val)
+                            }
+                        },
+                        colors: ['#f97316']
+                    };
 
-                        if (!res.ok) {
-                            let msg = `Gagal memuat data (HTTP ${res.status}).`;
-                            try {
-                                const body = await res.json();
-                                if (body?.message) msg = body.message;
-                            } catch (e) { }
-                            throw new Error(msg);
+                    outletChart = new ApexCharts(document.querySelector("#outletBars"), options);
+                    outletChart.render();
+                } else {
+                    outletChart.updateOptions({
+                        xaxis: { categories: labels }
+                    });
+                    outletChart.updateSeries([{
+                        data: amounts
+                    }]);
+                }
+            }
+
+
+            function formatSignedPct(value) {
+                if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+                const raw = Number(value);
+                const n = Math.abs(raw) < 0.05 ? 0 : raw;
+                const sign = n > 0 ? '+' : '';
+                return `${sign}${n.toFixed(1)}%`;
+            }
+
+            // Removed renderOutletBreakdown
+
+            function setTarget(target) {
+                const dailyTarget = Number(target?.daily_sales_target || 0);
+                const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
+
+                if (!dailyTarget || dailyTarget <= 0 || pct === null) {
+                    targetWrapEl.classList.add('hidden');
+                    return;
+                }
+
+                targetWrapEl.classList.remove('hidden');
+                targetValueEl.textContent = idr.format(dailyTarget);
+                targetPctEl.textContent = `${pct.toFixed(0)}%`;
+                targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function render(data) {
+                kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
+                kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
+
+                const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
+                const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
+                const trendPrev = data?.trend_vs_prev_day?.prev_total_sales ?? null;
+
+                trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
+                trendSalesPctEl.textContent = formatSignedPct(trendPct);
+
+                setTarget(data?.target);
+
+                const showBreakdown = Boolean(data?.show_breakdown);
+
+                if (showBreakdown && Array.isArray(data?.hourly_stacked) && data.hourly_stacked.length > 0) {
+                    const allOutletNames = new Set();
+                    let hasOthers = false;
+
+                    data.hourly_stacked.forEach(h => {
+                        if (Array.isArray(h.segments)) {
+                            h.segments.forEach(s => allOutletNames.add(s.outlet_name));
                         }
+                        if (h.others && h.others.amount > 0) hasOthers = true;
+                    });
 
-                        const data = await res.json();
-                        render(data);
-                        setStatus(showSuccess ? 'Berhasil diperbarui.' : 'Aktif (auto refresh).', showSuccess ? 'success' : 'info');
-                    } catch (err) {
-                        setStatus(err?.message || 'Terjadi error saat memuat data.', 'error');
-                    } finally {
-                        setLoadingState(false);
-                    }
-                }
+                    const series = Array.from(allOutletNames).map(name => ({
+                        name: simplifyOutletName(name),
+                        data: data.hourly_stacked.map(h => {
+                            const seg = h.segments ? h.segments.find(s => s.outlet_name === name) : null;
+                            return seg ? Number(seg.amount || 0) : 0;
+                        })
+                    }));
 
-                function startAutoRefresh() {
-                    if (timer) clearInterval(timer);
-                    timer = setInterval(() => fetchSummary(false), 15000);
-                }
-
-                refreshBtn.addEventListener('click', () => fetchSummary(true));
-                outletDropdownBtnEl.addEventListener('click', () => {
-                    outletDropdownMenuEl.classList.toggle('hidden');
-                });
-                document.addEventListener('click', (event) => {
-                    if (outletFilterWrapEl.contains(event.target)) {
-                        return;
+                    if (hasOthers) {
+                        series.push({
+                            name: 'Others',
+                            data: data.hourly_stacked.map(h => Number(h.others?.amount || 0))
+                        });
                     }
 
-                    outletDropdownMenuEl.classList.add('hidden');
-                });
-                outletAllCheckboxEl.addEventListener('change', () => {
-                    normalizeOutletSelection('all');
+                    const labels = data.hourly_stacked.map(h => String(h.hour).padStart(2, '0') + ':00');
+                    renderVelocityChart({ series, labels });
+                } else {
+                    const sales = Array.isArray(data?.sales_per_hour) ? data.sales_per_hour : [];
+                    const series = [{
+                        name: 'Omzet',
+                        data: sales.map(s => Number(s.amount || s.total || 0))
+                    }];
+                    const labels = sales.map(s => String(s.hour).padStart(2, '0') + ':00');
+                    renderVelocityChart({ series, labels });
+                }
+                renderCategoryRows(Array.isArray(data?.category_sales) ? data.category_sales : []);
+                renderPaymentRows(Array.isArray(data?.payment_mix) ? data.payment_mix : []);
+                renderTopProducts(Array.isArray(data?.top_products) ? data.top_products : []);
+                renderOutletRows(Array.isArray(data?.outlet_sales) ? data.outlet_sales : [], showBreakdown);
+
+                const generatedAt = data?.generated_at ? new Date(data.generated_at) : null;
+                lastUpdatedEl.textContent = generatedAt ? generatedAt.toLocaleTimeString('id-ID') : '-';
+            }
+
+            async function fetchSummary(showSuccess = false) {
+                if (isLoading) return;
+
+                setLoadingState(true);
+                setStatus('Memuat data...', 'info');
+
+                try {
+                    const res = await fetch(buildUrl(), {
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    if (!res.ok) {
+                        let msg = `Gagal memuat data (HTTP ${res.status}).`;
+                        try {
+                            const body = await res.json();
+                            if (body?.message) msg = body.message;
+                        } catch (e) { }
+                        throw new Error(msg);
+                    }
+
+                    const data = await res.json();
+                    render(data);
+                    setStatus(showSuccess ? 'Berhasil diperbarui.' : 'Aktif (auto refresh).', showSuccess ? 'success' : 'info');
+                } catch (err) {
+                    setStatus(err?.message || 'Terjadi error saat memuat data.', 'error');
+                } finally {
+                    setLoadingState(false);
+                }
+            }
+
+            function startAutoRefresh() {
+                if (timer) clearInterval(timer);
+                timer = setInterval(() => fetchSummary(false), 15000);
+            }
+
+            refreshBtn.addEventListener('click', () => fetchSummary(true));
+            outletDropdownBtnEl.addEventListener('click', () => {
+                outletDropdownMenuEl.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (event) => {
+                if (outletFilterWrapEl.contains(event.target)) {
+                    return;
+                }
+
+                outletDropdownMenuEl.classList.add('hidden');
+            });
+            outletAllCheckboxEl.addEventListener('change', () => {
+                normalizeOutletSelection('all');
+                fetchSummary(true);
+            });
+            outletCheckboxEls.forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    normalizeOutletSelection('item');
                     fetchSummary(true);
                 });
-                outletCheckboxEls.forEach((checkbox) => {
-                    checkbox.addEventListener('change', () => {
-                        normalizeOutletSelection('item');
-                        fetchSummary(true);
-                    });
-                });
-                dateEl.addEventListener('change', () => fetchSummary(true));
+            });
+            dateEl.addEventListener('change', () => fetchSummary(true));
 
-                updateOutletLabel();
-                fetchSummary(false);
-                startAutoRefresh();
-            })();
-        </script>
+            updateOutletLabel();
+            fetchSummary(false);
+            startAutoRefresh();
+        })();
+    </script>
 @endpush
