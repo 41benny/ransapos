@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cetak Struk</title>
 </head>
-<body>
+<body class="{{ request()->boolean('embedded') ? 'embedded-print' : '' }}">
 <div class="no-print print-tools">
     <button type="button" id="printNowBtn" class="tool-btn">Cetak Sekarang</button>
     <button type="button" id="closeWindowBtn" class="tool-btn secondary">Kembali</button>
@@ -149,6 +149,10 @@
         line-height: 1.2;
         color: #000;
         background: #fff;
+    }
+
+    body.embedded-print .no-print {
+        display: none !important;
     }
 
     .print-tools {

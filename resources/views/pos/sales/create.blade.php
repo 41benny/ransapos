@@ -49,6 +49,14 @@
 
                 <!-- User Profile / Server Info -->
                 <div class="flex items-center gap-3">
+                    <button @click="openPrintSettings" type="button" title="Setting Print"
+                        class="inline-flex items-center gap-2 px-3 h-10 rounded-xl border border-gray-200 bg-surface-light text-gray-700 hover:bg-gray-100 transition shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span class="hidden md:inline text-sm font-semibold">Print</span>
+                    </button>
                     <div class="text-right hidden sm:block">
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Server</p>
                         <p class="text-sm font-semibold text-gray-700">{{ auth()->user()->name }}</p>
@@ -502,6 +510,118 @@
         </div>
 
 
+        <!-- Print Settings Modal -->
+        <div v-if="showPrintSettingsModal"
+            class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showPrintSettingsModal ? 'flex' : 'none' }">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6">
+                <div class="flex items-start justify-between gap-3 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Setting Print POS</h3>
+                        <p class="text-sm text-gray-500 mt-1">Atur mode cetak dan deteksi printer thermal yang tersedia.
+                        </p>
+                    </div>
+                    <button @click="closePrintSettings" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Mode Cetak</label>
+                            <select v-model="printEngine"
+                                class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
+                                <option value="browser">Browser Default</option>
+                                <option value="bridge">Printer Bridge (QZ Tray)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">
+                                Browser mode memakai printer default OS. Bridge mode mencoba cetak langsung ke printer
+                                terpilih.
+                            </p>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Status Bridge</p>
+                                <span :class="printerBridgeConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                    class="text-[10px] px-2 py-1 rounded-full font-bold uppercase">
+                                    @{{ printerBridgeConnected ? 'Terhubung' : 'Belum Tersambung' }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">@{{ printerStatusMessage ||
+                                'Klik Cari Printer untuk deteksi perangkat printer dari device kasir.' }}</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="refreshAvailablePrinters" :disabled="isLoadingPrinters"
+                                :class="isLoadingPrinters ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-hover'"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold transition">
+                                @{{ isLoadingPrinters ? 'Mencari...' : 'Cari Printer' }}
+                            </button>
+                            <button @click="runSmartDetectPrinter" :disabled="isLoadingPrinters || availablePrinters.length === 0"
+                                :class="isLoadingPrinters || availablePrinters.length === 0
+                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800'"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold transition">
+                                Auto Detect
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Printer Terdeteksi</label>
+                            <select v-model="selectedPrinterName"
+                                class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
+                                <option value="">-- Pilih printer --</option>
+                                <option v-for="printer in availablePrinters" :key="'printer-' + printer" :value="printer">
+                                    @{{ printer }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Keyword Smart Detect</label>
+                            <input v-model.trim="printerKeyword" type="text"
+                                placeholder="Contoh: POS, TM, Receipt, XP-58"
+                                class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
+                            <p class="text-xs text-gray-500 mt-2">Sistem prioritaskan printer yang namanya mengandung
+                                keyword ini.</p>
+                        </div>
+
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p class="text-xs text-amber-800 font-medium">
+                                Jika daftar kosong, install dan jalankan QZ Tray di device kasir, lalu klik Cari Printer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-5 border-t border-gray-100 flex flex-wrap justify-between gap-3">
+                    <button @click="testPrintConfiguration" :disabled="isTestingPrint"
+                        :class="isTestingPrint ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'"
+                        class="px-4 py-2.5 rounded-lg text-sm font-semibold transition">
+                        @{{ isTestingPrint ? 'Testing...' : 'Test Print' }}
+                    </button>
+
+                    <div class="flex gap-2">
+                        <button @click="closePrintSettings"
+                            class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                            Batal
+                        </button>
+                        <button @click="savePrintSettings"
+                            class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition">
+                            Simpan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div v-if="showSuccessModal"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             style="display: none;" :style="{ display: showSuccessModal ? 'flex' : 'none' }">
@@ -715,6 +835,7 @@
 
         <!-- VUE JS 3 -->
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js"></script>
         <script>
             const { createApp } = Vue;
 
@@ -749,6 +870,18 @@
 
                         showSuccessModal: false,
                         lastSale: null,
+
+                        // Print Settings
+                        showPrintSettingsModal: false,
+                        printEngine: 'browser',
+                        availablePrinters: [],
+                        selectedPrinterName: '',
+                        printerKeyword: 'POS',
+                        printerStatusMessage: '',
+                        printerBridgeConnected: false,
+                        isLoadingPrinters: false,
+                        isTestingPrint: false,
+                        userId: {{ auth()->id() ?? 'null' }},
 
                         selectedPromotionId: '',
                         voucherCodeInput: '',
@@ -865,6 +998,12 @@
                     if (!this.hasVoucherInput) {
                         this.clearVoucher();
                     }
+
+                    this.loadPrintSettings();
+
+                    if (this.printEngine === 'bridge') {
+                        this.refreshAvailablePrinters();
+                    }
                 },
                 methods: {
                     // ... Existing Methods ...
@@ -889,11 +1028,277 @@
 
                         throw new Error('Terjadi kesalahan sistem.');
                     },
-                    openReceiptPrintWindow(saleId) {
+                    getPrintSettingsStorageKey() {
+                        const outletKey = this.outletId ? `outlet_${this.outletId}` : 'outlet_unknown';
+                        const userKey = this.userId ? `user_${this.userId}` : 'user_unknown';
+                        return `morest_pos_print_settings_${outletKey}_${userKey}`;
+                    },
+                    loadPrintSettings() {
+                        try {
+                            const raw = localStorage.getItem(this.getPrintSettingsStorageKey());
+                            if (!raw) {
+                                return;
+                            }
+
+                            const parsed = JSON.parse(raw);
+                            const allowedEngines = ['browser', 'bridge'];
+
+                            this.printEngine = allowedEngines.includes(parsed.printEngine) ? parsed.printEngine : 'browser';
+                            this.selectedPrinterName = typeof parsed.selectedPrinterName === 'string'
+                                ? parsed.selectedPrinterName
+                                : '';
+                            this.printerKeyword = typeof parsed.printerKeyword === 'string' && parsed.printerKeyword.trim() !== ''
+                                ? parsed.printerKeyword.trim()
+                                : 'POS';
+                        } catch (error) {
+                            console.warn('Gagal membaca setting print POS:', error);
+                        }
+                    },
+                    savePrintSettings() {
+                        const payload = {
+                            printEngine: this.printEngine,
+                            selectedPrinterName: String(this.selectedPrinterName || ''),
+                            printerKeyword: String(this.printerKeyword || 'POS').trim() || 'POS',
+                        };
+
+                        localStorage.setItem(this.getPrintSettingsStorageKey(), JSON.stringify(payload));
+                        this.printerStatusMessage = 'Setting print berhasil disimpan.';
+                        this.showPrintSettingsModal = false;
+                    },
+                    openPrintSettings() {
+                        this.showPrintSettingsModal = true;
+
+                        if (this.printEngine === 'bridge') {
+                            this.refreshAvailablePrinters();
+                        }
+                    },
+                    closePrintSettings() {
+                        this.showPrintSettingsModal = false;
+                    },
+                    normalizePrinterList(input) {
+                        if (Array.isArray(input)) {
+                            return input
+                                .map(item => String(item || '').trim())
+                                .filter(Boolean);
+                        }
+
+                        if (typeof input === 'string' && input.trim() !== '') {
+                            return [input.trim()];
+                        }
+
+                        return [];
+                    },
+                    isQzBridgeAvailable() {
+                        return typeof window !== 'undefined'
+                            && typeof window.qz !== 'undefined'
+                            && !!window.qz
+                            && !!window.qz.websocket;
+                    },
+                    async connectPrinterBridge() {
+                        if (!this.isQzBridgeAvailable()) {
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'QZ Tray belum terdeteksi di device kasir ini.';
+                            return false;
+                        }
+
+                        try {
+                            if (window.qz.websocket.isActive()) {
+                                this.printerBridgeConnected = true;
+                                return true;
+                            }
+
+                            await window.qz.websocket.connect({
+                                retries: 1,
+                                delay: 0,
+                            });
+
+                            this.printerBridgeConnected = true;
+                            this.printerStatusMessage = 'QZ Tray terhubung.';
+                            return true;
+                        } catch (error) {
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'Gagal konek ke QZ Tray. Pastikan QZ Tray sedang berjalan.';
+                            return false;
+                        }
+                    },
+                    async refreshAvailablePrinters() {
+                        this.isLoadingPrinters = true;
+
+                        try {
+                            const connected = await this.connectPrinterBridge();
+                            if (!connected) {
+                                this.availablePrinters = [];
+                                return;
+                            }
+
+                            let printers = [];
+
+                            if (window.qz.printers && typeof window.qz.printers.find === 'function') {
+                                const found = await window.qz.printers.find();
+                                printers = this.normalizePrinterList(found);
+                            }
+
+                            if (printers.length === 0 && window.qz.printers && typeof window.qz.printers.getDefault === 'function') {
+                                const defaultPrinter = await window.qz.printers.getDefault();
+                                printers = this.normalizePrinterList(defaultPrinter);
+                            }
+
+                            this.availablePrinters = Array.from(new Set(printers));
+
+                            if (this.availablePrinters.length === 0) {
+                                this.printerStatusMessage = 'Printer tidak ditemukan di device ini.';
+                                return;
+                            }
+
+                            if (!this.selectedPrinterName || !this.availablePrinters.includes(this.selectedPrinterName)) {
+                                this.runSmartDetectPrinter();
+                            } else {
+                                this.printerStatusMessage = `${this.availablePrinters.length} printer terdeteksi.`;
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            this.availablePrinters = [];
+                            this.printerStatusMessage = 'Gagal membaca daftar printer dari QZ Tray.';
+                        } finally {
+                            this.isLoadingPrinters = false;
+                        }
+                    },
+                    findBestPrinterCandidate(printers) {
+                        if (!Array.isArray(printers) || printers.length === 0) {
+                            return '';
+                        }
+
+                        const keyword = String(this.printerKeyword || '').toLowerCase().trim();
+                        const hints = ['thermal', 'receipt', 'pos', 'tm', 'xp', '58', '80'];
+                        const prioritizedHints = keyword ? [keyword, ...hints] : hints;
+
+                        let bestPrinter = printers[0];
+                        let bestScore = -1;
+
+                        printers.forEach((printerName) => {
+                            const lower = String(printerName || '').toLowerCase();
+                            let score = 0;
+
+                            prioritizedHints.forEach((hint, index) => {
+                                if (hint && lower.includes(hint)) {
+                                    score += (prioritizedHints.length - index);
+                                }
+                            });
+
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestPrinter = printerName;
+                            }
+                        });
+
+                        return bestPrinter;
+                    },
+                    runSmartDetectPrinter() {
+                        if (!Array.isArray(this.availablePrinters) || this.availablePrinters.length === 0) {
+                            this.printerStatusMessage = 'Belum ada printer untuk dianalisis.';
+                            return;
+                        }
+
+                        const detectedPrinter = this.findBestPrinterCandidate(this.availablePrinters);
+                        if (!detectedPrinter) {
+                            this.printerStatusMessage = 'Smart detect gagal menemukan kandidat printer.';
+                            return;
+                        }
+
+                        this.selectedPrinterName = detectedPrinter;
+                        this.printerStatusMessage = `Smart detect memilih: ${detectedPrinter}`;
+                    },
+                    async testPrintConfiguration() {
+                        if (this.printEngine !== 'bridge') {
+                            alert('Mode Browser aktif. Test print gunakan tombol Print Struk biasa dan akan mengikuti default printer OS.');
+                            return;
+                        }
+
+                        if (!this.selectedPrinterName) {
+                            alert('Pilih printer dulu sebelum test print.');
+                            return;
+                        }
+
+                        this.isTestingPrint = true;
+
+                        try {
+                            const connected = await this.connectPrinterBridge();
+                            if (!connected) {
+                                return;
+                            }
+
+                            const config = window.qz.configs.create(this.selectedPrinterName, {
+                                copies: 1,
+                            });
+
+                            const payload = [
+                                '\x1B\x40',
+                                '\x1B\x61\x01',
+                                'MOREST POS\n',
+                                'TEST PRINTER\n',
+                                '\x1B\x61\x00',
+                                `Printer: ${this.selectedPrinterName}\n`,
+                                `${new Date().toLocaleString('id-ID')}\n`,
+                                '\n\n\n',
+                                '\x1D\x56\x00',
+                            ];
+
+                            await window.qz.print(config, payload);
+                            this.printerStatusMessage = `Test print terkirim ke ${this.selectedPrinterName}.`;
+                        } catch (error) {
+                            console.error(error);
+                            this.printerStatusMessage = 'Test print gagal. Sistem akan tetap bisa pakai mode browser.';
+                            alert('Test print bridge gagal. Cek permission/signature QZ Tray lalu coba lagi.');
+                        } finally {
+                            this.isTestingPrint = false;
+                        }
+                    },
+                    async printReceiptViaBridge(saleId) {
+                        if (!this.selectedPrinterName) {
+                            this.printerStatusMessage = 'Printer belum dipilih.';
+                            return false;
+                        }
+
+                        const connected = await this.connectPrinterBridge();
+                        if (!connected) {
+                            return false;
+                        }
+
+                        try {
+                            const receiptUrl = `${window.location.origin}/pos/sales/${saleId}/print?autoprint=0&embedded=1`;
+                            const config = window.qz.configs.create(this.selectedPrinterName, {
+                                copies: 1,
+                            });
+                            const payload = [
+                                {
+                                    type: 'pixel',
+                                    format: 'html',
+                                    flavor: 'file',
+                                    data: receiptUrl,
+                                },
+                            ];
+
+                            await window.qz.print(config, payload);
+                            this.printerStatusMessage = `Struk dikirim ke printer ${this.selectedPrinterName}.`;
+                            return true;
+                        } catch (error) {
+                            console.error(error);
+                            this.printerStatusMessage = 'Print bridge gagal, fallback ke browser print.';
+                            return false;
+                        }
+                    },
+                    async openReceiptPrintWindow(saleId) {
                         const normalizedSaleId = Number(saleId);
                         if (!Number.isFinite(normalizedSaleId) || normalizedSaleId <= 0) {
                             alert('ID transaksi tidak valid untuk dicetak.');
                             return;
+                        }
+
+                        if (this.printEngine === 'bridge') {
+                            const printed = await this.printReceiptViaBridge(normalizedSaleId);
+                            if (printed) {
+                                return;
+                            }
                         }
 
                         window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
@@ -1354,7 +1759,12 @@
                 watch: {
                     selectedCategory() { this.filterProducts(); },
                     salesType() { this.updateCartPricesBySalesType(); },
-                    selectedPromotionId() { this.recalculateCart(); }
+                    selectedPromotionId() { this.recalculateCart(); },
+                    printEngine(newValue) {
+                        if (newValue === 'bridge' && this.showPrintSettingsModal) {
+                            this.refreshAvailablePrinters();
+                        }
+                    }
                 }
             }).mount('#posApp');
         </script>
