@@ -89,11 +89,13 @@ class AuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
-                RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
 
-                throw ValidationException::withMessages([
-                    'email' => 'Perangkat browser ini terdaftar untuk outlet lain. Silakan lakukan pairing ulang untuk outlet Anda.',
-                ]);
+                return back()
+                    ->withErrors([
+                        'email' => 'Perangkat browser ini terdaftar untuk outlet lain. Token perangkat lama sudah dilepas, silakan login lagi lalu pairing outlet Anda.',
+                    ])
+                    ->withInput($request->only('email'))
+                    ->withCookie(cookie()->forget(config('pos.device_cookie', 'pos_device_token'), '/'));
             }
 
             if ($user && $device && $user->hasRole(self::SINGLE_DEVICE_ROLES)
