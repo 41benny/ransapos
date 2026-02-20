@@ -216,9 +216,9 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                 <table class="w-full text-sm italic">
-                    <thead class="bg-slate-50/50">
+                    <thead class="bg-slate-50/50 sticky top-0 z-10">
                         <tr>
                             <th
                                 class="text-left px-3 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
