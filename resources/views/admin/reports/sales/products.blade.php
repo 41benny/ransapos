@@ -211,7 +211,7 @@
                                     @endphp
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal border-r border-slate-100 {{ $oQty > 0 ? 'text-indigo-600' : 'text-slate-300' }}">
                                         @if($oQty > 0)
-                                            <a href="{{ route('admin.reports.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => [$outletCol->id], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                            <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => [$outletCol->id], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
                                                target="_blank"
                                                class="hover:text-indigo-900 hover:underline transition-all"
                                                title="Lihat Detail Transaksi">
@@ -223,7 +223,7 @@
                                     </td>
                                 @endforeach
                                 <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-slate-800 bg-indigo-50/30">
-                                    <a href="{{ route('admin.reports.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $filters['outlet_ids'] ?? [], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                    <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $filters['outlet_ids'] ?? [], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
                                        target="_blank"
                                        class="hover:text-indigo-600 hover:underline transition-all text-indigo-700"
                                        title="Lihat Detail Transaksi Semua Outlet yang Difilter">
