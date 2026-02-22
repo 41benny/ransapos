@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Ringkasan laba rugi berdasarkan periode')
 
 @section('content')
-    <div class="container mx-auto px-4 py-6">
+    <div class="w-full py-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Laporan Laba Rugi</h1>

@@ -398,7 +398,7 @@
             </header>
 
             <!-- Content -->
-            <main class="flex-1 overflow-y-auto p-8 scrollbar-hide">
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-20 scrollbar-hide">
                 <div class="animate-in fade-in duration-500">
                     @yield('content')
                 </div>

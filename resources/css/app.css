@@ -70,6 +70,10 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
+html {
+  font-size: 110%;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--surface-ground);
@@ -343,7 +347,8 @@ th {
 .imperial-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
+  /* ~16.5px pada skala 110% */
   background-color: white;
 }
 
@@ -357,7 +362,8 @@ th {
   text-align: left;
   font-weight: 700;
   color: #475569;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  /* ~15.4px pada skala 110% */
   letter-spacing: 0.025em;
 }
 
@@ -365,7 +371,8 @@ th {
   padding: 0.625rem 0.75rem;
   color: #1e293b;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
+  /* ~16.5px pada skala 110% */
 }
 
 .imperial-table tbody tr:hover {
@@ -464,4 +471,27 @@ th {
   background: #94a3b8;
 }
 
-/* End of file */
+/* Layout utility: buat kartu/table full lebar dan nyaris setinggi layar konten */
+/* Negative margin harus sama persis dengan padding <main> di layouts/admin.blade.php */
+.page-fullwidth {
+  margin-left: -1rem;
+  margin-right: -1rem;
+}
+
+@media (min-width: 768px) {
+  .page-fullwidth {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-fullwidth {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+}
+
+.page-card-fill {
+  min-height: calc(100vh - 160px);
+}

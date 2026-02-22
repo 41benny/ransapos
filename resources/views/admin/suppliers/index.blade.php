@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Kelola semua supplier Anda')
 
 @section('content')
-    <div class="w-full max-w-7xl mx-auto">
+    <div class="w-full">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
 
             @if(session('success'))

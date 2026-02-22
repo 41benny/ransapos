@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Laporan mutasi barang detail per item dan outlet')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div class="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
         {{-- Header Section --}}
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>

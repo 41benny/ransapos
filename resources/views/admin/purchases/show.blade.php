@@ -135,21 +135,21 @@
                                 <tr class="hover:bg-slate-50/50 transition-colors">
                                     <td class="px-5 py-3.5">
                                         <div class="flex flex-col">
-                                            <span class="text-[11.5px] font-normal text-slate-700 leading-tight">{{ $item->product->name }}</span>
+                                            <span class="text-sm font-normal text-slate-700 leading-tight">{{ $item->product->name }}</span>
                                             <span class="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-widest">{{ $item->product->sku ?? '-' }}</span>
                                         </div>
                                     </td>
                                     <td class="px-5 py-3.5 text-right tabular-nums">
-                                        <span class="text-[11.5px] font-normal text-slate-600">{{ number_format($item->quantity, 0, ',', '.') }}</span>
+                                        <span class="text-sm font-normal text-slate-600">{{ number_format($item->quantity, 0, ',', '.') }}</span>
                                     </td>
                                     <td class="px-5 py-3.5 text-right tabular-nums">
-                                        <span class="text-[11.5px] font-normal text-slate-600">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
+                                        <span class="text-sm font-normal text-slate-600">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</span>
                                     </td>
                                     <td class="px-5 py-3.5 text-right tabular-nums">
                                         <span class="text-[11.5px] font-normal text-rose-500">Rp {{ number_format($item->discount_amount, 0, ',', '.') }}</span>
                                     </td>
                                     <td class="px-5 py-3.5 text-right tabular-nums">
-                                        <span class="text-[11.5px] font-normal text-slate-800 tracking-tight">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                                        <span class="text-sm font-normal text-slate-800 tracking-tight">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                                     </td>
                                 </tr>
                             @endforeach
@@ -157,12 +157,12 @@
                         <tfoot class="bg-slate-50/50">
                             <tr>
                                 <td colspan="4" class="px-5 py-2 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">Subtotal Items</td>
-                                <td class="px-5 py-2 text-right text-[11px] font-normal text-slate-700 tabular-nums">Rp {{ number_format($purchase->subtotal, 0, ',', '.') }}</td>
+                                <td class="px-5 py-2 text-right text-xs font-normal text-slate-700 tabular-nums">Rp {{ number_format($purchase->subtotal, 0, ',', '.') }}</td>
                             </tr>
                             @if($purchase->tax_amount > 0)
                             <tr>
                                 <td colspan="4" class="px-5 py-2 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">Pajak (Tax)</td>
-                                <td class="px-5 py-2 text-right text-[11px] font-normal text-slate-700 tabular-nums">Rp {{ number_format($purchase->tax_amount, 0, ',', '.') }}</td>
+                                <td class="px-5 py-2 text-right text-xs font-normal text-slate-700 tabular-nums">Rp {{ number_format($purchase->tax_amount, 0, ',', '.') }}</td>
                             </tr>
                             @endif
                             @if($purchase->discount_amount > 0)
@@ -270,7 +270,7 @@
             {{-- Notes Card --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Catatan Internal</span>
-                <p class="text-[11.5px] font-normal text-slate-600 italic mt-2 leading-relaxed">
+                <p class="text-sm font-normal text-slate-600 italic mt-2 leading-relaxed">
                     {{ $purchase->notes ?? 'Tidak ada catatan tambahan.' }}
                 </p>
             </div>

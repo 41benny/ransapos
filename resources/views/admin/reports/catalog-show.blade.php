@@ -5,11 +5,11 @@
 @section('page-subtitle', 'Detail laporan dari katalog')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl space-y-5">
+    <div class="w-full space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Kode Laporan:
+                    <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Kode Laporan:
                         {{ strtoupper($slug) }}
                     </div>
                     <div class="mt-1 text-2xl font-normal text-slate-800">{{ $report['title'] }}</div>
@@ -27,7 +27,7 @@
             <form method="GET" class="mt-8 grid grid-cols-1 items-end gap-4 md:grid-cols-12">
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
                 <div class="md:col-span-2">
-                    <label class="mb-1.5 block text-[10px] font-normal uppercase tracking-widest text-slate-400">Tanggal
+                    <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Tanggal
                         Dari</label>
                     <div class="relative">
                         <i class="far fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -36,7 +36,7 @@
                     </div>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="mb-1.5 block text-[10px] font-normal uppercase tracking-widest text-slate-400">Tanggal
+                    <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Tanggal
                         Sampai</label>
                     <div class="relative">
                         <i class="far fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="md:col-span-3">
                     <label
-                        class="mb-1.5 block text-[10px] font-normal uppercase tracking-widest text-slate-400">Outlet</label>
+                        class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet</label>
                     <div class="relative">
                         <select name="outlet_id"
                             class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
@@ -64,7 +64,7 @@
                 @if($isStockMovement)
                     <div class="md:col-span-3">
                         <label
-                            class="mb-1.5 block text-[10px] font-normal uppercase tracking-widest text-slate-400">Produk</label>
+                            class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Produk</label>
                         <div class="relative">
                             <select name="product_id"
                                 class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
@@ -83,7 +83,7 @@
                 <div class="{{ $isStockMovement ? 'md:col-span-2' : 'md:col-span-5' }} flex items-center gap-2">
                     <button type="submit"
                         class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
-                        <i class="fas fa-sync-alt text-[10px]"></i>
+                        <i class="fas fa-sync-alt text-xs"></i>
                         TAMPILKAN
                     </button>
                     <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'xlsx'])) }}"
@@ -123,7 +123,7 @@
                     {{-- KPI Cards --}}
                     <div
                         class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-                        <span class="block text-[10px] font-normal uppercase tracking-[0.2em] text-slate-400 mb-2">Total
+                        <span class="block text-xs font-normal uppercase tracking-[0.2em] text-slate-400 mb-2">Total
                             Transactions</span>
                         <div class="flex items-center gap-4">
                             <div
@@ -137,7 +137,7 @@
 
                     <div
                         class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg">
-                        <span class="block text-[10px] font-normal uppercase tracking-[0.2em] text-slate-400 mb-2">Total
+                        <span class="block text-xs font-normal uppercase tracking-[0.2em] text-slate-400 mb-2">Total
                             Amount</span>
                         <div class="flex items-center gap-4">
                             <div
@@ -299,7 +299,7 @@
                                 <canvas id="paxChart"></canvas>
                                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                                     <span class="text-3xl font-normal text-slate-800">{{ number_format($totalPax) }}</span>
-                                    <span class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Total
+                                    <span class="text-xs font-normal uppercase tracking-widest text-slate-400">Total
                                         Pax</span>
                                 </div>
                             </div>
@@ -318,7 +318,7 @@
 
                                 <div class="pt-4">
                                     <div class="flex justify-between mb-1">
-                                        <span class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Capacity
+                                        <span class="text-xs font-normal uppercase tracking-widest text-slate-400">Capacity
                                             Utilization: {{ $paxPercent }}%</span>
                                     </div>
                                     <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -411,7 +411,7 @@
                                             <span
                                                 class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-normal uppercase">{{ $productRow->sales_type ?? 'REGULAR' }}</span>
                                         </div>
-                                        <div class="text-[11px] text-slate-400 mt-0.5">Qty:
+                                        <div class="text-sm text-slate-400 mt-0.5">Qty:
                                             {{ number_format($productRow->total_qty) }}
                                         </div>
                                     </div>
@@ -491,22 +491,22 @@
                 {{-- Cards --}}
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Total Transaksi</div>
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Transaksi</div>
                         <div class="mt-1 text-2xl font-normal text-slate-900">
                             {{ number_format($summary['total_transactions'] ?? 0) }}</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Gross Value (Normal)</div>
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Gross Value (Normal)</div>
                         <div class="mt-1 text-2xl font-normal text-slate-900">Rp
                             {{ number_format($summary['total_gross_value'] ?? 0, 0, ',', '.') }}</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Total Diskon</div>
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Diskon</div>
                         <div class="mt-1 text-2xl font-normal text-rose-600">Rp
                             {{ number_format($summary['total_discount'] ?? 0, 0, ',', '.') }}</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-[10px] font-normal uppercase tracking-widest text-slate-400">Net Sales (Paid)</div>
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Net Sales (Paid)</div>
                         <div class="mt-1 text-2xl font-normal text-indigo-600">Rp
                             {{ number_format($summary['total_net_sales'] ?? 0, 0, ',', '.') }}</div>
                     </div>
@@ -1263,17 +1263,17 @@
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.stocks.mutations', array_filter(array_merge($stockAuditBase, ['reference_scope' => 'sales_cogs']))) }}">
-                        <i class="fas fa-percent text-[10px]"></i>
+                        <i class="fas fa-percent text-xs"></i>
                         Audit HPP Penjualan (Kotor+Reversal)
                     </a>
                     <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.stocks.mutations', $stockAuditBase) }}">
-                        <i class="fas fa-list-ul text-[10px]"></i>
+                        <i class="fas fa-list-ul text-xs"></i>
                         Audit Mutasi Stok
                     </a>
                     <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'sales-vs-hpp'], $auditBase))) }}">
-                        <i class="fas fa-balance-scale text-[10px]"></i>
+                        <i class="fas fa-balance-scale text-xs"></i>
                         Audit Sales vs HPP
                     </a>
                     @if(!empty($summary['selected_product_name']))

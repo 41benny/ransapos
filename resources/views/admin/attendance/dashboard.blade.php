@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Ringkasan kehadiran, kedisiplinan, dan anomali absensi karyawan')
 
 @section('content')
-    <div class="w-full max-w-7xl mx-auto space-y-6">
+    <div class="w-full space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-white rounded-xl shadow-sm border border-orange-100 p-6">
             <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>

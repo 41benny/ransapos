@@ -38,7 +38,7 @@
                     <h3 class="text-xl font-bold text-slate-800">Rp
                         {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}
                     </h3>
-                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Total Debit Terhitung</p>
+                    <p class="text-xs font-medium text-slate-400 mt-0.5">Total Debit Terhitung</p>
                 </div>
                 <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-500 transition-all duration-500 group-hover:w-full">
                 </div>
@@ -58,7 +58,7 @@
                     <h3 class="text-xl font-bold text-slate-800">Rp
                         {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}
                     </h3>
-                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Total Kredit Terhitung</p>
+                    <p class="text-xs font-medium text-slate-400 mt-0.5">Total Kredit Terhitung</p>
                 </div>
                 <div class="absolute bottom-0 left-0 h-1 w-0 bg-rose-500 transition-all duration-500 group-hover:w-full">
                 </div>
@@ -76,7 +76,7 @@
                 </div>
                 <div class="flex flex-col">
                     <h3 class="text-sm font-bold text-slate-800">{{ $transactions->total() }} Transaksi</h3>
-                    <p class="text-[10px] font-medium text-slate-400 mt-0.5">Menampilkan baris kriteria filter</p>
+                    <p class="text-xs font-medium text-slate-400 mt-0.5">Menampilkan baris kriteria filter</p>
                 </div>
             </div>
         </div>
@@ -169,13 +169,13 @@
                         </tr>
                         <tr class="bg-white/50 border-b border-slate-100">
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="transaction_number" value="{{ request('transaction_number') }}" placeholder="Search #">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="transaction_number" value="{{ request('transaction_number') }}" placeholder="Search #">
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="date" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="transaction_date" value="{{ request('transaction_date') }}">
+                                <input type="date" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="transaction_date" value="{{ request('transaction_date') }}">
                             </th>
                             <th class="px-4 py-1.5">
-                                <select class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="cash_account_id">
+                                <select class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="cash_account_id">
                                     <option value="">All Accounts</option>
                                     @foreach($accounts as $account)
                                         <option value="{{ $account->id }}" {{ request('cash_account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
@@ -183,7 +183,7 @@
                                 </select>
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="description" value="{{ request('description') }}" placeholder="Search desc...">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="description" value="{{ request('description') }}" placeholder="Search desc...">
                             </th>
                             <th class="px-4 py-1.5 text-right">
                                 <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
@@ -192,10 +192,10 @@
                                 <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-right placeholder:text-slate-300" data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Balance">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-right placeholder:text-slate-300" data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Balance">
                             </th>
                             <th class="px-4 py-1.5">
-                                <select class="filter-input w-full px-2 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="coa_account_id">
+                                <select class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="coa_account_id">
                                     <option value="">All COA</option>
                                     @foreach($coaAccounts as $coaAccount)
                                         <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>{{ $coaAccount->code }}</option>
@@ -326,7 +326,7 @@
                                         <span class="text-[11px] font-medium text-slate-200">--</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-right text-[11.5px] font-medium text-slate-800 tracking-tight">
+                                <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium text-slate-800 tracking-tight">
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
                                 </td>
                                 <td class="px-4 py-2 whitespace-nowrap text-[10px] font-medium text-slate-500">
@@ -381,7 +381,7 @@
                                             <i class="fas fa-cash-register text-2xl text-slate-200"></i>
                                         </div>
                                         <h4 class="text-sm font-bold text-slate-800">No Transactions Found</h4>
-                                        <p class="text-[10px] font-medium text-slate-400 mt-0.5 max-w-[200px] mx-auto italic">Adjust your filter or record a new transaction.</p>
+                                        <p class="text-xs font-medium text-slate-400 mt-0.5 max-w-[200px] mx-auto italic">Adjust your filter or record a new transaction.</p>
                                     </div>
                                 </td>
                             </tr>

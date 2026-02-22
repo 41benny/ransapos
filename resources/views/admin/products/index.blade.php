@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Manajemen item produk, kategori, harga jual, dan paket bundle (BOM)')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div class="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
         {{-- Header Section --}}
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
@@ -66,64 +66,64 @@
                 <table class="min-w-full divide-y divide-slate-200" id="productsTable">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable group"
+                            <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-700 resizable group"
                                 style="min-width: 100px; position: relative;">
                                 SKU
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable"
+                            <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 200px; position: relative;">
                                 Nama Produk
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable"
+                            <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 120px; position: relative;">
                                 Kategori
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable"
+                            <th class="px-5 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 120px; position: relative;">
                                 Harga Jual
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable"
+                            <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 80px; position: relative;">
                                 Satuan
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-700 resizable"
+                            <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 100px; position: relative;">
                                 Status
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-700"
+                            <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-700"
                                 style="min-width: 100px;">Aksi</th>
                         </tr>
                         {{-- Compact Filter Row --}}
                         <tr class="bg-white border-b border-slate-100 no-print">
                             <td class="px-3 py-2">
                                 <input type="text" data-name="sku" placeholder="Cari SKU..."
-                                    class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="name" placeholder="Cari nama produk..."
-                                    class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="category" placeholder="Kategori..."
-                                    class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="price" placeholder="Harga..."
-                                    class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
+                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="unit" placeholder="Satuan..."
-                                    class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-center">
+                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-center">
                             </td>
                             <td class="px-3 py-2">
                                 <select data-name="status"
-                                    class="filter-input w-full px-2 py-1.5 text-[10.5px] font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
+                                    class="filter-input w-full px-2 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
                                     <option value="">Semua</option>
                                     <option value="aktif">Aktif</option>
                                     <option value="nonaktif">Nonaktif</option>
@@ -142,35 +142,35 @@
                             <tr class="group hover:bg-slate-50/50 transition-colors">
                                 <td class="px-5 py-3.5">
                                     <span
-                                        class="text-[10px] font-mono text-slate-600 uppercase tracking-widest leading-none">{{ $product->sku }}</span>
+                                        class="text-xs font-mono text-slate-600 uppercase tracking-widest leading-none">{{ $product->sku }}</span>
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <div class="flex flex-col">
                                         <span
-                                            class="text-[11.5px] font-normal text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{{ $product->name }}</span>
+                                            class="text-sm font-normal text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors">{{ $product->name }}</span>
                                         @if($product->description)
                                             <span
-                                                class="text-[9px] font-normal text-slate-600 mt-1 line-clamp-1 italic">{{ $product->description }}</span>
+                                                class="text-xs font-normal text-slate-600 mt-1 line-clamp-1 italic">{{ $product->description }}</span>
                                         @endif
                                     </div>
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <span
-                                        class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-normal text-slate-700">
+                                        class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-700">
                                         {{ $product->category->name ?? '-' }}
                                     </span>
                                 </td>
                                 <td class="px-5 py-3.5 text-right tabular-nums">
-                                    <span class="text-[11.5px] font-normal text-slate-900">Rp
+                                    <span class="text-sm font-normal text-slate-900">Rp
                                         {{ number_format((float) $product->selling_price, 0, ',', '.') }}</span>
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
-                                    <span class="text-[11px] font-normal text-slate-700">{{ $product->unit }}</span>
+                                    <span class="text-sm font-normal text-slate-700">{{ $product->unit }}</span>
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
                                     @if($product->is_active)
                                         <span
-                                            class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-normal text-emerald-600 ring-1 ring-inset ring-emerald-200 uppercase tracking-widest">Aktif</span>
+                                            class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-normal text-emerald-600 ring-1 ring-inset ring-emerald-200 uppercase tracking-widest">Aktif</span>
                                     @else
                                         <span
                                             class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-0.5 text-[9px] font-normal text-slate-400 ring-1 ring-inset ring-slate-200 uppercase tracking-widest">Nonaktif</span>
@@ -179,7 +179,7 @@
                                 <td class="px-5 py-3.5 text-center">
                                     <div class="relative inline-block text-left product-actions-dropdown">
                                         <button type="button"
-                                            class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10.5px] font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                            class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                             <span>Aksi</span>
                                             <i class="fas fa-chevron-down text-[8px] text-slate-400"></i>
                                         </button>
@@ -187,7 +187,7 @@
                                             class="action-dropdown-menu hidden absolute right-0 z-[100] mt-2 w-44 origin-top-right rounded-xl bg-white shadow-xl border border-slate-100 ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-2 duration-200">
                                             <div class="py-1">
                                                 <a href="{{ route('admin.products.show', $product) }}"
-                                                    class="flex items-center gap-2 px-4 py-2 text-[11px] text-slate-600 hover:bg-slate-50 hover:text-indigo-600">
+                                                    class="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600">
                                                     <i class="fas fa-eye w-4 text-center opacity-70"></i>
                                                     Lihat Detail
                                                 </a>
@@ -199,7 +199,7 @@
 
                                                 @if($product->bomHeader)
                                                     <a href="{{ route('admin.boms.show', ['bom' => $product->bomHeader, 'source_type' => 'bundle', 'return_to' => request()->fullUrl()]) }}"
-                                                        class="flex items-center gap-2 px-4 py-2 text-[11px] text-slate-600 hover:bg-slate-50 hover:text-indigo-600 border-t border-slate-50">
+                                                        class="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 border-t border-slate-50">
                                                         <i class="fas fa-book-open w-4 text-center opacity-70"></i>
                                                         Lihat Resep (BOM)
                                                     </a>
@@ -215,7 +215,7 @@
                                                     onsubmit="return confirm('Yakin hapus produk {{ $product->name }}?')">
                                                     @csrf @method('DELETE')
                                                     <button type="submit"
-                                                        class="flex w-full items-center gap-2 px-4 py-2 text-[11px] text-rose-500 hover:bg-rose-50 transition-colors">
+                                                        class="flex w-full items-center gap-2 px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 transition-colors">
                                                         <i class="fas fa-trash w-4 text-center opacity-70"></i>
                                                         Hapus Produk
                                                     </button>
@@ -258,7 +258,7 @@
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <h3 class="text-lg font-normal text-slate-800 tracking-tight">Import Data Produk</h3>
-                        <p class="text-xs font-normal text-slate-500 mt-1">Gunakan file Excel (.xlsx) sesuai dengan template
+                        <p class="text-sm font-normal text-slate-500 mt-1">Gunakan file Excel (.xlsx) sesuai dengan template
                             sistem</p>
                     </div>
                     <button onclick="document.getElementById('importModal').style.display = 'none';"
@@ -292,16 +292,16 @@
                     </div>
 
                     <div id="filename-display"
-                        class="hidden rounded-xl bg-slate-50 p-3 text-[11px] font-normal text-slate-600 border border-slate-100 flex items-center gap-3">
+                        class="hidden rounded-xl bg-slate-50 p-3 text-xs font-normal text-slate-600 border border-slate-100 flex items-center gap-3">
                         <i class="fas fa-file-excel text-emerald-500"></i>
                         <span class="truncate"></span>
                     </div>
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" onclick="document.getElementById('importModal').style.display = 'none';"
-                            class="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-600 text-[11px] font-normal transition-all hover:bg-slate-200 active:scale-95 uppercase tracking-widest">Batal</button>
+                            class="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-600 text-xs font-normal transition-all hover:bg-slate-200 active:scale-95 uppercase tracking-widest">Batal</button>
                         <button type="submit"
-                            class="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white text-[11px] font-normal transition-all hover:bg-slate-800 active:scale-95 shadow-lg uppercase tracking-widest">Mulai
+                            class="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white text-xs font-normal transition-all hover:bg-slate-800 active:scale-95 shadow-lg uppercase tracking-widest">Mulai
                             Import</button>
                     </div>
                 </form>

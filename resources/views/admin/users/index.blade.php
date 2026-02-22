@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Kelola akun pengguna dan outlet')
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div class="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
         {{-- Header Section --}}
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
@@ -55,13 +55,13 @@
                         {{-- Filter Row --}}
                         <tr class="bg-slate-50/30">
                             <td class="px-4 py-2">
-                                <input type="text" data-name="name" class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Cari nama...">
+                                <input type="text" data-name="name" class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Cari nama...">
                             </td>
                             <td class="px-4 py-2">
-                                <input type="text" data-name="role" class="filter-input w-full px-3 py-1.5 text-[10.5px] font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Filter role...">
+                                <input type="text" data-name="role" class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Filter role...">
                             </td>
                             <td class="px-4 py-2 text-center">
-                                <select data-name="status" class="filter-input w-32 px-3 py-1.5 text-[10.5px] font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                <select data-name="status" class="filter-input w-32 px-3 py-1.5 text-xs font-normal bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                     <option value="">Status</option>
                                     <option value="aktif">Aktif</option>
                                     <option value="nonaktif">Nonaktif</option>
@@ -79,8 +79,8 @@
                             <tr class="group hover:bg-slate-50/50 transition-colors">
                                 <td class="px-5 py-3.5">
                                     <div class="flex flex-col">
-                                        <span class="text-[11.5px] font-normal text-slate-900 leading-tight">{{ $user->name }}</span>
-                                        <span class="text-[10px] font-normal text-slate-500 mt-0.5">{{ $user->email }}</span>
+                                        <span class="text-sm font-normal text-slate-900 leading-tight">{{ $user->name }}</span>
+                                        <span class="text-xs font-normal text-slate-500 mt-0.5">{{ $user->email }}</span>
                                     </div>
                                 </td>
                                 <td class="px-5 py-3.5">
@@ -101,13 +101,13 @@
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
                                     <div class="relative inline-block text-left product-actions-dropdown">
-                                        <button type="button" class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10.5px] font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                        <button type="button" class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                             <span>Aksi</span>
                                             <i class="fas fa-chevron-down text-[8px] text-slate-400"></i>
                                         </button>
                                         <div class="action-dropdown-menu hidden absolute right-0 z-[100] mt-2 w-44 origin-top-right rounded-xl bg-white shadow-xl border border-slate-100 ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-2 duration-200">
                                             <div class="py-1">
-                                                <a href="{{ route('admin.users.edit', $user) }}" class="flex items-center gap-2 px-4 py-2 text-[11px] text-slate-600 hover:bg-slate-50 hover:text-amber-600 transition-colors">
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600 transition-colors">
                                                     <i class="fas fa-edit w-4 text-center opacity-70"></i>
                                                     Edit User
                                                 </a>

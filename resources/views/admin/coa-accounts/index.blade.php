@@ -4,7 +4,7 @@
 @section('page-title', 'Chart of Accounts')
 
 @section('content')
-    <div class="w-full max-w-7xl mx-auto">
+    <div class="w-full">
         <!-- Filter -->
         <div class="card bg-white p-4 mb-6">
             <form method="GET">

@@ -13,7 +13,7 @@
         ];
     @endphp
 
-    <div class="max-w-7xl mx-auto w-full">
+    <div class="w-full">
         @if(session('success'))
             <div class="mb-4 bg-green-50 text-green-700 p-4 rounded-lg border border-green-200 shadow-sm flex items-center">
                 <i class="fas fa-check-circle mr-2 text-lg"></i>
