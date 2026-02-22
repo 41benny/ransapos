@@ -210,11 +210,25 @@
                                         $oQty = $product->{"outlet_{$outletCol->id}_qty"} ?? 0;
                                     @endphp
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal border-r border-slate-100 {{ $oQty > 0 ? 'text-indigo-600' : 'text-slate-300' }}">
-                                        {{ $oQty > 0 ? number_format($oQty, 0, ',', '.') : '-' }}
+                                        @if($oQty > 0)
+                                            <a href="{{ route('admin.reports.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => [$outletCol->id], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                               target="_blank"
+                                               class="hover:text-indigo-900 hover:underline transition-all"
+                                               title="Lihat Detail Transaksi">
+                                                {{ number_format($oQty, 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            -
+                                        @endif
                                     </td>
                                 @endforeach
                                 <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-slate-800 bg-indigo-50/30">
-                                    {{ number_format($product->total_qty, 0, ',', '.') }}
+                                    <a href="{{ route('admin.reports.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $filters['outlet_ids'] ?? [], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                       target="_blank"
+                                       class="hover:text-indigo-600 hover:underline transition-all text-indigo-700"
+                                       title="Lihat Detail Transaksi Semua Outlet yang Difilter">
+                                        {{ number_format($product->total_qty, 0, ',', '.') }}
+                                    </a>
                                 </td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-emerald-600 bg-emerald-50/30 border-l border-emerald-100/50">
                                     Rp {{ number_format($product->total_amount, 0, ',', '.') }}

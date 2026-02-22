@@ -48,6 +48,13 @@ class SalesReportController extends Controller
             });
         }
 
+        // Filter product_id (via sale relations)
+        if ($request->filled('product_id')) {
+            $query->whereHas('items', function($q) use ($request) {
+                $q->where('product_id', $request->product_id);
+            });
+        }
+
         $sales = $query->orderBy('sale_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -106,6 +113,10 @@ class SalesReportController extends Controller
                         ->whereColumn('payment_filter.sale_id', 'sales.id')
                         ->where('payment_filter.payment_method_id', $paymentMethodId);
                 });
+            }
+
+            if ($request->filled('product_id')) {
+                $detailQuery->where('sale_items.product_id', $request->product_id);
             }
 
             $detailRows = $detailQuery
@@ -269,6 +280,11 @@ class SalesReportController extends Controller
                 $q->where('payment_method_id', $request->payment_method_id);
             });
         }
+        if ($request->filled('product_id')) {
+            $query->whereHas('items', function ($q) use ($request) {
+                $q->where('product_id', $request->product_id);
+            });
+        }
 
         $format = $request->input('format', 'xlsx');
         $filename = sprintf('laporan-penjualan-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
@@ -304,6 +320,10 @@ class SalesReportController extends Controller
                         ->whereColumn('payment_filter.sale_id', 'sales.id')
                         ->where('payment_filter.payment_method_id', $paymentMethodId);
                 });
+            }
+
+            if ($request->filled('product_id')) {
+                $detailQuery->where('sale_items.product_id', $request->product_id);
             }
 
             $rows = $detailQuery
