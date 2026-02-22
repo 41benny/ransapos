@@ -36,8 +36,8 @@
         </div>
 
         {{-- Filter Section --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
-            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-[10px]"></i>
                     <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Audit
