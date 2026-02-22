@@ -237,7 +237,8 @@ class SaleService
                         outletId: $data['outlet_id'],
                         quantity: $item['quantity'],
                         saleId: $sale->id,
-                        userId: $sale->user_id
+                        userId: $sale->user_id,
+                        notes: "Penjualan: {$product->name}"
                     );
                 } elseif ($type === 'finished_good') {
                     // Cek BOM aktif
@@ -252,7 +253,8 @@ class SaleService
                                 outletId: $data['outlet_id'],
                                 quantity: $consumeQty,
                                 saleId: $sale->id,
-                                userId: $sale->user_id
+                                userId: $sale->user_id,
+                                notes: "Penjualan: {$product->name}"
                             );
                         }
                     } else {
@@ -269,7 +271,8 @@ class SaleService
                                 outletId: $data['outlet_id'],
                                 quantity: $item['quantity'],
                                 saleId: $sale->id,
-                                userId: $sale->user_id
+                                userId: $sale->user_id,
+                                notes: "Penjualan: {$product->name}"
                             );
                         }
                     }
@@ -420,7 +423,7 @@ class SaleService
                             quantity: $consumeQty,
                             saleId: $sale->id,
                             userId: \Illuminate\Support\Facades\Auth::id(),
-                            notes: "Pembatalan transaksi (komponen BOM): {$reason}"
+                            notes: "Batal Jual (Menu: {$product->name}): {$reason}"
                         );
                     }
                 } elseif ($type === 'finished_good') {
@@ -432,7 +435,7 @@ class SaleService
                             quantity: $item->quantity,
                             saleId: $sale->id,
                             userId: \Illuminate\Support\Facades\Auth::id(),
-                            notes: "Pembatalan transaksi: {$reason}"
+                            notes: "Batal Jual (Menu: {$product->name}): {$reason}"
                         );
                     }
                 } elseif ($type !== 'service') {
@@ -442,7 +445,7 @@ class SaleService
                         quantity: $item->quantity,
                         saleId: $sale->id,
                         userId: \Illuminate\Support\Facades\Auth::id(),
-                        notes: "Pembatalan transaksi: {$reason}"
+                        notes: "Batal Jual (Menu: {$product->name}): {$reason}"
                     );
                 }
             }

@@ -82,57 +82,89 @@ class StockController extends Controller
      */
     public function mutations(Request $request)
     {
+        $tab = $request->get('tab', 'all');
+
         $query = StockMutation::with(['product', 'outlet', 'creator']);
 
-        // Filter by outlet
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
-        }
-
-        // Filter by product
-        if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
-        }
-
-        // Filter by mutation type
-        if ($request->filled('mutation_type')) {
-            $query->where('mutation_type', $request->mutation_type);
-        }
-
-        // Filter by reference type
-        if ($request->filled('reference_type')) {
-            $query->where('reference_type', $request->reference_type);
-        }
-
-        // Scope audit khusus COGS penjualan (termasuk reversal pembatalan)
-        if ($request->input('reference_scope') === 'sales_cogs') {
+        if ($tab === 'usage') {
+            // For the new "Pemakaian Bahan Baku" tab
             $query->whereIn('reference_type', ['sale', 'sale_cancellation']);
-        }
 
-        // Filter by date range
-        if ($request->filled('start_date')) {
-            $query->where('mutation_date', '>=', $request->start_date);
-        }
-        if ($request->filled('end_date')) {
-            $query->where('mutation_date', '<=', $request->end_date);
-        }
-
-        // Search by product name
-        if ($request->filled('search')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
-            });
+            // Harus pilih bahan baku
+            if ($request->filled('product_id')) {
+                $query->where('product_id', $request->product_id);
+            } else {
+                // If no product is selected, we might want to show nothing or require it.
+                // For now, let's just show an empty result set if no product is selected to force the user.
+                $query->whereRaw('1 = 0'); 
+            }
+            
+            // Filter by date range
+            if ($request->filled('start_date')) {
+                $query->where('mutation_date', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->where('mutation_date', '<=', $request->end_date);
+            }
+            
+            // It's safer to join sales to get invoice number and sort by it or just fetch them later since sale_id = reference_id.
+            $query->leftJoin('sales', 'stock_mutations.reference_id', '=', 'sales.id')
+                  ->select('stock_mutations.*', 'sales.invoice_number');
+                  
+        } else {
+            // Tab "all" (Default History)
+            
+            // Filter by outlet
+            if ($request->filled('outlet_id')) {
+                $query->where('stock_mutations.outlet_id', $request->outlet_id);
+            }
+    
+            // Filter by product
+            if ($request->filled('product_id')) {
+                $query->where('stock_mutations.product_id', $request->product_id);
+            }
+    
+            // Filter by mutation type
+            if ($request->filled('mutation_type')) {
+                $query->where('mutation_type', $request->mutation_type);
+            }
+    
+            // Filter by reference type
+            if ($request->filled('reference_type')) {
+                $query->where('reference_type', $request->reference_type);
+            }
+    
+            // Scope audit khusus COGS penjualan (termasuk reversal pembatalan)
+            if ($request->input('reference_scope') === 'sales_cogs') {
+                $query->whereIn('reference_type', ['sale', 'sale_cancellation']);
+            }
+    
+            // Filter by date range
+            if ($request->filled('start_date')) {
+                $query->where('mutation_date', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->where('mutation_date', '<=', $request->end_date);
+            }
+    
+            // Search by product name
+            if ($request->filled('search')) {
+                $query->whereHas('product', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%');
+                });
+            }
         }
 
         $mutations = $query->orderBy('mutation_date', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('stock_mutations.created_at', 'desc')
             ->paginate(50);
 
         // Load data for filters
         $outlets = Outlet::where('is_active', true)->get();
+        // For usage tab, we primarily want raw_materials
         $products = Product::orderBy('name')->get();
 
-        return view('admin.stocks.mutations', compact('mutations', 'outlets', 'products'));
+        return view('admin.stocks.mutations', compact('mutations', 'outlets', 'products', 'tab'));
     }
 
     /**

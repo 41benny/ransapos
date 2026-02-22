@@ -26,7 +26,8 @@ class StockService
         int $outletId,
         float $quantity,
         int $saleId,
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $notes = 'Penjualan'
     ): void {
         DB::beginTransaction();
 
@@ -70,7 +71,7 @@ class StockService
                 'reference_type' => 'sale',
                 'reference_id' => $saleId,
                 'mutation_date' => now()->toDateString(),
-                'notes' => 'Penjualan',
+                'notes' => $notes,
                 'created_by' => $userId,
             ]);
 
