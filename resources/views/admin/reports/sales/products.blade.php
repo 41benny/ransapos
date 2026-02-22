@@ -277,7 +277,17 @@
 
                 const updateLabel = () => {
                     const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
-                    if (allCheckbox.checked || checkedItems.length === 0) {
+                    
+                    // Jika semua checkbox terpilih, checkbox 'Semua Outlet' otomatis dicentang
+                    if (checkedItems.length === itemCheckboxes.length) {
+                         allCheckbox.checked = true;
+                         dropdownLabel.textContent = 'Semua Outlet';
+                         return;
+                    }
+                    
+                    allCheckbox.checked = false;
+
+                    if (checkedItems.length === 0) {
                         dropdownLabel.textContent = 'Semua Outlet';
                         return;
                     }
@@ -300,20 +310,26 @@
                 });
 
                 allCheckbox.addEventListener('change', () => {
-                    if (allCheckbox.checked) {
-                        itemCheckboxes.forEach((checkbox) => { checkbox.checked = false; });
-                    }
+                    // Jika diklik, ubah status semua checkbox anak mengikuti status checkbox ini
+                    const isChecked = allCheckbox.checked;
+                    itemCheckboxes.forEach((checkbox) => { 
+                        checkbox.checked = isChecked; 
+                    });
                     updateLabel();
                 });
 
                 itemCheckboxes.forEach((checkbox) => {
                     checkbox.addEventListener('change', () => {
-                        const hasCheckedItems = itemCheckboxes.some((item) => item.checked);
-                        allCheckbox.checked = !hasCheckedItems;
                         updateLabel();
                     });
                 });
 
+                // Inisialisasi awal
+                const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
+                if (checkedItems.length === 0 || checkedItems.length === itemCheckboxes.length) {
+                    allCheckbox.checked = true;
+                    itemCheckboxes.forEach((checkbox) => { checkbox.checked = true; });
+                }
                 updateLabel();
             })();
         </script>
