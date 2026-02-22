@@ -358,10 +358,18 @@
             padding: 0.375rem 0.75rem;
             font-size: 11.5px;
             box-shadow: none;
+            position: relative;
+            z-index: 20; /* Lebih tinggi dari z-10 di header tabel */
         }
         .ts-control:focus {
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
             border-color: #6366f1;
+        }
+        .ts-dropdown {
+            z-index: 30 !important; /* Memastikan melayang di atas segalanya */
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: 4px;
         }
     </style>
 @endpush
