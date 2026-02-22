@@ -25,7 +25,7 @@
             <div class="p-5 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-xs"></i>
-                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Laporan
+                    <h3 class="text-xs font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Laporan
                     </h3>
                 </div>
             </div>
@@ -38,30 +38,30 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
+                            <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
                                 Tanggal</label>
                             <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai
+                            <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai
                                 Tanggal</label>
                             <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
+                            <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
                             <div class="relative" id="salesProductOutletFilterWrap">
                                 <button type="button" id="salesProductOutletDropdownBtn"
-                                    class="w-full px-3 py-1.5 text-left text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
+                                    class="w-full px-3 py-1.5 text-left text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
                                     <span id="salesProductOutletDropdownLabel">Semua Outlet</span>
-                                    <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                                    <i class="fas fa-chevron-down text-xs text-slate-400"></i>
                                 </button>
                                 <div id="salesProductOutletDropdownMenu"
-                                    class="hidden absolute top-full left-0 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg p-2 z-20">
-                                    <label class="flex items-center gap-2 text-[11.5px] text-slate-700 pb-1 mb-1 border-b border-slate-100">
+                                    class="hidden absolute top-full left-0 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg p-2 z-50">
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 pb-1 mb-1 border-b border-slate-100">
                                         <input type="checkbox" id="salesProductOutletAllCheckbox"
                                             class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                             {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
@@ -69,7 +69,7 @@
                                     </label>
                                     <div style="max-height: 9rem; overflow-y: auto;" class="space-y-1 pr-1">
                                         @foreach($outlets as $outlet)
-                                            <label class="flex items-center gap-2 text-[11.5px] text-slate-700">
+                                            <label class="flex items-center gap-2 text-sm text-slate-700">
                                                 <input type="checkbox"
                                                     name="outlet_ids[]"
                                                     value="{{ $outlet->id }}"
@@ -85,9 +85,9 @@
                         </div>
 
                         <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kasir</label>
+                            <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Kasir</label>
                             <select name="user_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">Semua Kasir</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
@@ -139,7 +139,7 @@
             <div
                 class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-indigo-500">Total Item Terjual</span>
+                    <span class="text-xs font-normal uppercase tracking-[0.2em] text-indigo-500">Total Item Terjual</span>
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
                         <i class="fas fa-boxes text-sm"></i>
@@ -148,14 +148,14 @@
                 <div class="flex flex-col">
                     <h3 class="text-2xl font-normal text-slate-800 tracking-tight">
                         {{ number_format($grandTotal['total_qty'], 0, ',', '.') }}</h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Produk Berhasil Terjual</p>
+                    <p class="text-xs font-normal text-slate-400 mt-0.5">Produk Berhasil Terjual</p>
                 </div>
             </div>
 
             <div
                 class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Total Omzet
+                    <span class="text-xs font-normal uppercase tracking-[0.2em] text-emerald-500">Total Omzet
                         (Gross)</span>
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
@@ -165,7 +165,7 @@
                 <div class="flex flex-col">
                     <h3 class="text-2xl font-normal text-slate-800 tracking-tight">Rp
                         {{ number_format($grandTotal['total_amount'], 0, ',', '.') }}</h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Nilai Sebelum Diskon & Pajak Transaksi</p>
+                    <p class="text-xs font-normal text-slate-400 mt-0.5">Nilai Sebelum Diskon & Pajak Transaksi</p>
                 </div>
             </div>
         </div>
@@ -177,35 +177,35 @@
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
                             <th
-                                class="px-4 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 w-16">
+                                class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16">
                                 No</th>
-                            <th class="px-4 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">
                                 Produk</th>
-                            <th class="px-4 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">
                                 SKU</th>
-                            <th class="px-4 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">
+                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
                                 Total Qty</th>
-                            <th class="px-4 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">
+                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
                                 Total Omzet</th>
-                            <th class="px-4 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">
+                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
                                 Avg Price</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse($products as $index => $product)
                             <tr class="group hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-400">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-normal text-slate-400">
                                     #{{ $index + 1 }}</td>
-                                <td class="px-4 py-2.5 text-[11px] font-normal text-slate-800">{{ $product->product_name }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-mono text-slate-500">
+                                <td class="px-4 py-2.5 text-sm font-normal text-slate-800">{{ $product->product_name }}</td>
+                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-mono text-slate-500">
                                     {{ $product->sku }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] font-normal text-slate-800">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal text-slate-800">
                                     {{ number_format($product->total_qty, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] font-normal text-indigo-600">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal text-indigo-600">
                                     Rp {{ number_format($product->total_amount, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-500 italic">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm text-slate-500 italic">
                                     Rp {{ number_format($product->total_amount / max(1, $product->total_qty), 0, ',', '.') }}
                                 </td>
                             </tr>
@@ -214,7 +214,7 @@
                                 <td colspan="6" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-40">
                                         <i class="fas fa-box-open text-4xl mb-4"></i>
-                                        <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada data penjualan produk
+                                        <p class="text-sm font-normal text-slate-500 italic">Tidak ada data penjualan produk
                                         </p>
                                     </div>
                                 </td>
@@ -225,7 +225,7 @@
                         <tfoot class="bg-indigo-50/30">
                             <tr>
                                 <td colspan="3"
-                                    class="px-4 py-3 text-right text-[10px] font-normal text-slate-500 uppercase tracking-wider">
+                                    class="px-4 py-3 text-right text-xs font-normal text-slate-500 uppercase tracking-wider">
                                     GRAND TOTAL:
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm font-normal text-slate-900 border-l border-indigo-100/50">
