@@ -271,7 +271,7 @@ class DashboardController extends Controller
                 $outletSales = $outletSalesBase
                     ->groupBy('outlets.id', 'outlets.name')
                     ->selectRaw('outlets.id as outlet_id, outlets.name as outlet_name, COALESCE(SUM(sales.total_amount), 0) as amount, COUNT(*) as transactions, MAX(sales.created_at) as last_sale_at')
-                    ->orderByDesc('amount')
+                    ->orderBy('outlets.name')
                     ->get()
                     ->map(fn($row) => [
                         'outlet_id' => (int) $row->outlet_id,
@@ -290,7 +290,7 @@ class DashboardController extends Controller
             $hourlyStackedMeta = null;
 
             if ($showBreakdown) {
-                $topOutlets = $outletSales->take(5)->values();
+                $topOutlets = $outletSales->sortByDesc('amount')->take(5)->values();
                 $topOutletIds = $topOutlets->pluck('outlet_id')->all();
 
                 $outletNameById = $outletSales

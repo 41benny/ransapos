@@ -437,7 +437,8 @@
             const outletBarsEl = document.getElementById('outletBars');
             const outletEmptyEl = document.getElementById('outletEmpty');
             const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0, });
-            const hourlyPalette = ['rgba(249, 115, 22, 0.86)', 'rgba(245, 158, 11, 0.84)', 'rgba(234, 88, 12, 0.86)', 'rgba(250, 204, 21, 0.84)', 'rgba(244, 63, 94, 0.8)',]; const hourlyOthersColor = 'rgba(253, 186, 116, 0.78)';
+            const hourlyPalette = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+            const hourlyOthersColor = '#94A3B8';
             let timer = null; let isLoading = false; let hourlyTooltipEl = null;
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text; statusTextEl.className = 'text-xs';
@@ -579,7 +580,7 @@
                                 formatter: (val) => idr.format(val)
                             }
                         },
-                        colors: isStacked ? ['#4f46e5', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'] : ['#4f46e5']
+                        colors: isStacked ? hourlyPalette : ['#4F46E5']
                     };
 
                     hourlyChart = new ApexCharts(document.querySelector("#hourlyBars"), options);
@@ -588,7 +589,7 @@
                     hourlyChart.updateOptions({
                         chart: { stacked: isStacked },
                         xaxis: { categories: labels },
-                        colors: isStacked ? ['#4f46e5', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'] : ['#4f46e5']
+                        colors: isStacked ? hourlyPalette : ['#4F46E5']
                     });
                     hourlyChart.updateSeries(series);
                 }
@@ -900,6 +901,7 @@
                     if (hasOthers) {
                         series.push({
                             name: 'Others',
+                            color: hourlyOthersColor,
                             data: data.hourly_stacked.map(h => Number(h.others?.amount || 0))
                         });
                     }
