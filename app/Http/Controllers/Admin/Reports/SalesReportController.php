@@ -228,6 +228,33 @@ class SalesReportController extends Controller
             ->orderBy('total_amount', 'desc')
             ->get();
 
+        // Apply filters in-memory
+        if ($request->filled('filter_sku')) {
+            $products = $products->filter(fn($p) => stripos($p->sku ?? '', $request->filter_sku) !== false);
+        }
+        if ($request->filled('filter_product')) {
+            $products = $products->filter(fn($p) => stripos($p->product_name ?? '', $request->filter_product) !== false);
+        }
+        if ($request->filled('filter_qty')) {
+            $products = $products->filter(fn($p) => stripos((string)$p->total_qty, $request->filter_qty) !== false);
+        }
+        if ($request->filled('filter_amount')) {
+            $products = $products->filter(fn($p) => stripos((string)$p->total_amount, $request->filter_amount) !== false);
+        }
+        if ($request->filled('filter_avg')) {
+            $products = $products->filter(function($p) use ($request) {
+                $avg = $p->total_qty > 0 ? floor($p->total_amount / $p->total_qty) : 0;
+                return stripos((string)$avg, $request->filter_avg) !== false;
+            });
+        }
+        foreach ($outletsForColumns as $outletCol) {
+            $filterName = "filter_outlet_{$outletCol->id}";
+            if ($request->filled($filterName)) {
+                $products = $products->filter(fn($p) => stripos((string)($p->{"outlet_{$outletCol->id}_qty"} ?? 0), $request->{$filterName}) !== false);
+            }
+        }
+        $products = $products->values();
+
         // Grand total
         $grandTotal = [
             'total_qty' => $products->sum('total_qty'),

@@ -176,9 +176,18 @@
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16">No</th>
-                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">Produk</th>
-                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 border-r border-slate-200">SKU</th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16 resizable group" style="min-width: 60px; position:relative;">
+                                No
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 150px; position:relative;">
+                                Produk
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 border-r border-slate-200 resizable group" style="min-width: 100px; position:relative;">
+                                SKU
+                                <div class="resize-handle"></div>
+                            </th>
                             @foreach($outletsForColumns as $outletCol)
                                 @php
                                     $clean = trim(str_ireplace('moresto', '', $outletCol->name));
@@ -190,13 +199,58 @@
                                         $initials = $clean;
                                     }
                                 @endphp
-                                <th class="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100/50 border-r border-slate-200" title="{{ $outletCol->name }}">
+                                <th class="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100/50 border-r border-slate-200 resizable group" title="{{ $outletCol->name }}" style="min-width: 70px; position:relative;">
                                     {{ $initials }}
+                                    <div class="resize-handle"></div>
                                 </th>
                             @endforeach
-                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-indigo-50/50">Total Qty</th>
-                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-emerald-50/50">Total Omzet</th>
-                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">Avg Price</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-indigo-50/50 resizable group" style="min-width: 100px; position:relative;">
+                                Total Qty
+                                <div class="resize-handle bg-indigo-200"></div>
+                            </th>
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-emerald-50/50 resizable group" style="min-width: 120px; position:relative;">
+                                Total Omzet
+                                <div class="resize-handle bg-emerald-200"></div>
+                            </th>
+                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                Avg Price
+                                <div class="resize-handle"></div>
+                            </th>
+                        </tr>
+                        {{-- Compact Filter Row --}}
+                        <tr class="bg-white border-b border-slate-100 no-print">
+                            <td class="px-2 py-2">
+                                <button type="button" id="clearFilters" title="Reset filter tabel (klik untuk membersihkan semua kolom filter)"
+                                    class="h-8 w-full inline-flex items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-rose-50 transition-all">
+                                    <i class="fas fa-times-circle text-[12px]"></i>
+                                </button>
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="text" data-name="filter_product" placeholder="Cari..."
+                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                            </td>
+                            <td class="px-2 py-2 border-r border-slate-200">
+                                <input type="text" data-name="filter_sku" placeholder="Cari..."
+                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                            </td>
+                            @foreach($outletsForColumns as $outletCol)
+                                <td class="px-2 py-2 bg-slate-100/30 border-r border-slate-200">
+                                    <input type="text" data-name="filter_outlet_{{ $outletCol->id }}" placeholder=""
+                                        class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-slate-300">
+                                </td>
+                            @endforeach
+                            <td class="px-2 py-2 bg-indigo-50/30">
+                                <input type="text" data-name="filter_qty" placeholder=""
+                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-indigo-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-indigo-300">
+                            </td>
+                            <td class="px-2 py-2 bg-emerald-50/30 border-l border-emerald-100/50">
+                                <input type="text" data-name="filter_amount" placeholder=""
+                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all text-right placeholder:text-emerald-300">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="text" data-name="filter_avg" placeholder=""
+                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-slate-300">
+                            </td>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -298,9 +352,90 @@
                 padding: 0 !important;
             }
         }
+        
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+        }
+
+        .resize-handle:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+
+        .resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
     </style>
     @push('scripts')
         <script>
+            // Column resizing logic
+            const table = document.querySelector('table');
+            if (table) {
+                const headers = table.querySelectorAll('th.resizable');
+                headers.forEach(th => {
+                    const handle = th.querySelector('.resize-handle');
+                    if (handle) {
+                        let startX, startWidth;
+                        handle.addEventListener('mousedown', (e) => {
+                            startX = e.pageX; startWidth = th.offsetWidth;
+                            document.body.classList.add('resizing');
+                            const move = (e) => th.style.width = Math.max(50, startWidth + (e.pageX - startX)) + 'px';
+                            const up = () => {
+                                document.body.classList.remove('resizing');
+                                document.removeEventListener('mousemove', move);
+                                document.removeEventListener('mouseup', up);
+                            };
+                            document.addEventListener('mousemove', move);
+                            document.addEventListener('mouseup', up);
+                        });
+                    }
+                });
+            }
+
+            // Filtering logic via Input
+            const filterInputs = document.querySelectorAll('.filter-input');
+            const clearBtn = document.getElementById('clearFilters');
+
+            function updateFilter(name, value) {
+                const url = new URL(window.location.href);
+                if (value.trim()) url.searchParams.set(name, value.trim());
+                else url.searchParams.delete(name);
+                window.location.href = url.toString();
+            }
+
+            let timer;
+            filterInputs.forEach(input => {
+                const name = input.dataset.name;
+                input.addEventListener('input', (e) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => updateFilter(name, e.target.value), 600);
+                });
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    const url = new URL(window.location.href);
+                    const keysToDelete = [];
+                    url.searchParams.forEach((val, key) => {
+                        if(key.startsWith('filter_')) keysToDelete.push(key);
+                    });
+                    keysToDelete.forEach(key => url.searchParams.delete(key));
+                    window.location.href = url.toString();
+                });
+            }
+
+            // Preserve URL params in inputs on load
+            const params = new URLSearchParams(window.location.search);
+            filterInputs.forEach(input => {
+                if (params.has(input.dataset.name)) input.value = params.get(input.dataset.name);
+            });
+
             (() => {
                 const wrap = document.getElementById('salesProductOutletFilterWrap');
                 if (!wrap) return;
