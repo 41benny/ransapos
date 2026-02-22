@@ -59,6 +59,31 @@ class SalesReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        if ($viewMode === 'ringkas') {
+            if ($request->filled('filter_tanggal')) {
+                $sales = $sales->filter(fn($s) => stripos($s->created_at->format('d M Y, H:i'), $request->filter_tanggal) !== false);
+            }
+            if ($request->filled('filter_invoice')) {
+                $sales = $sales->filter(fn($s) => stripos($s->invoice_number ?? '', $request->filter_invoice) !== false);
+            }
+            if ($request->filled('filter_outlet')) {
+                $sales = $sales->filter(fn($s) => stripos($s->outlet->name ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_kasir')) {
+                $sales = $sales->filter(fn($s) => stripos($s->user->name ?? '', $request->filter_kasir) !== false);
+            }
+            if ($request->filled('filter_pembayaran')) {
+                $sales = $sales->filter(fn($s) => stripos($s->payments->first()?->paymentMethod->name ?? 'Mixed', $request->filter_pembayaran) !== false);
+            }
+            if ($request->filled('filter_bulat')) {
+                $sales = $sales->filter(fn($s) => stripos((string)abs((float)$s->rounding_amount), $request->filter_bulat) !== false);
+            }
+            if ($request->filled('filter_total')) {
+                $sales = $sales->filter(fn($s) => stripos((string)$s->total_amount, $request->filter_total) !== false);
+            }
+            $sales = $sales->values();
+        }
+
         // Calculate summary
         $summary = [
             'total_transactions' => $sales->count(),
@@ -135,6 +160,7 @@ class SalesReportController extends Controller
                     'sales.service_charge_amount',
                     'sales.rounding_amount',
                     'sales.total_amount',
+                    'sales.sales_type as metode_penjualan',
                     DB::raw("COALESCE(pay_agg.payment_methods, '-') as payment_methods")
                 )
                 ->selectRaw(
@@ -148,6 +174,44 @@ class SalesReportController extends Controller
                 ->orderByDesc('sales.created_at')
                 ->orderBy('sale_items.id')
                 ->get();
+
+            if ($request->filled('filter_transaksi')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->transaction_number ?? '', $request->filter_transaksi) !== false);
+            }
+            if ($request->filled('filter_tanggal')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos(\Carbon\Carbon::parse($r->sale_date)->format('d M Y'), $request->filter_tanggal) !== false);
+            }
+            if ($request->filled('filter_outlet')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->outlet_name ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_produk')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->product_name ?? '', $request->filter_produk) !== false);
+            }
+            if ($request->filled('filter_qty')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->qty, $request->filter_qty) !== false);
+            }
+            if ($request->filled('filter_harga')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->price, $request->filter_harga) !== false);
+            }
+            if ($request->filled('filter_diskon')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->item_discount, $request->filter_diskon) !== false);
+            }
+            if ($request->filled('filter_subtotal')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->item_subtotal, $request->filter_subtotal) !== false);
+            }
+            if ($request->filled('filter_total')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos((string)($r->item_total ?? $r->item_subtotal), $request->filter_total) !== false);
+            }
+            if ($request->filled('filter_status')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->payment_status ?? '', $request->filter_status) !== false);
+            }
+            if ($request->filled('filter_metode_bayar')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->payment_methods ?? '', $request->filter_metode_bayar) !== false);
+            }
+            if ($request->filled('filter_metode_jual')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->metode_penjualan ?? '', $request->filter_metode_jual) !== false);
+            }
+            $detailRows = $detailRows->values();
         }
 
         // Data untuk filter
@@ -364,14 +428,52 @@ class SalesReportController extends Controller
                     DB::raw('COALESCE(sale_items.discount_amount, 0) as diskon_item'),
                     'sale_items.subtotal as subtotal',
                     DB::raw("COALESCE(pay_agg.payment_methods, '-') as metode_bayar"),
+                    'sales.sales_type as metode_penjualan',
                     'sale_items.subtotal as total_item'
                 )
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.created_at')
                 ->orderBy('sale_items.id')
-                ->get()
-                ->map(fn ($row) => (array) $row)
-                ->all();
+                ->orderBy('sale_items.id')
+                ->get();
+
+            if ($request->filled('filter_transaksi')) {
+                $rows = $rows->filter(fn($r) => stripos($r->no_transaksi ?? '', $request->filter_transaksi) !== false);
+            }
+            if ($request->filled('filter_tanggal')) {
+                $rows = $rows->filter(fn($r) => stripos(\Carbon\Carbon::parse($r->tanggal)->format('d M Y'), $request->filter_tanggal) !== false);
+            }
+            if ($request->filled('filter_outlet')) {
+                $rows = $rows->filter(fn($r) => stripos($r->outlet ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_produk')) {
+                $rows = $rows->filter(fn($r) => stripos($r->produk ?? '', $request->filter_produk) !== false);
+            }
+            if ($request->filled('filter_qty')) {
+                $rows = $rows->filter(fn($r) => stripos((string)$r->qty, $request->filter_qty) !== false);
+            }
+            if ($request->filled('filter_harga')) {
+                $rows = $rows->filter(fn($r) => stripos((string)$r->harga, $request->filter_harga) !== false);
+            }
+            if ($request->filled('filter_diskon')) {
+                $rows = $rows->filter(fn($r) => stripos((string)$r->diskon_item, $request->filter_diskon) !== false);
+            }
+            if ($request->filled('filter_subtotal')) {
+                $rows = $rows->filter(fn($r) => stripos((string)$r->subtotal, $request->filter_subtotal) !== false);
+            }
+            if ($request->filled('filter_total')) {
+                $rows = $rows->filter(fn($r) => stripos((string)($r->total_item ?? $r->subtotal), $request->filter_total) !== false);
+            }
+            if ($request->filled('filter_metode_bayar')) {
+                $rows = $rows->filter(fn($r) => stripos($r->metode_bayar ?? '', $request->filter_metode_bayar) !== false);
+            }
+            if ($request->filled('filter_metode_jual')) {
+                $rows = $rows->filter(fn($r) => stripos($r->metode_penjualan ?? '', $request->filter_metode_jual) !== false);
+            }
+
+            $rows = $rows->map(fn ($row) => array_merge((array) $row, [
+                'metode_penjualan' => str_replace('_', ' ', $row->metode_penjualan),
+            ]))->all();
 
             $columns = [
                 ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
@@ -383,12 +485,35 @@ class SalesReportController extends Controller
                 ['key' => 'diskon_item', 'label' => 'Diskon Item', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'subtotal', 'label' => 'Subtotal', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'metode_bayar', 'label' => 'Metode Bayar', 'type' => 'text'],
+                ['key' => 'metode_penjualan', 'label' => 'Tipe Order', 'type' => 'text'],
                 ['key' => 'total_item', 'label' => 'Total Item', 'type' => 'number', 'decimals' => 2],
             ];
         } else {
             $sales = $query->orderBy('sale_date', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();
+
+            if ($request->filled('filter_tanggal')) {
+                $sales = $sales->filter(fn($s) => stripos($s->created_at->format('d M Y, H:i'), $request->filter_tanggal) !== false);
+            }
+            if ($request->filled('filter_invoice')) {
+                $sales = $sales->filter(fn($s) => stripos($s->invoice_number ?? '', $request->filter_invoice) !== false);
+            }
+            if ($request->filled('filter_outlet')) {
+                $sales = $sales->filter(fn($s) => stripos($s->outlet->name ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_kasir')) {
+                $sales = $sales->filter(fn($s) => stripos($s->user->name ?? '', $request->filter_kasir) !== false);
+            }
+            if ($request->filled('filter_pembayaran')) {
+                $sales = $sales->filter(fn($s) => stripos($s->payments->first()?->paymentMethod->name ?? 'Mixed', $request->filter_pembayaran) !== false);
+            }
+            if ($request->filled('filter_bulat')) {
+                $sales = $sales->filter(fn($s) => stripos((string)abs((float)$s->rounding_amount), $request->filter_bulat) !== false);
+            }
+            if ($request->filled('filter_total')) {
+                $sales = $sales->filter(fn($s) => stripos((string)$s->total_amount, $request->filter_total) !== false);
+            }
 
             $rows = $sales->map(function ($sale) {
                 $paymentMethods = $sale->payments->map(fn ($payment) => $payment->paymentMethod?->name)->filter()->unique()->implode(', ');

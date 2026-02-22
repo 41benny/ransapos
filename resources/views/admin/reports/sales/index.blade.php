@@ -251,27 +251,97 @@
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         @if(($viewMode ?? 'ringkas') === 'detail')
                             <tr>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">No Transaksi</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tanggal</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Produk</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Qty</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Harga</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Diskon</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Subtotal</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Total</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Metode</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    No Transaksi <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 80px; position:relative;">
+                                    Tanggal <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Outlet <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 120px; position:relative;">
+                                    Produk <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 50px; position:relative;">
+                                    Qty <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 80px; position:relative;">
+                                    Harga <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 70px; position:relative;">
+                                    Diskon <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 80px; position:relative;">
+                                    Subtotal <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 80px; position:relative;">
+                                    Total <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 70px; position:relative;">
+                                    Status <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Metode Bayar <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 90px; position:relative;">
+                                    Tipe Order <div class="resize-handle"></div>
+                                </th>
+                            </tr>
+                            {{-- Filter Row Detail --}}
+                            <tr class="bg-white border-b border-slate-100 no-print">
+                                <td class="px-1 py-1 relative">
+                                    <button type="button" id="clearFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10"><i class="fas fa-times text-[10px]"></i></button>
+                                    <input type="text" data-name="filter_transaksi" placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                </td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_tanggal" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_produk" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_qty" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_harga" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_diskon" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_subtotal" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_status" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_bayar" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_jual" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                             </tr>
                         @else
                             <tr>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tanggal & Jam</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Invoice</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Kasir</th>
-                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Pembayaran</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Bulat</th>
-                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Total</th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 120px; position:relative;">
+                                    Tanggal & Jam <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Invoice <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Outlet <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Kasir <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Pembayaran <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 80px; position:relative;">
+                                    Bulat <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Total <div class="resize-handle"></div>
+                                </th>
+                            </tr>
+                            {{-- Filter Row Ringkas --}}
+                            <tr class="bg-white border-b border-slate-100 no-print">
+                                <td class="px-1 py-1 relative">
+                                    <button type="button" id="clearFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10"><i class="fas fa-times text-[10px]"></i></button>
+                                    <input type="text" data-name="filter_tanggal" placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                </td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_invoice" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_kasir" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_pembayaran" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_bulat" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
                             </tr>
                         @endif
                     </thead>
@@ -294,10 +364,11 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">{{ $row->payment_methods }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500 capitalize">{{ str_replace('_', ' ', $row->metode_penjualan) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-6 py-16 text-center">
+                                    <td colspan="12" class="px-6 py-16 text-center">
                                         <div class="flex flex-col items-center justify-center opacity-40">
                                             <i class="fas fa-receipt text-4xl mb-4 text-slate-300"></i>
                                             <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada detail penjualan pada periode ini</p>
@@ -373,54 +444,128 @@
         </style>
     @endpush
     @push('scripts')
+        <style>
+            .resize-handle {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 4px;
+                height: 100%;
+                cursor: col-resize;
+                z-index: 10;
+            }
+
+            .resize-handle:hover {
+                background: rgba(99, 102, 241, 0.5);
+            }
+
+            .resizing {
+                cursor: col-resize;
+                user-select: none;
+            }
+        </style>
         <script>
+            // Column resizing logic
+            const table = document.querySelector('table');
+            if (table) {
+                const headers = table.querySelectorAll('th.resizable');
+                headers.forEach(th => {
+                    const handle = th.querySelector('.resize-handle');
+                    if (handle) {
+                        let startX, startWidth;
+                        handle.addEventListener('mousedown', (e) => {
+                            startX = e.pageX; startWidth = th.offsetWidth;
+                            document.body.classList.add('resizing');
+                            const move = (e) => th.style.width = Math.max(50, startWidth + (e.pageX - startX)) + 'px';
+                            const up = () => {
+                                document.body.classList.remove('resizing');
+                                document.removeEventListener('mousemove', move);
+                                document.removeEventListener('mouseup', up);
+                            };
+                            document.addEventListener('mousemove', move);
+                            document.addEventListener('mouseup', up);
+                        });
+                    }
+                });
+            }
+
+            // Filtering logic via Input
+            const filterInputs = document.querySelectorAll('.filter-input');
+            const clearBtn = document.getElementById('clearFilters');
+
+            function updateFilter(name, value) {
+                const url = new URL(window.location.href);
+                if (value.trim()) url.searchParams.set(name, value.trim());
+                else url.searchParams.delete(name);
+                window.location.href = url.toString();
+            }
+
+            let timer;
+            filterInputs.forEach(input => {
+                const name = input.dataset.name;
+                input.addEventListener('input', (e) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => updateFilter(name, e.target.value), 600);
+                });
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    const url = new URL(window.location.href);
+                    const keysToDelete = [];
+                    url.searchParams.forEach((val, key) => {
+                        if(key.startsWith('filter_')) keysToDelete.push(key);
+                    });
+                    keysToDelete.forEach(key => url.searchParams.delete(key));
+                    window.location.href = url.toString();
+                });
+            }
+
+            // Preserve URL params in inputs on load
+            const params = new URLSearchParams(window.location.search);
+            filterInputs.forEach(input => {
+                if (params.has(input.dataset.name)) input.value = params.get(input.dataset.name);
+            });
+
             (() => {
                 const wrap = document.getElementById('salesOutletFilterWrap');
-                if (!wrap) return;
-
-                const dropdownBtn = document.getElementById('salesOutletDropdownBtn');
-                const dropdownLabel = document.getElementById('salesOutletDropdownLabel');
-                const dropdownMenu = document.getElementById('salesOutletDropdownMenu');
+                const btn = document.getElementById('salesOutletDropdownBtn');
+                const label = document.getElementById('salesOutletDropdownLabel');
+                const menu = document.getElementById('salesOutletDropdownMenu');
                 const allCheckbox = document.getElementById('salesOutletAllCheckbox');
                 const itemCheckboxes = Array.from(document.querySelectorAll('.sales-outlet-checkbox'));
 
+                if (!wrap) return;
+
                 const updateLabel = () => {
-                    const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
-                    if (allCheckbox.checked || checkedItems.length === 0) {
-                        dropdownLabel.textContent = 'Semua Outlet';
-                        return;
+                    const checkedItems = itemCheckboxes.filter(c => c.checked);
+                    if (checkedItems.length === itemCheckboxes.length) {
+                        allCheckbox.checked = true;
+                        label.textContent = 'Semua Outlet';
+                    } else if (checkedItems.length === 0) {
+                        allCheckbox.checked = false;
+                        label.textContent = 'Semua Outlet';
+                    } else if (checkedItems.length === 1) {
+                        allCheckbox.checked = false;
+                        label.textContent = checkedItems[0].parentElement.textContent.trim();
+                    } else {
+                        allCheckbox.checked = false;
+                        label.textContent = `${checkedItems.length} Outlet`;
                     }
-
-                    if (checkedItems.length === 1) {
-                        dropdownLabel.textContent = checkedItems[0].parentElement?.textContent?.trim() || '1 Outlet Dipilih';
-                        return;
-                    }
-
-                    dropdownLabel.textContent = `${checkedItems.length} Outlet Dipilih`;
                 };
 
-                dropdownBtn.addEventListener('click', () => {
-                    dropdownMenu.classList.toggle('hidden');
-                });
-
-                document.addEventListener('click', (event) => {
-                    if (wrap.contains(event.target)) return;
-                    dropdownMenu.classList.add('hidden');
+                btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+                document.addEventListener('click', e => {
+                    if (!wrap.contains(e.target)) menu.classList.add('hidden');
                 });
 
                 allCheckbox.addEventListener('change', () => {
-                    itemCheckboxes.forEach((checkbox) => { 
-                        checkbox.checked = allCheckbox.checked; 
-                    });
+                    itemCheckboxes.forEach(c => c.checked = allCheckbox.checked);
                     updateLabel();
                 });
 
-                itemCheckboxes.forEach((checkbox) => {
-                    checkbox.addEventListener('change', () => {
-                        const allChecked = itemCheckboxes.every((item) => item.checked);
-                        allCheckbox.checked = allChecked;
-                        updateLabel();
-                    });
+                itemCheckboxes.forEach(c => {
+                    c.addEventListener('change', updateLabel);
                 });
 
                 updateLabel();
