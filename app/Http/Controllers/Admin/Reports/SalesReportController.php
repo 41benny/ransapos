@@ -174,6 +174,13 @@ class SalesReportController extends Controller
         $dateTo = $request->input('date_to', now()->toDateString());
         $outletIds = $this->resolveOutletIds($request);
 
+        // Ambil data outlet yang akan dijadikan kolom
+        $outletsForColumns = Outlet::where('is_active', true);
+        if (!empty($outletIds)) {
+            $outletsForColumns->whereIn('id', $outletIds);
+        }
+        $outletsForColumns = $outletsForColumns->orderBy('name')->get();
+
         // Build query dengan agregasi
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -191,14 +198,21 @@ class SalesReportController extends Controller
             $query->where('sales.user_id', $request->user_id);
         }
 
+        $selects = [
+            'products.id',
+            'products.name as product_name',
+            'products.sku',
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_amount')
+        ];
+
+        foreach ($outletsForColumns as $outletCol) {
+            $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.quantity ELSE 0 END) as outlet_{$outletCol->id}_qty");
+            $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.subtotal ELSE 0 END) as outlet_{$outletCol->id}_amount");
+        }
+
         // Agregasi per produk
-        $products = $query->select(
-                'products.id',
-                'products.name as product_name',
-                'products.sku',
-                DB::raw('SUM(sale_items.quantity) as total_qty'),
-                DB::raw('SUM(sale_items.subtotal) as total_amount')
-            )
+        $products = $query->select($selects)
             ->groupBy('products.id', 'products.name', 'products.sku')
             ->orderBy('total_amount', 'desc')
             ->get();
@@ -223,6 +237,7 @@ class SalesReportController extends Controller
             'products',
             'grandTotal',
             'outlets',
+            'outletsForColumns',
             'users',
             'filters',
             'dateFrom',

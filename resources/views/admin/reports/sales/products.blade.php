@@ -176,33 +176,47 @@
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16">
-                                No</th>
-                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">
-                                Produk</th>
-                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">
-                                SKU</th>
-                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
-                                Total Qty</th>
-                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
-                                Total Omzet</th>
-                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">
-                                Avg Price</th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16">No</th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">Produk</th>
+                            <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 border-r border-slate-200">SKU</th>
+                            @foreach($outletsForColumns as $outletCol)
+                                @php
+                                    $clean = trim(str_ireplace('moresto', '', $outletCol->name));
+                                    if (strtolower($clean) === 'ciplaz') {
+                                        $initials = 'Cplz';
+                                    } elseif (strlen($clean) > 8 && str_contains($clean, ' ')) {
+                                        $initials = collect(explode(' ', $clean))->map(fn($w) => strtoupper(substr($w, 0, 1)))->join('');
+                                    } else {
+                                        $initials = $clean;
+                                    }
+                                @endphp
+                                <th class="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100/50 border-r border-slate-200" title="{{ $outletCol->name }}">
+                                    {{ $initials }}
+                                </th>
+                            @endforeach
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-indigo-50/50">Total Qty</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest text-slate-700 bg-emerald-50/50">Total Omzet</th>
+                            <th class="px-4 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-500">Avg Price</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse($products as $index => $product)
-                            <tr class="group hover:bg-slate-50/80 transition-colors">
-                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-normal text-slate-400">
-                                    #{{ $index + 1 }}</td>
+                            <tr class="group hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-normal text-slate-400">#{{ $index + 1 }}</td>
                                 <td class="px-4 py-2.5 text-sm font-normal text-slate-800">{{ $product->product_name }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-mono text-slate-500">
-                                    {{ $product->sku }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal text-slate-800">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-mono text-slate-500 border-r border-slate-100">{{ $product->sku }}</td>
+                                @foreach($outletsForColumns as $outletCol)
+                                    @php
+                                        $oQty = $product->{"outlet_{$outletCol->id}_qty"} ?? 0;
+                                    @endphp
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal border-r border-slate-100 {{ $oQty > 0 ? 'text-indigo-600' : 'text-slate-300' }}">
+                                        {{ $oQty > 0 ? number_format($oQty, 0, ',', '.') : '-' }}
+                                    </td>
+                                @endforeach
+                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-slate-800 bg-indigo-50/30">
                                     {{ number_format($product->total_qty, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal text-indigo-600">
+                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-emerald-600 bg-emerald-50/30 border-l border-emerald-100/50">
                                     Rp {{ number_format($product->total_amount, 0, ',', '.') }}
                                 </td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm text-slate-500 italic">
@@ -211,7 +225,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-16 text-center">
+                                <td colspan="{{ 6 + count($outletsForColumns) }}" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-40">
                                         <i class="fas fa-box-open text-4xl mb-4"></i>
                                         <p class="text-sm font-normal text-slate-500 italic">Tidak ada data penjualan produk
@@ -225,13 +239,21 @@
                         <tfoot class="bg-indigo-50/30">
                             <tr>
                                 <td colspan="3"
-                                    class="px-4 py-3 text-right text-xs font-normal text-slate-500 uppercase tracking-wider">
+                                    class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider border-r border-slate-200">
                                     GRAND TOTAL:
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm font-normal text-slate-900 border-l border-indigo-100/50">
+                                @foreach($outletsForColumns as $outletCol)
+                                    @php
+                                        $oGrandQty = $products->sum("outlet_{$outletCol->id}_qty");
+                                    @endphp
+                                    <td class="px-4 py-3 text-right text-sm font-bold tracking-tight text-indigo-600 border-r border-slate-200 bg-indigo-50/40">
+                                        {{ $oGrandQty > 0 ? number_format($oGrandQty, 0, ',', '.') : '-' }}
+                                    </td>
+                                @endforeach
+                                <td class="px-4 py-3 text-right text-base font-black text-slate-900 border-l border-indigo-100/50 bg-indigo-100/50">
                                     {{ number_format($grandTotal['total_qty'], 0, ',', '.') }}
                                 </td>
-                                <td colspan="2" class="px-4 py-3 text-right text-sm font-normal text-indigo-700 bg-indigo-100/30">
+                                <td colspan="2" class="px-4 py-3 text-right text-base font-black text-emerald-700 bg-emerald-100/40 border-l border-emerald-200/50">
                                     Rp {{ number_format($grandTotal['total_amount'], 0, ',', '.') }}
                                 </td>
                             </tr>
