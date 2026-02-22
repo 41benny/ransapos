@@ -101,7 +101,7 @@
                         <div class="flex flex-col gap-1.5 md:col-span-2">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Bahan Baku (Pilih Salah Satu)</label>
                             <select name="product_id" required
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="tom-select w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">-- Pilih Bahan Baku --</option>
                                 @foreach($products as $prod)
                                     @if($prod->product_type === 'raw_material' || $prod->product_type === 'finished_good')
@@ -348,3 +348,38 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <style>
+        .ts-control {
+            border-radius: 0.5rem;
+            border-color: #e2e8f0;
+            padding: 0.375rem 0.75rem;
+            font-size: 11.5px;
+            box-shadow: none;
+        }
+        .ts-control:focus {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.querySelector('.tom-select')) {
+                new TomSelect('.tom-select', {
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    },
+                    placeholder: '-- Pilih Bahan Baku --'
+                });
+            }
+        });
+    </script>
+@endpush
