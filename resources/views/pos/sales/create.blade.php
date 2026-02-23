@@ -4,11 +4,12 @@
 @section('page-title', 'MorestoPOS')
 
 @section('content')
-    <div class="h-full flex flex-col md:flex-row overflow-hidden bg-background-light font-display text-slate-900"
+    <!-- Layout Wrapper: Responsive from sm (640px) upwards to trigger split screen -->
+    <div class="h-full flex flex-col sm:flex-row max-sm:overflow-y-auto sm:overflow-hidden bg-background-light font-display text-slate-900"
         id="posApp">
 
         <!-- LEFT PANEL: Products & Header -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div class="flex-1 flex flex-col min-w-0 max-sm:min-h-screen sm:overflow-hidden relative">
 
             <!-- Top Bar -->
             <div
@@ -210,7 +211,7 @@
 
         <!-- RIGHT PANEL: Current Order -->
         <div
-            class="w-full md:w-[400px] xl:w-[420px] bg-surface-light border-l border-gray-200 dark:border-red-900/30 flex flex-col h-full min-h-0 shadow-2xl z-20">
+            class="w-full flex-none sm:w-[320px] md:w-[360px] lg:w-[400px] xl:w-[420px] bg-surface-light border-t sm:border-t-0 sm:border-l border-gray-200 dark:border-red-900/30 flex flex-col h-auto sm:h-full max-sm:min-h-screen min-h-0 shadow-2xl z-20">
             <!-- Order Header -->
             <div class="flex-none p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-1">
@@ -345,8 +346,8 @@
             </div>
 
             <!-- Checkout Section -->
-            <div :class="isCartOpen ? 'flex-none max-h-[42vh]' : 'flex-1'"
-                class="p-6 border-t border-gray-100 bg-background-light/50 overflow-y-auto custom-scrollbar transition-all">
+            <div :class="isCartOpen ? 'flex-none max-h-[50vh] sm:max-h-[45vh]' : 'flex-1'"
+                class="p-4 sm:p-6 border-t border-gray-100 bg-background-light/50 overflow-y-auto custom-scrollbar transition-all">
                 <!-- Order Note Input -->
                 <div class="mb-4">
                     <input type="text" v-model="orderNotes" placeholder="Add order note..."

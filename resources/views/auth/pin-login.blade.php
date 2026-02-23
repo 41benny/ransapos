@@ -28,10 +28,10 @@
             </div>
         </div>
 
-        <div class="w-full lg:w-1/2 flex flex-col h-full border-l border-white/5" style="background-color: #1e1411;">
-            <div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
+        <div class="w-full lg:w-1/2 flex flex-col h-full border-l border-white/5 overflow-y-auto" style="background-color: #1e1411;">
+            <div class="flex-1 flex flex-col justify-center items-center px-6 py-8 sm:px-12 max-w-lg mx-auto w-full min-h-[min-content]">
                 @php($hasUsers = $users->isNotEmpty())
-                <div class="w-full text-center mb-6">
+                <div class="w-full text-center mb-4">
                     <h2 class="text-xl tracking-[0.2em] text-white/60 font-semibold">SELECT USER</h2>
                 </div>
 
@@ -52,11 +52,11 @@
                     <input type="hidden" name="user_id" id="selectedUserId" value="">
                     <input type="hidden" name="pin" id="pinInput" value="">
 
-                    <div class="flex justify-center gap-3 mb-6">
+                    <div class="flex justify-center gap-3 mb-4">
                         @forelse ($users as $user)
                             <button
                                 type="button"
-                                class="user-select-btn w-14 h-14 rounded-full border-2 border-transparent bg-white/10 text-white text-lg font-semibold transition-all"
+                                class="user-select-btn w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-transparent bg-white/10 text-white text-lg font-semibold transition-all shrink-0"
                                 data-user-id="{{ $user->id }}"
                                 data-user-name="{{ $user->name }}"
                                 aria-label="{{ $user->name }}">
@@ -68,27 +68,27 @@
                     </div>
 
                     <p class="text-center text-white font-semibold mb-1" id="selectedUserLabel">Pilih user</p>
-                    <p class="text-center text-[#ec4913] mb-4">Enter PIN Code</p>
+                    <p class="text-center text-[#ec4913] mb-3">Enter PIN Code</p>
 
-                    <div class="flex justify-center gap-2 mb-6">
+                    <div class="flex justify-center gap-2 mb-5">
                         @for ($i = 0; $i < 6; $i++)
                             <span class="w-3 h-3 rounded-full border border-white/30 bg-white/5 pin-dot transition-all" data-index="{{ $i }}"></span>
                         @endfor
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 max-w-xs mx-auto mb-5">
+                    <div class="grid grid-cols-3 gap-2 md:gap-3 max-w-xs mx-auto mb-5">
                         @foreach ([1,2,3,4,5,6,7,8,9] as $digit)
-                            <button type="button" class="pin-key h-14 rounded-xl bg-white/5 border border-white/10 text-white text-2xl hover:bg-white/10" data-key="{{ $digit }}">{{ $digit }}</button>
+                            <button type="button" class="pin-key h-12 md:h-14 rounded-xl bg-white/5 border border-white/10 text-white text-xl md:text-2xl hover:bg-white/10 transition-colors" data-key="{{ $digit }}">{{ $digit }}</button>
                         @endforeach
-                        <button type="button" class="pin-key h-14 rounded-xl bg-white/5 border border-white/10 text-white text-sm hover:bg-white/10" data-key="clear">CLEAR</button>
-                        <button type="button" class="pin-key h-14 rounded-xl bg-white/5 border border-white/10 text-white text-2xl hover:bg-white/10" data-key="0">0</button>
-                        <button type="button" class="pin-key h-14 rounded-xl bg-white/5 border border-white/10 text-white text-xs hover:bg-white/10" data-key="backspace">DEL</button>
+                        <button type="button" class="pin-key h-12 md:h-14 rounded-xl bg-white/5 border border-white/10 text-white text-xs md:text-sm hover:bg-white/10 transition-colors" data-key="clear">CLEAR</button>
+                        <button type="button" class="pin-key h-12 md:h-14 rounded-xl bg-white/5 border border-white/10 text-white text-xl md:text-2xl hover:bg-white/10 transition-colors" data-key="0">0</button>
+                        <button type="button" class="pin-key h-12 md:h-14 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] md:text-xs hover:bg-white/10 transition-colors" data-key="backspace">DEL</button>
                     </div>
 
                     <button
                         type="submit"
                         id="submitPinButton"
-                        class="w-full h-14 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full h-12 md:h-14 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                         style="background-color: #ec4913;"
                         disabled>
                         <span id="submitPinSpinner" class="hidden items-center justify-center" aria-hidden="true">
@@ -104,12 +104,12 @@
                     </button>
                 </form>
 
-                <a href="{{ route('login', ['email' => 1]) }}" class="mt-5 px-4 py-2 rounded-lg border border-white/20 bg-white/5 text-sm text-white hover:bg-white/10 transition">
+                <a href="{{ route('login', ['email' => 1]) }}" class="mt-4 px-4 py-2 flex-none rounded-lg border border-white/20 bg-white/5 text-sm text-white hover:bg-white/10 transition">
                     Login dengan email
                 </a>
             </div>
 
-            <div class="p-6 flex justify-between items-center text-xs text-white/20 border-t border-white/5">
+            <div class="p-4 md:p-6 flex-none flex justify-between items-center text-xs text-white/20 border-t border-white/5">
                 <span>PIN Quick Access</span>
                 <span>v2.5.0 POS Edition</span>
             </div>

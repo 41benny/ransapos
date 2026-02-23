@@ -147,23 +147,23 @@
         </div>
 
         <!-- Right Side: Login Form -->
-        <div class="w-full lg:w-1/2 flex flex-col h-full relative border-l border-white/5" style="background-color: #1e1411;">
+        <div class="w-full lg:w-1/2 flex flex-col h-full relative border-l border-white/5 overflow-y-auto" style="background-color: #1e1411;">
 
             <!-- Mobile Header -->
-            <div class="lg:hidden p-6 flex justify-center border-b border-white/5">
+            <div class="lg:hidden p-4 md:p-6 flex-none flex justify-center border-b border-white/5">
                 <h2 class="text-2xl font-bold text-white font-['Outfit']">Moresto</h2>
             </div>
 
-            <div class="flex-1 flex flex-col justify-center items-center px-6 sm:px-12 max-w-lg mx-auto w-full">
-                <div class="w-full mb-10 text-center animate-fade-up delay-100">
-                    <div class="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20" style="background: linear-gradient(to top right, #ec4913, #ea580c);">
+            <div class="flex-1 flex flex-col justify-center items-center px-6 py-8 sm:px-12 max-w-lg mx-auto w-full min-h-[min-content]">
+                <div class="w-full mb-8 text-center animate-fade-up delay-100">
+                    <div class="w-16 h-16 rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20" style="background: linear-gradient(to top right, #ec4913, #ea580c);">
                         <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
                     </div>
                     <h2 class="text-2xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
-                    <p class="text-gray-400">Please enter your credentials to access the POS.</p>
+                    <p class="text-gray-400 text-sm md:text-base">Please enter your credentials to access the POS.</p>
                 </div>
 
-                <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-5 animate-fade-up delay-200">
+                <form action="{{ route('login.post') }}" method="POST" class="w-full space-y-4 animate-fade-up delay-200">
                     @csrf
                     @if(session('error'))
                     <div class="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center font-medium">
