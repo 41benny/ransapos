@@ -408,7 +408,30 @@ class CashAccountController extends Controller
                 ->get();
         }
 
-        return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts'));
+        // Ambil semua transaksi terkait menggunakan teknik yang sama dengan di printVoucher
+        $voucherNumber = (string) ($cashTransaction->voucher_number ?: $cashTransaction->transaction_number);
+
+        $relatedTransactions = CashTransaction::query()
+            ->with(['coaAccount', 'cashAccount'])
+            ->where('voucher_number', $voucherNumber)
+            ->where('cash_account_id', $cashTransaction->cash_account_id)
+            ->where('type', $cashTransaction->type)
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($relatedTransactions->count() <= 1) {
+            $legacyVoucherTransactions = $this->resolveLegacyVoucherTransactions($cashTransaction);
+            if ($legacyVoucherTransactions->count() > $relatedTransactions->count()) {
+                $relatedTransactions = $legacyVoucherTransactions;
+            }
+        }
+
+        if ($relatedTransactions->isEmpty()) {
+            $relatedTransactions = collect([$cashTransaction]);
+        }
+
+        return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts', 'relatedTransactions'));
     }
 
     /**
@@ -418,24 +441,106 @@ class CashAccountController extends Controller
     {
         $request->validate([
             'transaction_date' => 'required|date',
-            'amount' => 'required|numeric|min:0',
-            'description' => 'required|string|max:255',
-            'coa_account_id' => 'nullable|exists:coa_accounts,id',
+            'rows' => 'required|array|min:1',
+            'rows.*.amount' => 'required|numeric|min:0',
+            'rows.*.description' => 'required|string|max:255',
+            'rows.*.coa_account_id' => 'required|exists:coa_accounts,id',
+            'deleted_row_ids' => 'nullable|array',
+            'deleted_row_ids.*' => 'exists:cash_transactions,id',
         ]);
 
         try {
-            $this->cashAccountService->updateTransaction($cashTransaction, $request->only([
-                'transaction_date',
-                'amount',
-                'description',
-                'coa_account_id',
-                'notes'
-            ]));
+            DB::beginTransaction();
+
+            $date = $request->input('transaction_date');
+            $notes = $request->input('notes');
+            $rows = $request->input('rows');
+            $deletedIds = $request->input('deleted_row_ids', []);
+
+            // 1. Hapus transaksi yang dihapus user dari tabel
+            if (!empty($deletedIds)) {
+                foreach ($deletedIds as $id) {
+                    $txnToDelete = CashTransaction::find($id);
+                    if ($txnToDelete && $txnToDelete->cash_account_id == $cashTransaction->cash_account_id) {
+                        $this->cashAccountService->deleteTransaction($txnToDelete);
+                    }
+                }
+            }
+
+            // 2. Update atau Buat Transaksi Baru
+            $voucherNumber = $cashTransaction->voucher_number ?: $cashTransaction->transaction_number;
+            $batchReferenceId = count($rows) > 1 && $cashTransaction->reference_type === 'general_batch'
+                ? $cashTransaction->reference_id
+                : (count($rows) > 1 ? mt_rand(100000000, 999999999) : null);
+            $referenceType = count($rows) > 1 ? 'general_batch' : null;
+
+            $account = $cashTransaction->cashAccount;
+            $type = $cashTransaction->type;
+            
+            // Kita cari transaksi yang paling awal untuk recalculate
+            $recalcFromDate = $cashTransaction->transaction_date->format('Y-m-d') < $date
+                ? $cashTransaction->transaction_date->format('Y-m-d')
+                : $date;
+
+            foreach ($rows as $index => $row) {
+                $rowId = $row['id'] ?? null;
+                $amount = (float) $row['amount'];
+                
+                if ($rowId) {
+                    // Update existing
+                    $txnToUpdate = CashTransaction::find($rowId);
+                    if ($txnToUpdate) {
+                        $txnToUpdate->update([
+                            'transaction_date' => $date,
+                            'amount' => $amount,
+                            'description' => $row['description'],
+                            'coa_account_id' => $row['coa_account_id'],
+                            'notes' => $notes,
+                            'reference_type' => $referenceType,
+                            'reference_id' => $batchReferenceId,
+                            'voucher_number' => $voucherNumber,
+                        ]);
+                    }
+                } else {
+                    // Create new row
+                    $data = [
+                        'cash_account_id' => $account->id,
+                        'type' => $type,
+                        'transaction_date' => $date,
+                        'amount' => $amount,
+                        'description' => $row['description'],
+                        'coa_account_id' => $row['coa_account_id'],
+                        'notes' => $notes,
+                        'reference_type' => $referenceType,
+                        'reference_id' => $batchReferenceId,
+                        'voucher_number' => $voucherNumber,
+                        'created_by' => auth()->id() ?? $cashTransaction->created_by,
+                    ];
+                    
+                    // Bypass service record validation and rely on recalculation
+                    // Similar to applyTransaction without recalculation yet
+                    $data['transaction_number'] = $this->cashAccountService->generateTransactionNumber(
+                        $account,
+                        $type,
+                        $date
+                    );
+                    $data['balance_before'] = 0; // will be recalculated
+                    $data['balance_after'] = 0;  // will be recalculated
+                    
+                    CashTransaction::create($data);
+                }
+            }
+
+            // 3. Recalculate Balances once for all changes
+            $this->cashAccountService->recalculateBalances($account, $recalcFromDate);
+
+            DB::commit();
 
             return redirect()
                 ->route('admin.cash-transactions.index', $request->query())
                 ->with('success', 'Transaksi berhasil diperbarui dan saldo telah dihitung ulang.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('error', $e->getMessage());
         }
     }

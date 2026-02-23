@@ -56,6 +56,25 @@
                         </div>
                     </div>
 
+@php
+    $rows = old('rows');
+    if (!is_array($rows) || count($rows) === 0) {
+        $rows = [];
+        foreach ($relatedTransactions as $rt) {
+            $rows[] = [
+                'id' => $rt->id,
+                'coa_account_id' => $rt->coa_account_id,
+                'amount' => $rt->amount,
+                'description' => $rt->description,
+            ];
+        }
+    }
+
+    $coaOptions = $coaAccounts->map(fn($coa) => [
+        'id' => (string) $coa->id,
+        'label' => $coa->code . ' - ' . $coa->name,
+    ])->values();
+@endphp
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="transaction_date" class="block text-sm font-medium text-gray-700 mb-2">
@@ -72,62 +91,110 @@
                                 <i class="fas fa-exclamation-triangle"></i> Mengubah tanggal akan memicu perhitungan ulang saldo.
                             </p>
                         </div>
+                    </div>
 
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">
-                                Jumlah (Rp) <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2 text-gray-500">Rp</span>
-                                <input type="text" id="amount" name="amount"
-                                    value="{{ old('amount', $cashTransaction->amount) }}"
-                                    inputmode="decimal"
-                                    data-currency-input="1"
-                                    class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('amount') border-red-500 @enderror"
-                                    required>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold">Detail</p>
+                                <h2 class="text-lg font-semibold text-gray-900">Daftar Transaksi</h2>
                             </div>
-                            @error('amount')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="add-row"
+                                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
+                                    <i class="fas fa-plus"></i> Tambah Baris
+                                </button>
+                            </div>
                         </div>
 
-                        <div>
-                            <label for="coa_account_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                Akun Lawan (COA)
-                            </label>
-                            <select id="coa_account_id" name="coa_account_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('coa_account_id') border-red-500 @enderror">
-                                <option value="">-- Pilih Akun COA --</option>
-                                @foreach($coaAccounts as $coa)
-                                    <option value="{{ $coa->id }}" {{ old('coa_account_id', $cashTransaction->coa_account_id) == $coa->id ? 'selected' : '' }}>
-                                        {{ $coa->code }} - {{ $coa->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('coa_account_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div class="overflow-x-auto rounded-lg border border-gray-200">
+                            <table class="min-w-[980px] w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold w-12">#</th>
+                                        <th class="px-4 py-3 text-left font-semibold min-w-[360px]">Pilih Akun</th>
+                                        <th class="px-4 py-3 text-left font-semibold min-w-[320px]">Deskripsi</th>
+                                        <th class="px-4 py-3 text-left font-semibold w-56">Jumlah</th>
+                                        <th class="px-4 py-3 text-right font-semibold w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transaction-rows" class="divide-y divide-gray-200">
+                                    @foreach($rows as $i => $row)
+                                        <tr data-index="{{ $i }}">
+                                            <input type="hidden" name="rows[{{ $i }}][id]" value="{{ $row['id'] ?? '' }}">
+                                            <td class="px-4 py-3 text-gray-500" data-role="row-number">{{ $i + 1 }}</td>
+                                            <td class="px-4 py-3">
+                                                <select name="rows[{{ $i }}][coa_account_id]"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
+                                                        data-role="coa"
+                                                        data-selected="{{ $row['coa_account_id'] ?? '' }}"
+                                                        required>
+                                                    <option value="">-- Pilih Akun --</option>
+                                                </select>
+                                                @error('rows.'.$i.'.coa_account_id')
+                                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <input type="text"
+                                                       name="rows[{{ $i }}][description]"
+                                                       value="{{ $row['description'] ?? '' }}"
+                                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.description') border-red-500 @enderror"
+                                                       placeholder="Contoh: Pembayaran listrik"
+                                                       required>
+                                                @error('rows.'.$i.'.description')
+                                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="relative">
+                                                    <span class="absolute left-3 top-2 text-gray-500">Rp</span>
+                                                    <input type="text"
+                                                           name="rows[{{ $i }}][amount]"
+                                                           value="{{ $row['amount'] ?? '' }}"
+                                                           inputmode="decimal"
+                                                           data-currency-input="1"
+                                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.amount') border-red-500 @enderror"
+                                                           placeholder="0"
+                                                           required>
+                                                </div>
+                                                @error('rows.'.$i.'.amount')
+                                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                @enderror
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button type="button"
+                                                        class="px-2.5 py-2 text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                                        data-action="remove-row"
+                                                        title="Hapus baris">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
 
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                                Deskripsi <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="description" name="description"
-                                value="{{ old('description', $cashTransaction->description) }}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
-                                required>
-                            @error('description')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div class="flex justify-end">
+                            <div class="w-full max-w-md rounded-lg border border-indigo-100 bg-indigo-50/40 px-4 py-3">
+                                <div class="flex items-center justify-between text-sm text-gray-600">
+                                    <span>Total Baris</span>
+                                    <span id="rows-count-summary" class="font-semibold text-gray-800">{{ count($rows) }} baris</span>
+                                </div>
+                                <div class="mt-1 flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-700">Total Jumlah</span>
+                                    <span id="rows-total-amount" class="text-lg font-bold text-indigo-700">Rp 0</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Catatan Tambahan</label>
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Catatan Global</label>
                         <textarea id="notes" name="notes" rows="3"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
-                            placeholder="Opsional">{{ old('notes', $cashTransaction->notes) }}</textarea>
+                            placeholder="Catatan untuk seluruh transaksi">{{ old('notes', $cashTransaction->notes) }}</textarea>
                         @error('notes')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -147,13 +214,59 @@
             </form>
         </div>
     </div>
+    
+    <template id="row-template">
+        <tr data-index="__INDEX__">
+            <td class="px-4 py-3 text-gray-500" data-role="row-number"></td>
+            <td class="px-4 py-3">
+                <select name="rows[__INDEX__][coa_account_id]"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        data-role="coa"
+                        required>
+                    <option value="">-- Pilih Akun --</option>
+                </select>
+            </td>
+            <td class="px-4 py-3">
+                <input type="text"
+                       name="rows[__INDEX__][description]"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                       placeholder="Contoh: Pembayaran listrik"
+                       required>
+            </td>
+            <td class="px-4 py-3">
+                <div class="relative">
+                    <span class="absolute left-3 top-2 text-gray-500">Rp</span>
+                    <input type="text"
+                           name="rows[__INDEX__][amount]"
+                           inputmode="decimal"
+                           data-currency-input="1"
+                           class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           placeholder="0"
+                           required>
+                </div>
+            </td>
+            <td class="px-4 py-3 text-right">
+                <button type="button"
+                        class="px-2.5 py-2 text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        data-action="remove-row"
+                        title="Hapus baris">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    </template>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const coaOptions = @json($coaOptions);
             const form = document.querySelector('form[action*="cash-transactions"]');
-            const amountInput = document.getElementById('amount');
-            if (!form || !amountInput) {
-                return;
-            }
+            const rowsEl = document.getElementById('transaction-rows');
+            const addBtn = document.getElementById('add-row');
+            const rowsCountSummaryEl = document.getElementById('rows-count-summary');
+            const rowsTotalAmountEl = document.getElementById('rows-total-amount');
+            const template = document.getElementById('row-template').innerHTML.trim();
+            
+            let nextIndex = 0;
 
             function parseCurrencyInput(value) {
                 const raw = String(value ?? '').trim().replace(/[^\d,.\-]/g, '');
@@ -196,23 +309,173 @@
                 });
             }
 
-            function renderCurrency() {
-                const raw = String(amountInput.value ?? '').trim();
+            function sanitizeCurrencyInputValue(value) {
+                const raw = String(value ?? '').trim();
                 if (!raw) {
+                    return '';
+                }
+                return String(parseCurrencyInput(raw));
+            }
+
+            function attachCurrencyInput(input, onChange) {
+                if (!input || input.dataset.currencyBound === '1') {
                     return;
                 }
 
-                amountInput.value = formatCurrencyInput(parseCurrencyInput(raw));
+                input.dataset.currencyBound = '1';
+                const render = () => {
+                    const raw = String(input.value ?? '').trim();
+                    if (!raw) {
+                        if (typeof onChange === 'function') {
+                            onChange();
+                        }
+                        return;
+                    }
+
+                    input.value = formatCurrencyInput(parseCurrencyInput(raw));
+                    if (typeof onChange === 'function') {
+                        onChange();
+                    }
+                };
+
+                input.addEventListener('input', render);
+                input.addEventListener('blur', render);
+                render();
             }
 
-            amountInput.addEventListener('input', renderCurrency);
-            amountInput.addEventListener('blur', renderCurrency);
-            renderCurrency();
+            function formatCurrency(amount) {
+                return 'Rp ' + amount.toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2,
+                });
+            }
 
-            form.addEventListener('submit', function () {
-                const raw = String(amountInput.value ?? '').trim();
-                amountInput.value = raw ? String(parseCurrencyInput(raw)) : '';
-            });
+            function refreshRowNumbers() {
+                rowsEl.querySelectorAll('tr').forEach((row, idx) => {
+                    const numEl = row.querySelector('[data-role="row-number"]');
+                    if (numEl) {
+                        numEl.textContent = idx + 1;
+                    }
+                });
+            }
+
+            function refreshRowsSummary() {
+                const rows = rowsEl.querySelectorAll('tr');
+                const totalAmount = Array.from(rows).reduce((carry, row) => {
+                    const input = row.querySelector('input[name$="[amount]"]');
+                    if (!input) {
+                        return carry;
+                    }
+
+                    const parsed = parseCurrencyInput(input.value);
+                    if (Number.isNaN(parsed) || parsed <= 0) {
+                        return carry;
+                    }
+
+                    return carry + parsed;
+                }, 0);
+
+                if (rowsCountSummaryEl) {
+                    rowsCountSummaryEl.textContent = rows.length + ' baris';
+                }
+                if (rowsTotalAmountEl) {
+                    rowsTotalAmountEl.textContent = formatCurrency(totalAmount);
+                }
+            }
+
+            function fillCoaOptions(select, selectedValue) {
+                if (!select) {
+                    return;
+                }
+
+                const placeholder = '<option value="">-- Pilih Akun --</option>';
+                const optionHtml = coaOptions.map((item) => {
+                    const selected = String(item.id) === String(selectedValue || '') ? ' selected' : '';
+                    return `<option value="${item.id}"${selected}>${item.label}</option>`;
+                }).join('');
+
+                select.innerHTML = placeholder + optionHtml;
+            }
+
+            function bindRow(row) {
+                const removeBtn = row.querySelector('[data-action="remove-row"]');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function () {
+                        const rows = rowsEl.querySelectorAll('tr');
+                        if (rows.length <= 1) {
+                            row.querySelectorAll('input:not([type="hidden"])').forEach((input) => input.value = '');
+                            const coa = row.querySelector('[data-role="coa"]');
+                            fillCoaOptions(coa, '');
+                            refreshRowsSummary();
+                            return;
+                        }
+                        
+                        // Add markup for deleted row tracking if it had an ID
+                        const idInput = row.querySelector('input[name$="[id]"]');
+                        if (idInput && idInput.value) {
+                            const hiddenDelete = document.createElement('input');
+                            hiddenDelete.type = 'hidden';
+                            hiddenDelete.name = 'deleted_row_ids[]';
+                            hiddenDelete.value = idInput.value;
+                            form.appendChild(hiddenDelete);
+                        }
+
+                        row.remove();
+                        refreshRowNumbers();
+                        refreshRowsSummary();
+                    });
+                }
+
+                const coa = row.querySelector('[data-role="coa"]');
+                const selected = coa ? coa.getAttribute('data-selected') : '';
+                fillCoaOptions(coa, selected);
+                if (coa) {
+                    coa.removeAttribute('data-selected');
+                }
+
+                const amountInput = row.querySelector('input[name$="[amount]"]');
+                if (amountInput) {
+                    attachCurrencyInput(amountInput, refreshRowsSummary);
+                    amountInput.addEventListener('input', refreshRowsSummary);
+                    amountInput.addEventListener('change', refreshRowsSummary);
+                }
+            }
+
+            function buildRow(index) {
+                const wrapper = document.createElement('tbody');
+                wrapper.innerHTML = template.replace(/__INDEX__/g, index);
+                return wrapper.firstElementChild;
+            }
+
+            if (rowsEl) {
+                rowsEl.querySelectorAll('tr[data-index]').forEach((row) => {
+                    const idx = parseInt(row.getAttribute('data-index'), 10);
+                    if (!Number.isNaN(idx)) {
+                        nextIndex = Math.max(nextIndex, idx + 1);
+                    }
+                    bindRow(row);
+                });
+                refreshRowNumbers();
+                refreshRowsSummary();
+            }
+
+            if (addBtn) {
+                addBtn.addEventListener('click', function () {
+                    const newRow = buildRow(nextIndex++);
+                    rowsEl.appendChild(newRow);
+                    bindRow(newRow);
+                    refreshRowNumbers();
+                    refreshRowsSummary();
+                });
+            }
+
+            if (form) {
+                form.addEventListener('submit', function () {
+                    form.querySelectorAll('[data-currency-input="1"]').forEach((input) => {
+                        input.value = sanitizeCurrencyInputValue(input.value);
+                    });
+                });
+            }
         });
     </script>
 @endsection
