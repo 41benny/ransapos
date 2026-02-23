@@ -408,6 +408,41 @@ class CashAccountController extends Controller
                 ->get();
         }
 
+        $transactionCategory = 'general';
+        if ($cashTransaction->reference_type === 'purchase') {
+            $transactionCategory = 'purchase_payment';
+        } elseif ($cashTransaction->reference_type === 'bank_transfer') {
+            $transactionCategory = 'book_transfer';
+        }
+
+        $outstandingPurchases = collect();
+        if ($transactionCategory === 'purchase_payment') {
+            $outstandingPurchases = Purchase::query()
+                ->with(['supplier', 'outlet'])
+                ->where('status', 'received')
+                ->where(function ($query) use ($cashTransaction) {
+                    $query->whereIn('payment_status', ['unpaid', 'partial'])
+                        ->orWhereNull('payment_status')
+                        ->orWhere('id', $cashTransaction->reference_id);
+                })
+                ->withSum('cashTransactions as total_paid', 'amount')
+                ->orderByDesc('purchase_date')
+                ->get()
+                ->map(function (Purchase $purchase) use ($cashTransaction) {
+                    $totalPaid = (float) ($purchase->total_paid ?? 0);
+                    
+                    // Jangan hitung jumlah dari transaksi ini saat mencari sisa hutang sebelumnya
+                    if ($cashTransaction->reference_id == $purchase->id) {
+                        $totalPaid -= (float) $cashTransaction->amount;
+                    }
+                    
+                    $purchase->remaining_amount = max(0, (float) $purchase->total_amount - $totalPaid);
+                    return $purchase;
+                })
+                ->filter(fn (Purchase $purchase) => $purchase->remaining_amount > 0 || $cashTransaction->reference_id == $purchase->id)
+                ->values();
+        }
+
         // Ambil semua transaksi terkait menggunakan teknik yang sama dengan di printVoucher
         $voucherNumber = (string) ($cashTransaction->voucher_number ?: $cashTransaction->transaction_number);
 
@@ -431,7 +466,7 @@ class CashAccountController extends Controller
             $relatedTransactions = collect([$cashTransaction]);
         }
 
-        return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts', 'relatedTransactions'));
+        return view('admin.cash-accounts.edit-transaction', compact('cashTransaction', 'accounts', 'coaAccounts', 'relatedTransactions', 'transactionCategory', 'outstandingPurchases'));
     }
 
     /**
@@ -439,6 +474,12 @@ class CashAccountController extends Controller
      */
     public function updateTransaction(Request $request, CashTransaction $cashTransaction)
     {
+        $transactionCategory = $request->input('transaction_category', 'general');
+
+        if ($transactionCategory === 'purchase_payment') {
+            return $this->updatePurchasePaymentFromCashTransaction($request, $cashTransaction);
+        }
+
         $request->validate([
             'transaction_date' => 'required|date',
             'rows' => 'required|array|min:1',
@@ -448,7 +489,7 @@ class CashAccountController extends Controller
             'deleted_row_ids' => 'nullable|array',
             'deleted_row_ids.*' => 'exists:cash_transactions,id',
         ]);
-
+        
         try {
             DB::beginTransaction();
 
@@ -539,6 +580,64 @@ class CashAccountController extends Controller
             return redirect()
                 ->route('admin.cash-transactions.index', $request->query())
                 ->with('success', 'Transaksi berhasil diperbarui dan saldo telah dihitung ulang.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update pembayaran hutang purchase dari menu Transaksi Kas/Bank.
+     */
+    protected function updatePurchasePaymentFromCashTransaction(Request $request, CashTransaction $cashTransaction)
+    {
+        $request->validate([
+            'transaction_date' => 'required|date',
+            'purchase_amount' => 'required|numeric|min:0',
+            'purchase_id' => 'required|exists:purchases,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $purchase = Purchase::findOrFail((int) $request->input('purchase_id'));
+            $date = $request->input('transaction_date');
+            $notes = $request->input('purchase_notes');
+            $amount = (float) $request->input('purchase_amount');
+
+            $oldPurchaseId = $cashTransaction->reference_id;
+            
+            // Recalculate balances
+            $recalcFromDate = $cashTransaction->transaction_date->format('Y-m-d') < $date
+                ? $cashTransaction->transaction_date->format('Y-m-d')
+                : $date;
+
+            // Update transaction
+            $cashTransaction->update([
+                'transaction_date' => $date,
+                'amount' => $amount,
+                'notes' => $notes,
+                'reference_id' => $purchase->id,
+            ]);
+
+            $this->cashAccountService->recalculateBalances($cashTransaction->cashAccount, $recalcFromDate);
+
+            // Update new purchase payment status
+            $this->cashAccountService->updatePurchasePaymentStatus($purchase);
+
+            // If purchase changed, update old purchase payment status
+            if ($oldPurchaseId && $oldPurchaseId != $purchase->id) {
+                $oldPurchase = Purchase::find($oldPurchaseId);
+                if ($oldPurchase) {
+                    $this->cashAccountService->updatePurchasePaymentStatus($oldPurchase);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.cash-transactions.index', $request->query())
+                ->with('success', 'Transaksi pelunasan hutang berhasil diperbarui dan saldo telah dihitung ulang.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', $e->getMessage());

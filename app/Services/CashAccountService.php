@@ -238,6 +238,21 @@ class CashAccountService
     }
 
     /**
+     * Update status pembayaran purchase berdasarkan transaksi kas
+     */
+    public function updatePurchasePaymentStatus(Purchase $purchase): void
+    {
+        $totalPaid = $purchase->cashTransactions()->sum('amount');
+        if ($totalPaid >= $purchase->total_amount) {
+            $purchase->update(['payment_status' => 'paid']);
+        } elseif ($totalPaid > 0) {
+            $purchase->update(['payment_status' => 'partial']);
+        } else {
+            $purchase->update(['payment_status' => 'unpaid']);
+        }
+    }
+
+    /**
      * Catat pembayaran purchase (kas keluar)
      */
     public function recordPurchasePayment(Purchase $purchase, array $data): CashTransaction

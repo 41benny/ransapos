@@ -93,6 +93,69 @@
                         </div>
                     </div>
 
+                    <input type="hidden" name="transaction_category" value="{{ $transactionCategory }}">
+
+                    @if($transactionCategory === 'purchase_payment')
+                    <div id="purchase-payment-section" class="rounded-lg border border-indigo-200 bg-indigo-50/30 p-5 space-y-4 mt-6">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold mb-1">Kategori: Bayar Hutang Purchase</p>
+                            <h2 class="text-lg font-semibold text-gray-900">Pembayaran Purchase</h2>
+                        </div>
+                        <div>
+                            <label for="purchase_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Pilih Purchase <span class="text-red-500">*</span>
+                            </label>
+                            <select id="purchase_id"
+                                    name="purchase_id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
+                                <option value="">-- Pilih Purchase --</option>
+                                @foreach($outstandingPurchases as $purchase)
+                                    <option value="{{ $purchase->id }}"
+                                            data-remaining="{{ $purchase->remaining_amount }}"
+                                            {{ (string) old('purchase_id', $cashTransaction->reference_id) === (string) $purchase->id ? 'selected' : '' }}>
+                                        {{ $purchase->purchase_number }} | {{ $purchase->supplier->name ?? '-' }} | Outlet {{ $purchase->outlet->name ?? '-' }} | Sisa: Rp {{ number_format($purchase->remaining_amount, 0, ',', '.') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('purchase_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="purchase_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jumlah Pembayaran <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text"
+                                       id="purchase_amount"
+                                       name="purchase_amount"
+                                       value="{{ old('purchase_amount', $cashTransaction->amount) }}"
+                                       inputmode="decimal"
+                                       data-currency-input="1"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_amount') border-red-500 @enderror"
+                                       placeholder="0">
+                                @error('purchase_amount')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p id="purchase-remaining-info" class="mt-1 text-xs text-gray-500"></p>
+                            </div>
+                            <div>
+                                <label for="purchase_notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Catatan Pembayaran
+                                </label>
+                                <textarea id="purchase_notes"
+                                          name="purchase_notes"
+                                          rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
+                                          placeholder="Catatan pembayaran purchase (opsional)">{{ old('purchase_notes', $cashTransaction->notes) }}</textarea>
+                                @error('purchase_notes')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                    @else
                     <div class="space-y-4">
                         <div class="flex items-center justify-between gap-3">
                             <div>
@@ -199,6 +262,7 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+                    @endif
                 </div>
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
@@ -474,6 +538,48 @@
                     form.querySelectorAll('[data-currency-input="1"]').forEach((input) => {
                         input.value = sanitizeCurrencyInputValue(input.value);
                     });
+                });
+            }
+
+            const purchaseSelectEl = document.getElementById('purchase_id');
+            const purchaseAmountEl = document.getElementById('purchase_amount');
+            const purchaseRemainingInfoEl = document.getElementById('purchase-remaining-info');
+
+            function syncPurchaseRemainingInfo() {
+                if (!purchaseSelectEl || !purchaseRemainingInfoEl) {
+                    return;
+                }
+
+                const selectedOption = purchaseSelectEl.options[purchaseSelectEl.selectedIndex];
+                const remaining = selectedOption ? Number(selectedOption.getAttribute('data-remaining')) : NaN;
+
+                if (!selectedOption || !selectedOption.value || Number.isNaN(remaining)) {
+                    purchaseRemainingInfoEl.innerHTML = '';
+                    return;
+                }
+
+                purchaseRemainingInfoEl.innerHTML = `Sisa hutang: <span class="font-medium text-gray-900">Rp ${remaining.toLocaleString('id-ID')}</span>`;
+            }
+            
+            if (purchaseSelectEl) {
+                purchaseSelectEl.addEventListener('change', syncPurchaseRemainingInfo);
+                syncPurchaseRemainingInfo(); // initial render
+            }
+
+            // Add validation for max amount
+            if (purchaseAmountEl) {
+                purchaseAmountEl.addEventListener('blur', function() {
+                    const selectedOption = purchaseSelectEl.options[purchaseSelectEl.selectedIndex];
+                    const remaining = selectedOption ? Number(selectedOption.getAttribute('data-remaining')) : NaN;
+                    
+                    if (!Number.isNaN(remaining)) {
+                        let entered = parseCurrencyInput(this.value);
+                        if (entered > remaining) {
+                            this.value = formatCurrencyInput(remaining);
+                            this.classList.add('bg-amber-50', 'border-amber-400');
+                            setTimeout(() => this.classList.remove('bg-amber-50', 'border-amber-400'), 500);
+                        }
+                    }
                 });
             }
         });
