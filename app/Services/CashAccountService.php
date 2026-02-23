@@ -206,7 +206,7 @@ class CashAccountService
             $transactions = [];
             $isBatchTransaction = count($rows) > 1;
             $batchReferenceId = $isBatchTransaction
-                ? (int) round(microtime(true) * 1000000)
+                ? mt_rand(100000000, 999999999)
                 : null;
             $voucherNumber = $header['voucher_number'] ?? $this->generateTransactionNumber(
                 $account,
