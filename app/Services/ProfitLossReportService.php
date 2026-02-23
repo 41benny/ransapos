@@ -110,6 +110,27 @@ class ProfitLossReportService
         // 5. LABA BERSIH (Net Profit)
         $netProfit = $grossProfit - $totalExpenses;
 
+        // 6. Revenue Trend (Last 5 Months)
+        $trends = [];
+        for ($i = 4; $i >= 0; $i--) {
+            $monthDate = now()->subMonths($i);
+            $start = $monthDate->copy()->startOfMonth()->format('Y-m-d');
+            $end = $monthDate->copy()->endOfMonth()->format('Y-m-d');
+            
+            $trendQuery = Sale::query()
+                ->where('status', 'completed')
+                ->whereBetween('sale_date', [$start, $end]);
+            
+            if ($outletId) {
+                $trendQuery->where('outlet_id', $outletId);
+            }
+            
+            $trends[] = [
+                'month' => $monthDate->format('M'),
+                'amount' => (float) $trendQuery->sum('total_amount'),
+            ];
+        }
+
         // Return report data
         return [
             'date_from' => $dateFrom,
@@ -133,6 +154,13 @@ class ProfitLossReportService
             // Net Profit
             'net_profit' => $netProfit,
             'net_profit_margin' => $totalRevenue > 0 ? ($netProfit / $totalRevenue) * 100 : 0,
+
+            // Charts
+            'revenue_trends' => $trends,
+            'expense_chart' => collect($expensesByGroup)->map(fn($g) => [
+                'label' => $g['group_name'],
+                'value' => $g['total']
+            ])->values()->toArray(),
         ];
     }
 

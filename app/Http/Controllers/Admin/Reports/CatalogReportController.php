@@ -133,11 +133,11 @@ class CatalogReportController extends Controller
             'sales-by-service-charge' => ['title' => 'Penjualan per Biaya Layanan', 'implemented' => false],
             'daily-outlet-summary' => ['title' => 'Ringkasan Penjualan Harian Per Outlet', 'implemented' => false],
             'credit-card' => ['title' => 'Kartu Kredit', 'implemented' => false],
-            'purchase-summary' => ['title' => 'Ringkasan Pembelian', 'implemented' => false],
-            'purchase-by-supplier' => ['title' => 'Pembelian per Supplier', 'implemented' => false],
-            'purchase-by-product' => ['title' => 'Pembelian per Produk', 'implemented' => false],
-            'purchase-by-category' => ['title' => 'Pembelian per Kategori', 'implemented' => false],
-            'purchase-unpaid' => ['title' => 'Pembelian Belum Lunas', 'implemented' => false],
+            'purchase-summary' => ['title' => 'Ringkasan Pembelian', 'implemented' => true],
+            'purchase-by-supplier' => ['title' => 'Pembelian per Supplier', 'implemented' => true],
+            'purchase-by-product' => ['title' => 'Pembelian per Produk', 'implemented' => true],
+            'purchase-by-category' => ['title' => 'Pembelian per Kategori', 'implemented' => true],
+            'purchase-unpaid' => ['title' => 'Pembelian Belum Lunas', 'implemented' => true],
             'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => true],
             'top-products' => ['title' => 'Produk Terlaris', 'implemented' => false],
             'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
@@ -206,6 +206,15 @@ class CatalogReportController extends Controller
                 'user_id' => $request->input('user_id'),
                 'status' => $request->input('status'),
                 'tab' => $request->input('tab', 'penjualan'),
+            ]));
+        }
+
+        if ($slug === 'profit-loss') {
+            return redirect()->route('admin.reports.profit-loss.index', array_filter([
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'tab' => $request->input('tab', 'ikhtisar'),
             ]));
         }
 
@@ -719,6 +728,221 @@ class CatalogReportController extends Controller
             ];
         }
 
+        if (in_array($slug, ['purchase-summary', 'purchase-by-supplier', 'purchase-by-product', 'purchase-by-category', 'purchase-unpaid'], true)) {
+            $purchasePaymentSub = DB::table('cash_transactions')
+                ->select(
+                    'reference_id',
+                    DB::raw('SUM(amount) as paid_amount')
+                )
+                ->where('reference_type', 'purchase')
+                ->groupBy('reference_id');
+
+            if ($slug === 'purchase-summary') {
+                $viewType = 'purchase-summary';
+
+                $purchaseBase = DB::table('purchases')
+                    ->leftJoinSub($purchasePaymentSub, 'purchase_payments', function ($join) {
+                        $join->on('purchase_payments.reference_id', '=', 'purchases.id');
+                    })
+                    ->where('purchases.status', 'received')
+                    ->whereBetween('purchases.purchase_date', [$dateFrom, $dateTo]);
+
+                if (!empty($outletId)) {
+                    $purchaseBase->where('purchases.outlet_id', $outletId);
+                }
+
+                $totals = (clone $purchaseBase)
+                    ->selectRaw('COUNT(*) as total_purchase_count')
+                    ->selectRaw('COALESCE(SUM(purchases.subtotal), 0) as subtotal')
+                    ->selectRaw('COALESCE(SUM(purchases.discount_amount), 0) as total_discount')
+                    ->selectRaw('COALESCE(SUM(purchases.tax_amount), 0) as total_tax')
+                    ->selectRaw('COALESCE(SUM(purchases.total_amount), 0) as total_amount')
+                    ->selectRaw('COALESCE(SUM(COALESCE(purchase_payments.paid_amount, 0)), 0) as total_paid')
+                    ->first();
+
+                $rows = (clone $purchaseBase)
+                    ->select('purchases.purchase_date')
+                    ->selectRaw('COUNT(*) as total_purchase_count')
+                    ->selectRaw('COALESCE(SUM(purchases.total_amount), 0) as total_amount')
+                    ->selectRaw('COALESCE(SUM(COALESCE(purchase_payments.paid_amount, 0)), 0) as total_paid')
+                    ->groupBy('purchases.purchase_date')
+                    ->orderByDesc('purchases.purchase_date')
+                    ->get()
+                    ->map(function ($row) {
+                        $row->outstanding_amount = max(0, (float) $row->total_amount - (float) $row->total_paid);
+                        return $row;
+                    });
+
+                $summary = [
+                    'total_purchase_count' => (int) ($totals->total_purchase_count ?? 0),
+                    'subtotal' => (float) ($totals->subtotal ?? 0),
+                    'total_discount' => (float) ($totals->total_discount ?? 0),
+                    'total_tax' => (float) ($totals->total_tax ?? 0),
+                    'total_amount' => (float) ($totals->total_amount ?? 0),
+                    'total_paid' => (float) ($totals->total_paid ?? 0),
+                    'total_outstanding' => max(0, (float) ($totals->total_amount ?? 0) - (float) ($totals->total_paid ?? 0)),
+                ];
+            }
+
+            if ($slug === 'purchase-by-supplier') {
+                $viewType = 'purchase-by-supplier';
+
+                $query = DB::table('purchases')
+                    ->join('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+                    ->leftJoinSub($purchasePaymentSub, 'purchase_payments', function ($join) {
+                        $join->on('purchase_payments.reference_id', '=', 'purchases.id');
+                    })
+                    ->where('purchases.status', 'received')
+                    ->whereBetween('purchases.purchase_date', [$dateFrom, $dateTo]);
+
+                if (!empty($outletId)) {
+                    $query->where('purchases.outlet_id', $outletId);
+                }
+
+                $rows = $query
+                    ->select(
+                        'suppliers.id as supplier_id',
+                        'suppliers.code as supplier_code',
+                        'suppliers.name as supplier_name'
+                    )
+                    ->selectRaw('COUNT(purchases.id) as total_purchase_count')
+                    ->selectRaw('COALESCE(SUM(purchases.total_amount), 0) as total_amount')
+                    ->selectRaw('COALESCE(SUM(COALESCE(purchase_payments.paid_amount, 0)), 0) as total_paid')
+                    ->groupBy('suppliers.id', 'suppliers.code', 'suppliers.name')
+                    ->orderByDesc('total_amount')
+                    ->get()
+                    ->map(function ($row) {
+                        $row->outstanding_amount = max(0, (float) $row->total_amount - (float) $row->total_paid);
+                        return $row;
+                    });
+
+                $summary = [
+                    'supplier_count' => (int) $rows->count(),
+                    'total_purchase_count' => (int) $rows->sum('total_purchase_count'),
+                    'total_amount' => (float) $rows->sum('total_amount'),
+                    'total_paid' => (float) $rows->sum('total_paid'),
+                    'total_outstanding' => (float) $rows->sum('outstanding_amount'),
+                ];
+            }
+
+            if ($slug === 'purchase-by-product') {
+                $viewType = 'purchase-by-product';
+
+                $query = DB::table('purchase_items')
+                    ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+                    ->join('products', 'purchase_items.product_id', '=', 'products.id')
+                    ->where('purchases.status', 'received')
+                    ->whereBetween('purchases.purchase_date', [$dateFrom, $dateTo]);
+
+                if (!empty($outletId)) {
+                    $query->where('purchases.outlet_id', $outletId);
+                }
+
+                $rows = $query
+                    ->select(
+                        'products.id as product_id',
+                        'products.sku as product_sku',
+                        'products.name as product_name',
+                        'products.unit as product_unit'
+                    )
+                    ->selectRaw('COUNT(DISTINCT purchases.id) as total_purchase_count')
+                    ->selectRaw('COALESCE(SUM(purchase_items.quantity), 0) as total_qty')
+                    ->selectRaw('COALESCE(SUM(purchase_items.subtotal), 0) as total_amount')
+                    ->groupBy('products.id', 'products.sku', 'products.name', 'products.unit')
+                    ->orderByDesc('total_amount')
+                    ->get()
+                    ->map(function ($row) {
+                        $qty = (float) ($row->total_qty ?? 0);
+                        $amount = (float) ($row->total_amount ?? 0);
+                        $row->avg_unit_price = $qty > 0 ? $amount / $qty : 0;
+                        return $row;
+                    });
+
+                $summary = [
+                    'product_count' => (int) $rows->count(),
+                    'total_purchase_count' => (int) $rows->sum('total_purchase_count'),
+                    'total_qty' => (float) $rows->sum('total_qty'),
+                    'total_amount' => (float) $rows->sum('total_amount'),
+                ];
+            }
+
+            if ($slug === 'purchase-by-category') {
+                $viewType = 'purchase-by-category';
+
+                $query = DB::table('purchase_items')
+                    ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+                    ->join('products', 'purchase_items.product_id', '=', 'products.id')
+                    ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+                    ->where('purchases.status', 'received')
+                    ->whereBetween('purchases.purchase_date', [$dateFrom, $dateTo]);
+
+                if (!empty($outletId)) {
+                    $query->where('purchases.outlet_id', $outletId);
+                }
+
+                $rows = $query
+                    ->selectRaw("COALESCE(product_categories.name, 'Tanpa Kategori') as category_name")
+                    ->selectRaw('COUNT(DISTINCT purchases.id) as total_purchase_count')
+                    ->selectRaw('COUNT(DISTINCT products.id) as total_product_count')
+                    ->selectRaw('COALESCE(SUM(purchase_items.quantity), 0) as total_qty')
+                    ->selectRaw('COALESCE(SUM(purchase_items.subtotal), 0) as total_amount')
+                    ->groupBy('category_name')
+                    ->orderByDesc('total_amount')
+                    ->get();
+
+                $summary = [
+                    'category_count' => (int) $rows->count(),
+                    'total_purchase_count' => (int) $rows->sum('total_purchase_count'),
+                    'total_product_count' => (int) $rows->sum('total_product_count'),
+                    'total_qty' => (float) $rows->sum('total_qty'),
+                    'total_amount' => (float) $rows->sum('total_amount'),
+                ];
+            }
+
+            if ($slug === 'purchase-unpaid') {
+                $viewType = 'purchase-unpaid';
+
+                $query = DB::table('purchases')
+                    ->join('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+                    ->join('outlets', 'purchases.outlet_id', '=', 'outlets.id')
+                    ->leftJoinSub($purchasePaymentSub, 'purchase_payments', function ($join) {
+                        $join->on('purchase_payments.reference_id', '=', 'purchases.id');
+                    })
+                    ->where('purchases.status', 'received')
+                    ->whereBetween('purchases.purchase_date', [$dateFrom, $dateTo]);
+
+                if (!empty($outletId)) {
+                    $query->where('purchases.outlet_id', $outletId);
+                }
+
+                $rows = $query
+                    ->select(
+                        'purchases.id as purchase_id',
+                        'purchases.purchase_number',
+                        'purchases.purchase_date',
+                        'outlets.name as outlet_name',
+                        'suppliers.name as supplier_name',
+                        'purchases.total_amount'
+                    )
+                    ->selectRaw('COALESCE(purchase_payments.paid_amount, 0) as total_paid')
+                    ->orderByDesc('purchases.purchase_date')
+                    ->get()
+                    ->map(function ($row) {
+                        $row->outstanding_amount = max(0, (float) $row->total_amount - (float) $row->total_paid);
+                        return $row;
+                    })
+                    ->filter(fn($row) => (float) $row->outstanding_amount > 0)
+                    ->values();
+
+                $summary = [
+                    'total_purchase_count' => (int) $rows->count(),
+                    'total_amount' => (float) $rows->sum('total_amount'),
+                    'total_paid' => (float) $rows->sum('total_paid'),
+                    'total_outstanding' => (float) $rows->sum('outstanding_amount'),
+                ];
+            }
+        }
+
         $format = $request->input('format');
         if (in_array($format, ['xlsx', 'pdf'], true)) {
             [$exportColumns, $exportRows] = $this->buildExportPayload($viewType, $rows, $summary);
@@ -830,6 +1054,61 @@ class CatalogReportController extends Controller
                 $arr['is_balanced'] = !empty($arr['is_balanced']) ? 'YES' : 'NO';
                 return $arr;
             })->all()];
+        }
+
+        if ($viewType === 'purchase-summary') {
+            return [[
+                ['key' => 'purchase_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'total_purchase_count', 'label' => 'Jumlah Pembelian', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_amount', 'label' => 'Total Pembelian', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_paid', 'label' => 'Total Dibayar', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'outstanding_amount', 'label' => 'Sisa Hutang', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'purchase-by-supplier') {
+            return [[
+                ['key' => 'supplier_code', 'label' => 'Kode Supplier', 'type' => 'text'],
+                ['key' => 'supplier_name', 'label' => 'Supplier', 'type' => 'text'],
+                ['key' => 'total_purchase_count', 'label' => 'Jumlah Pembelian', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_amount', 'label' => 'Total Pembelian', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_paid', 'label' => 'Total Dibayar', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'outstanding_amount', 'label' => 'Sisa Hutang', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'purchase-by-product') {
+            return [[
+                ['key' => 'product_sku', 'label' => 'SKU', 'type' => 'text'],
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'product_unit', 'label' => 'Satuan', 'type' => 'text'],
+                ['key' => 'total_purchase_count', 'label' => 'Jumlah Pembelian', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'avg_unit_price', 'label' => 'Rata2 Harga', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_amount', 'label' => 'Total Pembelian', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'purchase-by-category') {
+            return [[
+                ['key' => 'category_name', 'label' => 'Kategori', 'type' => 'text'],
+                ['key' => 'total_purchase_count', 'label' => 'Jumlah Pembelian', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_product_count', 'label' => 'Jumlah Produk', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_amount', 'label' => 'Total Pembelian', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'purchase-unpaid') {
+            return [[
+                ['key' => 'purchase_number', 'label' => 'No PO', 'type' => 'text'],
+                ['key' => 'purchase_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'supplier_name', 'label' => 'Supplier', 'type' => 'text'],
+                ['key' => 'total_amount', 'label' => 'Total Pembelian', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_paid', 'label' => 'Total Dibayar', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'outstanding_amount', 'label' => 'Sisa Hutang', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($rowsCollection->isNotEmpty()) {

@@ -1578,6 +1578,199 @@
                     </div>
                 @endif
             </div>
+        @elseif(in_array($viewType, ['purchase-summary', 'purchase-by-supplier', 'purchase-by-product', 'purchase-by-category', 'purchase-unpaid'], true))
+            @php
+                $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Data</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            @if($viewType === 'purchase-by-supplier')
+                                {{ number_format($summary['supplier_count'] ?? 0) }}
+                            @elseif($viewType === 'purchase-by-product')
+                                {{ number_format($summary['product_count'] ?? 0) }}
+                            @elseif($viewType === 'purchase-by-category')
+                                {{ number_format($summary['category_count'] ?? 0) }}
+                            @else
+                                {{ number_format($summary['total_purchase_count'] ?? 0) }}
+                            @endif
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Pembelian</div>
+                        <div class="mt-2 text-2xl font-normal text-indigo-700">
+                            {{ $money($summary['total_amount'] ?? 0) }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Dibayar</div>
+                        <div class="mt-2 text-2xl font-normal text-emerald-700">
+                            {{ $money($summary['total_paid'] ?? 0) }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Sisa Hutang</div>
+                        <div class="mt-2 text-2xl font-normal text-rose-700">
+                            {{ $money($summary['total_outstanding'] ?? 0) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    @if($viewType === 'purchase-summary')
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3 text-right">Jumlah PO</th>
+                                    <th class="px-4 py-3 text-right">Total Pembelian</th>
+                                    <th class="px-4 py-3 text-right">Total Dibayar</th>
+                                    <th class="px-4 py-3 text-right">Sisa Hutang</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-800">{{ \Carbon\Carbon::parse($row->purchase_date)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_purchase_count) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->total_amount) }}</td>
+                                        <td class="px-4 py-3 text-right text-emerald-700">{{ $money($row->total_paid) }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-700">{{ $money($row->outstanding_amount) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada data pembelian untuk filter yang dipilih.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @elseif($viewType === 'purchase-by-supplier')
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Supplier</th>
+                                    <th class="px-4 py-3 text-right">Jumlah PO</th>
+                                    <th class="px-4 py-3 text-right">Total Pembelian</th>
+                                    <th class="px-4 py-3 text-right">Total Dibayar</th>
+                                    <th class="px-4 py-3 text-right">Sisa Hutang</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-800">
+                                            {{ $row->supplier_name }}
+                                            @if(!empty($row->supplier_code))
+                                                <span class="ml-1 text-xs text-slate-500">({{ $row->supplier_code }})</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_purchase_count) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->total_amount) }}</td>
+                                        <td class="px-4 py-3 text-right text-emerald-700">{{ $money($row->total_paid) }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-700">{{ $money($row->outstanding_amount) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada data pembelian untuk filter yang dipilih.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @elseif($viewType === 'purchase-by-product')
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Produk</th>
+                                    <th class="px-4 py-3 text-right">Jumlah PO</th>
+                                    <th class="px-4 py-3 text-right">Total Qty</th>
+                                    <th class="px-4 py-3 text-right">Rata-rata Harga</th>
+                                    <th class="px-4 py-3 text-right">Total Pembelian</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-800">
+                                            {{ $row->product_name }}
+                                            @if(!empty($row->product_sku))
+                                                <span class="ml-1 text-xs text-slate-500">({{ $row->product_sku }})</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_purchase_count) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_qty, 2, ',', '.') }} {{ $row->product_unit ?: 'pcs' }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->avg_unit_price) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->total_amount) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada data pembelian untuk filter yang dipilih.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @elseif($viewType === 'purchase-by-category')
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Kategori</th>
+                                    <th class="px-4 py-3 text-right">Jumlah PO</th>
+                                    <th class="px-4 py-3 text-right">Jumlah Produk</th>
+                                    <th class="px-4 py-3 text-right">Total Qty</th>
+                                    <th class="px-4 py-3 text-right">Total Pembelian</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-800">{{ $row->category_name }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_purchase_count) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_product_count) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_qty, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->total_amount) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Belum ada data pembelian untuk filter yang dipilih.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @else
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">No PO</th>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Outlet</th>
+                                    <th class="px-4 py-3">Supplier</th>
+                                    <th class="px-4 py-3 text-right">Total Pembelian</th>
+                                    <th class="px-4 py-3 text-right">Total Dibayar</th>
+                                    <th class="px-4 py-3 text-right">Sisa Hutang</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ $row->purchase_number }}</td>
+                                        <td class="px-4 py-3 text-slate-700">{{ \Carbon\Carbon::parse($row->purchase_date)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
+                                        <td class="px-4 py-3 text-slate-800">{{ $row->supplier_name }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->total_amount) }}</td>
+                                        <td class="px-4 py-3 text-right text-emerald-700">{{ $money($row->total_paid) }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-700">{{ $money($row->outstanding_amount) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">Belum ada data pembelian belum lunas untuk filter yang dipilih.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
         @elseif($viewType === 'sales-vs-hpp')
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">

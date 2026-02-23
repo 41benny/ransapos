@@ -550,6 +550,12 @@ class SalesReportController extends Controller
         $dateTo = $request->input('date_to', now()->toDateString());
         $outletIds = $this->resolveOutletIds($request);
 
+        $outletsForColumns = Outlet::where('is_active', true);
+        if (!empty($outletIds)) {
+            $outletsForColumns->whereIn('id', $outletIds);
+        }
+        $outletsForColumns = $outletsForColumns->orderBy('name')->get();
+
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -563,33 +569,113 @@ class SalesReportController extends Controller
             $query->where('sales.user_id', $request->user_id);
         }
 
-        $products = $query->select(
-            'products.name as produk',
-            'products.sku as sku',
-            DB::raw('SUM(sale_items.quantity) as qty'),
-            DB::raw('SUM(sale_items.subtotal) as total')
-        )
+        $selects = [
+            'products.id',
+            'products.name as product_name',
+            'products.sku',
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_amount'),
+        ];
+
+        foreach ($outletsForColumns as $outletCol) {
+            $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.quantity ELSE 0 END) as outlet_{$outletCol->id}_qty");
+            $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.subtotal ELSE 0 END) as outlet_{$outletCol->id}_amount");
+        }
+
+        $products = $query->select($selects)
             ->groupBy('products.id', 'products.name', 'products.sku')
-            ->orderBy('total', 'desc')
-            ->get()
-            ->map(fn ($row) => (array) $row)
-            ->all();
+            ->orderBy('total_amount', 'desc')
+            ->get();
+
+        if ($request->filled('filter_sku')) {
+            $products = $products->filter(fn($p) => stripos($p->sku ?? '', $request->filter_sku) !== false);
+        }
+        if ($request->filled('filter_product')) {
+            $products = $products->filter(fn($p) => stripos($p->product_name ?? '', $request->filter_product) !== false);
+        }
+        if ($request->filled('filter_qty')) {
+            $products = $products->filter(fn($p) => stripos((string)$p->total_qty, $request->filter_qty) !== false);
+        }
+        if ($request->filled('filter_amount')) {
+            $products = $products->filter(fn($p) => stripos((string)$p->total_amount, $request->filter_amount) !== false);
+        }
+        if ($request->filled('filter_avg')) {
+            $products = $products->filter(function($p) use ($request) {
+                $avg = $p->total_qty > 0 ? floor($p->total_amount / $p->total_qty) : 0;
+                return stripos((string)$avg, $request->filter_avg) !== false;
+            });
+        }
+        foreach ($outletsForColumns as $outletCol) {
+            $filterName = "filter_outlet_{$outletCol->id}";
+            if ($request->filled($filterName)) {
+                $products = $products->filter(fn($p) => stripos((string)($p->{"outlet_{$outletCol->id}_qty"} ?? 0), $request->{$filterName}) !== false);
+            }
+        }
+        $products = $products->values();
+
+        $rows = $products->map(function ($row, $index) use ($outletsForColumns) {
+            $data = [
+                'no' => $index + 1,
+                'produk' => $row->product_name,
+                'sku' => $row->sku,
+            ];
+
+            foreach ($outletsForColumns as $outletCol) {
+                $data["outlet_{$outletCol->id}_qty"] = (float) ($row->{"outlet_{$outletCol->id}_qty"} ?? 0);
+                $data["outlet_{$outletCol->id}_amount"] = (float) ($row->{"outlet_{$outletCol->id}_amount"} ?? 0);
+            }
+
+            $qty = (float) $row->total_qty;
+            $amount = (float) $row->total_amount;
+            $data['total_qty'] = $qty;
+            $data['total_omzet'] = $amount;
+            $data['avg_price'] = $qty > 0 ? floor($amount / $qty) : 0;
+
+            return $data;
+        })->all();
+
+        $grandTotalQty = collect($rows)->sum('total_qty');
+        $grandTotalAmount = collect($rows)->sum('total_omzet');
+        $grandTotalRow = [
+            'no' => '',
+            'produk' => 'GRAND TOTAL',
+            'sku' => '',
+        ];
+
+        foreach ($outletsForColumns as $outletCol) {
+            $grandTotalRow["outlet_{$outletCol->id}_qty"] = collect($rows)->sum("outlet_{$outletCol->id}_qty");
+            $grandTotalRow["outlet_{$outletCol->id}_amount"] = collect($rows)->sum("outlet_{$outletCol->id}_amount");
+        }
+
+        $grandTotalRow['total_qty'] = $grandTotalQty;
+        $grandTotalRow['total_omzet'] = $grandTotalAmount;
+        $grandTotalRow['avg_price'] = $grandTotalQty > 0 ? floor($grandTotalAmount / $grandTotalQty) : 0;
+
+        $rows[] = $grandTotalRow;
 
         $columns = [
+            ['key' => 'no', 'label' => 'No', 'type' => 'text'],
             ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
             ['key' => 'sku', 'label' => 'SKU', 'type' => 'text'],
-            ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
-            ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
         ];
+
+        foreach ($outletsForColumns as $outletCol) {
+            $columns[] = ['key' => "outlet_{$outletCol->id}_qty", 'label' => "{$outletCol->name} Qty", 'type' => 'number', 'decimals' => 2];
+            $columns[] = ['key' => "outlet_{$outletCol->id}_amount", 'label' => "{$outletCol->name} Omzet", 'type' => 'number', 'decimals' => 2];
+        }
+
+        $columns[] = ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 2];
+        $columns[] = ['key' => 'total_omzet', 'label' => 'Total Omzet', 'type' => 'number', 'decimals' => 2];
+        $columns[] = ['key' => 'avg_price', 'label' => 'Avg Price', 'type' => 'number', 'decimals' => 2];
 
         $format = $request->input('format', 'xlsx');
         $filename = sprintf('laporan-penjualan-produk-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
 
         if ($format === 'pdf') {
-            return ReportExport::pdf($filename, 'Laporan Penjualan per Produk', $columns, $products);
+            return ReportExport::pdf($filename, 'Laporan Penjualan per Produk', $columns, $rows);
         }
 
-        return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $products);
+        return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $rows);
     }
 
     private function resolveOutletIds(Request $request): array

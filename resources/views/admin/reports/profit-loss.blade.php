@@ -1,313 +1,357 @@
 @extends('layouts.admin')
 
-@section('title', 'Laporan Laba Rugi')
-@section('page-title', 'Laporan Laba Rugi')
-@section('page-subtitle', 'Ringkasan laba rugi berdasarkan periode')
+@section('title', 'Profit & Loss Statement')
+@section('page-title', 'Profit & Loss Statement')
+@section('page-subtitle', 'Reports & Analytics')
 
 @section('content')
-    <div class="w-full py-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-                <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Laporan Laba Rugi</h1>
-                <p class="text-xs font-normal text-slate-500 mt-0.5">Analisis pendapatan, beban, dan performa laba unit
-                    usaha</p>
-            </div>
-            <div class="flex items-center gap-3 no-print">
-                <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'ikhtisar')]) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
-                    <i class="fas fa-arrow-left text-[10px]"></i>
+    <div class="w-full py-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {{-- Header Section --}}
+        <div class="flex flex-col gap-6 mb-8 no-print">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Laporan & Analitik</span>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight mt-1">Laba & Rugi</h1>
+                </div>
+                <a href="{{ route('admin.reports.index', ['tab' => 'ikhtisar']) }}"
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                    <i class="fas fa-arrow-left text-xs"></i>
                     <span>Kembali ke Katalog</span>
                 </a>
             </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
-            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-filter text-indigo-500 text-xs"></i>
-                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Periode
-                    </h3>
-                </div>
-            </div>
-            <div class="p-5">
-                <form method="GET" class="space-y-4">
-                    <input type="hidden" name="tab" value="{{ request('tab', 'ikhtisar') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <div class="flex flex-col gap-1.5 lg:col-span-1">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
-                                Tanggal</label>
-                            <input type="date" name="date_from" value="{{ $dateFrom }}"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                        </div>
-                        <div class="flex flex-col gap-1.5 lg:col-span-1">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai
-                                Tanggal</label>
-                            <input type="date" name="date_to" value="{{ $dateTo }}"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                        </div>
-                        <div class="flex flex-col gap-1.5 lg:col-span-2">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet
-                                (Opsional)</label>
-                            <select name="outlet_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                <option value="">Semua Outlet</option>
-                                @foreach($outlets as $outlet)
-                                    <option value="{{ $outlet->id }}" {{ $outletId == $outlet->id ? 'selected' : '' }}>
-                                        {{ $outlet->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="flex items-end lg:col-span-2 gap-2">
-                            <button type="submit"
-                                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
-                                <i class="fas fa-search text-[10px]"></i>
-                                <span>Tampilkan</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
-                        <a href="{{ route('admin.reports.profit-loss.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
-                            <i class="fas fa-file-excel text-[10px]"></i>
-                            <span>Excel</span>
-                        </a>
-                        <a href="{{ route('admin.reports.profit-loss.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
-                            class="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-xs font-normal text-rose-700 border border-rose-100 shadow-sm transition-all hover:bg-rose-100 active:scale-95">
-                            <i class="fas fa-file-pdf text-[10px]"></i>
-                            <span>PDF</span>
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <!-- Pendapatan -->
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-indigo-500">Total Pendapatan</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
-                        <i class="fas fa-hand-holding-usd text-xs"></i>
+            
+            <form method="GET" class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-fit">
+                <input type="hidden" name="tab" value="{{ request('tab', 'ikhtisar') }}">
+                <div class="flex flex-col px-3 border-r border-slate-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                        <i class="far fa-calendar text-[10px]"></i> Rentang Tanggal
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <input type="date" name="date_from" value="{{ $dateFrom }}"
+                            class="text-xs font-bold text-slate-700 bg-transparent outline-none border-none p-0 focus:ring-0">
+                        <span class="text-slate-300">—</span>
+                        <input type="date" name="date_to" value="{{ $dateTo }}"
+                            class="text-xs font-bold text-slate-700 bg-transparent outline-none border-none p-0 focus:ring-0">
                     </div>
                 </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-normal text-slate-800">Rp
-                        {{ number_format($report['total_revenue'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Penjualan + Pendapatan Lain</p>
+
+                <div class="flex flex-col px-3 border-r border-slate-100">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                        <i class="fas fa-store text-[10px]"></i> Outlet
+                    </span>
+                    <select name="outlet_id" onchange="this.form.submit()"
+                        class="text-xs font-bold text-slate-700 bg-transparent outline-none border-none p-0 focus:ring-0 cursor-pointer appearance-none min-w-[120px]">
+                        <option value="">All Outlets</option>
+                        @foreach($outlets as $outlet)
+                            <option value="{{ $outlet->id }}" {{ $outletId == $outlet->id ? 'selected' : '' }}>
+                                {{ $outlet->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 px-1">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
+                        <i class="fas fa-sync-alt text-[10px]"></i>
+                        <span>Update</span>
+                    </button>
+                    
+                    <a href="{{ route('admin.reports.profit-loss.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+                        class="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 transition-all" title="Download Excel">
+                        <i class="fas fa-download text-sm"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {{-- Summary KPI Row --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Pendapatan -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group">
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Pendapatan</span>
+                <h3 class="text-2xl font-black text-slate-800 mt-2 tracking-tight">
+                    Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
+                </h3>
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i class="fas fa-money-bill-wave text-5xl"></i>
+                </div>
+            </div>
+
+            <!-- COGS -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500">
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">COGS (HPP)</span>
+                <h3 class="text-2xl font-black text-rose-500 mt-2 tracking-tight">
+                    Rp {{ number_format($report['total_cogs'] ?? 0, 0, ',', '.') }}
+                </h3>
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i class="fas fa-boxes text-5xl text-rose-500"></i>
                 </div>
             </div>
 
             <!-- Laba Kotor -->
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Laba Kotor</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
-                        <i class="fas fa-chart-line text-xs"></i>
-                    </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-emerald-500">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Laba Kotor</span>
+                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {{ number_format($report['gross_profit_margin'], 1) }}%
+                    </span>
                 </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-normal text-slate-800">Rp
-                        {{ number_format($report['gross_profit'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-[10px] font-normal text-emerald-500 mt-0.5">Margin:
-                        {{ number_format($report['gross_profit_margin'], 2) }}%
-                    </p>
-                </div>
-            </div>
-
-            <!-- Total Biaya -->
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-rose-500">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-rose-500">Total Biaya</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
-                        <i class="fas fa-wallet text-xs"></i>
-                    </div>
-                </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-normal text-slate-800">Rp
-                        {{ number_format($report['total_expenses'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Pengeluaran Operasional</p>
+                <h3 class="text-2xl font-black text-emerald-500 mt-2 tracking-tight">
+                    Rp {{ number_format($report['gross_profit'], 0, ',', '.') }}
+                </h3>
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i class="fas fa-chart-line text-5xl text-emerald-500"></i>
                 </div>
             </div>
 
             <!-- Laba Bersih -->
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-900 p-4 shadow-lg transition-all hover:shadow-xl">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-indigo-300">Laba Bersih</span>
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white">
-                        <i class="fas fa-trophy text-xs"></i>
-                    </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-indigo-500">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Laba Bersih</span>
+                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {{ number_format($report['net_profit_margin'], 1) }}%
+                    </span>
                 </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-normal text-white">Rp {{ number_format($report['net_profit'], 0, ',', '.') }}
-                    </h3>
-                    <p class="text-[10px] font-normal text-indigo-300 mt-0.5">Net Margin:
-                        {{ number_format($report['net_profit_margin'], 2) }}%
-                    </p>
-                </div>
-                <div
-                    class="absolute bottom-0 left-0 h-1 {{ $report['net_profit'] >= 0 ? 'bg-emerald-500' : 'bg-rose-500' }} w-full opacity-50">
+                <h3 class="text-2xl font-black text-indigo-600 mt-2 tracking-tight">
+                    Rp {{ number_format($report['net_profit'], 0, ',', '.') }}
+                </h3>
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <i class="fas fa-wallet text-5xl text-indigo-600"></i>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-list-alt text-indigo-500 text-xs"></i>
-                    <h2 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Rincian
-                        Laporan
-                        Laba Rugi</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {{-- Main Table Section (7/12) --}}
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-lg font-black text-slate-800">Rincian Keuangan</h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-slate-50/50">
+                                    <th class="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Keterangan</th>
+                                    <th class="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Kode Akun</th>
+                                    <th class="text-right px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                {{-- REVENUE --}}
+                                <tr class="group hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-chevron-down text-[8px] text-slate-300"></i>
+                                            <span class="text-sm font-bold text-slate-800">Total Pendapatan</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-[10px] font-bold text-slate-400 tracking-widest">4-0000</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="text-sm font-bold text-slate-800">Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}</span>
+                                    </td>
+                                </tr>
+
+                                {{-- COGS --}}
+                                <tr class="group hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-chevron-down text-[8px] text-slate-300"></i>
+                                            <span class="text-sm font-bold text-slate-800">Cost of Goods Sold (HPP)</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-[10px] font-bold text-slate-400 tracking-widest">5-0000</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="text-sm font-bold text-rose-500">Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}</span>
+                                    </td>
+                                </tr>
+
+                                {{-- EXPENSES BY GROUP --}}
+                                @foreach($report['expenses_by_group'] as $group)
+                                    <tr class="bg-slate-50/30">
+                                        <td class="px-6 py-4" colspan="2">
+                                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ $group['group_name'] }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <span class="text-[11px] font-black text-slate-600">Rp {{ number_format($group['total'], 0, ',', '.') }}</span>
+                                        </td>
+                                    </tr>
+                                    @foreach($group['accounts'] as $account)
+                                        <tr class="group hover:bg-slate-50 transition-colors">
+                                            <td class="px-10 py-3">
+                                                <span class="text-sm text-slate-600">{{ $account['name'] }}</span>
+                                            </td>
+                                            <td class="px-6 py-3 text-center">
+                                                <span class="text-[10px] font-medium text-slate-400 tracking-widest">{{ $account['code'] }}</span>
+                                            </td>
+                                            <td class="px-6 py-3 text-right">
+                                                <span class="text-sm font-medium text-slate-700">Rp {{ number_format($account['amount'], 0, ',', '.') }}</span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-indigo-50/50">
+                                    <td class="px-6 py-6" colspan="2">
+                                        <span class="text-sm font-black text-indigo-700 uppercase tracking-widest">Laba / Rugi Bersih</span>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span class="text-lg font-black text-indigo-700">Rp {{ number_format($report['net_profit'], 0, ',', '.') }}</span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-                <button onclick="window.print()"
-                    class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 no-print">
-                    <i class="fas fa-print text-[10px]"></i>
-                    <span>Cetak Report</span>
-                </button>
             </div>
 
-            <div class="p-6">
-                <!-- A. PENDAPATAN -->
-                <div class="mb-6">
-                    <h3 class="text-sm font-normal text-gray-700 mb-3">A. PENDAPATAN</h3>
-                    <div class="pl-4">
-                        <div class="flex justify-between py-2 border-b border-gray-200">
-                            <span class="text-sm text-gray-900">Penjualan</span>
-                            <span class="text-sm font-normal text-gray-900">
-                                Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between py-2 bg-gray-100 font-normal mt-2">
-                        <span>Total Pendapatan</span>
-                        <span>Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}</span>
+            {{-- Sidebar Section (5/12) --}}
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                {{-- Expense Distribution Chart --}}
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h3 class="text-lg font-black text-slate-800 mb-6">Distribusi Biaya</h3>
+                    <div id="expenseDonut" class="h-64"></div>
+                    <div id="expenseEmpty" class="hidden text-center py-10">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Data biaya tidak tersedia</p>
                     </div>
                 </div>
 
-                <!-- B. HARGA POKOK PENJUALAN -->
-                <div class="mb-6">
-                    <h3 class="text-sm font-normal text-gray-700 mb-3">B. HARGA POKOK PENJUALAN (HPP)</h3>
-                    <div class="pl-4">
-                        <div class="flex justify-between py-2 border-b border-gray-200">
-                            <span class="text-sm text-gray-900">HPP Penjualan</span>
-                            <span class="text-sm font-normal text-red-600">
-                                Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}
-                            </span>
-                        </div>
+                {{-- Revenue Trend Chart --}}
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-black text-slate-800">Tren Pendapatan</h3>
                     </div>
-                </div>
-
-                <!-- C. LABA KOTOR -->
-                <div class="mb-6 border-t-2 border-gray-400 pt-4">
-                    <div class="flex justify-between py-3 bg-green-50 rounded-lg px-4">
-                        <div>
-                            <span class="font-normal text-green-800">LABA KOTOR</span>
-                            <p class="text-xs text-green-600 mt-1">
-                                Margin: {{ number_format($report['gross_profit_margin'], 2) }}%
-                            </p>
-                        </div>
-                        <span class="text-xl font-normal text-green-800">
-                            Rp {{ number_format($report['gross_profit'], 0, ',', '.') }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- D. BIAYA OPERASIONAL -->
-                <div class="mb-6">
-                    <h3 class="text-sm font-normal text-gray-700 mb-3">C. BIAYA OPERASIONAL</h3>
-
-                    @if(count($report['expenses_by_group']) > 0)
-                        @foreach($report['expenses_by_group'] as $group)
-                            <div class="mb-4 pl-4">
-                                <h4 class="text-sm font-normal text-gray-600 mb-2">{{ $group['group_name'] }}</h4>
-
-                                @foreach($group['accounts'] as $account)
-                                    <div class="flex justify-between py-1 pl-4 text-sm text-gray-700">
-                                        <span>{{ $account['code'] }} - {{ $account['name'] }}</span>
-                                        <span>Rp {{ number_format($account['amount'], 0, ',', '.') }}</span>
-                                    </div>
-                                @endforeach
-
-                                <div class="flex justify-between py-2 border-b border-gray-200 font-normal text-sm mt-1">
-                                    <span class="pl-4">Subtotal {{ $group['group_name'] }}</span>
-                                    <span>Rp {{ number_format($group['total'], 0, ',', '.') }}</span>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        <div class="flex justify-between py-2 bg-red-50 font-normal mt-2 rounded-lg px-4">
-                            <span>Total Biaya Operasional</span>
-                            <span class="text-red-800">Rp {{ number_format($report['total_expenses'], 0, ',', '.') }}</span>
-                        </div>
-                    @else
-                        <div class="pl-4">
-                            <p class="text-sm text-gray-500 italic">Belum ada biaya operasional tercatat</p>
-                            <div class="flex justify-between py-2 bg-gray-50 font-normal mt-2">
-                                <span>Total Biaya Operasional</span>
-                                <span>Rp 0</span>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- E. LABA BERSIH -->
-                <div class="border-t-2 border-gray-400 pt-4">
-                    <div class="flex justify-between py-4 bg-indigo-50 rounded-lg px-4">
-                        <div>
-                            <span class="text-lg font-normal text-indigo-900">LABA BERSIH</span>
-                            <p class="text-xs text-indigo-600 mt-1">
-                                Margin Laba Bersih: {{ number_format($report['net_profit_margin'], 2) }}%
-                            </p>
-                        </div>
-                        <span
-                            class="text-2xl font-normal {{ $report['net_profit'] >= 0 ? 'text-indigo-900' : 'text-red-600' }}">
-                            Rp {{ number_format($report['net_profit'], 0, ',', '.') }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Summary Calculation -->
-                <div class="mt-6 bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                    <p class="font-normal text-gray-700 mb-2">Ringkasan Perhitungan:</p>
-                    <p>Pendapatan: Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}</p>
-                    <p>HPP: Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}</p>
-                    <p class="border-t border-gray-300 mt-1 pt-1">Laba Kotor: Rp
-                        {{ number_format($report['gross_profit'], 0, ',', '.') }}
-                    </p>
-                    <p class="mt-1">Biaya Operasional: Rp {{ number_format($report['total_expenses'], 0, ',', '.') }}</p>
-                    <p class="border-t-2 border-gray-400 mt-1 pt-1 font-normal text-gray-900">
-                        Laba Bersih: Rp {{ number_format($report['net_profit'], 0, ',', '.') }}
-                    </p>
+                    <div id="revenueBarTrend" class="h-64"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Expense Distribution Chart
+            const expenseData = @json($report['expense_chart']);
+            if (expenseData.length > 0) {
+                const donutOptions = {
+                    series: expenseData.map(item => item.value),
+                    chart: {
+                        type: 'donut',
+                        height: 250,
+                        fontFamily: 'Inter, sans-serif'
+                    },
+                    labels: expenseData.map(item => item.label),
+                    colors: ['#4F46E5', '#10B981', '#F59E0B', '#F97316', '#8B5CF6', '#EC4899'],
+                    legend: {
+                        position: 'bottom',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        markers: { radius: 12 }
+                    },
+                    dataLabels: { enabled: false },
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '70%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'TOTAL',
+                                        fontSize: '10px',
+                                        fontWeight: 900,
+                                        color: '#94a3b8',
+                                        formatter: function (w) {
+                                            const sum = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                            if (sum >= 1000000) return (sum / 1000000).toFixed(1) + 'M';
+                                            if (sum >= 1000) return (sum / 1000).toFixed(0) + 'k';
+                                            return sum;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    stroke: { width: 0 }
+                };
+                new ApexCharts(document.querySelector("#expenseDonut"), donutOptions).render();
+            } else {
+                document.querySelector("#expenseDonut").classList.add('hidden');
+                document.querySelector("#expenseEmpty").classList.remove('hidden');
+            }
+
+            // Revenue Trend Chart
+            const trendData = @json($report['revenue_trends']);
+            const barOptions = {
+                series: [{
+                    name: 'Pendapatan',
+                    data: trendData.map(item => item.amount)
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 250,
+                    toolbar: { show: false },
+                    fontFamily: 'Inter, sans-serif'
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        columnWidth: '45%',
+                        distributed: true
+                    }
+                },
+                colors: ['#EEF2FF', '#D8E2FF', '#C7D2FE', '#A5B4FC', '#6366F1'],
+                dataLabels: { enabled: false },
+                legend: { show: false },
+                xaxis: {
+                    categories: trendData.map(item => item.month),
+                    labels: {
+                        style: {
+                            colors: '#94a3b8',
+                            fontSize: '10px',
+                            fontWeight: 600
+                        }
+                    },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: { show: false },
+                grid: { show: false },
+                tooltip: {
+                    theme: 'dark',
+                    y: {
+                        formatter: function(val) {
+                            return 'Rp ' + new Intl.NumberFormat('id-ID').format(val);
+                        }
+                    }
+                }
+            };
+            new ApexCharts(document.querySelector("#revenueBarTrend"), barOptions).render();
+        });
+    </script>
+    @endpush
 
     <style>
         @media print {
             .no-print {
                 display: none !important;
             }
-
             body {
-                font-size: 12px;
+                background: white !important;
             }
-
-            .container {
-                max-width: 100%;
-                padding: 0;
+            .rounded-2xl {
+                border-radius: 0 !important;
+            }
+            .shadow-sm {
+                box-shadow: none !important;
             }
         }
     </style>
