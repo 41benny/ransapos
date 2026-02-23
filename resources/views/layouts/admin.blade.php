@@ -163,9 +163,12 @@
                             [
                                 'label' => 'Purchasing',
                                 'icon' => 'fas fa-cart-shopping',
-                                'route' => 'admin.purchases.index',
-                                'match' => 'admin.purchases.*',
-                                'permission' => 'purchases.view',
+                                'route' => null,
+                                'match' => 'admin.purchases.*|admin.reports.debts.*',
+                                'children' => [
+                                    ['label' => 'Pembelian (PO)', 'route' => 'admin.purchases.index', 'match' => 'admin.purchases.*', 'permission' => 'purchases.view'],
+                                    ['label' => 'Buku Hutang', 'route' => 'admin.reports.debts.index', 'match' => 'admin.reports.debts.*', 'permission' => 'reports.view'],
+                                ]
                             ],
                             [
                                 'label' => 'Finance',

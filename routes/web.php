@@ -386,6 +386,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])
             ->name('attendance.export')
             ->middleware('permission:reports.export');
+            
+        Route::get('/debts', [\App\Http\Controllers\Admin\DebtReportController::class, 'index'])->name('debts.index');
+        Route::get('/debts/{supplier}', [\App\Http\Controllers\Admin\DebtReportController::class, 'show'])->name('debts.show');
     });
 
     // User Management

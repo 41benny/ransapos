@@ -164,12 +164,26 @@ class CashAccountController extends Controller
 
         $transactions = $this->cashAccountService->getTransactions($filters);
         $totals = $this->cashAccountService->getTransactionTotals($filters);
+        $accountStats = $this->cashAccountService->getPerAccountTotals($filters);
+        
         $accounts = CashAccount::active()->orderBy('name')->get();
+        $totalBalance = $accounts->sum('current_balance');
+        
         $outlets = \App\Models\Outlet::active()->orderBy('name')->get();
         $coaAccounts = CoaAccount::active()->orderBy('code')->get();
         $coaGroups = CoaAccount::query()->where('is_active', true)->distinct()->orderBy('group')->pluck('group');
 
-        return view('admin.cash-accounts.transactions', compact('transactions', 'accounts', 'outlets', 'coaAccounts', 'coaGroups', 'filters', 'totals'));
+        return view('admin.cash-accounts.transactions', compact(
+            'transactions', 
+            'accounts', 
+            'accountStats',
+            'totalBalance',
+            'outlets', 
+            'coaAccounts', 
+            'coaGroups', 
+            'filters', 
+            'totals'
+        ));
     }
 
     /**
@@ -188,10 +202,6 @@ class CashAccountController extends Controller
         $outstandingPurchases = Purchase::query()
             ->with(['supplier', 'outlet'])
             ->where('status', 'received')
-            ->where(function ($query) {
-                $query->whereIn('payment_status', ['unpaid', 'partial'])
-                    ->orWhereNull('payment_status');
-            })
             ->withSum('cashTransactions as total_paid', 'amount')
             ->orderByDesc('purchase_date')
             ->get()
@@ -260,6 +270,7 @@ class CashAccountController extends Controller
             'cash_account_id' => (int) $data['cash_account_id'],
             'amount' => (float) $data['purchase_amount'],
             'transaction_date' => $data['transaction_date'],
+            'description' => $data['purchase_description'] ?? null,
             'notes' => $data['purchase_notes'] ?? null,
             'created_by' => $data['created_by'],
         ]);
@@ -420,27 +431,22 @@ class CashAccountController extends Controller
             $outstandingPurchases = Purchase::query()
                 ->with(['supplier', 'outlet'])
                 ->where('status', 'received')
-                ->where(function ($query) use ($cashTransaction) {
-                    $query->whereIn('payment_status', ['unpaid', 'partial'])
-                        ->orWhereNull('payment_status')
-                        ->orWhere('id', $cashTransaction->reference_id);
-                })
-                ->withSum('cashTransactions as total_paid', 'amount')
-                ->orderByDesc('purchase_date')
-                ->get()
-                ->map(function (Purchase $purchase) use ($cashTransaction) {
-                    $totalPaid = (float) ($purchase->total_paid ?? 0);
-                    
-                    // Jangan hitung jumlah dari transaksi ini saat mencari sisa hutang sebelumnya
-                    if ($cashTransaction->reference_id == $purchase->id) {
-                        $totalPaid -= (float) $cashTransaction->amount;
-                    }
-                    
-                    $purchase->remaining_amount = max(0, (float) $purchase->total_amount - $totalPaid);
-                    return $purchase;
-                })
-                ->filter(fn (Purchase $purchase) => $purchase->remaining_amount > 0 || $cashTransaction->reference_id == $purchase->id)
-                ->values();
+            ->withSum('cashTransactions as total_paid', 'amount')
+            ->orderByDesc('purchase_date')
+            ->get()
+            ->map(function (Purchase $purchase) use ($cashTransaction) {
+                $totalPaid = (float) ($purchase->total_paid ?? 0);
+                
+                // Jangan hitung jumlah dari transaksi ini saat mencari sisa hutang sebelumnya
+                if ($cashTransaction->reference_id == $purchase->id) {
+                    $totalPaid -= (float) $cashTransaction->amount;
+                }
+                
+                $purchase->remaining_amount = max(0, (float) $purchase->total_amount - $totalPaid);
+                return $purchase;
+            })
+            ->filter(fn (Purchase $purchase) => $purchase->remaining_amount > 0 || $cashTransaction->reference_id == $purchase->id)
+            ->values();
         }
 
         // Ambil semua transaksi terkait menggunakan teknik yang sama dengan di printVoucher
@@ -595,6 +601,7 @@ class CashAccountController extends Controller
             'transaction_date' => 'required|date',
             'purchase_amount' => 'required|numeric|min:0',
             'purchase_id' => 'required|exists:purchases,id',
+            'purchase_description' => 'required|string|max:255',
         ]);
 
         try {
@@ -604,6 +611,7 @@ class CashAccountController extends Controller
             $date = $request->input('transaction_date');
             $notes = $request->input('purchase_notes');
             $amount = (float) $request->input('purchase_amount');
+            $description = $request->input('purchase_description');
 
             $oldPurchaseId = $cashTransaction->reference_id;
             
@@ -616,6 +624,7 @@ class CashAccountController extends Controller
             $cashTransaction->update([
                 'transaction_date' => $date,
                 'amount' => $amount,
+                'description' => $description,
                 'notes' => $notes,
                 'reference_id' => $purchase->id,
             ]);

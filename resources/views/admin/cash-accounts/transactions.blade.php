@@ -22,61 +22,56 @@
             </div>
         </div>
 
-        {{-- KPI Overview --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {{-- Total Debit Card --}}
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500">Total Arus Masuk</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
-                        <i class="fas fa-arrow-down-left text-xs"></i>
+        {{-- Account Balance Cards Grid --}}
+        <div class="bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+            <div class="px-6 py-4 border-b border-slate-200/50 bg-white/50 backdrop-blur-sm flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-200">
+                        <i class="fas fa-bank text-sm"></i>
                     </div>
-                </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-bold text-slate-800">Rp
-                        {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}
-                    </h3>
-                    <p class="text-xs font-medium text-slate-400 mt-0.5">Total Debit Terhitung</p>
-                </div>
-                <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-500 transition-all duration-500 group-hover:w-full">
+                    <div>
+                        <h2 class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Asset Overview</h2>
+                        <h3 class="text-sm font-black text-slate-800 tracking-tight">Saldo per Bank <span class="mx-2 text-slate-300 font-light">|</span> <span class="text-indigo-600">Rp {{ number_format($totalBalance, 0, ',', '.') }}</span></h3>
+                    </div>
                 </div>
             </div>
+            
+            <div class="p-4 bg-slate-50/40">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    @foreach($accounts as $account)
+                        @php
+                            $stats = $accountStats[$account->id] ?? ['total_in' => 0, 'total_out' => 0];
+                            $isFiltered = request('cash_account_id') == $account->id;
+                        @endphp
+                        <div onclick="updateFilter('cash_account_id', '{{ $account->id }}')" 
+                             class="group relative cursor-pointer overflow-hidden rounded-xl border-2 {{ $isFiltered ? 'border-indigo-500 bg-indigo-50/80 shadow-md ring-1 ring-indigo-200' : 'border-white bg-white hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-100/40' }} p-4 transition-all duration-500 active:scale-[0.97]">
+                            
+                            <div class="flex justify-between items-start mb-2.5">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ $account->code }}</span>
+                                    <div class="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors truncate max-w-[100px]" title="{{ $account->name }}">
+                                        {{ $account->name }}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">▲ {{ number_format($stats['total_in'], 0, ',', '.') }}</span>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-1 rounded">▼ {{ number_format($stats['total_out'], 0, ',', '.') }}</span>
+                                </div>
+                            </div>
 
-            {{-- Total Kredit Card --}}
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-rose-500">Total Arus Keluar</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
-                        <i class="fas fa-arrow-up-right text-xs"></i>
-                    </div>
-                </div>
-                <div class="flex flex-col">
-                    <h3 class="text-xl font-bold text-slate-800">Rp
-                        {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}
-                    </h3>
-                    <p class="text-xs font-medium text-slate-400 mt-0.5">Total Kredit Terhitung</p>
-                </div>
-                <div class="absolute bottom-0 left-0 h-1 w-0 bg-rose-500 transition-all duration-500 group-hover:w-full">
-                </div>
-            </div>
+                            <div class="text-sm font-black text-indigo-600 group-hover:text-indigo-700 tracking-tight transition-colors">
+                                Rp {{ number_format($account->current_balance, 0, ',', '.') }}
+                            </div>
 
-            {{-- Filter Summary --}}
-            <div
-                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md md:col-span-2 lg:col-span-1">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-500">Status Pencarian</span>
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
-                        <i class="fas fa-filter text-xs"></i>
-                    </div>
-                </div>
-                <div class="flex flex-col">
-                    <h3 class="text-sm font-bold text-slate-800">{{ $transactions->total() }} Transaksi</h3>
-                    <p class="text-xs font-medium text-slate-400 mt-0.5">Menampilkan baris kriteria filter</p>
+                            @if($isFiltered)
+                                <div class="absolute top-0 right-0 h-4 w-4 bg-indigo-600 rounded-bl-lg flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-check text-[8px] text-white"></i>
+                                </div>
+                            @endif
+
+                            <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -295,13 +290,13 @@
                                 <td class="px-4 py-2 whitespace-nowrap text-[11px] font-medium text-slate-600">
                                     {{ $transaction->transaction_date->format('d M Y') }}
                                 </td>
-                                <td class="px-4 py-2 text-[11px] font-medium text-slate-700">
-                                    <div class="truncate max-w-[140px]" title="{{ $transaction->cashAccount->name }}">
+                                <td class="px-4 py-2 text-[11px] font-medium text-slate-700 overflow-hidden">
+                                    <div class="truncate w-full" title="{{ $transaction->cashAccount->name }}">
                                         {{ $transaction->cashAccount->name }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-2 text-[11px] font-medium text-slate-600">
-                                    <div class="truncate max-w-[220px]" title="{{ $transaction->display_description }}">
+                                <td class="px-4 py-2 text-[11px] font-medium text-slate-600 overflow-hidden">
+                                    <div class="truncate w-full" title="{{ $transaction->display_description }}">
                                         {{ $transaction->display_description }}
                                     </div>
                                     @if($isBatchRow)
@@ -329,13 +324,13 @@
                                 <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium text-slate-800 tracking-tight">
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-[10px] font-medium text-slate-500">
+                                <td class="px-4 py-2 whitespace-nowrap text-[10px] font-medium text-slate-500 overflow-hidden">
                                     @if($isBatchRow)
                                         <span class="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">Multi ({{ $displayRowCount }})</span>
                                     @elseif($transaction->coaAccount)
-                                        <div class="max-w-[180px] truncate" title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
+                                        <div class="truncate" title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
                                             <span class="text-slate-800 font-medium">{{ $transaction->coaAccount->code }}</span>
-                                            <span class="text-slate-400 ml-0.5">· {{ Str::limit($transaction->coaAccount->name, 18) }}</span>
+                                            <span class="text-slate-400 ml-0.5">· {{ $transaction->coaAccount->name }}</span>
                                         </div>
                                     @else
                                         <span class="text-slate-300">--</span>
@@ -416,19 +411,18 @@
         .resize-handle {
             position: absolute;
             top: 0;
-            right: 0;
-            width: 4px;
+            right: -4px; /* Offset to center the wider handle */
+            width: 10px;
             height: 100%;
             cursor: col-resize;
             user-select: none;
-            z-index: 10;
+            z-index: 50;
             touch-action: none;
-            transition: all 0.2s;
+            transition: background-color 0.2s;
         }
 
         .resize-handle:hover {
-            background-color: #6366f1;
-            width: 6px;
+            background-color: rgba(99, 102, 241, 0.4);
         }
 
         .resizing {
@@ -472,6 +466,16 @@
                         }
                     }
                 });
+                
+                // Initialize table total width on load
+                let totalinitWidth = 0;
+                if(colgroup) {
+                    Array.from(colgroup.children).forEach(col => {
+                        totalinitWidth += parseFloat(col.style.width || col.offsetWidth || 100);
+                    });
+                    table.style.width = totalinitWidth + 'px';
+                    table.style.minWidth = totalinitWidth + 'px';
+                }
             } catch (e) {
                 console.error('Error loading cash table widths:', e);
             }
@@ -520,6 +524,16 @@
                         const headerIndex = Array.from(headers).indexOf(th);
                         if (headerIndex >= 0 && resizableCols[headerIndex]) {
                             resizableCols[headerIndex].style.width = newWidth + 'px';
+                        }
+                        
+                        // Update table total width to allow growing beyond 100%
+                        let totalTableWidth = 0;
+                        if(colgroup) {
+                            Array.from(colgroup.children).forEach(col => {
+                                totalTableWidth += parseFloat(col.style.width || col.offsetWidth || 100);
+                            });
+                            table.style.width = totalTableWidth + 'px';
+                            table.style.minWidth = totalTableWidth + 'px';
                         }
                     }
 

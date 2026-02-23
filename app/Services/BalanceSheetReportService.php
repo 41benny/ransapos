@@ -30,18 +30,80 @@ class BalanceSheetReportService
             $movementQuery->where('cash_accounts.outlet_id', $outletId);
         }
 
+        // Untuk Lawan Kas (Counterpart COA):
+        // Jika COA = Asset (misal Persediaan, Piutang, Aset Tetap): Uang Keluar (out) -> Aset Bertambah, Uang Masuk (in) -> Aset Berkurang
+        // Jika COA = Liability/Equity: Uang Masuk (in) -> Liability Bertambah, Uang Keluar (out) -> Liability Berkurang
         $movements = $movementQuery
             ->select(
                 'cash_transactions.coa_account_id',
-                DB::raw("SUM(CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END) as balance_to_date")
+                DB::raw("SUM(
+                    CASE 
+                        WHEN coa_accounts.type = 'asset' THEN (CASE WHEN cash_transactions.type = 'out' THEN cash_transactions.amount ELSE -cash_transactions.amount END)
+                        ELSE (CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END)
+                    END
+                ) as balance_to_date"),
+                DB::raw("SUM(
+                    CASE WHEN cash_transactions.transaction_date >= '{$dateFrom}' THEN 
+                        CASE 
+                            WHEN coa_accounts.type = 'asset' THEN (CASE WHEN cash_transactions.type = 'out' THEN cash_transactions.amount ELSE -cash_transactions.amount END)
+                            ELSE (CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END)
+                        END
+                    ELSE 0 END
+                ) as movement_in_period")
             )
-            ->selectRaw(
-                "SUM(CASE WHEN cash_transactions.transaction_date >= ? THEN CASE WHEN cash_transactions.type = 'in' THEN cash_transactions.amount ELSE -cash_transactions.amount END ELSE 0 END) as movement_in_period",
-                [$dateFrom]
-            )
-            ->groupBy('cash_transactions.coa_account_id')
+            ->groupBy('cash_transactions.coa_account_id', 'coa_accounts.type')
             ->get()
             ->keyBy('coa_account_id');
+
+        // MENGHITUNG SALDO REAL KAS/BANK (Penting! Karena Kas/Bank tidak pernah jadi counterpart dirinya sendiri)
+        $cashAccountsStatsQuery = DB::table('cash_accounts')
+            ->leftJoinSub(
+                DB::table('cash_transactions')
+                    ->select(
+                        'cash_account_id',
+                        DB::raw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as balance_to_date"),
+                        DB::raw("SUM(CASE WHEN transaction_date >= '" . addslashes($dateFrom) . "' THEN (CASE WHEN type = 'in' THEN amount ELSE -amount END) ELSE 0 END) as movement_in_period")
+                    )
+                    ->whereDate('transaction_date', '<=', $dateTo)
+                    ->groupBy('cash_account_id'),
+                'mov',
+                'cash_accounts.id',
+                '=',
+                'mov.cash_account_id'
+            )
+            ->where('cash_accounts.is_active', true);
+
+        if (!empty($outletId)) {
+            $cashAccountsStatsQuery->where('cash_accounts.outlet_id', $outletId);
+        }
+
+        $cashAccountsStats = $cashAccountsStatsQuery
+            ->select(
+                'cash_accounts.type',
+                DB::raw('SUM(cash_accounts.opening_balance + COALESCE(mov.balance_to_date, 0)) as total_balance'),
+                DB::raw('SUM(COALESCE(mov.movement_in_period, 0)) as total_movement')
+            )
+            ->groupBy('cash_accounts.type')
+            ->get()
+            ->keyBy('type');
+
+        // Inject ke ID COA 1-100 (Kas) dan 1-110 (Bank)
+        $kasCoa = $coaAccounts->where('code', '1-100')->first();
+        if ($kasCoa) {
+            $stats = $cashAccountsStats->get('cash');
+            $movements->put($kasCoa->id, (object)[
+                'balance_to_date' => $stats->total_balance ?? 0,
+                'movement_in_period' => $stats->total_movement ?? 0,
+            ]);
+        }
+        $bankCoa = $coaAccounts->where('code', '1-110')->first();
+        if ($bankCoa) {
+            $stats = $cashAccountsStats->get('bank');
+            $movements->put($bankCoa->id, (object)[
+                'balance_to_date' => $stats->total_balance ?? 0,
+                'movement_in_period' => $stats->total_movement ?? 0,
+            ]);
+        }
 
         $sections = [
             'asset' => ['label' => 'Aset', 'rows' => [], 'total' => 0.0],
@@ -72,27 +134,10 @@ class BalanceSheetReportService
         $liabilityEquityTotal = $liabilityTotal + $equityTotal;
         $difference = $assetTotal - $liabilityEquityTotal;
 
-        $cashMovementsSub = DB::table('cash_transactions')
-            ->select(
-                'cash_account_id',
-                DB::raw("SUM(CASE WHEN type = 'in' THEN amount ELSE -amount END) as movement")
-            )
-            ->whereDate('transaction_date', '<=', $dateTo)
-            ->groupBy('cash_account_id');
-
-        $cashBankControlQuery = DB::table('cash_accounts')
-            ->leftJoinSub($cashMovementsSub, 'mov', function ($join) {
-                $join->on('cash_accounts.id', '=', 'mov.cash_account_id');
-            })
-            ->where('cash_accounts.is_active', true);
-
-        if (!empty($outletId)) {
-            $cashBankControlQuery->where('cash_accounts.outlet_id', $outletId);
+        $cashBankControl = 0;
+        foreach ($cashAccountsStats as $stat) {
+            $cashBankControl += (float) ($stat->total_balance ?? 0);
         }
-
-        $cashBankControl = (float) $cashBankControlQuery
-            ->selectRaw('COALESCE(SUM(cash_accounts.opening_balance + COALESCE(mov.movement, 0)), 0) as total')
-            ->value('total');
 
         return [
             'date_from' => $dateFrom,

@@ -81,6 +81,7 @@ class StoreCashTransactionRequest extends FormRequest
         if ($category === 'purchase_payment') {
             $rules['purchase_id'] = 'required|exists:purchases,id';
             $rules['purchase_amount'] = 'required|numeric|min:0.01';
+            $rules['purchase_description'] = 'required|string|max:255';
             $rules['purchase_notes'] = 'nullable|string';
         }
 

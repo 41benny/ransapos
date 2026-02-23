@@ -273,13 +273,16 @@ class CashAccountService
                 throw new Exception('Jumlah pembayaran melebihi sisa tagihan. Sisa: ' . number_format($remaining, 0, ',', '.'));
             }
 
-            // Get COA Account untuk HPP (Harga Pokok Penjualan)
-            // Jika tidak ada COA yang dipilih, gunakan COA HPP sebagai default
-            $coaAccountId = $data['coa_account_id'] ?? \App\Models\CoaAccount::where('group', 'HPP')->where('is_active', true)->first()?->id;
+        // Get COA Account untuk Hutang Usaha (2-100)
+        // Jika tidak ada COA yang dipilih, gunakan COA Hutang sebagai default
+        // Fallback ke HPP jika Hutang Usaha belum ada (kompatibilitas)
+        $coaAccountId = $data['coa_account_id'] ?? 
+            \App\Models\CoaAccount::where('code', '2-100')->where('is_active', true)->first()?->id ?? 
+            \App\Models\CoaAccount::where('group', 'HPP')->where('is_active', true)->first()?->id;
 
-            if (! $coaAccountId) {
-                throw new Exception('COA Account untuk HPP tidak ditemukan. Pastikan akun COA untuk HPP sudah dibuat.');
-            }
+        if (! $coaAccountId) {
+            throw new Exception('COA Account untuk Hutang Usaha/HPP tidak ditemukan. Pastikan akun COA sudah dibuat.');
+        }
 
             // Create transaction dengan reference ke purchase
             $transaction = $this->recordTransaction([
@@ -288,7 +291,7 @@ class CashAccountService
                 'type' => 'out',
                 'transaction_date' => $data['transaction_date'] ?? now()->format('Y-m-d'),
                 'amount' => $data['amount'],
-                'description' => "Pembayaran Purchase #{$purchase->purchase_number}",
+                'description' => $data['description'] ?? "Pembayaran Purchase #{$purchase->purchase_number}",
                 'reference_type' => 'purchase',
                 'reference_id' => $purchase->id,
                 'notes' => $data['notes'] ?? null,
@@ -519,6 +522,23 @@ class CashAccountService
             'debit' => (float) $totalDebit,
             'credit' => (float) $totalCredit,
         ];
+    }
+
+    /**
+     * Get totals (in/out) grouped by account, respecting filters
+     */
+    public function getPerAccountTotals(array $filters = []): array
+    {
+        $query = CashTransaction::query();
+        $this->applyTransactionFilters($query, $filters);
+
+        return $query->select('cash_account_id')
+            ->selectRaw("SUM(CASE WHEN type = 'in' THEN amount ELSE 0 END) as total_in")
+            ->selectRaw("SUM(CASE WHEN type = 'out' THEN amount ELSE 0 END) as total_out")
+            ->groupBy('cash_account_id')
+            ->get()
+            ->keyBy('cash_account_id')
+            ->toArray();
     }
 
     protected function applyTransactionFilters(Builder $query, array $filters): void

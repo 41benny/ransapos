@@ -101,25 +101,46 @@
                             <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold mb-1">Kategori: Bayar Hutang Purchase</p>
                             <h2 class="text-lg font-semibold text-gray-900">Pembayaran Purchase</h2>
                         </div>
-                        <div>
-                            <label for="purchase_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                Pilih Purchase <span class="text-red-500">*</span>
-                            </label>
-                            <select id="purchase_id"
-                                    name="purchase_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
-                                <option value="">-- Pilih Purchase --</option>
-                                @foreach($outstandingPurchases as $purchase)
-                                    <option value="{{ $purchase->id }}"
-                                            data-remaining="{{ $purchase->remaining_amount }}"
-                                            {{ (string) old('purchase_id', $cashTransaction->reference_id) === (string) $purchase->id ? 'selected' : '' }}>
-                                        {{ $purchase->purchase_number }} | {{ $purchase->supplier->name ?? '-' }} | Outlet {{ $purchase->outlet->name ?? '-' }} | Sisa: Rp {{ number_format($purchase->remaining_amount, 0, ',', '.') }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('purchase_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label for="purchase_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Pilih Purchase <span class="text-red-500">*</span>
+                                </label>
+                                <select id="purchase_id"
+                                        name="purchase_id"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
+                                    <option value="">-- Pilih Purchase --</option>
+                                    @foreach($outstandingPurchases as $purchase)
+                                        <option value="{{ $purchase->id }}"
+                                                data-remaining="{{ $purchase->remaining_amount }}"
+                                                data-supplier-name="{{ $purchase->supplier->name ?? '-' }}"
+                                                data-po-number="{{ $purchase->purchase_number }}"
+                                                data-po-date="{{ $purchase->purchase_date->format('d/m/Y') }}"
+                                                {{ (string) old('purchase_id', $cashTransaction->reference_id) === (string) $purchase->id ? 'selected' : '' }}>
+                                            {{ $purchase->purchase_number }} | {{ $purchase->supplier->name ?? '-' }} | Outlet {{ $purchase->outlet->name ?? '-' }} | Sisa: Rp {{ number_format($purchase->remaining_amount, 0, ',', '.') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('purchase_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="purchase_description" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Deskripsi Voucher <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text"
+                                       id="purchase_description"
+                                       name="purchase_description"
+                                       value="{{ old('purchase_description', $cashTransaction->description) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_description') border-red-500 @enderror"
+                                       placeholder="Otomatis terisi setelah pilih purchase"
+                                       required>
+                                @error('purchase_description')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,13 +163,13 @@
                             </div>
                             <div>
                                 <label for="purchase_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Catatan Pembayaran
+                                    Catatan (Internal)
                                 </label>
                                 <textarea id="purchase_notes"
                                           name="purchase_notes"
                                           rows="3"
                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
-                                          placeholder="Catatan pembayaran purchase (opsional)">{{ old('purchase_notes', $cashTransaction->notes) }}</textarea>
+                                          placeholder="Catatan tambahan (opsional)">{{ old('purchase_notes', $cashTransaction->notes) }}</textarea>
                                 @error('purchase_notes')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -543,15 +564,19 @@
 
             const purchaseSelectEl = document.getElementById('purchase_id');
             const purchaseAmountEl = document.getElementById('purchase_amount');
+            const purchaseDescriptionEl = document.getElementById('purchase_description');
             const purchaseRemainingInfoEl = document.getElementById('purchase-remaining-info');
 
-            function syncPurchaseRemainingInfo() {
+            function syncPurchaseSelection() {
                 if (!purchaseSelectEl || !purchaseRemainingInfoEl) {
                     return;
                 }
 
                 const selectedOption = purchaseSelectEl.options[purchaseSelectEl.selectedIndex];
                 const remaining = selectedOption ? Number(selectedOption.getAttribute('data-remaining')) : NaN;
+                const supplier = selectedOption ? selectedOption.getAttribute('data-supplier-name') : '';
+                const poNumber = selectedOption ? selectedOption.getAttribute('data-po-number') : '';
+                const poDate = selectedOption ? selectedOption.getAttribute('data-po-date') : '';
 
                 if (!selectedOption || !selectedOption.value || Number.isNaN(remaining)) {
                     purchaseRemainingInfoEl.innerHTML = '';
@@ -559,11 +584,23 @@
                 }
 
                 purchaseRemainingInfoEl.innerHTML = `Sisa hutang: <span class="font-medium text-gray-900">Rp ${remaining.toLocaleString('id-ID')}</span>`;
+
+                // Sync description otomatis jika masih kosong atau berisi pola yang sama
+                if (purchaseDescriptionEl) {
+                    const newDesc = `Pembayaran hutang supplier ${supplier}, no po ${poNumber} tgl ${poDate}`;
+                    // Isi otomatis jika tujuan deskripsi kosong atau hanya default placeholder atau pola pembayaran lama
+                    if (!purchaseDescriptionEl.value || 
+                        purchaseDescriptionEl.value === '' || 
+                        purchaseDescriptionEl.value.startsWith('Pembayaran hutang supplier') ||
+                        purchaseDescriptionEl.value.startsWith('Pembayaran Purchase #')) {
+                        purchaseDescriptionEl.value = newDesc;
+                    }
+                }
             }
             
             if (purchaseSelectEl) {
-                purchaseSelectEl.addEventListener('change', syncPurchaseRemainingInfo);
-                syncPurchaseRemainingInfo(); // initial render
+                purchaseSelectEl.addEventListener('change', syncPurchaseSelection);
+                syncPurchaseSelection(); // initial render
             }
 
             // Add validation for max amount
