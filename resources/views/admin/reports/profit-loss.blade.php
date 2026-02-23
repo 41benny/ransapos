@@ -68,26 +68,30 @@
         {{-- Summary KPI Row --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Total Pendapatan -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group">
+            <a href="{{ route('admin.reports.sales.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId]) }}" target="_blank"
+                class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Pendapatan</span>
-                <h3 class="text-2xl font-black text-slate-800 mt-2 tracking-tight">
+                <h3 class="text-2xl font-black text-slate-800 mt-2 tracking-tight flex items-center gap-2">
                     Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
+                    <i class="fas fa-external-link-alt text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                 </h3>
                 <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <i class="fas fa-money-bill-wave text-5xl"></i>
                 </div>
-            </div>
+            </a>
 
             <!-- COGS -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500">
+            <a href="{{ route('admin.stocks.mutations', ['start_date' => $dateFrom, 'end_date' => $dateTo, 'outlet_id' => $outletId, 'reference_scope' => 'sales_cogs']) }}" target="_blank"
+                class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500 hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">COGS (HPP)</span>
-                <h3 class="text-2xl font-black text-rose-500 mt-2 tracking-tight">
+                <h3 class="text-2xl font-black text-rose-500 mt-2 tracking-tight flex items-center gap-2">
                     Rp {{ number_format($report['total_cogs'] ?? 0, 0, ',', '.') }}
+                    <i class="fas fa-external-link-alt text-[10px] text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                 </h3>
                 <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <i class="fas fa-boxes text-5xl text-rose-500"></i>
                 </div>
-            </div>
+            </a>
 
             <!-- Laba Kotor -->
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-emerald-500">
@@ -152,7 +156,10 @@
                                         <span class="text-[10px] font-bold text-slate-400 tracking-widest">4-0000</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-bold text-slate-800">Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}</span>
+                                        <a href="{{ route('admin.reports.sales.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId]) }}" target="_blank"
+                                            class="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors">
+                                            Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
+                                        </a>
                                     </td>
                                 </tr>
 
@@ -168,7 +175,10 @@
                                         <span class="text-[10px] font-bold text-slate-400 tracking-widest">5-0000</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-bold text-rose-500">Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}</span>
+                                        <a href="{{ route('admin.stocks.mutations', ['start_date' => $dateFrom, 'end_date' => $dateTo, 'outlet_id' => $outletId, 'reference_scope' => 'sales_cogs']) }}" target="_blank"
+                                            class="text-sm font-bold text-rose-500 hover:text-indigo-600 transition-colors">
+                                            Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}
+                                        </a>
                                     </td>
                                 </tr>
 
@@ -179,7 +189,10 @@
                                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ $group['group_name'] }}</span>
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <span class="text-[11px] font-black text-slate-600">Rp {{ number_format($group['total'], 0, ',', '.') }}</span>
+                                            <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_type' => 'expense', 'coa_group' => $group['group_name']]) }}" target="_blank"
+                                                class="text-[11px] font-black text-slate-600 hover:text-indigo-600 transition-colors">
+                                                Rp {{ number_format($group['total'], 0, ',', '.') }}
+                                            </a>
                                         </td>
                                     </tr>
                                     @foreach($group['accounts'] as $account)
@@ -191,7 +204,10 @@
                                                 <span class="text-[10px] font-medium text-slate-400 tracking-widest">{{ $account['code'] }}</span>
                                             </td>
                                             <td class="px-6 py-3 text-right">
-                                                <span class="text-sm font-medium text-slate-700">Rp {{ number_format($account['amount'], 0, ',', '.') }}</span>
+                                                <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_account_id' => $account['id']]) }}" target="_blank"
+                                                    class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors">
+                                                    Rp {{ number_format($account['amount'], 0, ',', '.') }}
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
