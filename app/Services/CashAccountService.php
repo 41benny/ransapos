@@ -248,7 +248,7 @@ class CashAccountService
         } elseif ($totalPaid > 0) {
             $purchase->update(['payment_status' => 'partial']);
         } else {
-            $purchase->update(['payment_status' => 'unpaid']);
+            $purchase->update(['payment_status' => 'pending']);
         }
     }
 
@@ -476,7 +476,7 @@ class CashAccountService
                     // Recalculate payment status logic needs to be handled if needed, 
                     // but for now we just delete the transaction.
                     // Ideally we should re-check total paid for the purchase.
-                    // Simplified: Set to partial or unpaid? 
+                    // Simplified: Set to partial or pending? 
                     // Let's defer strict purchase status update for now or handle it:
                     // We would need to sum remaining transactions for this purchase.
                 }

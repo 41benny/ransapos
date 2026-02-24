@@ -6,6 +6,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Product;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -29,68 +30,82 @@ class PurchaseService
      */
     public function createPurchase(array $data): Purchase
     {
-        DB::beginTransaction();
+        $maxAttempts = 5;
 
-        try {
-            // 1. Generate purchase number
-            $purchaseNumber = $this->generatePurchaseNumber(
-                outletId: (int) $data['outlet_id'],
-                purchaseDate: $data['purchase_date'] ?? now()->toDateString(),
-            );
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            DB::beginTransaction();
 
-            // 2. Hitung total dari items
-            $subtotal = 0;
-            foreach ($data['items'] as $item) {
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-                $itemSubtotal -= $item['discount_amount'] ?? 0;
-                $subtotal += $itemSubtotal;
-            }
+            try {
+                // 1. Generate purchase number
+                $purchaseNumber = $this->generatePurchaseNumber(
+                    outletId: (int) $data['outlet_id'],
+                    purchaseDate: $data['purchase_date'] ?? now()->toDateString(),
+                );
 
-            // 3. Hitung total amount
-            $taxAmount = $data['tax_amount'] ?? 0;
-            $discountAmount = $data['discount_amount'] ?? 0;
-            $totalAmount = $subtotal + $taxAmount - $discountAmount;
+                // 2. Hitung total dari items
+                $subtotal = 0;
+                foreach ($data['items'] as $item) {
+                    $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                    $itemSubtotal -= $item['discount_amount'] ?? 0;
+                    $subtotal += $itemSubtotal;
+                }
 
-            // 4. Buat purchase header
-            $purchase = Purchase::create([
-                'purchase_number' => $purchaseNumber,
-                'outlet_id' => $data['outlet_id'],
-                'supplier_id' => $data['supplier_id'],
-                'purchase_date' => $data['purchase_date'],
-                'status' => 'draft',
-                'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount,
-                'discount_amount' => $discountAmount,
-                'total_amount' => $totalAmount,
-                'payment_status' => $data['payment_status'] ?? 'pending',
-                'notes' => $data['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
+                // 3. Hitung total amount
+                $taxAmount = $data['tax_amount'] ?? 0;
+                $discountAmount = $data['discount_amount'] ?? 0;
+                $totalAmount = $subtotal + $taxAmount - $discountAmount;
 
-            // 5. Buat purchase items
-            foreach ($data['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-                $itemSubtotal -= $item['discount_amount'] ?? 0;
-
-                PurchaseItem::create([
-                    'purchase_id' => $purchase->id,
-                    'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'discount_amount' => $item['discount_amount'] ?? 0,
-                    'subtotal' => $itemSubtotal,
+                // 4. Buat purchase header
+                $purchase = Purchase::create([
+                    'purchase_number' => $purchaseNumber,
+                    'outlet_id' => $data['outlet_id'],
+                    'supplier_id' => $data['supplier_id'],
+                    'purchase_date' => $data['purchase_date'],
+                    'status' => 'draft',
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'discount_amount' => $discountAmount,
+                    'total_amount' => $totalAmount,
+                    'payment_status' => $data['payment_status'] ?? 'pending',
+                    'notes' => $data['notes'] ?? null,
+                    'created_by' => auth()->id(),
                 ]);
+
+                // 5. Buat purchase items
+                foreach ($data['items'] as $item) {
+                    $product = Product::findOrFail($item['product_id']);
+
+                    $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                    $itemSubtotal -= $item['discount_amount'] ?? 0;
+
+                    PurchaseItem::create([
+                        'purchase_id' => $purchase->id,
+                        'product_id' => $product->id,
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'discount_amount' => $item['discount_amount'] ?? 0,
+                        'subtotal' => $itemSubtotal,
+                    ]);
+                }
+
+                DB::commit();
+
+                return $purchase->load(['items.product', 'outlet', 'supplier', 'creator']);
+            } catch (QueryException $e) {
+                DB::rollBack();
+
+                if ($this->isDuplicatePurchaseNumberException($e) && $attempt < $maxAttempts) {
+                    continue;
+                }
+
+                throw $e;
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            DB::commit();
-
-            return $purchase->load(['items.product', 'outlet', 'supplier', 'creator']);
-        } catch (Exception $e) {
-            DB::rollBack();
-            throw $e;
         }
+
+        throw new Exception('Gagal membuat nomor purchase yang unik. Silakan coba lagi.');
     }
 
     /**
@@ -269,25 +284,48 @@ class PurchaseService
         $purchaseDateObj = Carbon::parse($purchaseDate);
         $date = $purchaseDateObj->format('Ymd');
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
+        $prefix = "PO-{$outlet}-{$date}-";
 
-        // Cari purchase terakhir pada tanggal purchase tersebut untuk outlet ini
-        $lastPurchase = Purchase::where('outlet_id', $outletId)
-            ->whereDate('purchase_date', $purchaseDateObj->toDateString())
+        // Cari nomor purchase terakhir berdasarkan prefix (outlet + tanggal pada nomor).
+        $lastPurchase = Purchase::where('purchase_number', 'like', $prefix . '%')
             ->lockForUpdate()
-            ->orderBy('id', 'desc')
+            ->orderBy('purchase_number', 'desc')
             ->first();
 
+        $nextNumber = 1;
         if ($lastPurchase) {
-            // Extract nomor urut terakhir
-            $lastNumber = (int) substr($lastPurchase->purchase_number, -3);
-            $nextNumber = $lastNumber + 1;
-        } else {
-            $nextNumber = 1;
+            $nextNumber = $this->extractPurchaseNumberSequence($lastPurchase->purchase_number) + 1;
         }
 
-        $sequence = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        // Safety net untuk data lama yang nomor/date-nya pernah tidak sinkron.
+        do {
+            $sequence = str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+            $candidate = $prefix . $sequence;
+            $nextNumber++;
+        } while (Purchase::where('purchase_number', $candidate)->lockForUpdate()->exists());
 
-        return "PO-{$outlet}-{$date}-{$sequence}";
+        return $candidate;
+    }
+
+    protected function extractPurchaseNumberSequence(string $purchaseNumber): int
+    {
+        if (preg_match('/(\d+)$/', $purchaseNumber, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return 0;
+    }
+
+    protected function isDuplicatePurchaseNumberException(QueryException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        if (!str_contains($message, 'duplicate entry')) {
+            return false;
+        }
+
+        return str_contains($message, 'purchases_purchase_number_unique')
+            || str_contains($message, 'purchase_number');
     }
 
     /**
