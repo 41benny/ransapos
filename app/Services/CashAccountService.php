@@ -8,8 +8,10 @@ use App\Models\CoaAccount;
 use App\Models\Purchase;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CashAccountService
 {
@@ -507,7 +509,74 @@ class CashAccountService
 
         $this->applyTransactionFilters($query, $filters);
 
-        return $query->paginate(20)->withQueryString();
+        $rows = $query->get();
+
+        $displayRows = $rows
+            ->groupBy(function ($transaction) {
+                if ($transaction->reference_type === 'general_batch' && !empty($transaction->reference_id)) {
+                    return 'batch:' . $transaction->reference_id;
+                }
+
+                $isLegacyCandidate = empty($transaction->reference_type)
+                    && empty($transaction->reference_id)
+                    && !empty($transaction->created_at);
+
+                if ($isLegacyCandidate) {
+                    $createdAtKey = optional($transaction->created_at)->format('Y-m-d H:i:s');
+                    $dateKey = optional($transaction->transaction_date)->format('Y-m-d');
+                    $notesHash = md5(trim((string) ($transaction->notes ?? '')));
+
+                    return 'legacy:' . implode('|', [
+                        (string) $transaction->cash_account_id,
+                        (string) ($transaction->created_by ?? 0),
+                        (string) $transaction->type,
+                        (string) $dateKey,
+                        (string) $createdAtKey,
+                        $notesHash,
+                    ]);
+                }
+
+                return 'single:' . $transaction->id;
+            })
+            ->map(function ($group, $groupKey) {
+                $representative = $group->first();
+                $rowCount = $group->count();
+                $isGeneralBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
+                $isLegacyBatch = $rowCount > 1 && Str::startsWith($groupKey, 'legacy:');
+                $isBatch = $isGeneralBatch || $isLegacyBatch;
+
+                $representative->setAttribute('display_amount', (float) $group->sum('amount'));
+                $representative->setAttribute('display_row_count', $rowCount);
+                $representative->setAttribute('display_is_batch', $isBatch);
+                $representative->setAttribute(
+                    'display_voucher_number',
+                    (string) ($group->pluck('voucher_number')->filter()->sort()->first()
+                        ?? $representative->voucher_number
+                        ?? $representative->transaction_number)
+                );
+                $representative->setAttribute(
+                    'display_description',
+                    $isBatch ? 'Transaksi Umum (' . $rowCount . ' baris)' : $representative->description
+                );
+
+                return $representative;
+            })
+            ->values();
+
+        $perPage = 20;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentPageItems = $displayRows->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $currentPageItems,
+            $displayRows->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
     }
 
     public function getTransactionTotals(array $filters = []): array

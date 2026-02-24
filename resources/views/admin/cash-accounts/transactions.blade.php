@@ -49,7 +49,7 @@
                             <div class="flex justify-between items-start mb-2.5">
                                 <div class="flex flex-col">
                                     <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ $account->code }}</span>
-                                    <div class="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors truncate max-w-[100px]" title="{{ $account->name }}">
+                                    <div class="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors whitespace-normal break-words" title="{{ $account->name }}">
                                         {{ $account->name }}
                                     </div>
                                 </div>
@@ -118,59 +118,59 @@
                     </colgroup>
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
-                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-left text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="120" style="position: relative;">
                                 Voucher Number
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-left text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="100" style="position: relative;">
                                 Date
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-left text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="140" style="position: relative;">
                                 Cash Account
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-left text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="200" style="position: relative;">
                                 Description
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-right text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="100" style="position: relative;">
                                 Debit (In)
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-right text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="100" style="position: relative;">
                                 Kredit (Out)
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-right text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-right text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="120" style="position: relative;">
                                 Balance
                                 <div class="resize-handle"></div>
                             </th>
-                            <th class="resizable px-4 py-2.5 text-left text-[9px] font-bold uppercase tracking-widest text-slate-500"
+                            <th class="resizable px-4 py-2.5 text-left text-sm font-normal uppercase tracking-widest text-slate-500"
                                 data-min-width="180" style="position: relative;">
                                 COA Account
                                 <div class="resize-handle"></div>
                             </th>
                             <th
-                                class="px-4 py-2.5 text-center text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                                class="px-4 py-2.5 text-center text-sm font-normal uppercase tracking-widest text-slate-500">
                                 Actions</th>
                         </tr>
                         <tr class="bg-white/50 border-b border-slate-100">
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="transaction_number" value="{{ request('transaction_number') }}" placeholder="Search #">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="transaction_number" value="{{ request('transaction_number') }}" placeholder="Search #">
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="date" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="transaction_date" value="{{ request('transaction_date') }}">
+                                <input type="date" class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="transaction_date" value="{{ request('transaction_date') }}">
                             </th>
                             <th class="px-4 py-1.5">
-                                <select class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="cash_account_id">
+                                <select class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="cash_account_id">
                                     <option value="">All Accounts</option>
                                     @foreach($accounts as $account)
                                         <option value="{{ $account->id }}" {{ request('cash_account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
@@ -178,19 +178,19 @@
                                 </select>
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="description" value="{{ request('description') }}" placeholder="Search desc...">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-300" data-name="description" value="{{ request('description') }}" placeholder="Search desc...">
                             </th>
                             <th class="px-4 py-1.5 text-right">
-                                <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
+                                <span class="text-sm font-normal text-slate-300 uppercase italic">Auto</span>
                             </th>
                             <th class="px-4 py-1.5 text-right">
-                                <span class="text-[9px] font-medium text-slate-300 uppercase italic">Auto</span>
+                                <span class="text-sm font-normal text-slate-300 uppercase italic">Auto</span>
                             </th>
                             <th class="px-4 py-1.5">
-                                <input type="text" class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-right placeholder:text-slate-300" data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Balance">
+                                <input type="text" class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-right placeholder:text-slate-300" data-name="balance_after" value="{{ request('balance_after') }}" placeholder="Balance">
                             </th>
                             <th class="px-4 py-1.5">
-                                <select class="filter-input w-full px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="coa_account_id">
+                                <select class="filter-input w-full px-2 py-1 text-sm font-normal bg-white border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all" data-name="coa_account_id">
                                     <option value="">All COA</option>
                                     @foreach($coaAccounts as $coaAccount)
                                         <option value="{{ $coaAccount->id }}" {{ request('coa_account_id') == $coaAccount->id ? 'selected' : '' }}>{{ $coaAccount->code }}</option>
@@ -208,59 +208,7 @@
                     </thead>
                     <tbody>
                         @php
-                            $displayTransactions = $transactions->getCollection()
-                                ->groupBy(function ($transaction) {
-                                    if ($transaction->reference_type === 'general_batch' && !empty($transaction->reference_id)) {
-                                        return 'batch:' . $transaction->reference_id;
-                                    }
-
-                                    // Fallback untuk data lama (sebelum ada reference general_batch):
-                                    // satu submit multi-baris biasanya punya cap created_at detik yang sama.
-                                    $isLegacyCandidate = empty($transaction->reference_type)
-                                        && empty($transaction->reference_id)
-                                        && !empty($transaction->created_at);
-
-                                    if ($isLegacyCandidate) {
-                                        $createdAtKey = optional($transaction->created_at)->format('Y-m-d H:i:s');
-                                        $dateKey = optional($transaction->transaction_date)->format('Y-m-d');
-                                        $notesHash = md5(trim((string) ($transaction->notes ?? '')));
-
-                                        return 'legacy:' . implode('|', [
-                                            (string) $transaction->cash_account_id,
-                                            (string) ($transaction->created_by ?? 0),
-                                            (string) $transaction->type,
-                                            (string) $dateKey,
-                                            (string) $createdAtKey,
-                                            $notesHash,
-                                        ]);
-                                    }
-
-                                    return 'single:' . $transaction->id;
-                                })
-                                ->map(function ($group, $groupKey) {
-                                    $representative = $group->first();
-                                    $rowCount = $group->count();
-                                    $isGeneralBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
-                                    $isLegacyBatch = $rowCount > 1 && Str::startsWith($groupKey, 'legacy:');
-                                    $isBatch = $isGeneralBatch || $isLegacyBatch;
-
-                                    $representative->setAttribute('display_amount', (float) $group->sum('amount'));
-                                    $representative->setAttribute('display_row_count', $rowCount);
-                                    $representative->setAttribute('display_is_batch', $isBatch);
-                                    $representative->setAttribute(
-                                        'display_voucher_number',
-                                        (string) ($group->pluck('voucher_number')->filter()->sort()->first()
-                                            ?? $representative->voucher_number
-                                            ?? $representative->transaction_number)
-                                    );
-                                    $representative->setAttribute(
-                                        'display_description',
-                                        $isBatch ? 'Transaksi Umum (' . $rowCount . ' baris)' : $representative->description
-                                    );
-
-                                    return $representative;
-                                })
-                                ->values();
+                            $displayTransactions = $transactions->getCollection();
                         @endphp
 
                         @forelse($displayTransactions as $transaction)
@@ -276,60 +224,56 @@
                                 <td class="px-4 py-2 whitespace-nowrap">
                                     <div class="flex flex-col">
                                         <a href="{{ route('admin.cash-transactions.show', array_merge(['cashTransaction' => $transaction], request()->query())) }}"
-                                            class="text-[11.5px] font-medium text-slate-800 hover:text-indigo-600 transition-colors">
+                                            class="text-sm font-normal text-slate-800 hover:text-indigo-600 transition-colors">
                                             {{ $displayVoucherNumber }}
                                         </a>
                                         @if($isBatchRow)
-                                            <span class="inline-flex items-center gap-1 mt-0.5 text-[9px] font-medium text-slate-400">
+                                            <span class="inline-flex items-center gap-1 mt-0.5 text-xs font-normal text-slate-400">
                                                 <i class="fas fa-layer-group text-[8px]"></i>
                                                 {{ $displayRowCount }} Items Merged
                                             </span>
                                         @endif
                                     </div>
                                 </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-[11px] font-medium text-slate-600">
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-normal text-slate-600">
                                     {{ $transaction->transaction_date->format('d M Y') }}
                                 </td>
-                                <td class="px-4 py-2 text-[11px] font-medium text-slate-700 overflow-hidden">
+                                <td class="px-4 py-2 text-sm font-normal text-slate-700 overflow-hidden">
                                     <div class="truncate w-full" title="{{ $transaction->cashAccount->name }}">
                                         {{ $transaction->cashAccount->name }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-2 text-[11px] font-medium text-slate-600 overflow-hidden">
+                                <td class="px-4 py-2 text-sm font-normal text-slate-600 overflow-hidden">
                                     <div class="truncate w-full" title="{{ $transaction->display_description }}">
                                         {{ $transaction->display_description }}
                                     </div>
                                     @if($isBatchRow)
-                                        <span class="text-[8px] font-medium uppercase tracking-tighter text-indigo-400 block mt-0.5 italic leading-none">Consolidated Entry</span>
+                                        <span class="text-xs font-normal tracking-tight text-indigo-400 block mt-0.5 italic leading-none">Consolidated Entry</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-2 whitespace-nowrap text-right">
                                     @if($transaction->type === 'in')
-                                        <div class="inline-flex items-center justify-end px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                                            <span class="text-[11px] font-medium">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
-                                        </div>
+                                        <span class="text-sm font-normal text-emerald-700">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
                                     @else
-                                        <span class="text-[11px] font-medium text-slate-200">--</span>
+                                        <span class="text-sm font-normal text-slate-200">--</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-2 whitespace-nowrap text-right">
                                     @if($transaction->type === 'out')
-                                        <div class="inline-flex items-center justify-end px-1.5 py-0.5 rounded bg-rose-50 text-rose-700">
-                                            <span class="text-[11px] font-medium">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
-                                        </div>
+                                        <span class="text-sm font-normal text-rose-700">Rp {{ number_format($displayAmount, 0, ',', '.') }}</span>
                                     @else
-                                        <span class="text-[11px] font-medium text-slate-200">--</span>
+                                        <span class="text-sm font-normal text-slate-200">--</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium text-slate-800 tracking-tight">
+                                <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-normal text-slate-800 tracking-tight">
                                     Rp {{ number_format($transaction->balance_after, 0, ',', '.') }}
                                 </td>
-                                <td class="px-4 py-2 whitespace-nowrap text-[10px] font-medium text-slate-500 overflow-hidden">
+                                <td class="px-4 py-2 whitespace-nowrap text-sm font-normal text-slate-500 overflow-hidden">
                                     @if($isBatchRow)
                                         <span class="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">Multi ({{ $displayRowCount }})</span>
                                     @elseif($transaction->coaAccount)
                                         <div class="truncate" title="{{ $transaction->coaAccount->code }} - {{ $transaction->coaAccount->name }}">
-                                            <span class="text-slate-800 font-medium">{{ $transaction->coaAccount->code }}</span>
+                                            <span class="text-slate-800 font-normal">{{ $transaction->coaAccount->code }}</span>
                                             <span class="text-slate-400 ml-0.5">· {{ $transaction->coaAccount->name }}</span>
                                         </div>
                                     @else
@@ -389,12 +333,12 @@
                 class="px-4 py-3 border-t border-slate-100 bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex flex-wrap items-center gap-6">
                     <div class="flex flex-col">
-                        <span class="text-[9px] font-medium uppercase tracking-widest text-emerald-500">Cumulative In</span>
-                        <span class="text-xs font-medium text-slate-800">Rp {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-sm font-normal uppercase tracking-widest text-emerald-500">Cumulative In</span>
+                        <span class="text-sm font-normal text-slate-800">Rp {{ number_format($totals['debit'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                     <div class="flex flex-col border-l border-slate-200 pl-6">
-                        <span class="text-[9px] font-medium uppercase tracking-widest text-rose-500">Cumulative Out</span>
-                        <span class="text-xs font-medium text-slate-800">Rp {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}</span>
+                        <span class="text-sm font-normal uppercase tracking-widest text-rose-500">Cumulative Out</span>
+                        <span class="text-sm font-normal text-slate-800">Rp {{ number_format($totals['credit'] ?? 0, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
