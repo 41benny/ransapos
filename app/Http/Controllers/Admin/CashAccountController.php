@@ -77,7 +77,7 @@ class CashAccountController extends Controller
     {
         $cashAccount->load(['creator', 'transactions' => function ($query) {
             $query->orderBy('transaction_date', 'desc')
-                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
                 ->limit(10);
         }]);
 
@@ -458,7 +458,7 @@ class CashAccountController extends Controller
             ->where('cash_account_id', $cashTransaction->cash_account_id)
             ->where('type', $cashTransaction->type)
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         if ($relatedTransactions->count() <= 1) {
@@ -680,7 +680,7 @@ class CashAccountController extends Controller
             ->where('cash_account_id', $cashTransaction->cash_account_id)
             ->where('type', $cashTransaction->type)
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         // Fallback legacy: data lama sebelum voucher_number dibakukan
@@ -732,7 +732,7 @@ class CashAccountController extends Controller
             ->whereBetween('created_at', [$createdAtStart, $createdAtEnd])
             ->whereRaw('COALESCE(TRIM(notes), \'\') = ?', [$notes])
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
     }
 

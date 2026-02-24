@@ -388,14 +388,14 @@ class CashAccountService
         $transactions = CashTransaction::where('cash_account_id', $account->id)
             ->where('transaction_date', '>=', $fromDate)
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         // Ambil saldo terakhir sebelum tanggal tersebut
         $lastTransactionBefore = CashTransaction::where('cash_account_id', $account->id)
             ->where('transaction_date', '<', $fromDate)
             ->orderBy('transaction_date', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->first();
 
         $runningBalance = $lastTransactionBefore
@@ -503,7 +503,7 @@ class CashAccountService
     {
         $query = CashTransaction::with(['cashAccount.outlet', 'creator', 'coaAccount'])
             ->orderBy('transaction_date', 'desc')
-            ->orderBy('created_at', 'desc');
+            ->orderBy('id', 'desc');
 
         $this->applyTransactionFilters($query, $filters);
 
@@ -686,7 +686,7 @@ class CashAccountService
         $transactions = CashTransaction::where('cash_account_id', $cashAccountId)
             ->whereBetween('transaction_date', [$dateFrom, $dateTo])
             ->orderBy('transaction_date', 'asc')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         // Calculate summary
