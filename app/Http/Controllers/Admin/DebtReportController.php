@@ -161,6 +161,7 @@ class DebtReportController extends Controller
             'totalDebit',
             'totalCredit',
             'allTimeDebt',
+            'allTimePaid',
             'endingBalanceAllTime'
         ));
     }
