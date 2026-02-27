@@ -10,16 +10,6 @@
                 <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Transaksi Kas & Bank</h1>
                 <p class="text-xs font-medium text-slate-500 mt-0.5">Kelola dan monitor semua arus kas masuk & keluar unit usaha</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.cash-transactions.create') }}"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-slate-800 hover:shadow-md active:scale-95">
-                    <i class="fas fa-plus text-[10px] transition-transform group-hover:rotate-90"></i>
-                    <span>Catat Transaksi</span>
-                    <div
-                        class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full">
-                    </div>
-                </a>
-            </div>
         </div>
 
         {{-- Account Balance Cards Grid --}}
@@ -161,7 +151,16 @@
         {{-- Main Table Section --}}
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Transaction History</h3>
+                <div class="flex items-center gap-3">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Transaction History</h3>
+                    <div class="h-4 w-px bg-slate-300"></div>
+                    <a href="{{ route('admin.cash-transactions.create') }}"
+                        class="group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-slate-800 hover:shadow-md active:scale-95">
+                        <i class="fas fa-plus text-[9px] transition-transform group-hover:rotate-90"></i>
+                        <span>Catat Transaksi</span>
+                        <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full"></div>
+                    </a>
+                </div>
                 <div class="flex items-center gap-2">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Live Access</span>
