@@ -38,8 +38,8 @@ class CashAccountService
         if ($coa->type !== 'asset') {
             throw new Exception(
                 'Kode COA ' . self::TRANSFER_CLEARING_COA_CODE .
-                ' sudah dipakai dengan tipe "' . $coa->type . '". ' .
-                'Silakan ubah ke tipe Asset agar bisa dipakai untuk pindah buku.'
+                    ' sudah dipakai dengan tipe "' . $coa->type . '". ' .
+                    'Silakan ubah ke tipe Asset agar bisa dipakai untuk pindah buku.'
             );
         }
 
@@ -275,16 +275,19 @@ class CashAccountService
                 throw new Exception('Jumlah pembayaran melebihi sisa tagihan. Sisa: ' . number_format($remaining, 0, ',', '.'));
             }
 
-        // Get COA Account untuk Hutang Usaha (2-100)
-        // Jika tidak ada COA yang dipilih, gunakan COA Hutang sebagai default
-        // Fallback ke HPP jika Hutang Usaha belum ada (kompatibilitas)
-        $coaAccountId = $data['coa_account_id'] ?? 
-            \App\Models\CoaAccount::where('code', '2-100')->where('is_active', true)->first()?->id ?? 
-            \App\Models\CoaAccount::where('group', 'HPP')->where('is_active', true)->first()?->id;
+            // Get COA Account untuk Hutang Usaha (2-100)
+            // Jika tidak ada COA yang dipilih, gunakan COA Hutang sebagai default
+            // Fallback ke HPP jika Hutang Usaha belum ada (kompatibilitas)
+            $coaAccountId = $data['coa_account_id'] ??
+                \App\Models\CoaAccount::where('code', '2-100')->where('is_active', true)->first()?->id ??
+                \App\Models\CoaAccount::where('group', 'HPP')->where('is_active', true)->first()?->id;
 
-        if (! $coaAccountId) {
-            throw new Exception('COA Account untuk Hutang Usaha/HPP tidak ditemukan. Pastikan akun COA sudah dibuat.');
-        }
+            if (! $coaAccountId) {
+                throw new Exception('COA Account untuk Hutang Usaha/HPP tidak ditemukan. Pastikan akun COA sudah dibuat.');
+            }
+
+            // Default description updated to match frontend standard
+            $defaultDescription = "Pembayaran hutang supplier " . ($purchase->supplier->name ?? '-') . ", no po " . $purchase->purchase_number . " tgl " . $purchase->purchase_date->format('d/m/Y');
 
             // Create transaction dengan reference ke purchase
             $transaction = $this->recordTransaction([
@@ -293,7 +296,7 @@ class CashAccountService
                 'type' => 'out',
                 'transaction_date' => $data['transaction_date'] ?? now()->format('Y-m-d'),
                 'amount' => $data['amount'],
-                'description' => $data['description'] ?? "Pembayaran Purchase #{$purchase->purchase_number}",
+                'description' => $data['description'] ?? $defaultDescription,
                 'reference_type' => 'purchase',
                 'reference_id' => $purchase->id,
                 'notes' => $data['notes'] ?? null,
