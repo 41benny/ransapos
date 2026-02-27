@@ -579,7 +579,6 @@ class SalesReportController extends Controller
 
         foreach ($outletsForColumns as $outletCol) {
             $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.quantity ELSE 0 END) as outlet_{$outletCol->id}_qty");
-            $selects[] = DB::raw("SUM(CASE WHEN sales.outlet_id = {$outletCol->id} THEN sale_items.subtotal ELSE 0 END) as outlet_{$outletCol->id}_amount");
         }
 
         $products = $query->select($selects)
@@ -622,7 +621,6 @@ class SalesReportController extends Controller
 
             foreach ($outletsForColumns as $outletCol) {
                 $data["outlet_{$outletCol->id}_qty"] = (float) ($row->{"outlet_{$outletCol->id}_qty"} ?? 0);
-                $data["outlet_{$outletCol->id}_amount"] = (float) ($row->{"outlet_{$outletCol->id}_amount"} ?? 0);
             }
 
             $qty = (float) $row->total_qty;
@@ -644,7 +642,6 @@ class SalesReportController extends Controller
 
         foreach ($outletsForColumns as $outletCol) {
             $grandTotalRow["outlet_{$outletCol->id}_qty"] = collect($rows)->sum("outlet_{$outletCol->id}_qty");
-            $grandTotalRow["outlet_{$outletCol->id}_amount"] = collect($rows)->sum("outlet_{$outletCol->id}_amount");
         }
 
         $grandTotalRow['total_qty'] = $grandTotalQty;
@@ -660,13 +657,12 @@ class SalesReportController extends Controller
         ];
 
         foreach ($outletsForColumns as $outletCol) {
-            $columns[] = ['key' => "outlet_{$outletCol->id}_qty", 'label' => "{$outletCol->name} Qty", 'type' => 'number', 'decimals' => 2];
-            $columns[] = ['key' => "outlet_{$outletCol->id}_amount", 'label' => "{$outletCol->name} Omzet", 'type' => 'number', 'decimals' => 2];
+            $columns[] = ['key' => "outlet_{$outletCol->id}_qty", 'label' => "{$outletCol->name} Qty", 'type' => 'number', 'decimals' => 0];
         }
 
-        $columns[] = ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 2];
-        $columns[] = ['key' => 'total_omzet', 'label' => 'Total Omzet', 'type' => 'number', 'decimals' => 2];
-        $columns[] = ['key' => 'avg_price', 'label' => 'Avg Price', 'type' => 'number', 'decimals' => 2];
+        $columns[] = ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 0];
+        $columns[] = ['key' => 'total_omzet', 'label' => 'Total Omzet', 'type' => 'number', 'decimals' => 0];
+        $columns[] = ['key' => 'avg_price', 'label' => 'Avg Price', 'type' => 'number', 'decimals' => 0];
 
         $format = $request->input('format', 'xlsx');
         $filename = sprintf('laporan-penjualan-produk-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
