@@ -23,55 +23,121 @@
         </div>
 
         {{-- Account Balance Cards Grid --}}
-        <div class="bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
-            <div class="px-6 py-4 border-b border-slate-200/50 bg-white/50 backdrop-blur-sm flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-200">
-                        <i class="fas fa-bank text-sm"></i>
+        @php
+            $regularAccounts = $accounts->filter(function($account) {
+                return !str_contains(strtoupper($account->name), 'PETTY CASH') && !str_contains(strtoupper($account->code), 'PT');
+            });
+            $pettyCashAccounts = $accounts->filter(function($account) {
+                return str_contains(strtoupper($account->name), 'PETTY CASH') || str_contains(strtoupper($account->code), 'PT');
+            });
+        @endphp
+
+        <div class="space-y-4">
+            {{-- Regular Accounts --}}
+            <div class="bg-slate-50/50 rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+                <div class="px-6 py-4 border-b border-slate-200/50 bg-white/50 backdrop-blur-sm flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-200">
+                            <i class="fas fa-bank text-sm"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Asset Overview</h2>
+                            <h3 class="text-sm font-black text-slate-800 tracking-tight">Saldo Kas & Bank <span class="mx-2 text-slate-300 font-light">|</span> <span class="text-indigo-600">Rp {{ number_format($regularAccounts->sum('current_balance'), 0, ',', '.') }}</span></h3>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Asset Overview</h2>
-                        <h3 class="text-sm font-black text-slate-800 tracking-tight">Saldo per Bank <span class="mx-2 text-slate-300 font-light">|</span> <span class="text-indigo-600">Rp {{ number_format($totalBalance, 0, ',', '.') }}</span></h3>
+                </div>
+                
+                <div class="p-4 bg-slate-50/40">
+                    <div class="flex overflow-x-auto gap-3 pb-2 snap-x" style="scrollbar-width: thin;">
+                        @foreach($regularAccounts as $account)
+                            @php
+                                $stats = $accountStats[$account->id] ?? ['total_in' => 0, 'total_out' => 0];
+                                $isFiltered = request('cash_account_id') == $account->id;
+                            @endphp
+                            <div onclick="updateFilter('cash_account_id', '{{ $account->id }}')" 
+                                 class="snap-start shrink-0 w-64 group relative cursor-pointer overflow-hidden rounded-xl border-2 {{ $isFiltered ? 'border-indigo-500 bg-indigo-50/80 shadow-md ring-1 ring-indigo-200' : 'border-white bg-white hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-100/40' }} p-4 transition-all duration-500 active:scale-[0.97]">
+                                
+                                <div class="flex justify-between items-start mb-2.5">
+                                    <div class="flex flex-col pr-2">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ $account->code }}</span>
+                                        <div class="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors whitespace-normal break-words line-clamp-2" title="{{ $account->name }}">
+                                            {{ $account->name }}
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-1 shrink-0">
+                                        <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">▲ {{ number_format($stats['total_in'], 0, ',', '.') }}</span>
+                                        <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-1 rounded">▼ {{ number_format($stats['total_out'], 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-sm font-black text-indigo-600 group-hover:text-indigo-700 tracking-tight transition-colors mt-2">
+                                    Rp {{ number_format($account->current_balance, 0, ',', '.') }}
+                                </div>
+
+                                @if($isFiltered)
+                                    <div class="absolute top-0 right-0 h-4 w-4 bg-indigo-600 rounded-bl-lg flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[8px] text-white"></i>
+                                    </div>
+                                @endif
+
+                                <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
-            
-            <div class="p-4 bg-slate-50/40">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    @foreach($accounts as $account)
-                        @php
-                            $stats = $accountStats[$account->id] ?? ['total_in' => 0, 'total_out' => 0];
-                            $isFiltered = request('cash_account_id') == $account->id;
-                        @endphp
-                        <div onclick="updateFilter('cash_account_id', '{{ $account->id }}')" 
-                             class="group relative cursor-pointer overflow-hidden rounded-xl border-2 {{ $isFiltered ? 'border-indigo-500 bg-indigo-50/80 shadow-md ring-1 ring-indigo-200' : 'border-white bg-white hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-100/40' }} p-4 transition-all duration-500 active:scale-[0.97]">
-                            
-                            <div class="flex justify-between items-start mb-2.5">
-                                <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ $account->code }}</span>
-                                    <div class="text-[11px] font-bold text-slate-700 group-hover:text-indigo-600 transition-colors whitespace-normal break-words" title="{{ $account->name }}">
-                                        {{ $account->name }}
+
+            {{-- Petty Cash Accounts --}}
+            <div class="bg-amber-50/30 rounded-2xl border border-amber-200/60 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700 delay-100">
+                <div class="px-6 py-3 border-b border-amber-200/50 bg-white/50 backdrop-blur-sm flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-200">
+                            <i class="fas fa-wallet text-xs"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-0.5">Petty Cash Overview</h2>
+                            <h3 class="text-xs font-black text-slate-700 tracking-tight">Total Petty Cash <span class="mx-2 text-slate-300 font-light">|</span> <span class="text-amber-600">Rp {{ number_format($pettyCashAccounts->sum('current_balance'), 0, ',', '.') }}</span></h3>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-amber-50/20">
+                    <div class="flex overflow-x-auto gap-3 pb-2 snap-x" style="scrollbar-width: thin;">
+                        @foreach($pettyCashAccounts as $account)
+                            @php
+                                $stats = $accountStats[$account->id] ?? ['total_in' => 0, 'total_out' => 0];
+                                $isFiltered = request('cash_account_id') == $account->id;
+                            @endphp
+                            <div onclick="updateFilter('cash_account_id', '{{ $account->id }}')" 
+                                 class="snap-start shrink-0 w-64 group relative cursor-pointer overflow-hidden rounded-xl border-2 {{ $isFiltered ? 'border-amber-500 bg-amber-50/80 shadow-md ring-1 ring-amber-200' : 'border-white bg-white hover:border-amber-100 hover:shadow-xl hover:shadow-amber-100/40' }} p-3 transition-all duration-500 active:scale-[0.97]">
+                                
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="flex flex-col pr-2">
+                                        <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{{ $account->code }}</span>
+                                        <div class="text-[10px] font-bold text-slate-700 group-hover:text-amber-700 transition-colors whitespace-normal break-words line-clamp-2" title="{{ $account->name }}">
+                                            {{ $account->name }}
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-1 shrink-0">
+                                        <span class="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">▲ {{ number_format($stats['total_in'], 0, ',', '.') }}</span>
+                                        <span class="text-[8px] font-bold text-rose-500 bg-rose-50 px-1 rounded">▼ {{ number_format($stats['total_out'], 0, ',', '.') }}</span>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">▲ {{ number_format($stats['total_in'], 0, ',', '.') }}</span>
-                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-1 rounded">▼ {{ number_format($stats['total_out'], 0, ',', '.') }}</span>
+
+                                <div class="text-xs font-black text-amber-600 group-hover:text-amber-700 tracking-tight transition-colors mt-2">
+                                    Rp {{ number_format($account->current_balance, 0, ',', '.') }}
                                 </div>
+
+                                @if($isFiltered)
+                                    <div class="absolute top-0 right-0 h-4 w-4 bg-amber-500 rounded-bl-lg flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[8px] text-white"></i>
+                                    </div>
+                                @endif
+
+                                <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
                             </div>
-
-                            <div class="text-sm font-black text-indigo-600 group-hover:text-indigo-700 tracking-tight transition-colors">
-                                Rp {{ number_format($account->current_balance, 0, ',', '.') }}
-                            </div>
-
-                            @if($isFiltered)
-                                <div class="absolute top-0 right-0 h-4 w-4 bg-indigo-600 rounded-bl-lg flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-check text-[8px] text-white"></i>
-                                </div>
-                            @endif
-
-                            <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>
