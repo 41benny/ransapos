@@ -44,7 +44,14 @@ class CashSessionController extends Controller
     public function store(OpenCashSessionRequest $request)
     {
         try {
-            $session = $this->cashSessionService->openSession($request->validated());
+            $posDevice = $request->attributes->get('pos_device');
+
+            $session = $this->cashSessionService->openSession(
+                $request->validated(),
+                auth()->user(),
+                $posDevice?->id,
+                $request->ip()
+            );
 
             return redirect()
                 ->route('pos.dashboard')
@@ -123,10 +130,14 @@ class CashSessionController extends Controller
     public function closeStore(CloseCashSessionRequest $request, CashSession $cashSession)
     {
         try {
+            $posDevice = $request->attributes->get('pos_device');
+
             $session = $this->cashSessionService->closeSession(
                 $cashSession,
                 $request->actual_balance,
-                $request->notes
+                $request->notes,
+                $posDevice?->id,
+                $request->ip()
             );
 
             $diffMessage = '';

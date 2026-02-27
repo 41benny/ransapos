@@ -23,8 +23,8 @@ return new class extends Migration
             $table->decimal('total_sales', 15, 2)->default(0);
             $table->decimal('total_cash', 15, 2)->default(0);
             $table->decimal('total_non_cash', 15, 2)->default(0);
-            $table->timestamp('opened_at');
-            $table->timestamp('closed_at')->nullable();
+            $table->dateTime('opened_at');
+            $table->dateTime('closed_at')->nullable();
             $table->text('notes')->nullable();
             $table->enum('status', ['open', 'closed'])->default('open');
             $table->timestamps();

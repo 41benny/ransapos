@@ -18,7 +18,12 @@ class CashSessionService
      * @return CashSession
      * @throws Exception
      */
-    public function openSession(array $data, ?User $user = null): CashSession
+    public function openSession(
+        array $data,
+        ?User $user = null,
+        ?int $openedPosDeviceId = null,
+        ?string $openedIp = null
+    ): CashSession
     {
         DB::beginTransaction();
         
@@ -34,6 +39,8 @@ class CashSessionService
                 'session_number' => $sessionNumber,
                 'outlet_id' => $data['outlet_id'],
                 'user_id' => $userId,
+                'opened_pos_device_id' => $openedPosDeviceId,
+                'opened_ip' => $openedIp,
                 'opening_balance' => $data['opening_balance'],
                 'expected_balance' => $data['opening_balance'], // Awal sama dengan opening
                 'actual_balance' => null,
@@ -66,7 +73,13 @@ class CashSessionService
      * @return CashSession
      * @throws Exception
      */
-    public function closeSession(CashSession $session, float $actualBalance, ?string $notes = null): CashSession
+    public function closeSession(
+        CashSession $session,
+        float $actualBalance,
+        ?string $notes = null,
+        ?int $closedPosDeviceId = null,
+        ?string $closedIp = null
+    ): CashSession
     {
         DB::beginTransaction();
         
@@ -84,6 +97,8 @@ class CashSessionService
                 'actual_balance' => $actualBalance,
                 'difference' => $difference,
                 'closed_at' => now(),
+                'closed_pos_device_id' => $closedPosDeviceId,
+                'closed_ip' => $closedIp,
                 'status' => 'closed',
                 'notes' => $notes ? ($session->notes ? $session->notes . "\n\n" . $notes : $notes) : $session->notes,
             ]);

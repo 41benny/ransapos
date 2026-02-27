@@ -59,6 +59,20 @@
                         <span class="px-3 py-1 text-xs font-normal bg-gray-100 text-gray-800 rounded-full">Closed</span>
                     @endif
                 </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Perangkat Buka:</span>
+                    <span class="text-sm font-normal text-gray-900">{{ $sessionDiagnostics['opened_device_name'] ?? '-' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Perangkat Tutup:</span>
+                    <span class="text-sm font-normal text-gray-900">{{ $sessionDiagnostics['closed_device_name'] ?? '-' }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">IP Buka/Tutup:</span>
+                    <span class="text-sm font-normal text-gray-900">
+                        {{ $cashSession->opened_ip ?? '-' }} / {{ $cashSession->closed_ip ?? '-' }}
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -121,6 +135,36 @@
             </p>
         </div>
     </div>
+</div>
+
+<!-- Diagnostics Box -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="text-lg font-normal text-gray-900 mb-4">Diagnostics Shift</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600 mb-1">Rentang Tanggal Transaksi</p>
+            <p class="text-base font-normal text-gray-900">{{ $sessionDiagnostics['sale_date_range_label'] ?? '-' }}</p>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600 mb-1">Durasi Shift</p>
+            <p class="text-base font-normal text-gray-900">
+                {{ ($sessionDiagnostics['duration_minutes'] ?? null) !== null ? $sessionDiagnostics['duration_minutes'] . ' menit' : '-' }}
+            </p>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-4">
+            <p class="text-sm text-gray-600 mb-1">Delta Total Session vs Sum Sales</p>
+            <p class="text-base font-normal {{ ($sessionDiagnostics['delta_total_vs_sum'] ?? 0) == 0.0 ? 'text-gray-900' : 'text-amber-700' }}">
+                Rp {{ number_format($sessionDiagnostics['delta_total_vs_sum'] ?? 0, 0, ',', '.') }}
+            </p>
+        </div>
+    </div>
+
+    @if(!empty($sessionDiagnostics['device_mismatch']))
+        <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Buka/tutup shift terdeteksi menggunakan perangkat berbeda.
+            Ini bukan error otomatis, tetapi perlu verifikasi operasional.
+        </div>
+    @endif
 </div>
 
 <!-- Payment Breakdown -->

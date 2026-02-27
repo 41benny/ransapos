@@ -12,6 +12,10 @@ class CashSession extends Model
         'session_number',
         'outlet_id',
         'user_id',
+        'opened_pos_device_id',
+        'closed_pos_device_id',
+        'opened_ip',
+        'closed_ip',
         'opening_balance',
         'expected_balance',
         'actual_balance',
@@ -51,6 +55,22 @@ class CashSession extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Perangkat saat shift dibuka
+     */
+    public function openedDevice(): BelongsTo
+    {
+        return $this->belongsTo(PosDevice::class, 'opened_pos_device_id');
+    }
+
+    /**
+     * Perangkat saat shift ditutup
+     */
+    public function closedDevice(): BelongsTo
+    {
+        return $this->belongsTo(PosDevice::class, 'closed_pos_device_id');
     }
 
     /**
