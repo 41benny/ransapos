@@ -220,7 +220,7 @@
                                     ?? $transaction->voucher_number
                                     ?? $transaction->transaction_number);
                             @endphp
-                            <tr class="group hover:bg-slate-50/80 transition-colors">
+                            <tr class="group border-b border-slate-200 hover:bg-slate-50/80 transition-colors">
                                 <td class="px-4 py-2 whitespace-nowrap">
                                     <div class="flex flex-col">
                                         <a href="{{ route('admin.cash-transactions.show', array_merge(['cashTransaction' => $transaction], request()->query())) }}"
