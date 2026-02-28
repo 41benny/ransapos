@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\POS\OpenCashSessionRequest;
 use App\Http\Requests\POS\CloseCashSessionRequest;
 use App\Models\CashSession;
+use App\Models\SalesType;
 use App\Services\CashSessionService;
 use Exception;
 
@@ -171,7 +172,7 @@ class CashSessionController extends Controller
      */
     protected function buildSessionReportStats(CashSession $session): array
     {
-        $salesTypeLabels = config('sales.price_levels', []);
+        $salesTypeLabels = SalesType::priceLevels();
 
         $paymentStats = [];
         $salesTypeStats = [];

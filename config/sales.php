@@ -7,19 +7,6 @@ return [
     // - block: reject the sale until a BOM is configured
     'finished_good_without_bom' => env('SALES_FINISHED_GOOD_WITHOUT_BOM', 'reduce'),
 
-    // Level harga untuk channel/type penjualan.
-    // Key dipakai sebagai value teknis, label dipakai di UI.
-    'price_levels' => [
-        'regular' => 'Reguler',
-        'compliment' => 'Compliment',
-        'family' => 'Family',
-        'franchise' => 'Franchise',
-        'gofood' => 'GoFood',
-        'grabfood' => 'GrabFood',
-        'hpp' => 'HPP',
-        'meal_karyawan' => 'Meal Karyawan',
-        'member' => 'Member',
-        'reseller' => 'Reseller',
-        'shopeefood' => 'ShopeeFood',
-    ],
+    // NOTE: price_levels sudah dipindah ke tabel `sales_types` di database.
+    // Gunakan App\Models\SalesType::priceLevels() untuk mengambil data.
 ];

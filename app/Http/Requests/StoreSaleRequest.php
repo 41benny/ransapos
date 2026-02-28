@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\SalesType;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -34,7 +35,7 @@ class StoreSaleRequest extends FormRequest
      */
     public function rules(): array
     {
-        $salesTypeKeys = array_keys(config('sales.price_levels', ['regular' => 'Reguler']));
+        $salesTypeKeys = array_keys(SalesType::priceLevels());
         $user = $this->user();
 
         $outletRule = ['required', 'exists:outlets,id'];

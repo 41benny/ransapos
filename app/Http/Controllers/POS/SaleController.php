@@ -12,6 +12,7 @@ use App\Models\Promotion;
 use App\Models\CashSession;
 use App\Models\Outlet;
 use App\Models\Voucher;
+use App\Models\SalesType;
 use App\Services\SaleService;
 use App\Models\Sale;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class SaleController extends Controller
      */
     public function create()
     {
-        $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
+        $priceLevels = SalesType::priceLevels();
         $currentOutletId = (int) (auth()->user()->outlet_id ?? 0);
         $currentUserId = (int) (auth()->id() ?? 0);
 

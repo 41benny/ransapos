@@ -7,6 +7,7 @@ use App\Models\BomDetail;
 use App\Models\BomHeader;
 use App\Models\Outlet;
 use App\Models\Product;
+use App\Models\SalesType;
 use App\Models\ProductCategory;
 use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
@@ -158,7 +159,7 @@ class ProductController extends Controller
             })
             ->orderBy('name')
             ->get(['id', 'name', 'role_id', 'outlet_id']);
-        $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
+        $priceLevels = SalesType::priceLevels();
         $defaults = [
             'product_type' => $formMode === 'bundle' ? 'finished_good' : 'finished_good',
             'is_sellable' => true,
@@ -353,7 +354,7 @@ class ProductController extends Controller
             })
             ->orderBy('name')
             ->get(['id', 'name', 'role_id', 'outlet_id']);
-        $priceLevels = config('sales.price_levels', ['regular' => 'Reguler']);
+        $priceLevels = SalesType::priceLevels();
 
         // Bundle tetap memakai halaman edit_bundle agar form komponen BOM tersedia.
         $isBundle = $product->bomHeader()->where('source_type', 'bundle')->exists();
@@ -647,7 +648,7 @@ class ProductController extends Controller
      */
     private function normalizePriceLevels(array $priceLevels, float $fallbackRegularPrice): array
     {
-        $definedLevels = array_keys(config('sales.price_levels', ['regular' => 'Reguler']));
+        $definedLevels = array_keys(SalesType::priceLevels());
         $normalized = [];
 
         foreach ($definedLevels as $level) {
