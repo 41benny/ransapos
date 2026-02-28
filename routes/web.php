@@ -374,6 +374,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/sales-products/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProducts'])
             ->name('sales.products.export')
             ->middleware('permission:reports.export');
+        Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
+            ->name('sales.products.export-old')
+            ->middleware('permission:reports.export');
         Route::get('/shifts/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportIndex'])
             ->name('shifts.export')
             ->middleware('permission:reports.export');

@@ -10,6 +10,11 @@ use App\Models\PaymentMethod;
 use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SalesReportController extends Controller
 {
@@ -672,6 +677,148 @@ class SalesReportController extends Controller
         }
 
         return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $rows);
+    }
+
+    public function exportProductsOld(Request $request): StreamedResponse
+    {
+        $dateFrom = $request->input('date_from', now()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
+
+        $selectedOutletsQuery = Outlet::where('is_active', true);
+        if (!empty($outletIds)) {
+            $selectedOutletsQuery->whereIn('id', $outletIds);
+        }
+        $selectedOutlets = $selectedOutletsQuery->orderBy('name')->get();
+
+        $query = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+            ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletIds)) {
+            $query->whereIn('sales.outlet_id', $outletIds);
+        }
+        if ($request->filled('user_id')) {
+            $query->where('sales.user_id', $request->user_id);
+        }
+
+        $rows = $query
+            ->select(
+                'sales.outlet_id',
+                'outlets.name as outlet_name',
+                'products.name as product_name',
+                'products.sku',
+                DB::raw("COALESCE(product_categories.name, 'Tanpa Kategori') as category_name"),
+                DB::raw('SUM(sale_items.quantity) as qty')
+            )
+            ->groupBy('sales.outlet_id', 'outlets.name', 'products.name', 'products.sku', 'product_categories.name')
+            ->orderBy('outlets.name')
+            ->orderBy('category_name')
+            ->orderBy('products.name')
+            ->get();
+
+        if ($request->filled('filter_sku')) {
+            $rows = $rows->filter(fn($r) => stripos($r->sku ?? '', $request->filter_sku) !== false);
+        }
+        if ($request->filled('filter_product')) {
+            $rows = $rows->filter(fn($r) => stripos($r->product_name ?? '', $request->filter_product) !== false);
+        }
+        if ($request->filled('filter_qty')) {
+            $rows = $rows->filter(fn($r) => stripos((string)$r->qty, $request->filter_qty) !== false);
+        }
+        foreach ($selectedOutlets as $outlet) {
+            $filterName = "filter_outlet_{$outlet->id}";
+            if ($request->filled($filterName)) {
+                $rows = $rows->filter(function ($r) use ($request, $filterName, $outlet) {
+                    return (int) $r->outlet_id === (int) $outlet->id
+                        ? stripos((string) $r->qty, $request->{$filterName}) !== false
+                        : true;
+                });
+            }
+        }
+
+        $filename = sprintf(
+            'laporan-penjualan-produk-old-%s-sd-%s.xlsx',
+            str_replace('-', '', $dateFrom),
+            str_replace('-', '', $dateTo)
+        );
+
+        return new StreamedResponse(function () use ($rows, $selectedOutlets) {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Penjualan Produk Old');
+
+            $rowNum = 1;
+            $writtenSections = 0;
+
+            foreach ($selectedOutlets as $outlet) {
+                $outletRows = $rows
+                    ->where('outlet_id', $outlet->id)
+                    ->sortBy([
+                        ['category_name', 'asc'],
+                        ['product_name', 'asc'],
+                    ])
+                    ->values();
+
+                if ($outletRows->isEmpty()) {
+                    continue;
+                }
+
+                $writtenSections++;
+
+                $sheet->setCellValueExplicit("A{$rowNum}", 'Outlet: ' . $outlet->name, DataType::TYPE_STRING);
+                $sheet->mergeCells("A{$rowNum}:B{$rowNum}");
+                $sheet->getStyle("A{$rowNum}")->getFont()->setBold(true);
+                $rowNum++;
+
+                $sheet->setCellValue('A' . $rowNum, 'Nama Produk');
+                $sheet->setCellValue('B' . $rowNum, 'Qty');
+                $sheet->getStyle("A{$rowNum}:B{$rowNum}")->getFont()->setBold(true);
+                $rowNum++;
+
+                $currentCategory = null;
+                foreach ($outletRows as $item) {
+                    $categoryName = (string) ($item->category_name ?? 'Tanpa Kategori');
+
+                    if ($currentCategory !== $categoryName) {
+                        $sheet->setCellValueExplicit("A{$rowNum}", 'Kategori: ' . $categoryName, DataType::TYPE_STRING);
+                        $sheet->mergeCells("A{$rowNum}:B{$rowNum}");
+                        $sheet->getStyle("A{$rowNum}")->getFont()->setBold(true);
+                        $rowNum++;
+                        $currentCategory = $categoryName;
+                    }
+
+                    $sheet->setCellValueExplicit("A{$rowNum}", (string) $item->product_name, DataType::TYPE_STRING);
+                    $sheet->setCellValue("B{$rowNum}", (float) ($item->qty ?? 0));
+                    $sheet->getStyle("B{$rowNum}")
+                        ->getNumberFormat()
+                        ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                    $rowNum++;
+                }
+
+                $rowNum++;
+            }
+
+            if ($writtenSections === 0) {
+                $sheet->setCellValueExplicit('A1', 'Tidak ada data untuk filter yang dipilih.', DataType::TYPE_STRING);
+                $sheet->mergeCells('A1:B1');
+            }
+
+            $sheet->getColumnDimension('A')->setAutoSize(true);
+            $sheet->getColumnDimension('B')->setAutoSize(true);
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     private function resolveOutletIds(Request $request): array

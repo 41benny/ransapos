@@ -113,6 +113,11 @@
                         </div>
 
                         <div class="flex items-center gap-2">
+                            <a href="{{ route('admin.reports.sales.products.export-old', request()->query()) }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2 text-xs font-normal text-amber-700 border border-amber-100 shadow-sm transition-all hover:bg-amber-100 active:scale-95">
+                                <i class="fas fa-file-excel text-[10px]"></i>
+                                <span>Excel Old</span>
+                            </a>
                             <a href="{{ route('admin.reports.sales.products.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
                                 class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
