@@ -14,6 +14,7 @@ use App\Models\Outlet;
 use App\Models\Voucher;
 use App\Models\SalesType;
 use App\Models\Payment;
+use App\Models\SaleItem;
 use App\Services\SaleService;
 use App\Models\Sale;
 use Illuminate\Http\Request;
@@ -333,6 +334,7 @@ class SaleController extends Controller
     {
         $user = auth()->user();
         $outletId = $user->outlet_id;
+        $viewMode = $request->input('view', 'invoice') === 'product' ? 'product' : 'invoice';
         $dateFromInput = (string) $request->input('date_from', '');
         $dateToInput = (string) $request->input('date_to', '');
         $dateFrom = null;
@@ -354,8 +356,26 @@ class SaleController extends Controller
             }
         }
 
-        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
+        if ($dateFrom && !$dateTo) {
+            $dateTo = now()->endOfDay();
+        }
+
+        if (!$dateFrom && $dateTo) {
+            $dateFrom = $dateTo->copy()->subMonthNoOverflow()->startOfDay();
+        }
+
+        if (!$dateFrom && !$dateTo) {
+            $dateTo = now()->endOfDay();
+            $dateFrom = now()->subMonthNoOverflow()->startOfDay();
+        }
+
+        if ($dateFrom->gt($dateTo)) {
             [$dateFrom, $dateTo] = [$dateTo->copy()->startOfDay(), $dateFrom->copy()->endOfDay()];
+        }
+
+        $maxRangeStart = $dateTo->copy()->subMonthNoOverflow()->startOfDay();
+        if ($dateFrom->lt($maxRangeStart)) {
+            $dateFrom = $maxRangeStart;
         }
 
         $baseQuery = Sale::query()
@@ -397,6 +417,29 @@ class SaleController extends Controller
         $completedCount = (clone $completedQuery)->count();
         $completedAmount = (float) (clone $completedQuery)->sum('total_amount');
         $voidCount = (clone $baseQuery)->where('status', 'cancelled')->count();
+        $productRows = SaleItem::query()
+            ->selectRaw('COALESCE(sale_items.product_name, ?) as product_name', ['Produk Tanpa Nama'])
+            ->selectRaw('COALESCE(sale_items.product_sku, ?) as product_sku', ['-'])
+            ->selectRaw('SUM(sale_items.quantity) as total_qty')
+            ->selectRaw('SUM(sale_items.subtotal) as total_amount')
+            ->selectRaw('COUNT(DISTINCT sale_items.sale_id) as total_transactions')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->where('sales.outlet_id', $outletId)
+            ->where('sales.user_id', $user->id)
+            ->where('sales.status', 'completed')
+            ->whereNotNull('sales.cash_session_id')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('cash_sessions')
+                    ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
+                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+            })
+            ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
+            ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
+            ->groupBy('sale_items.product_name', 'sale_items.product_sku')
+            ->orderByDesc('total_qty')
+            ->paginate(20, ['*'], 'products_page')
+            ->withQueryString();
 
         $paymentBreakdown = Payment::query()
             ->selectRaw('COALESCE(payment_methods.name, ?) as method_name, SUM(payments.amount) as total_amount, COUNT(payments.id) as payment_count', ['Tanpa Metode'])
@@ -436,6 +479,8 @@ class SaleController extends Controller
             'sales' => $sales,
             'summary' => $summary,
             'paymentBreakdown' => $paymentBreakdown,
+            'productRows' => $productRows,
+            'viewMode' => $viewMode,
             'filters' => [
                 'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
                 'date_to' => $dateTo ? $dateTo->toDateString() : '',

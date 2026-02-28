@@ -21,6 +21,7 @@
             </div>
 
             <form method="GET" action="{{ route('pos.sales.history') }}" class="px-6 py-4 border-b border-gray-100">
+                <input type="hidden" name="view" value="{{ $viewMode ?? 'invoice' }}">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
                         <label for="date_from" class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Mulai</label>
@@ -46,6 +47,20 @@
                     </div>
                 </div>
             </form>
+
+            <div class="px-6 py-3 border-b border-gray-100 bg-gray-50/40 flex items-center gap-2">
+                <a href="{{ route('pos.sales.history', ['view' => 'invoice', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '']) }}"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ($viewMode ?? 'invoice') === 'invoice' ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
+                    <span class="material-icons-round text-sm">receipt_long</span>
+                    Per Invoice
+                </a>
+                <a href="{{ route('pos.sales.history', ['view' => 'product', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '']) }}"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ($viewMode ?? 'invoice') === 'product' ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
+                    <span class="material-icons-round text-sm">inventory_2</span>
+                    Per Produk
+                </a>
+                <span class="ml-auto text-[11px] text-gray-500">Maks. periode 1 bulan</span>
+            </div>
 
             <div class="p-6 grid grid-cols-2 lg:grid-cols-4 gap-3 border-b border-gray-100">
                 <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
@@ -82,7 +97,45 @@
             @endif
 
             <div class="p-0">
-                @if($sales->count() > 0)
+                @if(($viewMode ?? 'invoice') === 'product')
+                    @if($productRows->count() > 0)
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 text-gray-600 font-medium text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3 border-b border-gray-100">Produk</th>
+                                        <th class="px-6 py-3 border-b border-gray-100">SKU</th>
+                                        <th class="px-6 py-3 border-b border-gray-100 text-right">Qty Terjual</th>
+                                        <th class="px-6 py-3 border-b border-gray-100 text-right">Jumlah Transaksi</th>
+                                        <th class="px-6 py-3 border-b border-gray-100 text-right">Total Penjualan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 text-sm">
+                                    @foreach($productRows as $row)
+                                        <tr class="hover:bg-gray-50/50 transition-colors">
+                                            <td class="px-6 py-4 font-medium text-gray-900">{{ $row->product_name }}</td>
+                                            <td class="px-6 py-4 text-gray-500 font-mono text-xs">{{ $row->product_sku }}</td>
+                                            <td class="px-6 py-4 text-right font-semibold text-gray-900">{{ number_format((float) $row->total_qty, 0, ',', '.') }}</td>
+                                            <td class="px-6 py-4 text-right text-gray-700">{{ number_format((int) $row->total_transactions, 0, ',', '.') }}</td>
+                                            <td class="px-6 py-4 text-right font-bold text-gray-900">Rp {{ number_format((float) $row->total_amount, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-100">
+                            {{ $productRows->links() }}
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                                <span class="material-icons-round text-3xl">inventory_2</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Belum ada data produk</h3>
+                            <p class="text-gray-500 text-sm max-w-sm mt-1">Tidak ada produk terjual pada periode yang dipilih.</p>
+                        </div>
+                    @endif
+                @elseif($sales->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-gray-50 text-gray-600 font-medium text-xs uppercase tracking-wider">
