@@ -340,20 +340,36 @@ class SaleController extends Controller
         $dateFrom = null;
         $dateTo = null;
 
-        if ($dateFromInput !== '') {
-            try {
-                $dateFrom = Carbon::parse($dateFromInput)->startOfDay();
-            } catch (Exception $e) {
-                $dateFrom = null;
+        $parseDateInput = function (string $value, bool $isEndOfDay = false): ?Carbon {
+            $value = trim($value);
+            if ($value === '') {
+                return null;
             }
+
+            $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'm/d/Y', 'm-d-Y'];
+            foreach ($formats as $format) {
+                try {
+                    $date = Carbon::createFromFormat($format, $value);
+                    return $isEndOfDay ? $date->endOfDay() : $date->startOfDay();
+                } catch (Exception $e) {
+                    // Try next format.
+                }
+            }
+
+            try {
+                $date = Carbon::parse($value);
+                return $isEndOfDay ? $date->endOfDay() : $date->startOfDay();
+            } catch (Exception $e) {
+                return null;
+            }
+        };
+
+        if ($dateFromInput !== '') {
+            $dateFrom = $parseDateInput($dateFromInput, false);
         }
 
         if ($dateToInput !== '') {
-            try {
-                $dateTo = Carbon::parse($dateToInput)->endOfDay();
-            } catch (Exception $e) {
-                $dateTo = null;
-            }
+            $dateTo = $parseDateInput($dateToInput, true);
         }
 
         if ($dateFrom && !$dateTo) {
