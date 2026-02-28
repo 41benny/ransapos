@@ -81,6 +81,14 @@
                 <span class="text-xs font-bold text-gray-700 group-hover:text-violet-700">Absensi</span>
             </a>
 
+            <a href="{{ route('pos.sales.history') }}"
+                class="bg-white p-4 rounded-xl shadow-sm border border-sky-100 hover:border-sky-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">assessment</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-sky-700">Laporan</span>
+            </a>
+
             <form action="{{ route('logout') }}" method="POST" class="contents">
                 @csrf
                 <button type="submit"
@@ -239,7 +247,7 @@
                 <div class="flex-1 overflow-y-auto">
                     <div v-if="isLoadingHistory" class="p-8 text-center text-gray-400">Loading...</div>
                     <div v-else-if="historySales.length === 0" class="p-8 text-center text-gray-400">Belum ada transaksi
-                        di sesi ini.</div>
+                        pada riwayat sesi Anda.</div>
                     <template v-else>
                         <div v-for="sale in historySales" :key="sale.id" @click="selectSale(sale)"
                             :class="{'bg-white border-l-4 border-primary shadow-sm': selectedSale && selectedSale.id === sale.id, 'hover:bg-gray-100 border-l-4 border-transparent': !selectedSale || selectedSale.id !== sale.id}"

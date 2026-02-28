@@ -13,12 +13,14 @@ use App\Models\CashSession;
 use App\Models\Outlet;
 use App\Models\Voucher;
 use App\Models\SalesType;
+use App\Models\Payment;
 use App\Services\SaleService;
 use App\Models\Sale;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class SaleController extends Controller
 {
@@ -325,46 +327,120 @@ class SaleController extends Controller
     }
 
     /**
-     * Get transaction history for current session
+     * Get transaction history for cashier sessions (open + closed).
      */
     public function history(Request $request)
     {
         $user = auth()->user();
         $outletId = $user->outlet_id;
+        $dateFromInput = (string) $request->input('date_from', '');
+        $dateToInput = (string) $request->input('date_to', '');
+        $dateFrom = null;
+        $dateTo = null;
 
-        // Ambil cash session aktif
-        $activeSession = CashSession::where('status', 'open')
-            ->where('user_id', $user->id)
-            ->where('outlet_id', $outletId)
-            ->first();
-
-        if (!$activeSession) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tidak ada sesi kasir yang aktif',
-                    'data' => []
-                ]);
+        if ($dateFromInput !== '') {
+            try {
+                $dateFrom = Carbon::parse($dateFromInput)->startOfDay();
+            } catch (Exception $e) {
+                $dateFrom = null;
             }
-            // Return view with empty sales if no session
-            return view('pos.sales.history', ['sales' => []]);
         }
 
-        // Ambil penjualan dalam sesi ini
-        $sales = Sale::where('cash_session_id', $activeSession->id)
-            ->with(['items', 'customer', 'payments.paymentMethod'])
-            ->orderBy('created_at', 'desc')
-            ->limit(50) // Batasi 50 transaksi terakhir
-            ->get();
+        if ($dateToInput !== '') {
+            try {
+                $dateTo = Carbon::parse($dateToInput)->endOfDay();
+            } catch (Exception $e) {
+                $dateTo = null;
+            }
+        }
+
+        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
+            [$dateFrom, $dateTo] = [$dateTo->copy()->startOfDay(), $dateFrom->copy()->endOfDay()];
+        }
+
+        $baseQuery = Sale::query()
+            ->where('outlet_id', $outletId)
+            ->where('user_id', $user->id)
+            ->whereNotNull('cash_session_id')
+            ->whereHas('cashSession', function ($query) {
+                $query->whereIn('status', ['open', 'closed']);
+            });
+
+        if ($dateFrom) {
+            $baseQuery->whereDate('sale_date', '>=', $dateFrom->toDateString());
+        }
+
+        if ($dateTo) {
+            $baseQuery->whereDate('sale_date', '<=', $dateTo->toDateString());
+        }
 
         if ($request->wantsJson()) {
+            $sales = (clone $baseQuery)
+                ->with(['items', 'customer', 'payments.paymentMethod'])
+                ->orderBy('created_at', 'desc')
+                ->limit(50) // Batasi 50 transaksi terakhir
+                ->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $sales
             ]);
         }
 
-        return view('pos.sales.history', compact('sales'));
+        $sales = (clone $baseQuery)
+            ->with(['items', 'customer', 'payments.paymentMethod'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        $completedQuery = (clone $baseQuery)->where('status', 'completed');
+        $completedCount = (clone $completedQuery)->count();
+        $completedAmount = (float) (clone $completedQuery)->sum('total_amount');
+        $voidCount = (clone $baseQuery)->where('status', 'cancelled')->count();
+
+        $paymentBreakdown = Payment::query()
+            ->selectRaw('COALESCE(payment_methods.name, ?) as method_name, SUM(payments.amount) as total_amount, COUNT(payments.id) as payment_count', ['Tanpa Metode'])
+            ->join('sales', 'sales.id', '=', 'payments.sale_id')
+            ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+            ->where('sales.outlet_id', $outletId)
+            ->where('sales.user_id', $user->id)
+            ->whereNotNull('sales.cash_session_id')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('cash_sessions')
+                    ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
+                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+            });
+
+        if ($dateFrom) {
+            $paymentBreakdown->whereDate('sales.sale_date', '>=', $dateFrom->toDateString());
+        }
+
+        if ($dateTo) {
+            $paymentBreakdown->whereDate('sales.sale_date', '<=', $dateTo->toDateString());
+        }
+
+        $paymentBreakdown = $paymentBreakdown
+            ->groupBy('payment_methods.name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $summary = [
+            'transactions' => $completedCount,
+            'void_transactions' => $voidCount,
+            'gross_sales' => $completedAmount,
+            'avg_ticket' => $completedCount > 0 ? $completedAmount / $completedCount : 0,
+        ];
+
+        return view('pos.sales.history', [
+            'sales' => $sales,
+            'summary' => $summary,
+            'paymentBreakdown' => $paymentBreakdown,
+            'filters' => [
+                'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
+                'date_to' => $dateTo ? $dateTo->toDateString() : '',
+            ],
+        ]);
     }
 
     /**

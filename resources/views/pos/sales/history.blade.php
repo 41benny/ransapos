@@ -1,99 +1,232 @@
 @extends('layouts.pos_theme')
 
 @section('content')
-    <div class="bg-surface-light rounded-2xl shadow-soft flex flex-col relative overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <div>
-                <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <span class="material-icons-round text-primary text-xl">history</span>
-                    Riwayat Penjualan
-                </h2>
-                <p class="text-sm text-gray-500 mt-0.5">Transaksi sesi ini</p>
-            </div>
-            <div class="flex gap-2">
-                <a href="{{ route('pos.dashboard') }}"
-                    class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all text-sm">
-                    <span class="material-icons-round text-base">arrow_back</span>
-                    Kembali
-                </a>
-            </div>
-        </div>
-
-        <div class="p-0">
-            @if(count($sales) > 0)
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 text-gray-600 font-medium text-xs uppercase tracking-wider">
-                            <tr>
-                                <th class="px-6 py-3 border-b border-gray-100">Invoice</th>
-                                <th class="px-6 py-3 border-b border-gray-100">Waktu</th>
-                                <th class="px-6 py-3 border-b border-gray-100">Pelanggan</th>
-                                <th class="px-6 py-3 border-b border-gray-100">Metode Bayar</th>
-                                <th class="px-6 py-3 border-b border-gray-100 text-right">Total</th>
-                                <th class="px-6 py-3 border-b border-gray-100 text-center">Status</th>
-                                <th class="px-6 py-3 border-b border-gray-100 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 text-sm">
-                            @foreach($sales as $sale)
-                                <tr class="hover:bg-gray-50/50 transition-colors group">
-                                    <td class="px-6 py-4 font-mono font-medium text-gray-900">
-                                        {{ $sale->invoice_number }}
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-500">
-                                        {{ $sale->created_at->format('d M H:i') }}
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-900">
-                                        {{ $sale->customer_name ?? 'Walk-in' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-gray-600">
-                                        @foreach($sale->payments as $payment)
-                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-xs">
-                                                {{ $payment->paymentMethod->name ?? '-' }}
-                                            </span>
-                                        @endforeach
-                                    </td>
-                                    <td class="px-6 py-4 font-bold text-gray-900 text-right">
-                                        Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($sale->status == 'completed')
-                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                                Selesai
-                                            </span>
-                                        @elseif($sale->status == 'cancelled')
-                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
-                                                Void
-                                            </span>
-                                        @else
-                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                                                {{ ucfirst($sale->status) }}
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <div class="flex items-center justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <a href="{{ route('pos.sales.print', $sale->id) }}" target="_blank"
-                                                class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print Struk">
-                                                <span class="material-icons-round text-xl">print</span>
-                                            </a>
-                                            <!-- Validasi void bisa ditambahkan di sini -->
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+    <div class="space-y-4">
+        <div class="bg-surface-light rounded-2xl shadow-soft flex flex-col relative overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <span class="material-icons-round text-primary text-xl">assessment</span>
+                        Laporan Penjualan Kasir
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-0.5">Rekap transaksi sesi open/closed milik Anda</p>
                 </div>
-            @else
-                <div class="flex flex-col items-center justify-center py-12 text-center">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
-                        <span class="material-icons-round text-3xl">history_toggle_off</span>
+                <div class="flex gap-2">
+                    <a href="{{ route('pos.dashboard') }}"
+                        class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all text-sm">
+                        <span class="material-icons-round text-base">arrow_back</span>
+                        Kembali
+                    </a>
+                </div>
+            </div>
+
+            <form method="GET" action="{{ route('pos.sales.history') }}" class="px-6 py-4 border-b border-gray-100">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label for="date_from" class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Mulai</label>
+                        <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-primary focus:ring-primary">
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">Belum ada riwayat</h3>
-                    <p class="text-gray-500 text-sm max-w-sm mt-1">Transaksi yang Anda lakukan pada sesi ini akan muncul di sini.</p>
+                    <div>
+                        <label for="date_to" class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Akhir</label>
+                        <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-primary focus:ring-primary">
+                    </div>
+                    <div class="md:col-span-2 flex items-end gap-2">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 bg-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition">
+                            <span class="material-icons-round text-base">filter_alt</span>
+                            Terapkan Filter
+                        </button>
+                        <a href="{{ route('pos.sales.history') }}"
+                            class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold text-sm transition">
+                            <span class="material-icons-round text-base">refresh</span>
+                            Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <div class="p-6 grid grid-cols-2 lg:grid-cols-4 gap-3 border-b border-gray-100">
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Transaksi Selesai</p>
+                    <p class="text-xl font-bold text-gray-900 mt-1">{{ number_format($summary['transactions'] ?? 0, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Transaksi Void</p>
+                    <p class="text-xl font-bold text-red-700 mt-1">{{ number_format($summary['void_transactions'] ?? 0, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Total Penjualan</p>
+                    <p class="text-xl font-bold text-emerald-700 mt-1">Rp {{ number_format($summary['gross_sales'] ?? 0, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Rata-rata Ticket</p>
+                    <p class="text-xl font-bold text-gray-900 mt-1">Rp {{ number_format($summary['avg_ticket'] ?? 0, 0, ',', '.') }}</p>
+                </div>
+            </div>
+
+            @if($paymentBreakdown->count() > 0)
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-800 mb-3">Ringkasan Metode Pembayaran</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        @foreach($paymentBreakdown as $row)
+                            <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                <p class="text-xs text-gray-500">{{ $row->method_name }}</p>
+                                <p class="text-sm font-bold text-gray-900 mt-1">Rp {{ number_format($row->total_amount, 0, ',', '.') }}</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">{{ number_format($row->payment_count, 0, ',', '.') }} pembayaran</p>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             @endif
+
+            <div class="p-0">
+                @if($sales->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 text-gray-600 font-medium text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-3 border-b border-gray-100">Invoice</th>
+                                    <th class="px-6 py-3 border-b border-gray-100">Waktu</th>
+                                    <th class="px-6 py-3 border-b border-gray-100">Item</th>
+                                    <th class="px-6 py-3 border-b border-gray-100 text-right">Qty</th>
+                                    <th class="px-6 py-3 border-b border-gray-100">Pelanggan</th>
+                                    <th class="px-6 py-3 border-b border-gray-100">Metode Bayar</th>
+                                    <th class="px-6 py-3 border-b border-gray-100 text-right">Total</th>
+                                    <th class="px-6 py-3 border-b border-gray-100 text-center">Status</th>
+                                    <th class="px-6 py-3 border-b border-gray-100 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm">
+                                @foreach($sales as $sale)
+                                    @php
+                                        $items = $sale->items;
+                                        $rowCount = max($items->count(), 1);
+                                    @endphp
+
+                                    @if($items->count() > 0)
+                                        @foreach($items as $index => $item)
+                                            <tr class="hover:bg-gray-50/50 transition-colors group">
+                                                @if($index === 0)
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 font-mono font-medium text-gray-900 align-top">
+                                                        {{ $sale->invoice_number }}
+                                                    </td>
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-500 align-top">
+                                                        {{ $sale->created_at->format('d M Y H:i') }}
+                                                    </td>
+                                                @endif
+
+                                                <td class="px-6 py-4 text-gray-700 text-xs">
+                                                    <span class="font-medium">{{ $item->product_name ?? '-' }}</span>
+                                                </td>
+                                                <td class="px-6 py-4 text-right font-semibold text-gray-800 align-top">
+                                                    {{ number_format((float) $item->quantity, 0, ',', '.') }}
+                                                </td>
+
+                                                @if($index === 0)
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-900 align-top">
+                                                        {{ $sale->customer_name ?? 'Walk-in' }}
+                                                    </td>
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-600 align-top">
+                                                        @foreach($sale->payments as $payment)
+                                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-xs mb-1">
+                                                                {{ $payment->paymentMethod->name ?? '-' }}
+                                                            </span>
+                                                        @endforeach
+                                                    </td>
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 font-bold text-gray-900 text-right align-top">
+                                                        Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
+                                                    </td>
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-center align-top">
+                                                        @if($sale->status == 'completed')
+                                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                                Selesai
+                                                            </span>
+                                                        @elseif($sale->status == 'cancelled')
+                                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
+                                                                Void
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                                {{ ucfirst($sale->status) }}
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-center align-top">
+                                                        <div class="flex items-center justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <a href="{{ route('pos.sales.print', $sale->id) }}" target="_blank"
+                                                                class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print Struk">
+                                                                <span class="material-icons-round text-xl">print</span>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                @endif
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr class="hover:bg-gray-50/50 transition-colors group">
+                                            <td class="px-6 py-4 font-mono font-medium text-gray-900">
+                                                {{ $sale->invoice_number }}
+                                            </td>
+                                            <td class="px-6 py-4 text-gray-500">
+                                                {{ $sale->created_at->format('d M Y H:i') }}
+                                            </td>
+                                            <td class="px-6 py-4 text-gray-700 text-xs">-</td>
+                                            <td class="px-6 py-4 text-right font-semibold text-gray-800">0</td>
+                                            <td class="px-6 py-4 text-gray-900">
+                                                {{ $sale->customer_name ?? 'Walk-in' }}
+                                            </td>
+                                            <td class="px-6 py-4 text-gray-600">
+                                                @foreach($sale->payments as $payment)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-xs mb-1">
+                                                        {{ $payment->paymentMethod->name ?? '-' }}
+                                                    </span>
+                                                @endforeach
+                                            </td>
+                                            <td class="px-6 py-4 font-bold text-gray-900 text-right">
+                                                Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                @if($sale->status == 'completed')
+                                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                        Selesai
+                                                    </span>
+                                                @elseif($sale->status == 'cancelled')
+                                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">
+                                                        Void
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                                        {{ ucfirst($sale->status) }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <a href="{{ route('pos.sales.print', $sale->id) }}" target="_blank"
+                                                    class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print Struk">
+                                                    <span class="material-icons-round text-xl">print</span>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100">
+                        {{ $sales->links() }}
+                    </div>
+                @else
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                            <span class="material-icons-round text-3xl">history_toggle_off</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900">Belum ada data</h3>
+                        <p class="text-gray-500 text-sm max-w-sm mt-1">Belum ada transaksi kasir pada periode yang dipilih.</p>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 @endsection

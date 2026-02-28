@@ -689,7 +689,7 @@
                     <div class="flex-1 overflow-y-auto">
                         <div v-if="isLoadingHistory" class="p-8 text-center text-gray-400">Loading...</div>
                         <div v-else-if="historySales.length === 0" class="p-8 text-center text-gray-400">Belum ada transaksi
-                            di sesi ini.</div>
+                            pada riwayat sesi Anda.</div>
                         <template v-else>
                             <div v-for="sale in historySales" :key="sale.id" @click="selectSale(sale)"
                                 :class="{'bg-white border-l-4 border-primary shadow-sm': selectedSale && selectedSale.id === sale.id, 'hover:bg-gray-100 border-l-4 border-transparent': !selectedSale || selectedSale.id !== sale.id}"
