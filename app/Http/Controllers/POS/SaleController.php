@@ -501,6 +501,7 @@ class SaleController extends Controller
                 'sales' => $sales,
                 'summary' => $summary,
                 'paymentBreakdown' => $paymentBreakdown,
+                'productRows' => $productRows,
                 'filters' => [
                     'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
                     'date_to' => $dateTo ? $dateTo->toDateString() : '',

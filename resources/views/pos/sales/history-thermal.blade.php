@@ -60,6 +60,13 @@
     @php
         $outletName = auth()->user()->outlet->name ?? 'Outlet';
         $cashierName = auth()->user()->name ?? 'Kasir';
+        $formatQty = static function ($qty): string {
+            $qty = (float) $qty;
+            $isWhole = abs($qty - round($qty)) < 0.00001;
+            return $isWhole
+                ? number_format($qty, 0, ',', '.')
+                : number_format($qty, 2, ',', '.');
+        };
     @endphp
 
     <div class="center section">
@@ -121,6 +128,42 @@
                 <span class="right">0</span>
             </div>
         @endforelse
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+        <div class="bold">PRODUK TERJUAL (QTY)</div>
+        @php
+            $totalQtySold = collect($productRows ?? [])->sum('total_qty');
+            $totalSkuSold = collect($productRows ?? [])->count();
+        @endphp
+        @forelse(($productRows ?? []) as $row)
+            <div class="row">
+                <span class="left">
+                    @if(($row->product_sku ?? '-') !== '-')
+                        [{{ $row->product_sku }}]
+                    @endif
+                    {{ $row->product_name }} x{{ $formatQty($row->total_qty) }}
+                </span>
+                <span class="right">{{ number_format($row->total_amount, 0, ',', '.') }}</span>
+            </div>
+        @empty
+            <div class="row muted">
+                <span class="left">Tidak ada produk terjual</span>
+                <span class="right">-</span>
+            </div>
+        @endforelse
+        @if($totalSkuSold > 0)
+            <div class="row bold">
+                <span class="left">Total Qty</span>
+                <span class="right">{{ $formatQty($totalQtySold) }}</span>
+            </div>
+            <div class="row">
+                <span class="left">Jumlah SKU</span>
+                <span class="right">{{ number_format($totalSkuSold, 0, ',', '.') }}</span>
+            </div>
+        @endif
     </div>
 
     <div class="divider"></div>
