@@ -1,9 +1,12 @@
 @extends('layouts.pos_theme')
 
 @section('content')
+    @php
+        $printMode = (bool) ($printMode ?? false);
+    @endphp
     <div class="space-y-4">
         <div class="bg-surface-light rounded-2xl shadow-soft flex flex-col relative overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 no-print">
                 <div>
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <span class="material-icons-round text-primary text-xl">assessment</span>
@@ -12,6 +15,11 @@
                     <p class="text-sm text-gray-500 mt-0.5">Rekap transaksi sesi open/closed milik Anda</p>
                 </div>
                 <div class="flex gap-2">
+                    <button type="button" onclick="window.print()"
+                        class="flex items-center gap-2 bg-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm">
+                        <span class="material-icons-round text-base">print</span>
+                        Print
+                    </button>
                     <a href="{{ route('pos.dashboard') }}"
                         class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-all text-sm">
                         <span class="material-icons-round text-base">arrow_back</span>
@@ -20,7 +28,15 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ route('pos.sales.history') }}" class="px-6 py-4 border-b border-gray-100">
+            <div class="px-6 py-4 border-b border-gray-100 print-only hidden">
+                <h1 class="text-lg font-bold text-gray-900">Laporan Penjualan Kasir</h1>
+                <p class="text-xs text-gray-600 mt-1">
+                    Periode: {{ $filters['date_from'] ?? '-' }} s.d {{ $filters['date_to'] ?? '-' }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">Dicetak: {{ now()->format('d/m/Y H:i:s') }}</p>
+            </div>
+
+            <form method="GET" action="{{ route('pos.sales.history') }}" class="px-6 py-4 border-b border-gray-100 no-print">
                 <input type="hidden" name="view" value="{{ $viewMode ?? 'invoice' }}">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div>
@@ -48,7 +64,7 @@
                 </div>
             </form>
 
-            <div class="px-6 py-3 border-b border-gray-100 bg-gray-50/40 flex items-center gap-2">
+            <div class="px-6 py-3 border-b border-gray-100 bg-gray-50/40 flex items-center gap-2 no-print">
                 <a href="{{ route('pos.sales.history', ['view' => 'invoice', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '']) }}"
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ($viewMode ?? 'invoice') === 'invoice' ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
                     <span class="material-icons-round text-sm">receipt_long</span>
@@ -123,9 +139,11 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="px-6 py-4 border-t border-gray-100">
-                            {{ $productRows->links() }}
-                        </div>
+                        @if(method_exists($productRows, 'links'))
+                            <div class="px-6 py-4 border-t border-gray-100 no-print">
+                                {{ $productRows->links() }}
+                            </div>
+                        @endif
                     @else
                         <div class="flex flex-col items-center justify-center py-12 text-center">
                             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
@@ -148,7 +166,7 @@
                                     <th class="px-6 py-3 border-b border-gray-100">Metode Bayar</th>
                                     <th class="px-6 py-3 border-b border-gray-100 text-right">Total</th>
                                     <th class="px-6 py-3 border-b border-gray-100 text-center">Status</th>
-                                    <th class="px-6 py-3 border-b border-gray-100 text-center">Aksi</th>
+                                    <th class="px-6 py-3 border-b border-gray-100 text-center no-print">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-sm">
@@ -206,7 +224,7 @@
                                                             </span>
                                                         @endif
                                                     </td>
-                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-center align-top">
+                                                    <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-center align-top no-print">
                                                         <div class="flex items-center justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <a href="{{ route('pos.sales.print', $sale->id) }}" target="_blank"
                                                                 class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print Struk">
@@ -255,7 +273,7 @@
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 text-center">
+                                            <td class="px-6 py-4 text-center no-print">
                                                 <a href="{{ route('pos.sales.print', $sale->id) }}" target="_blank"
                                                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Print Struk">
                                                     <span class="material-icons-round text-xl">print</span>
@@ -267,9 +285,11 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="px-6 py-4 border-t border-gray-100">
-                        {{ $sales->links() }}
-                    </div>
+                    @if(method_exists($sales, 'links'))
+                        <div class="px-6 py-4 border-t border-gray-100 no-print">
+                            {{ $sales->links() }}
+                        </div>
+                    @endif
                 @else
                     <div class="flex flex-col items-center justify-center py-12 text-center">
                         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
@@ -282,4 +302,26 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .print-only { display: none; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: #fff !important; }
+            .shadow-soft { box-shadow: none !important; }
+            .rounded-2xl { border-radius: 0 !important; }
+        }
+    </style>
+
+    @if($printMode)
+        <script>
+            window.addEventListener('load', function () {
+                setTimeout(function () {
+                    window.print();
+                }, 120);
+            });
+        </script>
+    @endif
 @endsection

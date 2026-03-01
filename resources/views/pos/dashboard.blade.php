@@ -57,13 +57,13 @@
                 <span class="text-xs font-bold text-emerald-800 group-hover:text-emerald-900">Kasir / POS</span>
             </a>
 
-            <a href="{{ route('pos.sessions.print', $activeSession->id) }}" target="_blank"
-                class="bg-white p-4 rounded-xl shadow-sm border border-rose-100 hover:border-rose-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+            <button type="button" @click="openRecapModal"
+                class="w-full bg-white p-4 rounded-xl shadow-sm border border-rose-100 hover:border-rose-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
                     <span class="material-icons-round">print</span>
                 </div>
-                <span class="text-xs font-bold text-gray-700 group-hover:text-rose-700">Rekap Shift</span>
-            </a>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-rose-700">Print Rekap</span>
+            </button>
 
             <a href="{{ route('pos.petty-cash.index') }}"
                 class="bg-white p-4 rounded-xl shadow-sm border border-amber-100 hover:border-amber-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
@@ -363,6 +363,45 @@
         </div>
     </div>
 
+    <!-- Recap Print Modal -->
+    <div v-if="showRecapModal"
+        class="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        style="display: none;" v-show="showRecapModal">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Print Rekap Transaksi</h3>
+            <p class="text-sm text-gray-500 mb-5">Pilih periode transaksi sebelum cetak. Maksimal rentang 1 bulan (31 hari).</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="recap_date_from" class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
+                    <input id="recap_date_from" type="date" v-model="recapDateFrom"
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-primary focus:ring-primary">
+                </div>
+                <div>
+                    <label for="recap_date_to" class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Akhir</label>
+                    <input id="recap_date_to" type="date" v-model="recapDateTo"
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-primary focus:ring-primary">
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-3">
+                Rentang dipilih: <span class="font-semibold text-gray-700">@{{ recapDateFrom || '-' }}</span>
+                s.d <span class="font-semibold text-gray-700">@{{ recapDateTo || '-' }}</span>
+            </p>
+
+            <div class="flex gap-3 mt-6">
+                <button @click="closeRecapModal"
+                    class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition">
+                    Batal
+                </button>
+                <button @click="printRecapWithRange"
+                    class="flex-1 py-2.5 bg-primary hover:bg-red-700 text-white rounded-lg font-semibold transition">
+                    Cetak Rekap
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Void Confirmation Modal -->
     <div v-if="showVoidModal"
         class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -415,15 +454,83 @@
             return {
                 showHistoryModal: false,
                 showVoidModal: false,
+                showRecapModal: false,
                 historySales: [],
                 selectedSale: null,
                 isLoadingHistory: false,
                 isVoiding: false,
                 voidReason: '',
                 voidToken: '',
+                activeSessionId: @json($activeSession->id ?? null),
+                recapDateFrom: @json(now()->toDateString()),
+                recapDateTo: @json(now()->toDateString()),
             }
         },
         methods: {
+            openRecapModal() {
+                if (!this.activeSessionId) {
+                    alert('Sesi aktif tidak ditemukan. Buka shift dulu sebelum cetak rekap.');
+                    return;
+                }
+
+                this.showRecapModal = true;
+            },
+            closeRecapModal() {
+                this.showRecapModal = false;
+            },
+            parseDateOnly(value) {
+                if (!value) {
+                    return null;
+                }
+
+                const normalized = new Date(`${value}T00:00:00`);
+                return Number.isNaN(normalized.getTime()) ? null : normalized;
+            },
+            calculateRangeDays(dateFrom, dateTo) {
+                const start = this.parseDateOnly(dateFrom);
+                const end = this.parseDateOnly(dateTo);
+
+                if (!start || !end) {
+                    return null;
+                }
+
+                const msPerDay = 24 * 60 * 60 * 1000;
+                return Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
+            },
+            printRecapWithRange() {
+                if (!this.recapDateFrom || !this.recapDateTo) {
+                    alert('Tanggal mulai dan tanggal akhir wajib diisi.');
+                    return;
+                }
+
+                const start = this.parseDateOnly(this.recapDateFrom);
+                const end = this.parseDateOnly(this.recapDateTo);
+
+                if (!start || !end) {
+                    alert('Format tanggal tidak valid.');
+                    return;
+                }
+
+                if (start.getTime() > end.getTime()) {
+                    alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir.');
+                    return;
+                }
+
+                const rangeDays = this.calculateRangeDays(this.recapDateFrom, this.recapDateTo);
+                if (!rangeDays || rangeDays > 31) {
+                    alert('Rentang tanggal maksimal 31 hari (1 bulan).');
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    view: 'invoice',
+                    date_from: this.recapDateFrom,
+                    date_to: this.recapDateTo,
+                    print: '1',
+                });
+                window.open(`{{ route('pos.sales.history') }}?${params.toString()}`, '_blank', 'noopener,noreferrer');
+                this.showRecapModal = false;
+            },
             openReceiptPrintWindow(saleId) {
                 const normalizedSaleId = Number(saleId);
                 if (!Number.isFinite(normalizedSaleId) || normalizedSaleId <= 0) {

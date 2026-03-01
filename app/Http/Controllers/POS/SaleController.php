@@ -335,6 +335,7 @@ class SaleController extends Controller
         $user = auth()->user();
         $outletId = $user->outlet_id;
         $viewMode = $request->input('view', 'invoice') === 'product' ? 'product' : 'invoice';
+        $printMode = $request->boolean('print');
         $dateFromInput = (string) $request->input('date_from', '');
         $dateToInput = (string) $request->input('date_to', '');
         $dateFrom = null;
@@ -423,17 +424,19 @@ class SaleController extends Controller
             ]);
         }
 
-        $sales = (clone $baseQuery)
+        $salesQuery = (clone $baseQuery)
             ->with(['items', 'customer', 'payments.paymentMethod'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('created_at', 'desc');
+
+        $sales = $printMode
+            ? $salesQuery->get()
+            : $salesQuery->paginate(20)->withQueryString();
 
         $completedQuery = (clone $baseQuery)->where('status', 'completed');
         $completedCount = (clone $completedQuery)->count();
         $completedAmount = (float) (clone $completedQuery)->sum('total_amount');
         $voidCount = (clone $baseQuery)->where('status', 'cancelled')->count();
-        $productRows = SaleItem::query()
+        $productRowsQuery = SaleItem::query()
             ->selectRaw('COALESCE(sale_items.product_name, ?) as product_name', ['Produk Tanpa Nama'])
             ->selectRaw('COALESCE(sale_items.product_sku, ?) as product_sku', ['-'])
             ->selectRaw('SUM(sale_items.quantity) as total_qty')
@@ -453,9 +456,11 @@ class SaleController extends Controller
             ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
             ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
             ->groupBy('sale_items.product_name', 'sale_items.product_sku')
-            ->orderByDesc('total_qty')
-            ->paginate(20, ['*'], 'products_page')
-            ->withQueryString();
+            ->orderByDesc('total_qty');
+
+        $productRows = $printMode
+            ? $productRowsQuery->get()
+            : $productRowsQuery->paginate(20, ['*'], 'products_page')->withQueryString();
 
         $paymentBreakdown = Payment::query()
             ->selectRaw('COALESCE(payment_methods.name, ?) as method_name, SUM(payments.amount) as total_amount, COUNT(payments.id) as payment_count', ['Tanpa Metode'])
@@ -501,6 +506,7 @@ class SaleController extends Controller
                 'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
                 'date_to' => $dateTo ? $dateTo->toDateString() : '',
             ],
+            'printMode' => $printMode,
         ]);
     }
 
