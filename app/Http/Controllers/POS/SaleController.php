@@ -496,6 +496,18 @@ class SaleController extends Controller
             'avg_ticket' => $completedCount > 0 ? $completedAmount / $completedCount : 0,
         ];
 
+        if ($printMode) {
+            return view('pos.sales.history-thermal', [
+                'sales' => $sales,
+                'summary' => $summary,
+                'paymentBreakdown' => $paymentBreakdown,
+                'filters' => [
+                    'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
+                    'date_to' => $dateTo ? $dateTo->toDateString() : '',
+                ],
+            ]);
+        }
+
         return view('pos.sales.history', [
             'sales' => $sales,
             'summary' => $summary,
