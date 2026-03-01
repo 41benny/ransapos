@@ -136,17 +136,14 @@
         <div class="bold">PRODUK TERJUAL (QTY)</div>
         @php
             $totalQtySold = collect($productRows ?? [])->sum('total_qty');
-            $totalSkuSold = collect($productRows ?? [])->count();
+            $totalProducts = collect($productRows ?? [])->count();
         @endphp
         @forelse(($productRows ?? []) as $row)
             <div class="row">
                 <span class="left">
-                    @if(($row->product_sku ?? '-') !== '-')
-                        [{{ $row->product_sku }}]
-                    @endif
-                    {{ $row->product_name }} x{{ $formatQty($row->total_qty) }}
+                    {{ $row->product_name }}
                 </span>
-                <span class="right">{{ number_format($row->total_amount, 0, ',', '.') }}</span>
+                <span class="right">{{ $formatQty($row->total_qty) }}</span>
             </div>
         @empty
             <div class="row muted">
@@ -154,14 +151,14 @@
                 <span class="right">-</span>
             </div>
         @endforelse
-        @if($totalSkuSold > 0)
+        @if($totalProducts > 0)
             <div class="row bold">
                 <span class="left">Total Qty</span>
                 <span class="right">{{ $formatQty($totalQtySold) }}</span>
             </div>
             <div class="row">
-                <span class="left">Jumlah SKU</span>
-                <span class="right">{{ number_format($totalSkuSold, 0, ',', '.') }}</span>
+                <span class="left">Jumlah Produk</span>
+                <span class="right">{{ number_format($totalProducts, 0, ',', '.') }}</span>
             </div>
         @endif
     </div>
