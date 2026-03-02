@@ -492,9 +492,11 @@ class SaleController extends Controller
         $salesTypeLabels = SalesType::priceLevels();
         $salesTypeExpr = "COALESCE(NULLIF(LOWER(TRIM(sales_type)), ''), 'regular')";
         $salesTypeBreakdown = (clone $completedQuery)
-            ->selectRaw($salesTypeExpr . ' as sales_type_key')
-            ->selectRaw('COUNT(*) as transaction_count')
-            ->selectRaw('SUM(total_amount) as total_amount')
+            ->select([
+                DB::raw($salesTypeExpr . ' as sales_type_key'),
+                DB::raw('COUNT(*) as transaction_count'),
+                DB::raw('SUM(total_amount) as total_amount'),
+            ])
             ->groupByRaw($salesTypeExpr)
             ->orderByDesc('total_amount')
             ->get()
