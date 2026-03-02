@@ -523,7 +523,7 @@
                 }
 
                 const params = new URLSearchParams({
-                    view: 'invoice',
+                    view: 'product',
                     date_from: this.recapDateFrom,
                     date_to: this.recapDateTo,
                     print: '1',

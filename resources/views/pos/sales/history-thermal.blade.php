@@ -49,11 +49,6 @@
             white-space: nowrap;
         }
         .muted { color: #444; }
-        .sale-item {
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-            border-bottom: 1px dotted #999;
-        }
     </style>
 </head>
 <body>
@@ -133,6 +128,23 @@
     <div class="divider"></div>
 
     <div class="section">
+        <div class="bold">METODE PENJUALAN</div>
+        @forelse(($salesTypeBreakdown ?? []) as $row)
+            <div class="row">
+                <span class="left">{{ $row->sales_type_name }} x{{ number_format($row->transaction_count, 0, ',', '.') }}</span>
+                <span class="right">{{ number_format($row->total_amount, 0, ',', '.') }}</span>
+            </div>
+        @empty
+            <div class="row muted">
+                <span class="left">-</span>
+                <span class="right">0</span>
+            </div>
+        @endforelse
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
         <div class="bold">PRODUK TERJUAL (QTY)</div>
         @php
             $totalQtySold = collect($productRows ?? [])->sum('total_qty');
@@ -161,35 +173,6 @@
                 <span class="right">{{ number_format($totalProducts, 0, ',', '.') }}</span>
             </div>
         @endif
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="section">
-        <div class="bold">DAFTAR TRANSAKSI</div>
-        @forelse($sales as $sale)
-            <div class="sale-item">
-                <div class="row">
-                    <span class="left bold">{{ $sale->invoice_number }}</span>
-                    <span class="right">
-                        @if($sale->status === 'cancelled')
-                            VOID
-                        @else
-                            OK
-                        @endif
-                    </span>
-                </div>
-                <div class="row muted">
-                    <span class="left">{{ $sale->created_at->format('d/m H:i') }}</span>
-                    <span class="right">{{ number_format($sale->total_amount, 0, ',', '.') }}</span>
-                </div>
-            </div>
-        @empty
-            <div class="row muted">
-                <span class="left">Tidak ada transaksi</span>
-                <span class="right">-</span>
-            </div>
-        @endforelse
     </div>
 
     <div class="divider"></div>

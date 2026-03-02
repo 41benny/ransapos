@@ -489,6 +489,27 @@ class SaleController extends Controller
             ->orderByDesc('total_amount')
             ->get();
 
+        $salesTypeLabels = SalesType::priceLevels();
+        $salesTypeExpr = "COALESCE(NULLIF(LOWER(TRIM(sales_type)), ''), 'regular')";
+        $salesTypeBreakdown = (clone $completedQuery)
+            ->selectRaw($salesTypeExpr . ' as sales_type_key')
+            ->selectRaw('COUNT(*) as transaction_count')
+            ->selectRaw('SUM(total_amount) as total_amount')
+            ->groupByRaw($salesTypeExpr)
+            ->orderByDesc('total_amount')
+            ->get()
+            ->map(function ($row) use ($salesTypeLabels) {
+                $key = (string) ($row->sales_type_key ?? 'regular');
+
+                return (object) [
+                    'sales_type_key' => $key,
+                    'sales_type_name' => $salesTypeLabels[$key] ?? ucfirst(str_replace('_', ' ', $key)),
+                    'transaction_count' => (int) ($row->transaction_count ?? 0),
+                    'total_amount' => (float) ($row->total_amount ?? 0),
+                ];
+            })
+            ->values();
+
         $summary = [
             'transactions' => $completedCount,
             'void_transactions' => $voidCount,
@@ -501,6 +522,7 @@ class SaleController extends Controller
                 'sales' => $sales,
                 'summary' => $summary,
                 'paymentBreakdown' => $paymentBreakdown,
+                'salesTypeBreakdown' => $salesTypeBreakdown,
                 'productRows' => $productRows,
                 'filters' => [
                     'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
@@ -513,6 +535,7 @@ class SaleController extends Controller
             'sales' => $sales,
             'summary' => $summary,
             'paymentBreakdown' => $paymentBreakdown,
+            'salesTypeBreakdown' => $salesTypeBreakdown,
             'productRows' => $productRows,
             'viewMode' => $viewMode,
             'filters' => [
