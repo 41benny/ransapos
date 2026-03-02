@@ -490,26 +490,24 @@ class SaleController extends Controller
             ->get();
 
         $salesTypeLabels = SalesType::priceLevels();
-        $salesTypeExpr = "COALESCE(NULLIF(LOWER(TRIM(sales_type)), ''), 'regular')";
         $salesTypeBreakdown = (clone $completedQuery)
-            ->select([
-                DB::raw($salesTypeExpr . ' as sales_type_key'),
-                DB::raw('COUNT(*) as transaction_count'),
-                DB::raw('SUM(total_amount) as total_amount'),
-            ])
-            ->groupByRaw($salesTypeExpr)
-            ->orderByDesc('total_amount')
+            ->select(['sales_type', 'total_amount'])
             ->get()
-            ->map(function ($row) use ($salesTypeLabels) {
-                $key = (string) ($row->sales_type_key ?? 'regular');
+            ->groupBy(function ($sale) {
+                $rawType = strtolower(trim((string) ($sale->sales_type ?? '')));
+                return $rawType !== '' ? $rawType : 'regular';
+            })
+            ->map(function ($rows, string $key) use ($salesTypeLabels) {
+                $totalAmount = (float) $rows->sum(fn ($sale) => (float) $sale->total_amount);
 
                 return (object) [
                     'sales_type_key' => $key,
                     'sales_type_name' => $salesTypeLabels[$key] ?? ucfirst(str_replace('_', ' ', $key)),
-                    'transaction_count' => (int) ($row->transaction_count ?? 0),
-                    'total_amount' => (float) ($row->total_amount ?? 0),
+                    'transaction_count' => $rows->count(),
+                    'total_amount' => $totalAmount,
                 ];
             })
+            ->sortByDesc('total_amount')
             ->values();
 
         $summary = [
