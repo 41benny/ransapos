@@ -25,7 +25,7 @@
             <div class="p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-xs"></i>
-                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Laporan</h3>
+                    <h3 class="text-xs font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Laporan</h3>
                 </div>
             </div>
             <div class="p-5">
@@ -35,124 +35,109 @@
                         $selectedOutletIds = collect($filters['outlet_ids'] ?? [])->map(fn($id) => (int) $id)->all();
                     @endphp
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <!-- Date From -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari Tanggal</label>
-                            <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Date Range Group -->
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Periode Tanggal</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="relative">
+                                    <input type="date" name="date_from" value="{{ $dateFrom }}" required
+                                        class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div class="relative">
+                                    <input type="date" name="date_to" value="{{ $dateTo }}" required
+                                        class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Date To -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai Tanggal</label>
-                            <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                        </div>
-
-                        <!-- Outlet -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
+                        <!-- Outlet selection -->
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Filter Outlet</label>
                             <div class="relative" id="salesOutletFilterWrap">
                                 <button type="button" id="salesOutletDropdownBtn"
-                                    class="w-full px-3 py-1.5 text-left text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
-                                    <span id="salesOutletDropdownLabel">Semua Outlet</span>
+                                    class="w-full px-4 py-2.5 text-left text-[13px] font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between shadow-sm">
+                                    <span id="salesOutletDropdownLabel" class="truncate">Semua Outlet</span>
                                     <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
                                 </button>
                                 <div id="salesOutletDropdownMenu"
-                                    class="hidden absolute top-full left-0 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg p-2 z-20">
-                                    <label class="flex items-center gap-2 text-[11.5px] text-slate-700 pb-1 mb-1 border-b border-slate-100">
+                                    class="hidden absolute top-full left-0 mt-2 w-full rounded-2xl border border-slate-200 bg-white shadow-xl p-3 z-50">
+                                    <label class="flex items-center gap-3 px-2 py-2 text-[13px] font-bold text-slate-700 pb-2 mb-2 border-b border-slate-100 cursor-pointer">
                                         <input type="checkbox" id="salesOutletAllCheckbox"
-                                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            class="rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 h-5 w-5"
                                             {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
-                                        <span>Semua Outlet</span>
+                                        <span>Pilih Semua</span>
                                     </label>
-                                    <div style="max-height: 9rem; overflow-y: auto;" class="space-y-1 pr-1">
+                                    <div style="max-height: 12rem; overflow-y: auto;" class="space-y-1 pr-1 custom-scrollbar">
                                         @foreach($outlets as $outlet)
-                                            <label class="flex items-center gap-2 text-[11.5px] text-slate-700">
+                                            <label class="flex items-center gap-3 px-2 py-2 text-[13px] text-slate-600 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
                                                 <input type="checkbox"
                                                     name="outlet_ids[]"
                                                     value="{{ $outlet->id }}"
                                                     {{ (count($selectedOutletIds) === 0 || in_array((int) $outlet->id, $selectedOutletIds, true)) ? 'checked' : '' }}
-                                                    class="sales-outlet-checkbox rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                                                <span class="truncate">{{ $outlet->name }}</span>
+                                                    class="sales-outlet-checkbox rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 h-5 w-5">
+                                                <span class="truncate font-medium">{{ $outlet->name }}</span>
                                             </label>
                                         @endforeach
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-[9px] text-slate-400 ml-1">Kosong = semua outlet</p>
                         </div>
 
-                        <!-- Kasir -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kasir</label>
-                            <select name="user_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                <option value="">Semua Kasir</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Payment Method -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pembayaran</label>
-                            <select name="payment_method_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                <option value="">Semua Metode</option>
-                                @foreach($paymentMethods as $method)
-                                    <option value="{{ $method->id }}" {{ ($filters['payment_method_id'] ?? '') == $method->id ? 'selected' : '' }}>
-                                        {{ $method->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Mode View -->
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tampilan</label>
-                            <select name="view_mode"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
-                                <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
-                            </select>
+                        <!-- Other Filters Group -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Kasir</label>
+                                <select name="user_id"
+                                    class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                                    <option value="">Semua Kasir</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Bayar</label>
+                                <select name="payment_method_id"
+                                    class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                                    <option value="">Semua</option>
+                                    @foreach($paymentMethods as $method)
+                                        <option value="{{ $method->id }}" {{ ($filters['payment_method_id'] ?? '') == $method->id ? 'selected' : '' }}>
+                                            {{ $method->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-slate-100">
                         <div class="flex items-center gap-2">
                             <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
-                                <i class="fas fa-filter text-[10px]"></i>
+                                class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95">
+                                <i class="fas fa-magnifying-glass text-[10px]"></i>
                                 <span>Terapkan Filter</span>
                             </button>
                             <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
-                                <i class="fas fa-undo text-[10px]"></i>
+                                class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-500 border border-slate-200 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-95">
+                                <i class="fas fa-rotate-left text-[10px]"></i>
                                 <span>Reset</span>
                             </a>
                         </div>
 
                         <div class="flex items-center gap-2">
                             <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
+                                class="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
-                                <span>Excel</span>
+                                <span>EXCEL</span>
                             </a>
                             <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-xs font-normal text-rose-700 border border-rose-100 shadow-sm transition-all hover:bg-rose-100 active:scale-95">
+                                class="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-[11px] font-bold text-rose-700 border border-rose-100 transition-all hover:bg-rose-500 hover:text-white active:scale-95">
                                 <i class="fas fa-file-pdf text-[10px]"></i>
                                 <span>PDF</span>
                             </a>
-                            <button type="button" onclick="window.print()"
-                                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95">
-                                <i class="fas fa-print text-[10px]"></i>
-                                <span>Cetak Laporan</span>
-                            </button>
                         </div>
                     </div>
                 </form>
@@ -247,7 +232,7 @@
         <!-- Table Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         @if(($viewMode ?? 'ringkas') === 'detail')
                             <tr>

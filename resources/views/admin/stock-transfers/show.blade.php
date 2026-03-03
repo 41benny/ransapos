@@ -13,6 +13,11 @@
             <p class="text-[11px] font-mono text-slate-500 mt-1 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded w-fit inline-block border border-slate-200">{{ $stockTransfer->transfer_number }}</p>
         </div>
         <div class="flex items-center gap-3 no-print">
+            <a href="{{ route('admin.stock-transfers.print', $stockTransfer->id) }}" target="_blank"
+                class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
+                <i class="fas fa-print text-[10px]"></i>
+                <span>Cetak Pengiriman</span>
+            </a>
             <a href="{{ route('admin.stock-transfers.index') }}"
                 class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-arrow-left text-[10px]"></i>
@@ -119,6 +124,15 @@
                                 <span class="text-[13px] font-normal text-slate-800">{{ $stockTransfer->transfer_date->format('d F Y') }}</span>
                             </div>
                             <div class="flex flex-col gap-1">
+                                <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Nilai Transfer (HPP)</span>
+                                <span class="text-[13px] font-semibold text-slate-800">
+                                    Rp {{ number_format((float) ($transferNominalTotal ?? 0), 0, ',', '.') }}
+                                </span>
+                                <span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest">
+                                    Sumber: {{ ($valuationSource ?? 'actual') === 'estimated' ? 'Estimasi HPP' : (($valuationSource ?? 'actual') === 'mixed' ? 'Campuran (Aktual + Estimasi)' : 'Aktual') }}
+                                </span>
+                            </div>
+                            <div class="flex flex-col gap-1">
                                 <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Catatan Internal</span>
                                 <p class="text-[11.5px] font-normal text-slate-500 italic leading-relaxed">{{ $stockTransfer->notes ?? 'Tidak ada catatan.' }}</p>
                             </div>
@@ -145,12 +159,19 @@
                                     <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">Qty Terima</th>
                                     <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">Selisih</th>
                                 @endif
+                                <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">HPP/Unit</th>
+                                <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">Nominal HPP</th>
                                 <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">Notes</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             @foreach($stockTransfer->items as $item)
                                 <tr class="hover:bg-slate-50/50 transition-colors">
+                                    @php
+                                        $hppData = $itemHppMap[$item->product_id] ?? null;
+                                        $unitHpp = (float) ($hppData['unit_hpp'] ?? 0);
+                                        $nominalHpp = $unitHpp > 0 ? ((float) $item->quantity * $unitHpp) : null;
+                                    @endphp
                                     <td class="px-5 py-3.5">
                                         <div class="flex flex-col">
                                             <span class="text-[11.5px] font-normal text-slate-700 leading-tight">{{ $item->product->name }}</span>
@@ -179,6 +200,24 @@
                                             @endif
                                         </td>
                                     @endif
+                                    <td class="px-5 py-3.5 text-right">
+                                        @if($unitHpp > 0)
+                                            <span class="text-[11px] font-normal text-slate-700">
+                                                Rp {{ number_format($unitHpp, 0, ',', '.') }}
+                                            </span>
+                                        @else
+                                            <span class="text-[10px] font-normal text-slate-400">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3.5 text-right">
+                                        @if(!is_null($nominalHpp))
+                                            <span class="text-[11px] font-semibold text-slate-800">
+                                                Rp {{ number_format($nominalHpp, 0, ',', '.') }}
+                                            </span>
+                                        @else
+                                            <span class="text-[10px] font-normal text-slate-400">-</span>
+                                        @endif
+                                    </td>
                                     <td class="px-5 py-3.5">
                                         <span class="text-[10px] font-normal text-slate-400 italic">{{ $item->notes ?? '-' }}</span>
                                     </td>

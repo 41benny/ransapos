@@ -355,6 +355,50 @@ class SalesReportController extends Controller
         ));
     }
 
+    /**
+     * Laporan ringkasan penjualan harian
+     */
+    public function dailySummary(Request $request)
+    {
+        $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
+
+        $query = Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletIds) && count($outletIds) > 0) {
+            $query->whereIn('outlet_id', $outletIds);
+        }
+
+        if ($request->filled('sales_type')) {
+            $query->where('sales_type', $request->sales_type);
+        }
+
+        $dailySales = $query->select(
+                'sale_date',
+                DB::raw('SUM(total_amount - tax_amount - service_charge_amount + discount_amount - COALESCE(rounding_amount, 0)) as total_sales'),
+                DB::raw('SUM(discount_amount) as total_discount'),
+                DB::raw('SUM(service_charge_amount) as total_service_charge'),
+                DB::raw('SUM(tax_amount) as total_tax'),
+                DB::raw('SUM(rounding_amount) as total_adjustment'),
+                DB::raw('SUM(total_amount) as total_grand')
+            )
+            ->groupBy('sale_date')
+            ->orderBy('sale_date', 'asc')
+            ->get();
+
+        $outlets = Outlet::where('is_active', true)->get();
+        $salesTypes = \App\Models\SalesType::where('is_active', true)->pluck('name', 'code');
+        
+        $filters = $request->only(['date_from', 'date_to', 'sales_type']);
+        $filters['outlet_ids'] = $outletIds;
+        $filters['outlet_id'] = count($outletIds) === 1 ? $outletIds[0] : null;
+
+        return view('admin.reports.sales.daily', compact('dailySales', 'outlets', 'salesTypes', 'filters', 'dateFrom', 'dateTo'));
+    }
+
     public function exportIndex(Request $request)
     {
         $dateFrom = $request->input('date_from', now()->toDateString());
@@ -822,6 +866,69 @@ class SalesReportController extends Controller
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
+    }
+
+    public function exportDailySummary(Request $request)
+    {
+        $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
+        $dateTo = $request->input('date_to', now()->toDateString());
+        $outletIds = $this->resolveOutletIds($request);
+
+        $query = Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletIds) && count($outletIds) > 0) {
+            $query->whereIn('outlet_id', $outletIds);
+        }
+
+        if ($request->filled('sales_type')) {
+            $query->where('sales_type', $request->sales_type);
+        }
+
+        $dailySales = $query->select(
+                'sale_date',
+                DB::raw('SUM(total_amount - tax_amount - service_charge_amount + discount_amount - COALESCE(rounding_amount, 0)) as total_sales'),
+                DB::raw('SUM(discount_amount) as total_discount'),
+                DB::raw('SUM(service_charge_amount) as total_service_charge'),
+                DB::raw('SUM(tax_amount) as total_tax'),
+                DB::raw('SUM(rounding_amount) as total_adjustment'),
+                DB::raw('SUM(total_amount) as total_grand')
+            )
+            ->groupBy('sale_date')
+            ->orderBy('sale_date', 'asc')
+            ->get();
+
+        $rows = $dailySales->map(function ($item) {
+            return [
+                'tanggal' => optional($item->sale_date)->format('d/m/Y'),
+                'total_sales' => (float) $item->total_sales,
+                'discount' => (float) $item->total_discount,
+                'service_charge' => (float) $item->total_service_charge,
+                'tax' => (float) $item->total_tax,
+                'adjustment' => (float) $item->total_adjustment,
+                'total' => (float) $item->total_grand,
+            ];
+        })->all();
+
+        $columns = [
+            ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+            ['key' => 'total_sales', 'label' => 'Total Sales', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'discount', 'label' => 'Discount', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'service_charge', 'label' => 'Service Charge', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'tax', 'label' => 'Tax', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'adjustment', 'label' => 'Adjustment', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
+        ];
+
+        $format = $request->input('format', 'xlsx');
+        $filename = sprintf('ringkasan-penjualan-harian-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
+
+        if ($format === 'pdf') {
+            return ReportExport::pdf($filename, 'Ringkasan Penjualan Harian', $columns, $rows);
+        }
+
+        return ReportExport::xlsx($filename, 'Ringkasan Penjualan Harian', $columns, $rows);
     }
 
     private function resolveOutletIds(Request $request): array

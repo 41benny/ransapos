@@ -300,6 +300,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::post('stock-transfers/{stockTransfer}/cancel', [\App\Http\Controllers\Admin\StockTransferController::class, 'cancel'])
         ->name('stock-transfers.cancel')
         ->middleware('permission:stock-transfers.cancel');
+    Route::get('stock-transfers/{stockTransfer}/print', [\App\Http\Controllers\Admin\StockTransferController::class, 'print'])
+        ->name('stock-transfers.print')
+        ->middleware('permission:stock-transfers.view');
     Route::get('stock-transfers/available-stock', [\App\Http\Controllers\Admin\StockTransferController::class, 'getAvailableStock'])
         ->name('stock-transfers.available-stock')
         ->middleware('permission:stock-transfers.view');
@@ -382,14 +385,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index');
         Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index');
 
+        Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
+            ->name('sales.products.export-old')
+            ->middleware('permission:reports.export');
+        Route::get('/sales-daily', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'dailySummary'])->name('sales.daily');
+        Route::get('/sales-daily/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportDailySummary'])
+            ->name('sales.daily.export')
+            ->middleware('permission:reports.export');
         Route::get('/sales/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportIndex'])
             ->name('sales.export')
             ->middleware('permission:reports.export');
         Route::get('/sales-products/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProducts'])
             ->name('sales.products.export')
-            ->middleware('permission:reports.export');
-        Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
-            ->name('sales.products.export-old')
             ->middleware('permission:reports.export');
         Route::get('/shifts/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportIndex'])
             ->name('shifts.export')

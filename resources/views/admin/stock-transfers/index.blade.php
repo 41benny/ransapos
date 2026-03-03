@@ -104,6 +104,7 @@
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Asal (From)</th>
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tujuan (To)</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Item</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nominal HPP</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Author</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Aksi</th>
@@ -135,6 +136,18 @@
                             <td class="px-5 py-3.5 text-center">
                                 <span class="text-[11px] font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{{ $transfer->items->count() }} Item</span>
                             </td>
+                            <td class="px-5 py-3.5 text-right">
+                                @php
+                                    $nominalHpp = $transferNominals[$transfer->id] ?? null;
+                                @endphp
+                                @if(!is_null($nominalHpp))
+                                    <span class="text-[11px] font-semibold text-slate-800">
+                                        Rp {{ number_format((float) $nominalHpp, 0, ',', '.') }}
+                                    </span>
+                                @else
+                                    <span class="text-[10px] font-normal text-slate-400">-</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-3.5 text-center">
                                 @php
                                     $statusStyles = [
@@ -165,7 +178,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-16 text-center">
+                            <td colspan="9" class="px-6 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center opacity-40">
                                     <i class="fas fa-exchange-alt text-4xl mb-4 text-slate-300"></i>
                                     <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Tidak ada data transfer ditemukan</p>

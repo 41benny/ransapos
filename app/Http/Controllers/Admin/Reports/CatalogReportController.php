@@ -42,6 +42,7 @@ class CatalogReportController extends Controller
                 'items' => [
                     'sales-summary',
                     'sales',
+                    'sales-daily-summary',
                     'sales-order',
                     'sales-by-customer',
                     'sales-by-product',
@@ -112,7 +113,7 @@ class CatalogReportController extends Controller
             'cash-flow' => ['title' => 'Arus Kas', 'implemented' => true],
             'sales-summary' => ['title' => 'Ringkasan Penjualan', 'implemented' => true],
             'sales' => ['title' => 'Penjualan', 'implemented' => true, 'existing_route' => 'admin.reports.sales.index'],
-            'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => false],
+            'sales-daily-summary' => ['title' => 'Ringkasan Penjualan Harian', 'implemented' => true, 'existing_route' => 'admin.reports.sales.daily'],
             'sales-order' => ['title' => 'Order Penjualan', 'implemented' => false],
             'sales-by-customer' => ['title' => 'Penjualan per Pelanggan', 'implemented' => false],
             'sales-by-product' => ['title' => 'Penjualan per Produk', 'implemented' => true, 'existing_route' => 'admin.reports.sales.products'],
@@ -182,6 +183,15 @@ class CatalogReportController extends Controller
                 'date_to' => $request->input('date_to'),
                 'outlet_id' => $request->input('outlet_id'),
                 'user_id' => $request->input('user_id'),
+                'tab' => $request->input('tab', 'penjualan'),
+            ]));
+        }
+
+        if ($slug === 'sales-daily-summary') {
+            return redirect()->route('admin.reports.sales.daily', array_filter([
+                'date_from' => $request->input('date_from'),
+                'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
                 'tab' => $request->input('tab', 'penjualan'),
             ]));
         }

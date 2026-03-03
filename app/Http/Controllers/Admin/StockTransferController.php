@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\StockTransfer;
+use App\Models\StockMutation;
 use App\Models\Outlet;
 use App\Models\Product;
+use App\Services\CostService;
 use App\Services\StockTransferService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StockTransferController extends Controller
 {
     protected $transferService;
+    protected $costService;
 
-    public function __construct(StockTransferService $transferService)
+    public function __construct(StockTransferService $transferService, CostService $costService)
     {
         $this->transferService = $transferService;
+        $this->costService = $costService;
     }
 
     /**
@@ -57,9 +62,24 @@ class StockTransferController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
+        $transferNominals = collect();
+        $transferIds = $transfers->getCollection()->pluck('id')->filter()->values();
+        if ($transferIds->isNotEmpty()) {
+            $transferNominals = StockMutation::query()
+                ->select(
+                    'reference_id',
+                    DB::raw('SUM(COALESCE(total_cost, ABS(quantity) * COALESCE(unit_cost, 0))) as nominal_hpp')
+                )
+                ->where('reference_type', 'stock_transfer')
+                ->where('mutation_type', 'transfer_out')
+                ->whereIn('reference_id', $transferIds)
+                ->groupBy('reference_id')
+                ->pluck('nominal_hpp', 'reference_id');
+        }
+
         $outlets = Outlet::where('is_active', true)->get();
 
-        return view('admin.stock-transfers.index', compact('transfers', 'outlets'));
+        return view('admin.stock-transfers.index', compact('transfers', 'outlets', 'transferNominals'));
     }
 
     /**
@@ -121,7 +141,36 @@ class StockTransferController extends Controller
             'canceller'
         ]);
 
-        return view('admin.stock-transfers.show', compact('stockTransfer'));
+        [$itemHppMap, $transferNominalTotal, $valuationSource] = $this->buildTransferValuation($stockTransfer);
+
+        return view('admin.stock-transfers.show', compact(
+            'stockTransfer',
+            'itemHppMap',
+            'transferNominalTotal',
+            'valuationSource'
+        ));
+    }
+
+    /**
+     * Print transfer document for shipment / inter-outlet billing
+     */
+    public function print(StockTransfer $stockTransfer)
+    {
+        $stockTransfer->load([
+            'items.product',
+            'fromOutlet',
+            'toOutlet',
+            'creator',
+        ]);
+
+        [$itemHppMap, $transferNominalTotal, $valuationSource] = $this->buildTransferValuation($stockTransfer);
+
+        return view('admin.stock-transfers.print', compact(
+            'stockTransfer',
+            'itemHppMap',
+            'transferNominalTotal',
+            'valuationSource'
+        ));
     }
 
     /**
@@ -216,5 +265,63 @@ class StockTransferController extends Controller
             'product_name' => $product->name,
             'unit' => $product->unit ?? 'pcs',
         ]);
+    }
+
+    /**
+     * Build transfer valuation map.
+     * Priority:
+     * - actual from transfer_out mutation (if transfer already sent)
+     * - estimated from current avg cost of source outlet (if still draft)
+     */
+    private function buildTransferValuation(StockTransfer $stockTransfer): array
+    {
+        $mutationRows = StockMutation::query()
+            ->select(
+                'product_id',
+                DB::raw('SUM(ABS(quantity)) as total_qty'),
+                DB::raw('SUM(COALESCE(total_cost, ABS(quantity) * COALESCE(unit_cost, 0))) as total_nominal')
+            )
+            ->where('reference_type', 'stock_transfer')
+            ->where('reference_id', $stockTransfer->id)
+            ->where('mutation_type', 'transfer_out')
+            ->where('outlet_id', $stockTransfer->from_outlet_id)
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        $itemHppMap = collect();
+        $hasEstimated = false;
+        $hasActual = false;
+
+        foreach ($stockTransfer->items as $item) {
+            $row = $mutationRows->get($item->product_id);
+            $qty = (float) $item->quantity;
+
+            if ($row) {
+                $totalQty = (float) $row->total_qty;
+                $totalNominal = (float) $row->total_nominal;
+                $unitHpp = $totalQty > 0 ? ($totalNominal / $totalQty) : 0;
+                $lineNominal = $unitHpp * $qty;
+                $source = 'actual';
+                $hasActual = true;
+            } else {
+                $unitHpp = (float) $this->costService->getAvgCost((int) $item->product_id, (int) $stockTransfer->from_outlet_id);
+                $lineNominal = $unitHpp * $qty;
+                $source = 'estimated';
+                $hasEstimated = true;
+            }
+
+            $itemHppMap->put((int) $item->product_id, [
+                'unit_hpp' => $unitHpp,
+                'total_nominal' => $lineNominal,
+                'source' => $source,
+            ]);
+        }
+
+        $valuationSource = $hasEstimated && $hasActual
+            ? 'mixed'
+            : ($hasEstimated ? 'estimated' : 'actual');
+
+        return [$itemHppMap, (float) $itemHppMap->sum('total_nominal'), $valuationSource];
     }
 }
