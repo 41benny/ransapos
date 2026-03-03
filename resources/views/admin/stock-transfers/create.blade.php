@@ -1,16 +1,22 @@
 @extends('layouts.admin')
 
-@section('title', 'Buat Transfer Stok')
-@section('page-title', 'Buat Transfer Stok')
-@section('page-subtitle', 'Buat pengiriman stok barang antar outlet cabang')
+@php
+    $isEditMode = isset($stockTransfer);
+@endphp
+
+@section('title', $isEditMode ? 'Edit Transfer Stok' : 'Buat Transfer Stok')
+@section('page-title', $isEditMode ? 'Edit Transfer Stok' : 'Buat Transfer Stok')
+@section('page-subtitle', $isEditMode ? 'Perbarui draft pengiriman stok antar outlet' : 'Buat pengiriman stok barang antar outlet cabang')
 
 @section('content')
 <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
     {{-- Header Section --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">Buat Transfer Baru</h1>
-            <p class="text-xs font-normal text-slate-500 mt-0.5">Lakukan pemindahan stok produk antar outlet dengan aman</p>
+            <h1 class="text-2xl font-normal text-slate-800 tracking-tight">{{ $isEditMode ? 'Edit Draft Transfer' : 'Buat Transfer Baru' }}</h1>
+            <p class="text-xs font-normal text-slate-500 mt-0.5">
+                {{ $isEditMode ? 'Perbarui data transfer sebelum proses kirim dilakukan' : 'Lakukan pemindahan stok produk antar outlet dengan aman' }}
+            </p>
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.stock-transfers.index') }}"
@@ -35,8 +41,11 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('admin.stock-transfers.store') }}" id="transferForm" class="space-y-6">
+    <form method="POST" action="{{ $isEditMode ? route('admin.stock-transfers.update', $stockTransfer->id) : route('admin.stock-transfers.store') }}" id="transferForm" class="space-y-6">
         @csrf
+        @if($isEditMode)
+            @method('PUT')
+        @endif
 
         {{-- Route Info Card --}}
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -54,7 +63,7 @@
                             class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Pengirim</option>
                             @foreach($outlets as $outlet)
-                                <option value="{{ $outlet->id }}" {{ old('from_outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                <option value="{{ $outlet->id }}" {{ old('from_outlet_id', $isEditMode ? $stockTransfer->from_outlet_id : null) == $outlet->id ? 'selected' : '' }}>
                                     {{ $outlet->name }}
                                 </option>
                             @endforeach
@@ -67,7 +76,7 @@
                             class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Penerima</option>
                             @foreach($outlets as $outlet)
-                                <option value="{{ $outlet->id }}" {{ old('to_outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                <option value="{{ $outlet->id }}" {{ old('to_outlet_id', $isEditMode ? $stockTransfer->to_outlet_id : null) == $outlet->id ? 'selected' : '' }}>
                                     {{ $outlet->name }}
                                 </option>
                             @endforeach
@@ -76,13 +85,13 @@
 
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tanggal <span class="text-rose-500">*</span></label>
-                        <input type="date" name="transfer_date" id="transfer_date" required value="{{ old('transfer_date', date('Y-m-d')) }}"
+                        <input type="date" name="transfer_date" id="transfer_date" required value="{{ old('transfer_date', $isEditMode ? optional($stockTransfer->transfer_date)->format('Y-m-d') : date('Y-m-d')) }}"
                             class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
 
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan</label>
-                        <input type="text" name="notes" id="notes" value="{{ old('notes') }}" placeholder="Opsional..."
+                        <input type="text" name="notes" id="notes" value="{{ old('notes', $isEditMode ? $stockTransfer->notes : null) }}" placeholder="Opsional..."
                             class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                 </div>
@@ -115,7 +124,7 @@
                     <button type="submit"
                         class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
                         <i class="fas fa-check text-[10px]"></i>
-                        <span>SIMPAN & PROSES TRANSFER</span>
+                        <span>{{ $isEditMode ? 'SIMPAN PERUBAHAN DRAFT' : 'SIMPAN & PROSES TRANSFER' }}</span>
                     </button>
                 </div>
             </div>
@@ -134,13 +143,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const availableStockBaseUrl = @json(route('admin.stock-transfers.available-stock'));
     const products = @json($productsPayload);
     const productMap = new Map(products.map(product => [String(product.id), product]));
+    const prefillItems = @json(old('items', $isEditMode ? ($prefillItems ?? []) : []));
 
-    // Add first item by default
-    addItem();
+    // Add initial rows
+    if (Array.isArray(prefillItems) && prefillItems.length > 0) {
+        prefillItems.forEach(item => addItem(item));
+    } else {
+        addItem();
+    }
 
     addItemBtn.addEventListener('click', addItem);
 
-    function addItem() {
+    function addItem(prefill = null) {
         const itemHtml = `
             <div class="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md item-row animate-in zoom-in-95 duration-200" data-index="${itemIndex}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
@@ -231,6 +245,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => newRow.remove(), 200);
             }
         });
+
+        if (prefill) {
+            const selectedProduct = productMap.get(String(prefill.product_id));
+            if (selectedProduct) {
+                applySelectedProduct(newRow, selectedProduct);
+            }
+
+            if (typeof prefill.quantity !== 'undefined' && prefill.quantity !== null) {
+                const qtyInput = newRow.querySelector('.quantity-input');
+                qtyInput.value = prefill.quantity;
+            }
+
+            if (typeof prefill.notes !== 'undefined' && prefill.notes !== null) {
+                const notesInput = newRow.querySelector(`input[name="items[${itemIndex}][notes]"]`);
+                notesInput.value = prefill.notes;
+            }
+        }
 
         itemIndex++;
     }

@@ -83,6 +83,83 @@ class StockTransferService
     }
 
     /**
+     * Update transfer yang masih pending.
+     */
+    public function updateTransfer(StockTransfer $transfer, array $data): StockTransfer
+    {
+        if (!$transfer->isPending()) {
+            throw new Exception('Transfer hanya bisa diedit saat status masih pending.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            if ($data['from_outlet_id'] == $data['to_outlet_id']) {
+                throw new Exception('Outlet pengirim dan penerima tidak boleh sama.');
+            }
+
+            $transfer->update([
+                'from_outlet_id' => $data['from_outlet_id'],
+                'to_outlet_id' => $data['to_outlet_id'],
+                'transfer_date' => $data['transfer_date'],
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $transfer->load('items');
+
+            $submittedItems = collect($data['items'] ?? [])
+                ->map(function ($item) {
+                    return [
+                        'product_id' => (int) $item['product_id'],
+                        'quantity' => (float) $item['quantity'],
+                        'notes' => $item['notes'] ?? null,
+                    ];
+                })
+                ->filter(fn ($item) => $item['product_id'] > 0 && $item['quantity'] > 0)
+                ->keyBy('product_id');
+
+            if ($submittedItems->isEmpty()) {
+                throw new Exception('Minimal harus ada 1 produk.');
+            }
+
+            $existingByProduct = $transfer->items->keyBy('product_id');
+
+            $existingByProduct->each(function (StockTransferItem $existingItem) use ($submittedItems) {
+                if (!$submittedItems->has((int) $existingItem->product_id)) {
+                    $existingItem->delete();
+                }
+            });
+
+            $submittedItems->each(function ($itemData, $productId) use ($existingByProduct, $transfer) {
+                $existingItem = $existingByProduct->get((int) $productId);
+
+                if ($existingItem) {
+                    $existingItem->update([
+                        'quantity' => $itemData['quantity'],
+                        'notes' => $itemData['notes'],
+                        'received_quantity' => null,
+                    ]);
+                    return;
+                }
+
+                StockTransferItem::create([
+                    'stock_transfer_id' => $transfer->id,
+                    'product_id' => $itemData['product_id'],
+                    'quantity' => $itemData['quantity'],
+                    'notes' => $itemData['notes'],
+                ]);
+            });
+
+            DB::commit();
+
+            return $transfer->fresh()->load('items.product');
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Send/dispatch transfer (from outlet perspective)
      */
     public function sendTransfer(StockTransfer $transfer): StockTransfer

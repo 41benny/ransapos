@@ -88,21 +88,39 @@ class StockTransferController extends Controller
     public function create()
     {
         $outlets = Outlet::where('is_active', true)->get();
-        $productsPayload = Product::where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit', 'product_type'])
-            ->map(function (Product $product) {
-                return [
-                    'id' => (int) $product->id,
-                    'name' => (string) $product->name,
-                    'sku' => $product->sku,
-                    'unit' => $product->unit,
-                    'product_type' => $product->product_type,
-                ];
-            })
-            ->values();
+        $productsPayload = $this->buildProductsPayload();
 
         return view('admin.stock-transfers.create', compact('outlets', 'productsPayload'));
+    }
+
+    /**
+     * Show the form for editing pending transfer
+     */
+    public function edit(StockTransfer $stockTransfer)
+    {
+        if (!$stockTransfer->isPending()) {
+            return redirect()->route('admin.stock-transfers.show', $stockTransfer->id)
+                ->with('error', 'Transfer hanya bisa diedit saat status masih pending.');
+        }
+
+        $stockTransfer->load('items.product');
+        $outlets = Outlet::where('is_active', true)->get();
+        $productsPayload = $this->buildProductsPayload();
+
+        $prefillItems = $stockTransfer->items->map(function ($item) {
+            return [
+                'product_id' => (int) $item->product_id,
+                'quantity' => (float) $item->quantity,
+                'notes' => $item->notes,
+            ];
+        })->values();
+
+        return view('admin.stock-transfers.create', compact(
+            'stockTransfer',
+            'outlets',
+            'productsPayload',
+            'prefillItems'
+        ));
     }
 
     /**
@@ -137,6 +155,37 @@ class StockTransferController extends Controller
     }
 
     /**
+     * Update pending transfer
+     */
+    public function update(Request $request, StockTransfer $stockTransfer)
+    {
+        $request->validate([
+            'from_outlet_id' => 'required|exists:outlets,id',
+            'to_outlet_id' => 'required|exists:outlets,id|different:from_outlet_id',
+            'transfer_date' => 'required|date',
+            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.notes' => 'nullable|string|max:500',
+        ], [
+            'to_outlet_id.different' => 'Outlet tujuan harus berbeda dengan outlet asal.',
+            'items.required' => 'Minimal harus ada 1 produk.',
+            'items.min' => 'Minimal harus ada 1 produk.',
+        ]);
+
+        try {
+            $transfer = $this->transferService->updateTransfer($stockTransfer, $request->all());
+
+            return redirect()->route('admin.stock-transfers.show', $transfer->id)
+                ->with('success', 'Transfer stok berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return back()->withInput()
+                ->with('error', 'Gagal memperbarui transfer: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Display the specified transfer
      */
     public function show(StockTransfer $stockTransfer)
@@ -151,12 +200,18 @@ class StockTransferController extends Controller
             'canceller'
         ]);
 
-        [$itemHppMap, $transferNominalTotal, $valuationSource] = $this->buildTransferValuation($stockTransfer);
+        [
+            $itemHppMap,
+            $transferNominalTotal,
+            $transferBillingNominalTotal,
+            $valuationSource
+        ] = $this->buildTransferValuation($stockTransfer);
 
         return view('admin.stock-transfers.show', compact(
             'stockTransfer',
             'itemHppMap',
             'transferNominalTotal',
+            'transferBillingNominalTotal',
             'valuationSource'
         ));
     }
@@ -173,12 +228,18 @@ class StockTransferController extends Controller
             'creator',
         ]);
 
-        [$itemHppMap, $transferNominalTotal, $valuationSource] = $this->buildTransferValuation($stockTransfer);
+        [
+            $itemHppMap,
+            $transferNominalTotal,
+            $transferBillingNominalTotal,
+            $valuationSource
+        ] = $this->buildTransferValuation($stockTransfer);
 
         return view('admin.stock-transfers.print', compact(
             'stockTransfer',
             'itemHppMap',
             'transferNominalTotal',
+            'transferBillingNominalTotal',
             'valuationSource'
         ));
     }
@@ -302,28 +363,41 @@ class StockTransferController extends Controller
         $itemHppMap = collect();
         $hasEstimated = false;
         $hasActual = false;
+        $shipmentTotal = 0.0;
+        $billingTotal = 0.0;
 
         foreach ($stockTransfer->items as $item) {
             $row = $mutationRows->get($item->product_id);
-            $qty = (float) $item->quantity;
+            $sentQty = (float) $item->quantity;
+            $receivedQty = is_null($item->received_quantity) ? 0.0 : (float) $item->received_quantity;
 
             if ($row) {
                 $totalQty = (float) $row->total_qty;
                 $totalNominal = (float) $row->total_nominal;
                 $unitHpp = $totalQty > 0 ? ($totalNominal / $totalQty) : 0;
-                $lineNominal = $unitHpp * $qty;
                 $source = 'actual';
                 $hasActual = true;
             } else {
                 $unitHpp = (float) $this->costService->getAvgCost((int) $item->product_id, (int) $stockTransfer->from_outlet_id);
-                $lineNominal = $unitHpp * $qty;
                 $source = 'estimated';
                 $hasEstimated = true;
             }
 
+            $shipmentNominal = $unitHpp * $sentQty;
+            $billingNominal = $stockTransfer->isReceived() ? ($unitHpp * $receivedQty) : $shipmentNominal;
+            $billedQty = $stockTransfer->isReceived() ? $receivedQty : $sentQty;
+
+            $shipmentTotal += $shipmentNominal;
+            $billingTotal += $billingNominal;
+
             $itemHppMap->put((int) $item->product_id, [
                 'unit_hpp' => $unitHpp,
-                'total_nominal' => $lineNominal,
+                'sent_qty' => $sentQty,
+                'received_qty' => $receivedQty,
+                'billed_qty' => $billedQty,
+                'shipment_nominal' => $shipmentNominal,
+                'billing_nominal' => $billingNominal,
+                'total_nominal' => $billingNominal,
                 'source' => $source,
             ]);
         }
@@ -332,6 +406,23 @@ class StockTransferController extends Controller
             ? 'mixed'
             : ($hasEstimated ? 'estimated' : 'actual');
 
-        return [$itemHppMap, (float) $itemHppMap->sum('total_nominal'), $valuationSource];
+        return [$itemHppMap, (float) $shipmentTotal, (float) $billingTotal, $valuationSource];
+    }
+
+    private function buildProductsPayload()
+    {
+        return Product::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku', 'unit', 'product_type'])
+            ->map(function (Product $product) {
+                return [
+                    'id' => (int) $product->id,
+                    'name' => (string) $product->name,
+                    'sku' => $product->sku,
+                    'unit' => $product->unit,
+                    'product_type' => $product->product_type,
+                ];
+            })
+            ->values();
     }
 }

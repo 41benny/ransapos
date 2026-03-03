@@ -199,6 +199,12 @@
                         @endif
                     </td>
                 </tr>
+                <tr>
+                    <td class="label">Nilai Kirim (HPP)</td>
+                    <td><strong>Rp {{ number_format((float) ($transferNominalTotal ?? 0), 0, ',', '.') }}</strong></td>
+                    <td class="label">Nilai Tagihan Outlet</td>
+                    <td><strong>Rp {{ number_format((float) ($transferBillingNominalTotal ?? 0), 0, ',', '.') }}</strong></td>
+                </tr>
             </table>
         </div>
 
@@ -207,7 +213,8 @@
                 <tr>
                     <th style="width: 40px;">No</th>
                     <th>Produk</th>
-                    <th style="width: 90px;" class="text-right">Qty</th>
+                    <th style="width: 90px;" class="text-right">Qty Kirim</th>
+                    <th style="width: 90px;" class="text-right">Qty Tagih</th>
                     <th style="width: 140px;" class="text-right">HPP/Unit</th>
                     <th style="width: 160px;" class="text-right">Subtotal HPP</th>
                 </tr>
@@ -215,9 +222,10 @@
             <tbody>
                 @foreach($stockTransfer->items as $index => $item)
                     @php
-                        $hppData = $itemHppMap[$item->product_id] ?? ['unit_hpp' => 0, 'total_nominal' => 0];
+                        $hppData = $itemHppMap[$item->product_id] ?? ['unit_hpp' => 0, 'billing_nominal' => 0, 'billed_qty' => 0];
                         $unitHpp = (float) ($hppData['unit_hpp'] ?? 0);
-                        $lineNominal = (float) ($hppData['total_nominal'] ?? ($unitHpp * (float) $item->quantity));
+                        $lineNominal = (float) ($hppData['billing_nominal'] ?? ($unitHpp * (float) $item->quantity));
+                        $billedQty = (float) ($hppData['billed_qty'] ?? (float) $item->quantity);
                     @endphp
                     <tr>
                         <td>{{ $index + 1 }}</td>
@@ -226,6 +234,7 @@
                             <span style="color:#64748b; font-size:11px;">{{ $item->product->sku ?? 'NO-SKU' }}</span>
                         </td>
                         <td class="text-right">{{ number_format((float) $item->quantity, 2, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($billedQty, 2, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($unitHpp, 0, ',', '.') }}</td>
                         <td class="text-right"><strong>Rp {{ number_format($lineNominal, 0, ',', '.') }}</strong></td>
                     </tr>
@@ -237,7 +246,7 @@
             <table>
                 <tr>
                     <td>Total Nilai Tagihan Outlet</td>
-                    <td>Rp {{ number_format((float) $transferNominalTotal, 0, ',', '.') }}</td>
+                    <td>Rp {{ number_format((float) ($transferBillingNominalTotal ?? $transferNominalTotal), 0, ',', '.') }}</td>
                 </tr>
             </table>
         </div>

@@ -104,7 +104,7 @@
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Asal (From)</th>
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tujuan (To)</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Item</th>
-                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nominal HPP</th>
+                        <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nilai Kirim HPP</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Status</th>
                         <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Author</th>
                         <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Aksi</th>
