@@ -382,61 +382,61 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show')
             ->middleware('permission:reports.view');
 
-        // Laporan Penjualan (reports.sales.view ATAU reports.view lama)
+        // Laporan Penjualan
         Route::get('/sales', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'index'])->name('sales.index')
-            ->middleware('permission:reports.sales.view|reports.view');
+            ->middleware('permission:reports.sales.view');
         Route::get('/sales/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportIndex'])
             ->name('sales.export')
-            ->middleware('permission:reports.sales.export|reports.export');
+            ->middleware('permission:reports.sales.export');
 
         // Laporan Penjualan Harian
         Route::get('/sales-daily', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'dailySummary'])->name('sales.daily')
-            ->middleware('permission:reports.daily.view|reports.view');
+            ->middleware('permission:reports.daily.view');
         Route::get('/sales-daily/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportDailySummary'])
             ->name('sales.daily.export')
-            ->middleware('permission:reports.daily.export|reports.export');
+            ->middleware('permission:reports.daily.export');
 
         // Laporan Per Produk
         Route::get('/sales-products', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'products'])->name('sales.products')
-            ->middleware('permission:reports.product.view|reports.view');
+            ->middleware('permission:reports.product.view');
         Route::get('/sales-products/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProducts'])
             ->name('sales.products.export')
-            ->middleware('permission:reports.product.export|reports.export');
+            ->middleware('permission:reports.product.export');
         Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
             ->name('sales.products.export-old')
-            ->middleware('permission:reports.product.export|reports.export');
+            ->middleware('permission:reports.product.export');
 
         // Laporan Shift
         Route::get('/shifts', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'index'])->name('shifts.index')
-            ->middleware('permission:reports.shift.view|reports.view');
+            ->middleware('permission:reports.shift.view');
         Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show')
-            ->middleware('permission:reports.shift.view|reports.view');
+            ->middleware('permission:reports.shift.view');
         Route::get('/shifts/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportIndex'])
             ->name('shifts.export')
-            ->middleware('permission:reports.shift.export|reports.export');
+            ->middleware('permission:reports.shift.export');
         Route::get('/shifts/{cashSession}/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportShow'])
             ->name('shifts.show.export')
-            ->middleware('permission:reports.shift.export|reports.export');
+            ->middleware('permission:reports.shift.export');
 
         // Laporan Laba Rugi
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index')
-            ->middleware('permission:reports.profit.view|reports.view');
+            ->middleware('permission:reports.profit.view');
         Route::get('/profit-loss/export', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'export'])
             ->name('profit-loss.export')
-            ->middleware('permission:reports.profit.export|reports.export');
+            ->middleware('permission:reports.profit.export');
 
         // Laporan Kehadiran
         Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index')
-            ->middleware('permission:reports.attendance.view|reports.view');
+            ->middleware('permission:reports.attendance.view');
         Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])
             ->name('attendance.export')
-            ->middleware('permission:reports.attendance.export|reports.export');
+            ->middleware('permission:reports.attendance.export');
 
         // Buku Hutang Supplier
         Route::get('/debts', [\App\Http\Controllers\Admin\DebtReportController::class, 'index'])->name('debts.index')
-            ->middleware('permission:reports.debts.view|reports.view');
+            ->middleware('permission:reports.debts.view');
         Route::get('/debts/{supplier}', [\App\Http\Controllers\Admin\DebtReportController::class, 'show'])->name('debts.show')
-            ->middleware('permission:reports.debts.view|reports.view');
+            ->middleware('permission:reports.debts.view');
     });
 
     // User Management

@@ -220,10 +220,14 @@ class SalesReportController extends Controller
         }
 
         // Data untuk filter
-        $outlets = Outlet::where('is_active', true)->get();
-        $users = User::whereHas('role', function($query) {
+        $outlets = $this->resolveAccessibleOutlets();
+        $usersQuery = User::whereHas('role', function($query) {
             $query->whereIn('name', ['kasir', 'admin']);
-        })->get();
+        });
+        if (!empty($outletIds)) {
+            $usersQuery->whereIn('outlet_id', $outletIds);
+        }
+        $users = $usersQuery->get();
         $paymentMethods = PaymentMethod::where('is_active', true)->get();
 
         $filters = $request->only(['date_from', 'date_to', 'user_id', 'payment_method_id', 'view_mode']);
@@ -334,10 +338,14 @@ class SalesReportController extends Controller
         ];
 
         // Data untuk filter
-        $outlets = Outlet::where('is_active', true)->get();
-        $users = User::whereHas('role', function($query) {
+        $outlets = $this->resolveAccessibleOutlets();
+        $usersQuery = User::whereHas('role', function($query) {
             $query->whereIn('name', ['kasir', 'admin']);
-        })->get();
+        });
+        if (!empty($outletIds)) {
+            $usersQuery->whereIn('outlet_id', $outletIds);
+        }
+        $users = $usersQuery->get();
 
         $filters = $request->only(['date_from', 'date_to', 'user_id']);
         $filters['outlet_ids'] = $outletIds;
@@ -389,7 +397,7 @@ class SalesReportController extends Controller
             ->orderBy('sale_date', 'asc')
             ->get();
 
-        $outlets = Outlet::where('is_active', true)->get();
+        $outlets = $this->resolveAccessibleOutlets();
         $salesTypes = \App\Models\SalesType::where('is_active', true)->pluck('name', 'code');
         
         $filters = $request->only(['date_from', 'date_to', 'sales_type']);
@@ -933,26 +941,87 @@ class SalesReportController extends Controller
 
     private function resolveOutletIds(Request $request): array
     {
+        $accessibleOutletIds = $this->resolveAccessibleOutletIds();
+        if (empty($accessibleOutletIds)) {
+            return [0];
+        }
+
         if ($request->has('outlet_ids')) {
             $rawOutletIds = $request->input('outlet_ids', []);
             if (!is_array($rawOutletIds)) {
-                return [];
+                return $accessibleOutletIds;
             }
 
-            return collect($rawOutletIds)
+            $requestedOutletIds = collect($rawOutletIds)
                 ->filter(fn($id) => $id !== null && $id !== '')
                 ->map(fn($id) => is_numeric($id) ? (int) $id : null)
                 ->filter(fn($id) => is_int($id) && $id > 0)
                 ->unique()
                 ->values()
                 ->all();
+
+            if (empty($requestedOutletIds)) {
+                return $accessibleOutletIds;
+            }
+
+            $resolved = array_values(array_intersect($requestedOutletIds, $accessibleOutletIds));
+            return !empty($resolved) ? $resolved : $accessibleOutletIds;
         }
 
         if ($request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
             $outletId = (int) $request->input('outlet_id');
-            return $outletId > 0 ? [$outletId] : [];
+            if ($outletId <= 0) {
+                return $accessibleOutletIds;
+            }
+
+            return in_array($outletId, $accessibleOutletIds, true)
+                ? [$outletId]
+                : $accessibleOutletIds;
         }
 
-        return [];
+        return $accessibleOutletIds;
+    }
+
+    private function resolveAccessibleOutlets()
+    {
+        $accessibleOutletIds = $this->resolveAccessibleOutletIds();
+        if (empty($accessibleOutletIds)) {
+            return collect();
+        }
+
+        return Outlet::query()
+            ->where('is_active', true)
+            ->whereIn('id', $accessibleOutletIds)
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function resolveAccessibleOutletIds(): array
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return [];
+        }
+
+        if ($user->hasRole(['admin', 'manager', 'superadmin'])) {
+            return Outlet::query()
+                ->where('is_active', true)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        $userOutletId = (int) ($user->outlet_id ?? 0);
+        if ($userOutletId <= 0) {
+            return [];
+        }
+
+        $outletExists = Outlet::query()
+            ->where('is_active', true)
+            ->where('id', $userOutletId)
+            ->exists();
+
+        return $outletExists ? [$userOutletId] : [];
     }
 }

@@ -149,13 +149,127 @@ class CatalogReportController extends Controller
     }
 
     /**
+     * Mapping slug laporan ke permission view yang relevan.
+     *
+     * Jika slug tidak ada di mapping, akses ditolak (default deny).
+     *
+     * @return array<string, string>
+     */
+    private function reportViewPermissions(): array
+    {
+        return [
+            // Ikhtisar
+            'balance-sheet' => 'reports.profit.view',
+            'profit-loss' => 'reports.profit.view',
+            'cash-bank' => 'reports.profit.view',
+            'cash-bank-detail' => 'reports.profit.view',
+            'ledger-detail' => 'reports.profit.view',
+            'cash-flow' => 'reports.profit.view',
+
+            // Penjualan
+            'sales-summary' => 'reports.sales.view',
+            'sales' => 'reports.sales.view',
+            'sales-daily-summary' => 'reports.daily.view',
+            'sales-order' => 'reports.sales.view',
+            'sales-by-customer' => 'reports.sales.view',
+            'sales-by-product' => 'reports.product.view',
+            'sales-by-type' => 'reports.sales.view',
+            'sales-by-payment-method' => 'reports.sales.view',
+            'sales-by-category' => 'reports.sales.view',
+            'sales-by-hour' => 'reports.sales.view',
+            'cancelled-sales' => 'reports.sales.view',
+            'sales-stock-out' => 'reports.sales.view',
+            'sales-modifier' => 'reports.sales.view',
+            'sales-vs-hpp' => 'reports.sales.view',
+            'waiter-performance' => 'reports.sales.view',
+            'sales-discount' => 'reports.sales.view',
+            'shift-sessions' => 'reports.shift.view',
+            'sales-custom-item' => 'reports.sales.view',
+            'daily-outlet-summary' => 'reports.daily.view',
+            'credit-card' => 'reports.sales.view',
+            'promo' => 'promo-vouchers.view',
+            'sales-by-service-charge' => 'reports.sales.view',
+
+            // Pembelian
+            'purchase-summary' => 'purchases.view',
+            'purchase-by-supplier' => 'purchases.view',
+            'purchase-by-product' => 'purchases.view',
+            'purchase-by-category' => 'purchases.view',
+            'purchase-unpaid' => 'purchases.view',
+            'receivables' => 'purchases.view',
+
+            // Produk
+            'stock-movement' => 'stocks.view',
+            'top-products' => 'stocks.view',
+            'low-selling-products' => 'stocks.view',
+            'inventory-value' => 'stocks.view',
+
+            // Lain-lain / SDM
+            'other-income-expense' => 'expenses.report.view',
+            'attendance-recap' => 'reports.attendance.view',
+        ];
+    }
+
+    private function canAccessReportSlug(string $slug): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        $permission = $this->reportViewPermissions()[$slug] ?? null;
+        // Default deny: setiap slug baru wajib dimapping ke permission agar tidak bocor akses.
+        if (!$permission) {
+            return false;
+        }
+
+        return $user->hasPermission($permission);
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $categories
+     * @param  array<string, array<string, mixed>>  $reports
+     * @return array{0: array<string, array<string, mixed>>, 1: array<string, array<string, mixed>>}
+     */
+    private function filterReportsByPermission(array $categories, array $reports): array
+    {
+        $allowedReports = [];
+        foreach ($reports as $slug => $report) {
+            if ($this->canAccessReportSlug($slug)) {
+                $allowedReports[$slug] = $report;
+            }
+        }
+
+        foreach ($categories as $key => $category) {
+            $allowedItems = array_values(array_filter(
+                $category['items'] ?? [],
+                fn ($slug) => isset($allowedReports[$slug])
+            ));
+
+            if ($allowedItems === []) {
+                unset($categories[$key]);
+                continue;
+            }
+
+            $categories[$key]['items'] = $allowedItems;
+        }
+
+        return [$categories, $allowedReports];
+    }
+
+    /**
      * Halaman daftar katalog laporan.
      */
     public function index()
     {
+        [$categories, $reports] = $this->filterReportsByPermission(
+            $this->categories(),
+            $this->reports()
+        );
+
         return view('admin.reports.index', [
-            'categories' => $this->categories(),
-            'reports' => $this->reports(),
+            'categories' => $categories,
+            'reports' => $reports,
         ]);
     }
 
@@ -164,8 +278,14 @@ class CatalogReportController extends Controller
      */
     public function show(Request $request, string $slug)
     {
-        $reports = $this->reports();
-        abort_unless(isset($reports[$slug]), 404);
+        $allReports = $this->reports();
+        abort_unless(isset($allReports[$slug]), 404);
+        abort_unless($this->canAccessReportSlug($slug), 403, 'Anda tidak memiliki permission untuk laporan ini.');
+
+        [$categories, $reports] = $this->filterReportsByPermission(
+            $this->categories(),
+            $allReports
+        );
 
         if ($slug === 'sales') {
             return redirect()->route('admin.reports.sales.index', array_filter([
@@ -228,7 +348,7 @@ class CatalogReportController extends Controller
             ]));
         }
 
-        $report = $reports[$slug];
+        $report = $reports[$slug] ?? $allReports[$slug];
         $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary', 'stock-movement', 'inventory-value'];
         $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
         $defaultDateTo = in_array($slug, $financeSlugs, true) ? now()->endOfMonth()->toDateString() : now()->toDateString();
@@ -969,7 +1089,7 @@ class CatalogReportController extends Controller
         return view('admin.reports.catalog-show', [
             'slug' => $slug,
             'report' => $report,
-            'categories' => $this->categories(),
+            'categories' => $categories,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'outletId' => $outletId,
