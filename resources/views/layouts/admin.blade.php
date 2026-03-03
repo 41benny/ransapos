@@ -297,7 +297,7 @@
                         return $canAccess($extra['permission'] ?? null);
                     }));
 
-                    $canAccessPos = $currentUser?->hasRole(['superadmin', 'admin', 'manager', 'kasir']);
+                    $canAccessPos = $canAccess('pos.dashboard');
                 @endphp
 
                 @if($canAccessPos || count($extras) > 0)

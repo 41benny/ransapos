@@ -79,7 +79,7 @@
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 @if($stockTransfer->canBeSent())
                     <form method="POST" action="{{ route('admin.stock-transfers.send', $stockTransfer->id) }}"
-                          onsubmit="return confirm('Kirim transfer ini? Stok akan segera dikurangi dari outlet pengirim.')" class="w-full md:w-auto">
+                          onsubmit="return handleSendSubmit(this)" class="w-full md:w-auto">
                         @csrf
                         <button type="submit" class="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-xs font-normal text-indigo-900 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                             <i class="fas fa-paper-plane text-[10px]"></i>
@@ -392,6 +392,22 @@
 
 @push('scripts')
 <script>
+function handleSendSubmit(formElement) {
+    if (!confirm('Kirim transfer ini? Stok akan segera dikurangi dari outlet pengirim.')) {
+        return false;
+    }
+
+    const submitButton = formElement.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.classList.remove('hover:bg-slate-50', 'active:scale-95');
+        submitButton.classList.add('opacity-70', 'cursor-not-allowed');
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i><span>MEMPROSES...</span>';
+    }
+
+    return true;
+}
+
 function showCancelModal() {
     const modal = document.getElementById('cancelModal');
     modal.classList.remove('hidden');

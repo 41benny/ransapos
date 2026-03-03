@@ -11,6 +11,7 @@ use App\Services\CostService;
 use App\Services\StockTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class StockTransferController extends Controller
 {
@@ -259,6 +260,14 @@ class StockTransferController extends Controller
             return redirect()->route('admin.stock-transfers.show', $transfer->id)
                 ->with('success', 'Transfer berhasil dikirim. Stok telah dikurangi dari outlet pengirim.');
         } catch (\Exception $e) {
+            Log::warning('Stock transfer send failed', [
+                'transfer_id' => $stockTransfer->id,
+                'transfer_number' => $stockTransfer->transfer_number,
+                'status' => $stockTransfer->status,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
             return back()->with('error', 'Gagal mengirim transfer: ' . $e->getMessage());
         }
     }
@@ -471,4 +480,5 @@ class StockTransferController extends Controller
 
         return $summary;
     }
+
 }

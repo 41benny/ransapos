@@ -173,17 +173,16 @@ class StockTransferService
         try {
             // Kurangi stok di outlet pengirim
             foreach ($transfer->items as $item) {
-                // Cek ketersediaan stok
-                $stock = Stock::where('product_id', $item->product_id)
-                    ->where('outlet_id', $transfer->from_outlet_id)
-                    ->first();
-
-                if (!$stock || $stock->quantity < $item->quantity) {
-                    throw new Exception(
-                        "Stok {$item->product->name} tidak mencukupi di outlet pengirim. " .
-                            "Tersedia: " . ($stock ? $stock->quantity : 0) . ", Dibutuhkan: {$item->quantity}"
-                    );
-                }
+                $stock = Stock::firstOrCreate(
+                    [
+                        'product_id' => $item->product_id,
+                        'outlet_id' => $transfer->from_outlet_id,
+                    ],
+                    [
+                        'quantity' => 0,
+                        'last_mutation_at' => now(),
+                    ]
+                );
 
                 // Kurangi stok
                 $stockBefore = $stock->quantity;

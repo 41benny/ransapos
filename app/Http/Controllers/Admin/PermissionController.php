@@ -151,6 +151,7 @@ class PermissionController extends Controller
             'promo-vouchers' => 'Promo & Voucher',
             'reports' => 'Reports',
             'cash-sessions' => 'Cash Session',
+            'pos-dashboard' => 'Akses POS Kasir',
             'pos-devices' => 'Perangkat POS',
             'void-tokens' => 'Token Void',
             'permissions' => 'Role Permission',
