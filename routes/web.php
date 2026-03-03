@@ -31,7 +31,7 @@ Route::post('/pos/pin', [PosPinLoginController::class, 'login'])->name('pos.pin.
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Back Office (Admin) Routes
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,superadmin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,superadmin,pajak'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard')
         ->middleware('permission:dashboard.view');
