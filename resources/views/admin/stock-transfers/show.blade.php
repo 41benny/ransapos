@@ -13,15 +13,13 @@
             <p class="text-[11px] font-mono text-slate-500 mt-1 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded w-fit inline-block border border-slate-200">{{ $stockTransfer->transfer_number }}</p>
         </div>
         <div class="flex items-center gap-3 no-print">
-            @can('stock-transfers.update')
-                @if($stockTransfer->isPending())
-                    <a href="{{ route('admin.stock-transfers.edit', $stockTransfer->id) }}"
-                        class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-amber-600 active:scale-95">
-                        <i class="fas fa-pen text-[10px]"></i>
-                        <span>Edit Draft</span>
-                    </a>
-                @endif
-            @endcan
+            @if($stockTransfer->isPending())
+                <a href="{{ route('admin.stock-transfers.edit', $stockTransfer->id) }}"
+                    class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-amber-600 active:scale-95">
+                    <i class="fas fa-pen text-[10px]"></i>
+                    <span>Edit Draft</span>
+                </a>
+            @endif
             <a href="{{ route('admin.stock-transfers.print', $stockTransfer->id) }}" target="_blank"
                 class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
                 <i class="fas fa-print text-[10px]"></i>
@@ -155,6 +153,29 @@
                     </div>
                 </div>
             </div>
+
+            @if(($discrepancySummary['has_discrepancy'] ?? false))
+                <div class="mx-6 mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5"></i>
+                        <div class="text-[11px] text-amber-800 leading-relaxed">
+                            <p class="font-semibold uppercase tracking-wider text-[10px]">Selisih Penerimaan Terdeteksi</p>
+                            <p class="mt-1">
+                                Item selisih: {{ number_format((float) ($discrepancySummary['item_count'] ?? 0), 0, ',', '.') }} |
+                                Kurang: {{ number_format((float) ($discrepancySummary['shortage_qty'] ?? 0), 2, ',', '.') }} |
+                                Lebih: {{ number_format((float) ($discrepancySummary['excess_qty'] ?? 0), 2, ',', '.') }}
+                            </p>
+                            <p class="mt-1">
+                                Nilai kurang: Rp {{ number_format((float) ($discrepancySummary['shortage_nominal'] ?? 0), 0, ',', '.') }} |
+                                Nilai lebih: Rp {{ number_format((float) ($discrepancySummary['excess_nominal'] ?? 0), 0, ',', '.') }}
+                            </p>
+                            <p class="mt-1 text-[10px] uppercase tracking-wider">
+                                Shortage otomatis dikembalikan ke stok outlet pengirim melalui mutasi adjustment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- Items Table --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

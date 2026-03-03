@@ -19,8 +19,17 @@ class CheckPermission
             return redirect()->route('login');
         }
 
+        $parsedPermissions = [];
+        foreach ($permissions as $p) {
+            foreach (explode('|', $p) as $split) {
+                if (trim($split) !== '') {
+                    $parsedPermissions[] = trim($split);
+                }
+            }
+        }
+
         $user = auth()->user();
-        if (!$user || !$user->hasPermission($permissions)) {
+        if (!$user || !$user->hasPermission($parsedPermissions)) {
             abort(403, 'Anda tidak memiliki permission untuk aksi ini.');
         }
 

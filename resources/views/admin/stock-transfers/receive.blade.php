@@ -20,7 +20,7 @@
                 <div class="ml-3">
                     <p class="text-sm text-blue-700">
                         Verifikasi jumlah barang yang diterima. Jika ada selisih (kurang/lebih), masukkan jumlah aktual yang diterima.
-                        Sistem akan otomatis mencatat selisih sebagai adjustment.
+                        Selisih akan tercatat jelas sebagai adjustment. Shortage otomatis dikembalikan ke stok outlet pengirim.
                     </p>
                 </div>
             </div>
@@ -97,15 +97,33 @@
 
                 <!-- Summary -->
                 <div class="px-6 py-4 bg-gray-50 border-t">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
                         <div>
                             <p class="text-sm text-gray-600">Total Items</p>
                             <p class="text-xl font-bold text-gray-900">{{ $stockTransfer->items->count() }} produk</p>
                         </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div class="rounded-lg bg-white border px-3 py-2">
+                                <p class="text-gray-500">Total Kirim</p>
+                                <p class="font-semibold text-gray-900" id="totalSentQty">0.00</p>
+                            </div>
+                            <div class="rounded-lg bg-white border px-3 py-2">
+                                <p class="text-gray-500">Total Terima</p>
+                                <p class="font-semibold text-gray-900" id="totalReceivedQty">0.00</p>
+                            </div>
+                            <div class="rounded-lg bg-white border px-3 py-2">
+                                <p class="text-gray-500">Total Kurang</p>
+                                <p class="font-semibold text-rose-600" id="totalShortageQty">0.00</p>
+                            </div>
+                            <div class="rounded-lg bg-white border px-3 py-2">
+                                <p class="text-gray-500">Total Lebih</p>
+                                <p class="font-semibold text-emerald-600" id="totalExcessQty">0.00</p>
+                            </div>
+                        </div>
                         <div id="warningMessage" class="hidden">
                             <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-lg">
                                 <i class="fas fa-exclamation-triangle mr-2"></i>
-                                <span>Ada selisih quantity! Pastikan data sudah benar.</span>
+                                <span>Ada selisih quantity. Sistem akan mencatat detail selisih secara otomatis.</span>
                             </div>
                         </div>
                     </div>
@@ -131,17 +149,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const receivedInputs = document.querySelectorAll('.received-qty');
     const warningMessage = document.getElementById('warningMessage');
+    const totalSentQtyEl = document.getElementById('totalSentQty');
+    const totalReceivedQtyEl = document.getElementById('totalReceivedQty');
+    const totalShortageQtyEl = document.getElementById('totalShortageQty');
+    const totalExcessQtyEl = document.getElementById('totalExcessQty');
     let hasDifference = false;
 
     receivedInputs.forEach(input => {
         input.addEventListener('input', function() {
             calculateDifference(this);
-            checkForDifferences();
+            refreshSummary();
         });
 
         // Calculate on page load
         calculateDifference(input);
     });
+    refreshSummary();
 
     function calculateDifference(input) {
         const row = input.closest('.item-row');
@@ -164,19 +187,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function checkForDifferences() {
         hasDifference = false;
+        let totalSentQty = 0;
+        let totalReceivedQty = 0;
+        let totalShortageQty = 0;
+        let totalExcessQty = 0;
+
         receivedInputs.forEach(input => {
             const sentQty = parseFloat(input.dataset.sent);
             const receivedQty = parseFloat(input.value) || 0;
+            totalSentQty += sentQty;
+            totalReceivedQty += receivedQty;
+
+            const diff = receivedQty - sentQty;
+            if (diff < 0) {
+                totalShortageQty += Math.abs(diff);
+            } else if (diff > 0) {
+                totalExcessQty += diff;
+            }
+
             if (sentQty !== receivedQty) {
                 hasDifference = true;
             }
         });
+
+        totalSentQtyEl.textContent = totalSentQty.toFixed(2);
+        totalReceivedQtyEl.textContent = totalReceivedQty.toFixed(2);
+        totalShortageQtyEl.textContent = totalShortageQty.toFixed(2);
+        totalExcessQtyEl.textContent = totalExcessQty.toFixed(2);
 
         if (hasDifference) {
             warningMessage.classList.remove('hidden');
         } else {
             warningMessage.classList.add('hidden');
         }
+    }
+
+    function refreshSummary() {
+        checkForDifferences();
     }
 
     // Form submission confirmation

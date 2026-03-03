@@ -206,13 +206,15 @@ class StockTransferController extends Controller
             $transferBillingNominalTotal,
             $valuationSource
         ] = $this->buildTransferValuation($stockTransfer);
+        $discrepancySummary = $this->buildDiscrepancySummary($stockTransfer, $itemHppMap);
 
         return view('admin.stock-transfers.show', compact(
             'stockTransfer',
             'itemHppMap',
             'transferNominalTotal',
             'transferBillingNominalTotal',
-            'valuationSource'
+            'valuationSource',
+            'discrepancySummary'
         ));
     }
 
@@ -234,13 +236,15 @@ class StockTransferController extends Controller
             $transferBillingNominalTotal,
             $valuationSource
         ] = $this->buildTransferValuation($stockTransfer);
+        $discrepancySummary = $this->buildDiscrepancySummary($stockTransfer, $itemHppMap);
 
         return view('admin.stock-transfers.print', compact(
             'stockTransfer',
             'itemHppMap',
             'transferNominalTotal',
             'transferBillingNominalTotal',
-            'valuationSource'
+            'valuationSource',
+            'discrepancySummary'
         ));
     }
 
@@ -424,5 +428,47 @@ class StockTransferController extends Controller
                 ];
             })
             ->values();
+    }
+
+    private function buildDiscrepancySummary(StockTransfer $stockTransfer, $itemHppMap): array
+    {
+        $summary = [
+            'has_discrepancy' => false,
+            'item_count' => 0,
+            'shortage_qty' => 0.0,
+            'excess_qty' => 0.0,
+            'shortage_nominal' => 0.0,
+            'excess_nominal' => 0.0,
+        ];
+
+        if (!$stockTransfer->isReceived()) {
+            return $summary;
+        }
+
+        foreach ($stockTransfer->items as $item) {
+            $sentQty = (float) $item->quantity;
+            $receivedQty = (float) ($item->received_quantity ?? 0);
+            $diff = $receivedQty - $sentQty;
+
+            if (abs($diff) < 0.00001) {
+                continue;
+            }
+
+            $summary['has_discrepancy'] = true;
+            $summary['item_count']++;
+
+            $unitHpp = (float) (($itemHppMap[$item->product_id]['unit_hpp'] ?? 0));
+
+            if ($diff < 0) {
+                $shortageQty = abs($diff);
+                $summary['shortage_qty'] += $shortageQty;
+                $summary['shortage_nominal'] += $shortageQty * $unitHpp;
+            } else {
+                $summary['excess_qty'] += $diff;
+                $summary['excess_nominal'] += $diff * $unitHpp;
+            }
+        }
+
+        return $summary;
     }
 }

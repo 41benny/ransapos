@@ -304,27 +304,42 @@ class StockTransferService
                 // Jika ada selisih (shortage/damage), catat sebagai adjustment di outlet pengirim
                 $difference = $receivedQty - $item->quantity;
                 if ($difference != 0) {
-                    $senderStock = Stock::where('product_id', $item->product_id)
-                        ->where('outlet_id', $transfer->from_outlet_id)
-                        ->first();
-
-                    if ($senderStock) {
-                        StockMutation::create([
+                    // shortage (difference < 0): sisa barang diasumsikan kembali ke outlet pengirim
+                    // excess   (difference > 0): koreksi stok pengirim agar sesuai barang yang benar-benar diterima
+                    $senderStock = Stock::firstOrCreate(
+                        [
                             'product_id' => $item->product_id,
                             'outlet_id' => $transfer->from_outlet_id,
-                            'mutation_type' => 'adjustment',
-                            'quantity' => $difference,
-                            'unit_cost' => $unitCost,
-                            'total_cost' => abs($difference) * $unitCost,
-                            'stock_before' => $senderStock->quantity,
-                            'stock_after' => $senderStock->quantity,
-                            'reference_type' => 'stock_transfer',
-                            'reference_id' => $transfer->id,
-                            'mutation_date' => now()->toDateString(),
-                            'notes' => $difference < 0 ? 'Selisih transfer (shortage/damage)' : 'Selisih transfer (excess)',
-                            'created_by' => auth()->id(),
-                        ]);
-                    }
+                        ],
+                        [
+                            'quantity' => 0,
+                            'last_mutation_at' => now(),
+                        ]
+                    );
+
+                    $senderStockBefore = $senderStock->quantity;
+                    $adjustQtySender = -$difference;
+                    $senderStock->quantity += $adjustQtySender;
+                    $senderStock->last_mutation_at = now();
+                    $senderStock->save();
+
+                    StockMutation::create([
+                        'product_id' => $item->product_id,
+                        'outlet_id' => $transfer->from_outlet_id,
+                        'mutation_type' => 'adjustment',
+                        'quantity' => $adjustQtySender,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => abs($adjustQtySender) * $unitCost,
+                        'stock_before' => $senderStockBefore,
+                        'stock_after' => $senderStock->quantity,
+                        'reference_type' => 'stock_transfer',
+                        'reference_id' => $transfer->id,
+                        'mutation_date' => now()->toDateString(),
+                        'notes' => $difference < 0
+                            ? 'Selisih terima kurang: stok selisih dikembalikan ke outlet pengirim'
+                            : 'Selisih terima lebih: koreksi stok outlet pengirim',
+                        'created_by' => auth()->id(),
+                    ]);
                 }
             }
 

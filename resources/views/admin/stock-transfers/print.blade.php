@@ -242,6 +242,18 @@
             </tbody>
         </table>
 
+        @if(($discrepancySummary['has_discrepancy'] ?? false))
+            <div class="note" style="border:1px solid #fde68a; background:#fffbeb; padding:10px; border-radius:8px;">
+                <strong>Selisih Penerimaan:</strong>
+                Item {{ number_format((float) ($discrepancySummary['item_count'] ?? 0), 0, ',', '.') }},
+                Kurang {{ number_format((float) ($discrepancySummary['shortage_qty'] ?? 0), 2, ',', '.') }},
+                Lebih {{ number_format((float) ($discrepancySummary['excess_qty'] ?? 0), 2, ',', '.') }}.
+                Nilai Kurang Rp {{ number_format((float) ($discrepancySummary['shortage_nominal'] ?? 0), 0, ',', '.') }},
+                Nilai Lebih Rp {{ number_format((float) ($discrepancySummary['excess_nominal'] ?? 0), 0, ',', '.') }}.
+                Shortage otomatis dikembalikan ke stok outlet pengirim.
+            </div>
+        @endif
+
         <div class="total-box">
             <table>
                 <tr>
