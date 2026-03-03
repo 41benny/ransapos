@@ -265,6 +265,7 @@ class SalesReportController extends Controller
         $query = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
             ->where('sales.status', 'completed')
             ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
@@ -282,6 +283,7 @@ class SalesReportController extends Controller
             'products.id',
             'products.name as product_name',
             'products.sku',
+            DB::raw("COALESCE(product_categories.name, 'Tanpa Kategori') as category_name"),
             DB::raw('SUM(sale_items.quantity) as total_qty'),
             DB::raw('SUM(sale_items.subtotal) as total_amount')
         ];
@@ -293,7 +295,8 @@ class SalesReportController extends Controller
 
         // Agregasi per produk
         $products = $query->select($selects)
-            ->groupBy('products.id', 'products.name', 'products.sku')
+            ->groupBy('products.id', 'products.name', 'products.sku', 'product_categories.name')
+            ->orderBy('category_name', 'asc')
             ->orderBy('total_amount', 'desc')
             ->get();
 

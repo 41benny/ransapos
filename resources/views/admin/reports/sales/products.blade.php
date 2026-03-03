@@ -259,43 +259,59 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
-                        @forelse($products as $index => $product)
-                            <tr class="group hover:bg-slate-50 transition-colors">
-                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-normal text-slate-400">#{{ $index + 1 }}</td>
-                                <td class="px-4 py-2.5 text-sm font-normal text-slate-800">{{ $product->product_name }}</td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-sm font-mono text-slate-500 border-r border-slate-100">{{ $product->sku }}</td>
-                                @foreach($outletsForColumns as $outletCol)
-                                    @php
-                                        $oQty = $product->{"outlet_{$outletCol->id}_qty"} ?? 0;
-                                    @endphp
-                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal border-r border-slate-100 {{ $oQty > 0 ? 'text-indigo-600' : 'text-slate-300' }}">
-                                        @if($oQty > 0)
-                                            <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => [$outletCol->id], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
-                                               target="_blank"
-                                               class="hover:text-indigo-900 hover:underline transition-all"
-                                               title="Lihat Detail Transaksi">
-                                                {{ number_format($oQty, 0, ',', '.') }}
-                                            </a>
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                @endforeach
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-slate-800 bg-indigo-50/30">
-                                    <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $filters['outlet_ids'] ?? [], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
-                                       target="_blank"
-                                       class="hover:text-indigo-600 hover:underline transition-all text-indigo-700"
-                                       title="Lihat Detail Transaksi Semua Outlet yang Difilter">
-                                        {{ number_format($product->total_qty, 0, ',', '.') }}
-                                    </a>
-                                </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-emerald-600 bg-emerald-50/30 border-l border-emerald-100/50">
-                                    Rp {{ number_format($product->total_amount, 0, ',', '.') }}
-                                </td>
-                                <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm text-slate-500 italic">
-                                    Rp {{ number_format($product->total_amount / max(1, $product->total_qty), 0, ',', '.') }}
+                        @php
+                            $groupedProducts = $products->groupBy('category_name');
+                            $globalIndex = 0;
+                        @endphp
+
+                        @forelse($groupedProducts as $categoryName => $items)
+                            <tr class="bg-slate-50/50">
+                                <td colspan="{{ 6 + count($outletsForColumns) }}" class="px-4 py-2 text-xs font-bold text-slate-500 uppercase tracking-widest border-y border-slate-100">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-tag text-[10px] text-indigo-400"></i>
+                                        <span>Kategori: {{ $categoryName }}</span>
+                                    </div>
                                 </td>
                             </tr>
+                            @foreach($items as $product)
+                                @php $globalIndex++; @endphp
+                                <tr class="group hover:bg-slate-50 transition-colors">
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-sm font-normal text-slate-400">#{{ $globalIndex }}</td>
+                                    <td class="px-4 py-2.5 text-sm font-normal text-slate-800">{{ $product->product_name }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-sm font-mono text-slate-500 border-r border-slate-100">{{ $product->sku }}</td>
+                                    @foreach($outletsForColumns as $outletCol)
+                                        @php
+                                            $oQty = $product->{"outlet_{$outletCol->id}_qty"} ?? 0;
+                                        @endphp
+                                        <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-normal border-r border-slate-100 {{ $oQty > 0 ? 'text-indigo-600' : 'text-slate-300' }}">
+                                            @if($oQty > 0)
+                                                <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => [$outletCol->id], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                                   target="_blank"
+                                                   class="hover:text-indigo-900 hover:underline transition-all"
+                                                   title="Lihat Detail Transaksi">
+                                                    {{ number_format($oQty, 0, ',', '.') }}
+                                                </a>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-bold text-slate-800 bg-indigo-50/30">
+                                        <a href="{{ route('admin.reports.sales.index', ['tab' => 'penjualan', 'date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $filters['outlet_ids'] ?? [], 'product_id' => $product->id, 'view_mode' => 'detail']) }}"
+                                           target="_blank"
+                                           class="hover:text-indigo-600 hover:underline transition-all text-indigo-700"
+                                           title="Lihat Detail Transaksi Semua Outlet yang Difilter">
+                                            {{ number_format($product->total_qty, 0, ',', '.') }}
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium text-emerald-600 bg-emerald-50/30 border-l border-emerald-100/50">
+                                        Rp {{ number_format($product->total_amount, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-right text-sm text-slate-500 italic">
+                                        Rp {{ number_format($product->total_amount / max(1, $product->total_qty), 0, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
                         @empty
                             <tr>
                                 <td colspan="{{ 6 + count($outletsForColumns) }}" class="px-6 py-16 text-center">
