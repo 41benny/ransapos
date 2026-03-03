@@ -191,6 +191,10 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->hasRole('pajak')) {
+            return redirect()->intended(route('admin.reports.sales.daily'));
+        }
+
         Auth::logout();
         if (request()->hasSession()) {
             request()->session()->invalidate();
@@ -221,7 +225,8 @@ class AuthController extends Controller
             'admin.purchases.index' => 'purchases.view',
             'admin.cash-transactions.index' => 'cash-transactions.view',
             'admin.promo-vouchers.index' => 'promo-vouchers.view',
-            'admin.reports.index' => 'reports.view',
+            'admin.reports.index'          => 'reports.view',
+            'admin.reports.sales.daily'    => 'reports.daily.view',
             'admin.pos-devices.index' => 'pos-devices.view',
             'admin.void-tokens.index' => 'void-tokens.view',
         ];
