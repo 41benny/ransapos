@@ -7,6 +7,7 @@ use App\Models\Outlet;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -19,44 +20,32 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $usersQuery = User::with(['role', 'outlet'])
+        $baseQuery = User::query()
+            ->with(['role', 'outlet'])
             ->orderBy('name');
 
-        if ($request->filled('name')) {
-            $usersQuery->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
-        }
+        $posRoleNames = $this->posRoleNames();
 
-        if ($request->filled('email')) {
-            $usersQuery->where('email', 'like', '%' . trim((string) $request->input('email')) . '%');
-        }
-
-        if ($request->filled('role')) {
-            $role = trim((string) $request->input('role'));
-            $usersQuery->whereHas('role', function ($query) use ($role) {
-                $query->where('name', 'like', '%' . $role . '%')
-                    ->orWhere('display_name', 'like', '%' . $role . '%');
+        $posUsersQuery = (clone $baseQuery)
+            ->whereHas('role', function (Builder $query) use ($posRoleNames) {
+                $query->whereIn('name', $posRoleNames);
             });
-        }
 
-        if ($request->filled('outlet')) {
-            $outlet = trim((string) $request->input('outlet'));
-            $usersQuery->whereHas('outlet', function ($query) use ($outlet) {
-                $query->where('name', 'like', '%' . $outlet . '%');
+        $officeUsersQuery = (clone $baseQuery)
+            ->where(function (Builder $query) use ($posRoleNames) {
+                $query->whereDoesntHave('role')
+                    ->orWhereHas('role', function (Builder $roleQuery) use ($posRoleNames) {
+                        $roleQuery->whereNotIn('name', $posRoleNames);
+                    });
             });
-        }
 
-        if ($request->filled('status')) {
-            $status = strtolower(trim((string) $request->input('status')));
-            if (in_array($status, ['aktif', 'active', '1'], true)) {
-                $usersQuery->where('is_active', true);
-            } elseif (in_array($status, ['nonaktif', 'inactive', '0'], true)) {
-                $usersQuery->where('is_active', false);
-            }
-        }
+        $this->applyIndexFilters($posUsersQuery, $request);
+        $this->applyIndexFilters($officeUsersQuery, $request);
 
-        $users = $usersQuery->paginate(20)->withQueryString();
+        $posUsers = $posUsersQuery->paginate(12, ['*'], 'pos_page')->withQueryString();
+        $officeUsers = $officeUsersQuery->paginate(12, ['*'], 'office_page')->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        return view('admin.users.index', compact('posUsers', 'officeUsers'));
     }
 
     /**
@@ -256,6 +245,54 @@ class UserController extends Controller
     private function generateInternalEmployeePassword(): string
     {
         return Str::random(32);
+    }
+
+    /**
+     * Terapkan filter index users ke query list.
+     */
+    private function applyIndexFilters(Builder $usersQuery, Request $request): void
+    {
+        if ($request->filled('name')) {
+            $usersQuery->where('name', 'like', '%' . trim((string) $request->input('name')) . '%');
+        }
+
+        if ($request->filled('email')) {
+            $usersQuery->where('email', 'like', '%' . trim((string) $request->input('email')) . '%');
+        }
+
+        if ($request->filled('role')) {
+            $role = trim((string) $request->input('role'));
+            $usersQuery->whereHas('role', function (Builder $query) use ($role) {
+                $query->where('name', 'like', '%' . $role . '%')
+                    ->orWhere('display_name', 'like', '%' . $role . '%');
+            });
+        }
+
+        if ($request->filled('outlet')) {
+            $outlet = trim((string) $request->input('outlet'));
+            $usersQuery->whereHas('outlet', function (Builder $query) use ($outlet) {
+                $query->where('name', 'like', '%' . $outlet . '%');
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = strtolower(trim((string) $request->input('status')));
+            if (in_array($status, ['aktif', 'active', '1'], true)) {
+                $usersQuery->where('is_active', true);
+            } elseif (in_array($status, ['nonaktif', 'inactive', '0'], true)) {
+                $usersQuery->where('is_active', false);
+            }
+        }
+    }
+
+    /**
+     * Role yang dikategorikan sebagai user POS.
+     *
+     * @return array<int, string>
+     */
+    private function posRoleNames(): array
+    {
+        return ['kasir', 'kitchen', 'karyawan_outlet'];
     }
 
     /**
