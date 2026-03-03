@@ -168,7 +168,7 @@
                                 'match' => 'admin.purchases.*|admin.reports.debts.*',
                                 'children' => [
                                     ['label' => 'Pembelian (PO)', 'route' => 'admin.purchases.index', 'match' => 'admin.purchases.*', 'permission' => 'purchases.view'],
-                                    ['label' => 'Buku Hutang', 'route' => 'admin.reports.debts.index', 'match' => 'admin.reports.debts.*', 'permission' => 'reports.view'],
+                                    ['label' => 'Buku Hutang', 'route' => 'admin.reports.debts.index', 'match' => 'admin.reports.debts.*', 'permission' => 'reports.debts.view'],
                                 ]
                             ],
                             [
@@ -198,13 +198,12 @@
 
                         $mainNav = collect($mainNav)
                             ->map(function (array $item) use ($canAccess) {
-                                $children = $item['children'] ?? null;
-                                if (is_array($children)) {
-                                    $item['children'] = array_values(array_filter($children, function (array $child) use ($canAccess): bool {
+                                if (isset($item['children'])) {
+                                    $item['children'] = array_values(array_filter($item['children'], function (array $child) use ($canAccess): bool {
                                         return $canAccess($child['permission'] ?? null);
                                     }));
 
-                                    if (count($item['children']) === 0 && !$canAccess($item['permission'] ?? null)) {
+                                    if (count($item['children']) === 0) {
                                         return null;
                                     }
                                 } elseif (!$canAccess($item['permission'] ?? null)) {
@@ -278,36 +277,43 @@
                 </div>
 
                 {{-- Group: System Utilities --}}
+                @php
+                    $extras = [
+                        ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*', 'permission' => 'pos-devices.view'],
+                        ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
+                    ];
+
+                    if ($currentUser?->hasRole('superadmin')) {
+                        $extras[] = [
+                            'label' => 'Hak Akses',
+                            'icon' => 'fas fa-user-shield',
+                            'route' => 'admin.permissions.index',
+                            'match' => 'admin.permissions.*',
+                            'permission' => 'permissions.manage',
+                        ];
+                    }
+
+                    $extras = array_values(array_filter($extras, function (array $extra) use ($canAccess): bool {
+                        return $canAccess($extra['permission'] ?? null);
+                    }));
+
+                    $canAccessPos = $currentUser?->hasRole(['superadmin', 'admin', 'manager', 'kasir']);
+                @endphp
+
+                @if($canAccessPos || count($extras) > 0)
                 <div class="space-y-1">
                     <p class="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 mb-3 sidebar-text">
                         POS & Service</p>
+
+                    @if($canAccessPos)
                     <a href="{{ route('pos.dashboard') }}"
                         class="flex items-center px-4 py-3 text-xs font-bold text-slate-500 hover:text-white hover:bg-white/[0.03] rounded-xl transition-all group uppercase tracking-wider">
                         <i
                             class="fas fa-cash-register w-5 text-center mr-3 scale-110 text-slate-600 group-hover:text-slate-400"></i>
                         <span class="sidebar-text">POS Kasir</span>
                     </a>
-
-                    @php
-                        $extras = [
-                            ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*', 'permission' => 'pos-devices.view'],
-                            ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
-                        ];
-
-                        if ($currentUser?->hasRole('superadmin')) {
-                            $extras[] = [
-                                'label' => 'Hak Akses',
-                                'icon' => 'fas fa-user-shield',
-                                'route' => 'admin.permissions.index',
-                                'match' => 'admin.permissions.*',
-                                'permission' => 'permissions.manage',
-                            ];
-                        }
-
-                        $extras = array_values(array_filter($extras, function (array $extra) use ($canAccess): bool {
-                            return $canAccess($extra['permission'] ?? null);
-                        }));
-                    @endphp
+                    @endif
+                    
                     @foreach($extras as $extra)
                         @php
                             $isExtraActive = request()->routeIs(explode('|', $extra['match']));
@@ -325,6 +331,7 @@
                         </a>
                     @endforeach
                 </div>
+                @endif
             </nav>
 
             <!-- User Profile (Bottom) -->

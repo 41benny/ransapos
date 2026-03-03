@@ -6,6 +6,18 @@
 
 @section('content')
 <div class="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+    @if(session('success'))
+        <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Header Section --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
