@@ -131,7 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemsContainer = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
     const fromOutletSelect = document.getElementById('from_outlet_id');
-    const products = @json($products);
+    const availableStockBaseUrl = @json(route('admin.stock-transfers.available-stock'));
+    const products = @json($productsPayload);
+    const productMap = new Map(products.map(product => [String(product.id), product]));
 
     // Add first item by default
     addItem();
@@ -143,11 +145,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md item-row animate-in zoom-in-95 duration-200" data-index="${itemIndex}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
                     <div class="md:col-span-5">
-                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Produk</label>
-                        <select name="items[${itemIndex}][product_id]" class="product-select w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all" required>
-                            <option value="">Pilih Produk yang akan dikirim</option>
-                            ${products.map(p => `<option value="${p.id}">${p.name} ${p.sku ? '('+p.sku+')' : ''}</option>`).join('')}
-                        </select>
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Produk / Bahan</label>
+                        <div class="relative">
+                            <input type="text"
+                                   class="product-search w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                   placeholder="Ketik nama produk, bahan, atau SKU..."
+                                   autocomplete="off"
+                                   required>
+                            <input type="hidden" name="items[${itemIndex}][product_id]" class="product-id-input" required>
+                            <div class="product-suggestions absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-auto hidden"></div>
+                        </div>
+                        <p class="product-meta mt-1 ml-1 text-[9px] text-slate-400">Ketik minimal 1 huruf untuk mencari produk atau bahan.</p>
                     </div>
                     <div class="md:col-span-2">
                         <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Tersedia</label>
@@ -177,12 +185,43 @@ document.addEventListener('DOMContentLoaded', function() {
         itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
 
         const newRow = itemsContainer.lastElementChild;
-        const productSelect = newRow.querySelector('.product-select');
+        const productSearch = newRow.querySelector('.product-search');
+        const productIdInput = newRow.querySelector('.product-id-input');
+        const productSuggestions = newRow.querySelector('.product-suggestions');
+        const productMeta = newRow.querySelector('.product-meta');
         const removeBtn = newRow.querySelector('.remove-item-btn');
 
-        // Event listener for product change
-        productSelect.addEventListener('change', function() {
+        // Event listener for autocomplete input
+        productSearch.addEventListener('input', function() {
+            productIdInput.value = '';
+            productMeta.textContent = 'Pilih dari daftar saran agar produk terset.';
+            renderSuggestions(newRow, productSearch.value);
             checkAvailableStock(newRow);
+        });
+
+        productSearch.addEventListener('focus', function() {
+            renderSuggestions(newRow, productSearch.value);
+        });
+
+        productSearch.addEventListener('blur', function() {
+            setTimeout(() => {
+                productSuggestions.classList.add('hidden');
+            }, 120);
+        });
+
+        productSuggestions.addEventListener('mousedown', function(event) {
+            const btn = event.target.closest('.product-suggestion-item');
+            if (!btn) {
+                return;
+            }
+
+            event.preventDefault();
+            const product = productMap.get(btn.dataset.productId);
+            if (!product) {
+                return;
+            }
+
+            applySelectedProduct(newRow, product);
         });
 
         // Event listener for remove button
@@ -196,10 +235,87 @@ document.addEventListener('DOMContentLoaded', function() {
         itemIndex++;
     }
 
+    function productTypeLabel(type) {
+        switch (type) {
+            case 'raw_material':
+                return 'Bahan Baku';
+            case 'finished_good':
+                return 'Produk Jadi';
+            case 'service':
+                return 'Jasa';
+            default:
+                return 'Produk';
+        }
+    }
+
+    function productSearchText(product) {
+        return [
+            product.name || '',
+            product.sku || '',
+            productTypeLabel(product.product_type),
+        ].join(' ').toLowerCase();
+    }
+
+    function renderSuggestions(row, keyword) {
+        const suggestionsWrap = row.querySelector('.product-suggestions');
+        const term = (keyword || '').trim().toLowerCase();
+
+        if (!term) {
+            suggestionsWrap.classList.add('hidden');
+            suggestionsWrap.innerHTML = '';
+            return;
+        }
+
+        const filtered = products
+            .filter(product => productSearchText(product).includes(term))
+            .slice(0, 15);
+
+        if (filtered.length === 0) {
+            suggestionsWrap.innerHTML = '<div class="px-3 py-2 text-[10px] text-slate-400">Tidak ada produk/bahan yang cocok</div>';
+            suggestionsWrap.classList.remove('hidden');
+            return;
+        }
+
+        suggestionsWrap.innerHTML = filtered.map(product => `
+            <button type="button"
+                    class="product-suggestion-item w-full text-left px-3 py-2 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
+                    data-product-id="${product.id}">
+                <div class="text-[11px] text-slate-800">${escapeHtml(product.name)}</div>
+                <div class="text-[9px] text-slate-500 mt-0.5">
+                    ${productTypeLabel(product.product_type)}${product.sku ? ` | SKU: ${escapeHtml(product.sku)}` : ''}
+                </div>
+            </button>
+        `).join('');
+
+        suggestionsWrap.classList.remove('hidden');
+    }
+
+    function applySelectedProduct(row, product) {
+        const productSearch = row.querySelector('.product-search');
+        const productIdInput = row.querySelector('.product-id-input');
+        const productMeta = row.querySelector('.product-meta');
+        const suggestionsWrap = row.querySelector('.product-suggestions');
+
+        productSearch.value = product.name;
+        productIdInput.value = product.id;
+        productMeta.textContent = `${productTypeLabel(product.product_type)}${product.sku ? ` | SKU: ${product.sku}` : ''}${product.unit ? ` | Unit: ${product.unit}` : ''}`;
+        suggestionsWrap.classList.add('hidden');
+        checkAvailableStock(row);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     // Check available stock
     function checkAvailableStock(row) {
         const outletId = fromOutletSelect.value;
-        const productId = row.querySelector('.product-select').value;
+        const productId = row.querySelector('.product-id-input').value;
         const availableStockDiv = row.querySelector('.available-stock');
 
         if (!outletId || !productId) {
@@ -209,23 +325,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
         availableStockDiv.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px] text-indigo-400"></i>';
 
-        fetch(`/admin/stock-transfers/available-stock?product_id=${productId}&outlet_id=${outletId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    availableStockDiv.textContent = `${data.available_stock} ${data.unit}`;
-                    availableStockDiv.classList.remove('text-rose-600');
-                    availableStockDiv.classList.add('text-slate-800');
+        fetch(`${availableStockBaseUrl}?product_id=${productId}&outlet_id=${outletId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP_${response.status}`);
+                }
 
-                    if (data.available_stock <= 0) {
-                        availableStockDiv.classList.remove('text-slate-800');
-                        availableStockDiv.classList.add('text-rose-600');
-                    }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success) {
+                    throw new Error('INVALID_RESPONSE');
+                }
+
+                availableStockDiv.textContent = `${data.available_stock} ${data.unit}`;
+                availableStockDiv.classList.remove('text-rose-600');
+                availableStockDiv.classList.add('text-slate-800');
+
+                if (data.available_stock <= 0) {
+                    availableStockDiv.classList.remove('text-slate-800');
+                    availableStockDiv.classList.add('text-rose-600');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                availableStockDiv.textContent = 'Error';
+                if (error.message === 'HTTP_403') {
+                    availableStockDiv.textContent = 'Akses ditolak';
+                } else if (error.message === 'HTTP_404') {
+                    availableStockDiv.textContent = 'Route tidak ditemukan';
+                } else {
+                    availableStockDiv.textContent = 'Error';
+                }
+                availableStockDiv.classList.remove('text-slate-800');
+                availableStockDiv.classList.add('text-rose-600');
             });
     }
 
@@ -252,6 +384,19 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             alert('Minimal harus ada 1 produk untuk melakukan transfer!');
             return false;
+        }
+
+        for (const row of items) {
+            const productId = row.querySelector('.product-id-input')?.value;
+            const productSearch = row.querySelector('.product-search');
+            if (!productId) {
+                e.preventDefault();
+                alert('Pilih produk/bahan dari daftar autocomplete terlebih dahulu.');
+                if (productSearch) {
+                    productSearch.focus();
+                }
+                return false;
+            }
         }
     });
 });

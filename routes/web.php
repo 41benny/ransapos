@@ -276,6 +276,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->middleware('permission:stocks.export');
 
     // Stock Transfers
+    Route::get('stock-transfers/available-stock', [\App\Http\Controllers\Admin\StockTransferController::class, 'getAvailableStock'])
+        ->name('stock-transfers.available-stock')
+        ->middleware('permission:stock-transfers.create|stock-transfers.view');
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
         ->only(['create', 'store'])
         ->middleware('permission:stock-transfers.create');
@@ -302,9 +305,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->middleware('permission:stock-transfers.cancel');
     Route::get('stock-transfers/{stockTransfer}/print', [\App\Http\Controllers\Admin\StockTransferController::class, 'print'])
         ->name('stock-transfers.print')
-        ->middleware('permission:stock-transfers.view');
-    Route::get('stock-transfers/available-stock', [\App\Http\Controllers\Admin\StockTransferController::class, 'getAvailableStock'])
-        ->name('stock-transfers.available-stock')
         ->middleware('permission:stock-transfers.view');
 
     // Expense Management
@@ -375,44 +375,68 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->middleware('permission:cash-sessions.view');
 
     // Reports
-    Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'index'])->name('index');
-        Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show');
-        Route::get('/sales', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'index'])->name('sales.index');
-        Route::get('/sales-products', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'products'])->name('sales.products');
-        Route::get('/shifts', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'index'])->name('shifts.index');
-        Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show');
-        Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index');
-        Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index');
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // Katalog (semua yang punya reports.view bisa lihat)
+        Route::get('/', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'index'])->name('index')
+            ->middleware('permission:reports.view');
+        Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show')
+            ->middleware('permission:reports.view');
 
-        Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
-            ->name('sales.products.export-old')
-            ->middleware('permission:reports.export');
-        Route::get('/sales-daily', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'dailySummary'])->name('sales.daily');
-        Route::get('/sales-daily/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportDailySummary'])
-            ->name('sales.daily.export')
-            ->middleware('permission:reports.export');
+        // Laporan Penjualan (reports.sales.view ATAU reports.view lama)
+        Route::get('/sales', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'index'])->name('sales.index')
+            ->middleware('permission:reports.sales.view|reports.view');
         Route::get('/sales/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportIndex'])
             ->name('sales.export')
-            ->middleware('permission:reports.export');
+            ->middleware('permission:reports.sales.export|reports.export');
+
+        // Laporan Penjualan Harian
+        Route::get('/sales-daily', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'dailySummary'])->name('sales.daily')
+            ->middleware('permission:reports.daily.view|reports.view');
+        Route::get('/sales-daily/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportDailySummary'])
+            ->name('sales.daily.export')
+            ->middleware('permission:reports.daily.export|reports.export');
+
+        // Laporan Per Produk
+        Route::get('/sales-products', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'products'])->name('sales.products')
+            ->middleware('permission:reports.product.view|reports.view');
         Route::get('/sales-products/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProducts'])
             ->name('sales.products.export')
-            ->middleware('permission:reports.export');
+            ->middleware('permission:reports.product.export|reports.export');
+        Route::get('/sales-products/export-old', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportProductsOld'])
+            ->name('sales.products.export-old')
+            ->middleware('permission:reports.product.export|reports.export');
+
+        // Laporan Shift
+        Route::get('/shifts', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'index'])->name('shifts.index')
+            ->middleware('permission:reports.shift.view|reports.view');
+        Route::get('/shifts/{cashSession}', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'show'])->name('shifts.show')
+            ->middleware('permission:reports.shift.view|reports.view');
         Route::get('/shifts/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportIndex'])
             ->name('shifts.export')
-            ->middleware('permission:reports.export');
+            ->middleware('permission:reports.shift.export|reports.export');
         Route::get('/shifts/{cashSession}/export', [\App\Http\Controllers\Admin\Reports\ShiftReportController::class, 'exportShow'])
             ->name('shifts.show.export')
-            ->middleware('permission:reports.export');
+            ->middleware('permission:reports.shift.export|reports.export');
+
+        // Laporan Laba Rugi
+        Route::get('/profit-loss', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'index'])->name('profit-loss.index')
+            ->middleware('permission:reports.profit.view|reports.view');
         Route::get('/profit-loss/export', [\App\Http\Controllers\Admin\Reports\ProfitLossReportController::class, 'export'])
             ->name('profit-loss.export')
-            ->middleware('permission:reports.export');
+            ->middleware('permission:reports.profit.export|reports.export');
+
+        // Laporan Kehadiran
+        Route::get('/attendance', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'reportIndex'])->name('attendance.index')
+            ->middleware('permission:reports.attendance.view|reports.view');
         Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])
             ->name('attendance.export')
-            ->middleware('permission:reports.export');
-            
-        Route::get('/debts', [\App\Http\Controllers\Admin\DebtReportController::class, 'index'])->name('debts.index');
-        Route::get('/debts/{supplier}', [\App\Http\Controllers\Admin\DebtReportController::class, 'show'])->name('debts.show');
+            ->middleware('permission:reports.attendance.export|reports.export');
+
+        // Buku Hutang Supplier
+        Route::get('/debts', [\App\Http\Controllers\Admin\DebtReportController::class, 'index'])->name('debts.index')
+            ->middleware('permission:reports.debts.view|reports.view');
+        Route::get('/debts/{supplier}', [\App\Http\Controllers\Admin\DebtReportController::class, 'show'])->name('debts.show')
+            ->middleware('permission:reports.debts.view|reports.view');
     });
 
     // User Management

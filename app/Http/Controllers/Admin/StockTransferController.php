@@ -88,11 +88,21 @@ class StockTransferController extends Controller
     public function create()
     {
         $outlets = Outlet::where('is_active', true)->get();
-        $products = Product::where('is_active', true)
+        $productsPayload = Product::where('is_active', true)
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'name', 'sku', 'unit', 'product_type'])
+            ->map(function (Product $product) {
+                return [
+                    'id' => (int) $product->id,
+                    'name' => (string) $product->name,
+                    'sku' => $product->sku,
+                    'unit' => $product->unit,
+                    'product_type' => $product->product_type,
+                ];
+            })
+            ->values();
 
-        return view('admin.stock-transfers.create', compact('outlets', 'products'));
+        return view('admin.stock-transfers.create', compact('outlets', 'productsPayload'));
     }
 
     /**
