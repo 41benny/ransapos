@@ -954,55 +954,53 @@
                         marginContainer.classList.add('hidden');
                     }
                 }
-            }
 
-            // Sales vs COGS chart
-            const scContainer = document.getElementById('salesCogsChartContainer');
-            const scEl = document.getElementById('salesCogsBars');
-            if (scContainer && scEl) {
-                if (hasData) {
-                    scContainer.classList.remove('hidden');
-                    const scLabels = rows.map(r => simplifyOutletName(r.outlet_name));
-                    const scRevenues = rows.map(r => Number(r.amount || 0));
-                    const scCogs = rows.map(r => Number(r.cogs || 0));
-                    const scTheme = getChartTheme();
-                    if (!cogsChart) {
-                        cogsChart = new ApexCharts(scEl, {
-                            series: [
+                // Sales vs COGS chart
+                const scContainer = document.getElementById('salesCogsChartContainer');
+                const scEl = document.getElementById('salesCogsBars');
+                if (scContainer && scEl) {
+                    if (hasData) {
+                        scContainer.classList.remove('hidden');
+                        const scLabels = rows.map(r => simplifyOutletName(r.outlet_name));
+                        const scRevenues = rows.map(r => Number(r.amount || 0));
+                        const scCogs = rows.map(r => Number(r.cogs || 0));
+                        const scTheme = getChartTheme();
+                        if (!cogsChart) {
+                            cogsChart = new ApexCharts(scEl, {
+                                series: [
+                                    { name: 'Penjualan', data: scRevenues },
+                                    { name: 'HPP', data: scCogs },
+                                ],
+                                chart: { type: 'bar', height: '100%', toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent', animations: { enabled: true, easing: 'easeinout', speed: 600 } },
+                                plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
+                                theme: { mode: scTheme.dark ? 'dark' : 'light' },
+                                dataLabels: { enabled: false },
+                                stroke: { show: true, width: 2, colors: ['transparent'] },
+                                xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                                yaxis: { labels: { formatter: val => val >= 1000000 ? (val/1000000).toFixed(1)+'M' : val >= 1000 ? (val/1000).toFixed(0)+'k' : val, style: { colors: scTheme.axisText, fontSize: '10px' } } },
+                                grid: { borderColor: scTheme.grid, strokeDashArray: 4, padding: { left: 10, right: 10 } },
+                                tooltip: { theme: scTheme.tooltipTheme, y: { formatter: val => idr.format(val) } },
+                                colors: ['#3b82f6', '#f43f5e'],
+                                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 600 },
+                            });
+                            cogsChart.render();
+                        } else {
+                            cogsChart.updateOptions({
+                                xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } } },
+                                theme: { mode: scTheme.dark ? 'dark' : 'light' },
+                                grid: { borderColor: scTheme.grid },
+                                tooltip: { theme: scTheme.tooltipTheme },
+                            });
+                            cogsChart.updateSeries([
                                 { name: 'Penjualan', data: scRevenues },
                                 { name: 'HPP', data: scCogs },
-                            ],
-                            chart: { type: 'bar', height: '100%', toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent', animations: { enabled: true, easing: 'easeinout', speed: 600 } },
-                            plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
-                            theme: { mode: scTheme.dark ? 'dark' : 'light' },
-                            dataLabels: { enabled: false },
-                            stroke: { show: true, width: 2, colors: ['transparent'] },
-                            xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-                            yaxis: { labels: { formatter: val => val >= 1000000 ? (val/1000000).toFixed(1)+'M' : val >= 1000 ? (val/1000).toFixed(0)+'k' : val, style: { colors: scTheme.axisText, fontSize: '10px' } } },
-                            grid: { borderColor: scTheme.grid, strokeDashArray: 4, padding: { left: 10, right: 10 } },
-                            tooltip: { theme: scTheme.tooltipTheme, y: { formatter: val => idr.format(val) } },
-                            colors: ['#3b82f6', '#f43f5e'],
-                            legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 600 },
-                        });
-                        cogsChart.render();
+                            ]);
+                        }
                     } else {
-                        cogsChart.updateOptions({
-                            xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } } },
-                            theme: { mode: scTheme.dark ? 'dark' : 'light' },
-                            grid: { borderColor: scTheme.grid },
-                            tooltip: { theme: scTheme.tooltipTheme },
-                        });
-                        cogsChart.updateSeries([
-                            { name: 'Penjualan', data: scRevenues },
-                            { name: 'HPP', data: scCogs },
-                        ]);
+                        scContainer.classList.add('hidden');
                     }
-                } else {
-                    scContainer.classList.add('hidden');
                 }
             }
-            }
-
 
             function formatSignedPct(value) {
                 if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
