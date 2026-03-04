@@ -125,7 +125,8 @@
                             <span>Reset</span>
                         </a>
                         <select name="view_mode" onchange="this.form.submit()"
-                            class="ui-input px-3 py-2.5 text-[11px] font-bold bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all">
+                            class="ui-input flex-none px-3 py-2.5 text-[11px] font-bold bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
+                            style="width: auto; min-width: 128px;">
                             <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
                             <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
                         </select>
