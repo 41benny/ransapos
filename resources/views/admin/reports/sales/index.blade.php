@@ -127,7 +127,12 @@
                             </a>
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select name="view_mode" onchange="this.form.submit()"
+                                class="ui-input px-3 py-2.5 text-[11px] font-bold bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all">
+                                <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
+                                <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
+                            </select>
                             <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
                                 class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
