@@ -5,13 +5,13 @@
 @section('content')
     <div class="container mx-auto px-4 py-6">
         <div class="mb-6">
-            <a href="{{ route('admin.bank-transfers.index') }}" class="text-indigo-600 hover:text-indigo-900 text-sm">
+            <a href="{{ route('admin.bank-transfers.index') }}" class="ui-btn ui-btn-ghost text-indigo-600 hover:text-indigo-900 text-sm">
                 ← Kembali ke Daftar Transfer
             </a>
             <h1 class="text-2xl font-bold text-gray-900 mt-2">Detail Transfer</h1>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6 space-y-6">
+        <div class="ui-card bg-white rounded-lg shadow p-6 space-y-6">
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <div class="text-sm text-gray-500">Nomor Transfer</div>

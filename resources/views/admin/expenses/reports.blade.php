@@ -22,7 +22,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Outlet</label>
-                    <select name="outlet_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <select name="outlet_id" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                         <option value="">All Outlets</option>
                         @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" {{ $outletId == $outlet->id ? 'selected' : '' }}>
@@ -35,13 +35,13 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                     <input type="date" name="start_date" value="{{ $startDate }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                     <input type="date" name="end_date" value="{{ $endDate }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                 </div>
 
                 <div class="flex items-end">
@@ -127,7 +127,7 @@
         <div class="p-6 border-b">
             <h3 class="text-lg font-semibold text-gray-800">Expense Breakdown by Category</h3>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="ui-table min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>

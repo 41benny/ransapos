@@ -22,7 +22,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.reports.index', ['tab' => 'penjualan']) }}"
-                    class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95">
                     <i class="fas fa-arrow-left-long text-[10px]"></i>
                     <span>Katalog Laporan</span>
                 </a>
@@ -30,7 +30,7 @@
         </div>
 
         {{-- Sophisticated Filter Panel --}}
-        <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8 no-print relative z-30">
+        <div class="ui-card bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8 no-print relative z-30">
             <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span class="relative flex h-2 w-2">
@@ -58,7 +58,7 @@
                                         <i class="fas fa-calendar-day text-[10px]"></i>
                                     </div>
                                     <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                        class="w-full pl-9 pr-3 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all">
+                                        class="ui-input w-full pl-9 pr-3 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all">
                                 </div>
                                 <div class="font-black text-slate-300 text-[10px] uppercase tracking-widest">ke</div>
                                 <div class="relative flex-1 group">
@@ -66,7 +66,7 @@
                                         <i class="fas fa-calendar-check text-[10px]"></i>
                                     </div>
                                     <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                        class="w-full pl-9 pr-3 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all">
+                                        class="ui-input w-full pl-9 pr-3 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all">
                                 </div>
                             </div>
                         </div>
@@ -80,7 +80,7 @@
                                         <i class="fas fa-store text-[10px]"></i>
                                     </div>
                                     <select name="outlet_id"
-                                        class="w-full pl-9 pr-10 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all appearance-none cursor-pointer">
+                                        class="ui-input w-full pl-9 pr-10 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all appearance-none cursor-pointer">
                                         <option value="all">Semua Outlet Aktif</option>
                                         @foreach($outlets as $outlet)
                                             <option value="{{ $outlet->id }}" {{ ($filters['outlet_id'] ?? '') == $outlet->id ? 'selected' : '' }}>
@@ -101,7 +101,7 @@
                                         <i class="fas fa-tag text-[10px]"></i>
                                     </div>
                                     <select name="sales_type"
-                                        class="w-full pl-9 pr-10 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all appearance-none cursor-pointer">
+                                        class="ui-input w-full pl-9 pr-10 py-2.5 text-sm font-bold bg-slate-50 border-0 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:bg-white transition-all appearance-none cursor-pointer">
                                         <option value="">Semua Metode Penjualan</option>
                                         @foreach($salesTypes as $code => $name)
                                             <option value="{{ $code }}" {{ ($filters['sales_type'] ?? '') == $code ? 'selected' : '' }}>
@@ -120,7 +120,7 @@
                     {{-- Actions Bar --}}
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
                         <button type="submit"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-xl bg-slate-900 px-8 py-2.5 text-[13px] font-black text-white shadow-lg shadow-slate-200 transition-all hover:bg-indigo-600 hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+                            class="ui-btn ui-btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-xl bg-slate-900 px-8 py-2.5 text-[13px] font-black text-white shadow-lg shadow-slate-200 transition-all hover:bg-indigo-600 hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
                             <i class="fas fa-magnifying-glass text-xs"></i>
                             <span>Terapkan Parameter</span>
                         </button>
@@ -128,7 +128,7 @@
                         <div class="flex items-center gap-3 w-full sm:w-auto">
                             <div class="relative flex-1 sm:flex-none" id="exportDropdownWrap">
                                 <button type="button" id="exportDropdownBtn"
-                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-[11px] font-black text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                    class="ui-btn ui-btn-ghost w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-[11px] font-black text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                     <i class="fas fa-download text-indigo-500"></i>
                                     <span>Ekspor Laporan</span>
                                     <i class="fas fa-chevron-down text-[9px] ml-1 opacity-50"></i>
@@ -159,7 +159,7 @@
         </div>
 
         {{-- Luxury Table Section --}}
-        <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+        <div class="ui-card bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
             <div class="relative p-10 text-center border-b border-slate-100">
                 <div class="relative">
                     <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.3em] mb-4">
@@ -177,7 +177,7 @@
             </div>
             
             <div class="overflow-x-auto">
-                <table class="min-w-full border-separate border-spacing-0">
+                <table class="ui-table min-w-full border-separate border-spacing-0">
                     <thead class="bg-slate-50/50 backdrop-blur-md">
                         <tr>
                             <th class="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Tanggal</th>

@@ -13,7 +13,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali ke Katalog</span>
                 </a>
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Filter Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
             <div class="p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-xs"></i>
@@ -42,11 +42,11 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="relative">
                                     <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                        class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                        class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 </div>
                                 <div class="relative">
                                     <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                        class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                        class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 </div>
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                             <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Filter Outlet</label>
                             <div class="relative" id="salesOutletFilterWrap">
                                 <button type="button" id="salesOutletDropdownBtn"
-                                    class="w-full px-4 py-2.5 text-left text-[13px] font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between shadow-sm">
+                                    class="ui-btn ui-btn-ghost w-full px-4 py-2.5 text-left text-[13px] font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between shadow-sm">
                                     <span id="salesOutletDropdownLabel" class="truncate">Semua Outlet</span>
                                     <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
                                 </button>
@@ -89,7 +89,7 @@
                             <div class="space-y-2">
                                 <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Kasir</label>
                                 <select name="user_id"
-                                    class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                                    class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
                                     <option value="">Semua Kasir</option>
                                     @foreach($users as $user)
                                         <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
@@ -101,7 +101,7 @@
                             <div class="space-y-2">
                                 <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Bayar</label>
                                 <select name="payment_method_id"
-                                    class="w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                                    class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
                                     <option value="">Semua</option>
                                     @foreach($paymentMethods as $method)
                                         <option value="{{ $method->id }}" {{ ($filters['payment_method_id'] ?? '') == $method->id ? 'selected' : '' }}>
@@ -116,12 +116,12 @@
                     <div class="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-slate-100">
                         <div class="flex items-center gap-2">
                             <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95">
+                                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95">
                                 <i class="fas fa-magnifying-glass text-[10px]"></i>
                                 <span>Terapkan Filter</span>
                             </button>
                             <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}"
-                                class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-500 border border-slate-200 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-500 border border-slate-200 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-95">
                                 <i class="fas fa-rotate-left text-[10px]"></i>
                                 <span>Reset</span>
                             </a>
@@ -129,12 +129,12 @@
 
                         <div class="flex items-center gap-2">
                             <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-                                class="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
                                 <span>EXCEL</span>
                             </a>
                             <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
-                                class="inline-flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-[11px] font-bold text-rose-700 border border-rose-100 transition-all hover:bg-rose-500 hover:text-white active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-[11px] font-bold text-rose-700 border border-rose-100 transition-all hover:bg-rose-500 hover:text-white active:scale-95">
                                 <i class="fas fa-file-pdf text-[10px]"></i>
                                 <span>PDF</span>
                             </a>
@@ -230,9 +230,9 @@
         </div>
 
         <!-- Table Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <table class="ui-table ui-table-standard min-w-full divide-y divide-slate-200 text-sm">
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         @if(($viewMode ?? 'ringkas') === 'detail')
                             <tr>
@@ -279,17 +279,17 @@
                                     <button type="button" id="clearFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10"><i class="fas fa-times text-[10px]"></i></button>
                                     <input type="text" data-name="filter_transaksi" placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
                                 </td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_tanggal" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_produk" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_qty" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_harga" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_diskon" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_subtotal" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_status" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_bayar" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_jual" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_tanggal" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_produk" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_qty" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_harga" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_diskon" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_subtotal" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_status" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_bayar" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_metode_jual" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                             </tr>
                         @else
                             <tr>
@@ -321,12 +321,12 @@
                                     <button type="button" id="clearFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10"><i class="fas fa-times text-[10px]"></i></button>
                                     <input type="text" data-name="filter_tanggal" placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
                                 </td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_invoice" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_kasir" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_pembayaran" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_bulat" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
-                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_invoice" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_kasir" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_pembayaran" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_bulat" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_total" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
                             </tr>
                         @endif
                     </thead>

@@ -3,11 +3,11 @@
 @section('title', 'Terima Transfer Stok')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="ui-page-shell container mx-auto px-4 py-6">
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Terima Transfer Stok</h1>
+            <h1 class="text-2xl font-normal text-gray-900">Terima Transfer Stok</h1>
             <p class="text-sm text-gray-600 mt-1">{{ $stockTransfer->transfer_number }}</p>
         </div>
 
@@ -27,7 +27,7 @@
         </div>
 
         <!-- Transfer Info -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="ui-card bg-white rounded-lg shadow p-6 mb-6">
             <div class="grid grid-cols-2 gap-6">
                 <div>
                     <p class="text-sm text-gray-600 mb-1">Dari Outlet</p>
@@ -52,12 +52,12 @@
         <!-- Receive Form -->
         <form method="POST" action="{{ route('admin.stock-transfers.receive', $stockTransfer->id) }}" id="receiveForm">
             @csrf
-            <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="ui-card bg-white rounded-lg shadow overflow-hidden">
                 <div class="px-6 py-4 border-b">
                     <h3 class="text-lg font-semibold text-gray-900">Verifikasi Produk yang Diterima</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="ui-table min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
@@ -82,7 +82,7 @@
                                                step="0.01"
                                                min="0"
                                                value="{{ old('items.' . $item->id, $item->quantity) }}"
-                                               class="received-qty w-full border-gray-300 rounded-lg text-center focus:border-indigo-500 focus:ring-indigo-500"
+                                               class="received-qty ui-input w-full border-gray-300 rounded-lg text-center focus:border-indigo-500 focus:ring-indigo-500"
                                                data-sent="{{ $item->quantity }}"
                                                required>
                                     </td>
@@ -131,11 +131,11 @@
 
                 <!-- Action Buttons -->
                 <div class="px-6 py-4 border-t flex gap-3">
-                    <button type="submit" class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
+                    <button type="submit" class="ui-btn ui-btn-primary flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
                         <i class="fas fa-check mr-2"></i>Terima & Simpan ke Stok
                     </button>
                     <a href="{{ route('admin.stock-transfers.show', $stockTransfer->id) }}"
-                       class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
+                       class="ui-btn ui-btn-ghost bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
                         Batal
                     </a>
                 </div>

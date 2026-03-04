@@ -13,7 +13,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.reports.index', ['tab' => request('tab', 'penjualan')]) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali ke Katalog</span>
                 </a>
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Filter Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
             <div class="p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-xs"></i>
@@ -41,21 +41,21 @@
                             <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
                                 Tanggal</label>
                             <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai
                                 Tanggal</label>
                             <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
 
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
                             <div class="relative" id="salesProductOutletFilterWrap">
                                 <button type="button" id="salesProductOutletDropdownBtn"
-                                    class="w-full px-3 py-1.5 text-left text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
+                                    class="ui-btn ui-btn-ghost w-full px-3 py-1.5 text-left text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all flex items-center justify-between">
                                     <span id="salesProductOutletDropdownLabel">Semua Outlet</span>
                                     <i class="fas fa-chevron-down text-xs text-slate-400"></i>
                                 </button>
@@ -87,7 +87,7 @@
                         <div class="flex flex-col gap-1.5">
                             <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Kasir</label>
                             <select name="user_id"
-                                class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">Semua Kasir</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ ($filters['user_id'] ?? '') == $user->id ? 'selected' : '' }}>
@@ -101,12 +101,12 @@
                     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
                         <div class="flex items-center gap-2">
                             <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                                 <i class="fas fa-search text-[10px]"></i>
                                 <span>Terapkan Filter</span>
                             </button>
                             <a href="{{ route('admin.reports.sales.products', ['tab' => request('tab', 'penjualan')]) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-600 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                 <i class="fas fa-undo text-[10px]"></i>
                                 <span>Reset</span>
                             </a>
@@ -114,22 +114,22 @@
 
                         <div class="flex items-center gap-2">
                             <a href="{{ route('admin.reports.sales.products.export-old', request()->query()) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2 text-xs font-normal text-amber-700 border border-amber-100 shadow-sm transition-all hover:bg-amber-100 active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-amber-50 px-4 py-2 text-xs font-normal text-amber-700 border border-amber-100 shadow-sm transition-all hover:bg-amber-100 active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
                                 <span>Excel Old</span>
                             </a>
                             <a href="{{ route('admin.reports.sales.products.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
                                 <i class="fas fa-file-excel text-[10px]"></i>
                                 <span>Excel</span>
                             </a>
                             <a href="{{ route('admin.reports.sales.products.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-xs font-normal text-rose-700 border border-rose-100 shadow-sm transition-all hover:bg-rose-100 active:scale-95">
+                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-rose-50 px-4 py-2 text-xs font-normal text-rose-700 border border-rose-100 shadow-sm transition-all hover:bg-rose-100 active:scale-95">
                                 <i class="fas fa-file-pdf text-[10px]"></i>
                                 <span>PDF</span>
                             </a>
                             <button type="button" onclick="window.print()"
-                                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95">
+                                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95">
                                 <i class="fas fa-print text-[10px]"></i>
                                 <span>Cetak</span>
                             </button>
@@ -176,9 +176,9 @@
         </div>
 
         <!-- Products Table -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="ui-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500 w-16 resizable group" style="min-width: 60px; position:relative;">
@@ -232,11 +232,11 @@
                             </td>
                             <td class="px-2 py-2">
                                 <input type="text" data-name="filter_product" placeholder="Cari..."
-                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-2 py-2 border-r border-slate-200">
                                 <input type="text" data-name="filter_sku" placeholder="Cari..."
-                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             @foreach($outletsForColumns as $outletCol)
                                 <td class="px-2 py-2 bg-slate-100/30 border-r border-slate-200">
@@ -246,15 +246,15 @@
                             @endforeach
                             <td class="px-2 py-2 bg-indigo-50/30">
                                 <input type="text" data-name="filter_qty" placeholder=""
-                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-indigo-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-indigo-300">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-indigo-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-indigo-300">
                             </td>
                             <td class="px-2 py-2 bg-emerald-50/30 border-l border-emerald-100/50">
                                 <input type="text" data-name="filter_amount" placeholder=""
-                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all text-right placeholder:text-emerald-300">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all text-right placeholder:text-emerald-300">
                             </td>
                             <td class="px-2 py-2">
                                 <input type="text" data-name="filter_avg" placeholder=""
-                                    class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-slate-300">
                             </td>
                         </tr>
                     </thead>

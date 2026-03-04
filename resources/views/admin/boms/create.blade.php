@@ -36,7 +36,7 @@
                                     Produk Utama <span class="text-red-500">*</span>
                                 </label>
                                 <select name="product_id" id="product_id"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('product_id') border-red-500 @enderror"
+                                    class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('product_id') border-red-500 @enderror"
                                     required>
                                     <option value="">Pilih Produk...</option>
                                     @foreach($finishedProducts as $product)
@@ -53,7 +53,7 @@
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nama BOM</label>
                                 <input type="text" name="name" id="name"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                                    class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror"
                                     value="{{ old('name') }}" placeholder="Contoh: Resep Nasi Goreng Special">
                                 @error('name')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -73,7 +73,7 @@
                             <div>
                                 <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Catatan</label>
                                 <textarea name="notes" id="notes"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror"
+                                    class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror"
                                     rows="3" placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                                 @error('notes')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -94,7 +94,7 @@
                                                 <div class="md:col-span-6">
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Bahan/Komponen</label>
                                                     <select name="components[{{ $index }}][component_product_id]"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                         required>
                                                         <option value="">Pilih Bahan...</option>
                                                         @foreach($rawMaterials as $raw)
@@ -107,13 +107,13 @@
                                                 <div class="md:col-span-3">
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
                                                     <input type="number" name="components[{{ $index }}][quantity]"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                         step="0.0001" min="0.0001" value="{{ $component['quantity'] }}" required>
                                                 </div>
                                                 <div class="md:col-span-2">
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
                                                     <input type="text" name="components[{{ $index }}][uom]"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                         placeholder="kg, liter..." value="{{ $component['uom'] ?? '' }}">
                                                 </div>
                                                 <div class="md:col-span-1 flex items-end">
@@ -133,7 +133,7 @@
                                             <div class="md:col-span-6">
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Bahan/Komponen</label>
                                                 <select name="components[0][component_product_id]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                     required>
                                                     <option value="">Pilih Bahan...</option>
                                                     @foreach($rawMaterials as $raw)
@@ -144,13 +144,13 @@
                                             <div class="md:col-span-3">
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
                                                 <input type="number" name="components[0][quantity]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                     step="0.0001" min="0.0001" required>
                                             </div>
                                             <div class="md:col-span-2">
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
                                                 <input type="text" name="components[0][uom]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                                     placeholder="kg, liter...">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
@@ -229,18 +229,18 @@
                         '<div class="grid grid-cols-1 md:grid-cols-12 gap-3">' +
                         '<div class="md:col-span-6">' +
                         '<label class="block text-sm font-medium text-gray-700 mb-1">Bahan/Komponen</label>' +
-                        '<select name="components[' + index + '][component_product_id]" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" required>' +
+                        '<select name="components[' + index + '][component_product_id]" class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" required>' +
                         '<option value="">Pilih Bahan...</option>' +
                         rawMaterialsOptions +
                         '</select>' +
                         '</div>' +
                         '<div class="md:col-span-3">' +
                         '<label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>' +
-                        '<input type="number" name="components[' + index + '][quantity]" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" step="0.0001" min="0.0001" required>' +
+                        '<input type="number" name="components[' + index + '][quantity]" class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" step="0.0001" min="0.0001" required>' +
                         '</div>' +
                         '<div class="md:col-span-2">' +
                         '<label class="block text-sm font-medium text-gray-700 mb-1">Satuan</label>' +
-                        '<input type="text" name="components[' + index + '][uom]" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" placeholder="kg, liter...">' +
+                        '<input type="text" name="components[' + index + '][uom]" class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" placeholder="kg, liter...">' +
                         '</div>' +
                         '<div class="md:col-span-1 flex items-end">' +
                         '<button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-150 remove-component" title="Hapus Komponen"><i class="fas fa-trash"></i></button>' +

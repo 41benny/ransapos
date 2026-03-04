@@ -161,7 +161,7 @@
                     <form action="{{ route('admin.expenses.approve', $expense) }}" method="POST">
                         @csrf
                         <textarea name="approval_notes" rows="2"
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+                                  class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
                                   placeholder="Approval notes (optional)"></textarea>
                         <button type="submit"
                                 class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
@@ -172,7 +172,7 @@
                     <form action="{{ route('admin.expenses.reject', $expense) }}" method="POST">
                         @csrf
                         <textarea name="approval_notes" rows="2" required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
+                                  class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2"
                                   placeholder="Rejection reason (required)"></textarea>
                         <button type="submit"
                                 class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
@@ -189,7 +189,7 @@
                         @csrf
                         <label class="block text-sm font-medium text-gray-700 mb-2">Cash/Bank Account</label>
                         <select name="cash_account_id" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2">
+                                class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2">
                             <option value="">-- Select Account --</option>
                             @php
                             $cashAccounts = \App\Models\CashAccount::active()->get();

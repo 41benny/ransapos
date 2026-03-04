@@ -13,19 +13,19 @@
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.purchases.index') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 <span>Kembali</span>
             </a>
             @if($purchase->isDraft())
                 <a href="{{ route('admin.purchases.edit', $purchase) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-amber-600 border border-amber-200 shadow-sm transition-all hover:bg-amber-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-amber-600 border border-amber-200 shadow-sm transition-all hover:bg-amber-50 active:scale-95">
                     <i class="fas fa-edit text-[10px]"></i>
                     <span>Edit PO</span>
                 </a>
             @endif
             <a href="{{ route('admin.purchases.print', $purchase) }}" target="_blank"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-emerald-600 border border-emerald-200 shadow-sm transition-all hover:bg-emerald-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-emerald-600 border border-emerald-200 shadow-sm transition-all hover:bg-emerald-50 active:scale-95">
                 <i class="fas fa-print text-[10px]"></i>
                 <span>Cetak PO</span>
             </a>
@@ -51,7 +51,7 @@
         {{-- Main Info (Left/Top) --}}
         <div class="w-full lg:w-2/3 space-y-6">
             {{-- Purchase Status Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-6">
                     <div class="flex flex-col sm:flex-row justify-between gap-6">
                         <div class="flex-1 space-y-4">
@@ -95,16 +95,16 @@
                                 </div>
                             </div>
 
-                            @if($purchase->status === 'draft')
-                            <div class="mt-4">
-                                <form action="{{ route('admin.purchases.receive', $purchase) }}" method="POST" onsubmit="return confirm('Proses terima barang?')">
-                                    @csrf
-                                    <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
-                                        <i class="fas fa-check-double text-[10px]"></i>
-                                        <span>Terima Barang</span>
-                                    </button>
-                                </form>
-                            </div>
+                                @if($purchase->status === 'draft')
+                                <div class="mt-4">
+                                    <form action="{{ route('admin.purchases.receive', $purchase) }}" method="POST" onsubmit="return confirm('Proses terima barang?')">
+                                        @csrf
+                                        <button type="submit" class="ui-btn ui-btn-primary w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
+                                            <i class="fas fa-check-double text-[10px]"></i>
+                                            <span>Terima Barang</span>
+                                        </button>
+                                    </form>
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -112,7 +112,7 @@
             </div>
 
             {{-- Items Table Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-list-ul text-indigo-500 text-[10px]"></i>
@@ -120,7 +120,7 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
+                    <table class="ui-table min-w-full divide-y divide-slate-200">
                         <thead class="bg-slate-50">
                             <tr>
                                 <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">Produk / SKU</th>
@@ -181,7 +181,7 @@
         <div class="w-full lg:w-1/3 space-y-6">
             {{-- Payment Card (for RECEIVED status) --}}
             @if($purchase->status === 'received')
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-wallet text-indigo-500 text-[10px]"></i>
@@ -221,7 +221,7 @@
 
                         @if($remaining > 0)
                             <a href="{{ route('admin.purchases.payment', $purchase) }}" 
-                               class="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                               class="ui-btn ui-btn-primary mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                                 <i class="fas fa-plus-circle text-[10px]"></i>
                                 <span>Catat Pembayaran Baru</span>
                             </a>
@@ -232,7 +232,7 @@
             @endif
 
             {{-- Activity Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-history text-indigo-500 text-[10px]"></i>
@@ -268,7 +268,7 @@
             </div>
 
             {{-- Notes Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Catatan Internal</span>
                 <p class="text-sm font-normal text-slate-600 italic mt-2 leading-relaxed">
                     {{ $purchase->notes ?? 'Tidak ada catatan tambahan.' }}
@@ -278,7 +278,7 @@
             {{-- Danger Area --}}
             @if($purchase->isDraft())
             <div class="pt-2 space-y-3">
-                <button onclick="showCancelModal()" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-normal text-amber-600 border border-amber-200 shadow-sm transition-all hover:bg-amber-50 active:scale-95">
+                <button onclick="showCancelModal()" class="ui-btn ui-btn-ghost w-full inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-normal text-amber-600 border border-amber-200 shadow-sm transition-all hover:bg-amber-50 active:scale-95">
                     <i class="fas fa-times-circle text-[10px]"></i>
                     <span>Batalkan PO (Void)</span>
                 </button>
@@ -290,7 +290,7 @@
 
 {{-- Modal Cancel --}}
 <div id="cancelModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden p-8">
+    <div class="ui-card bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden p-8">
         <h3 class="text-lg font-normal text-slate-800 tracking-tight mb-2">Batalkan Pembelian?</h3>
         <p class="text-xs font-normal text-slate-500 leading-relaxed mb-6">Tindakan ini tidak dapat dibatalkan.</p>
         
@@ -298,11 +298,11 @@
             @csrf
             <div class="flex flex-col gap-1.5">
                 <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Alasan</label>
-                <textarea name="reason" required rows="2" class="w-full px-4 py-3 text-xs font-normal bg-slate-100 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
+                <textarea name="reason" required rows="2" class="ui-input w-full px-4 py-3 text-xs font-normal bg-slate-100 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" onclick="hideCancelModal()" class="flex-1 px-4 py-3 rounded-2xl bg-slate-100 text-slate-600 text-[11px] font-normal">TIDAK</button>
-                <button type="submit" class="flex-1 px-4 py-3 rounded-2xl bg-slate-900 text-white text-[11px] font-normal">YA, BATALKAN</button>
+                <button type="button" onclick="hideCancelModal()" class="ui-btn ui-btn-ghost flex-1 px-4 py-3 rounded-2xl bg-slate-100 text-slate-600 text-[11px] font-normal">TIDAK</button>
+                <button type="submit" class="ui-btn ui-btn-danger flex-1 px-4 py-3 rounded-2xl bg-slate-900 text-white text-[11px] font-normal">YA, BATALKAN</button>
             </div>
         </form>
     </div>

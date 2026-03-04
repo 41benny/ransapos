@@ -11,7 +11,7 @@
             <div>
                 <div class="flex items-center gap-3 mb-1">
                     <a href="{{ route('admin.permissions.index') }}"
-                        class="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                        class="ui-btn ui-btn-ghost h-8 w-8 inline-flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                         <i class="fas fa-arrow-left text-[10px]"></i>
                     </a>
                     <h1 class="text-2xl font-normal text-slate-900 tracking-tight">Kelola Hak Akses</h1>
@@ -49,7 +49,7 @@
         @endif
 
         {{-- Duplication Card --}}
-        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
+        <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
             <div class="flex items-center gap-3 mb-5">
                 <div
                     class="h-8 w-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center border border-slate-100">
@@ -65,14 +65,14 @@
                         class="text-[9px] font-normal text-slate-500 uppercase tracking-wider ml-1 mb-1.5 block">Salin Hak
                         Akses Dari Role:</label>
                     <select name="source_role_id" id="source_role_id"
-                        class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                        class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
                         @foreach($sourceRoles as $sourceRole)
                             <option value="{{ $sourceRole->id }}">{{ $sourceRole->display_name ?? $sourceRole->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <button type="submit"
-                    class="h-[38px] px-6 rounded-lg bg-slate-800 text-white text-[11px] font-normal hover:bg-slate-900 transition-all active:scale-95 shadow-sm">
+                    class="ui-btn ui-btn-primary h-[38px] px-6 rounded-lg bg-slate-800 text-white text-[11px] font-normal hover:bg-slate-900 transition-all active:scale-95 shadow-sm">
                     Terapkan Duplikasi
                 </button>
             </form>
@@ -84,7 +84,7 @@
 
             {{-- Bulk Actions Toolbar --}}
             <div
-                class="sticky top-6 z-40 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 p-5 shadow-lg flex items-center justify-between gap-4 flex-wrap">
+                class="ui-card sticky top-6 z-40 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200 p-5 shadow-lg flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-center gap-3">
                     <div
                         class="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-indigo-200 shadow-md">
@@ -99,16 +99,16 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" id="checkAll"
-                        class="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-[10px] font-normal hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95 shadow-sm">
+                        class="ui-btn ui-btn-ghost px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-[10px] font-normal hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95 shadow-sm">
                         Ceklis Semua
                     </button>
                     <button type="button" id="uncheckAll"
-                        class="px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-[10px] font-normal hover:text-rose-600 hover:border-rose-100 transition-all active:scale-95 shadow-sm">
+                        class="ui-btn ui-btn-ghost px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-[10px] font-normal hover:text-rose-600 hover:border-rose-100 transition-all active:scale-95 shadow-sm">
                         Hapus Semua
                     </button>
                     <div class="ml-2 pl-4 border-l border-slate-200">
                         <button type="submit"
-                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2 text-[11px] font-normal text-white shadow-indigo-600/20 shadow-lg transition-all hover:bg-indigo-700 active:scale-95">
+                            class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2 text-[11px] font-normal text-white shadow-indigo-600/20 shadow-lg transition-all hover:bg-indigo-700 active:scale-95">
                             <i class="fas fa-save text-[10px]"></i>
                             Simpan Perubahan
                         </button>
@@ -122,7 +122,7 @@
                         $moduleLabel = $moduleLabels[$module] ?? ucfirst(str_replace(['-', '_'], ' ', $module));
                     @endphp
                     <div
-                        class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        class="ui-card bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
                             <div>
                                 <p class="text-[12px] font-normal text-slate-900 tracking-wide">{{ $moduleLabel }}</p>
@@ -130,7 +130,7 @@
                                     {{ $module }}</p>
                             </div>
                             <button type="button"
-                                class="module-toggle h-7 px-3 rounded-md bg-white border border-slate-200 text-slate-500 text-[9px] font-normal hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95 shadow-sm"
+                                class="module-toggle ui-btn ui-btn-ghost h-7 px-3 rounded-md bg-white border border-slate-200 text-slate-500 text-[9px] font-normal hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95 shadow-sm"
                                 data-module="{{ $module }}">
                                 Toggle Modul
                             </button>
@@ -159,7 +159,7 @@
 
             <div class="flex justify-center pt-8 pb-20 no-print">
                 <button type="submit"
-                    class="inline-flex items-center gap-3 rounded-2xl bg-indigo-600 px-12 py-4 text-sm font-normal text-white shadow-indigo-600/30 shadow-xl transition-all hover:bg-indigo-700 active:scale-95">
+                    class="ui-btn ui-btn-primary inline-flex items-center gap-3 rounded-2xl bg-indigo-600 px-12 py-4 text-sm font-normal text-white shadow-indigo-600/30 shadow-xl transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-save text-xs"></i>
                     Simpan Seluruh Checklist
                 </button>

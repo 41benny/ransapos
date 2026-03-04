@@ -27,18 +27,18 @@
         <div class="flex items-center gap-3 no-print">
             @if($stockTransfer->isPending())
                 <a href="{{ route('admin.stock-transfers.edit', $stockTransfer->id) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-amber-600 active:scale-95">
+                    class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-amber-600 active:scale-95">
                     <i class="fas fa-pen text-[10px]"></i>
                     <span>Edit Draft</span>
                 </a>
             @endif
             <a href="{{ route('admin.stock-transfers.print', $stockTransfer->id) }}" target="_blank"
-                class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
+                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
                 <i class="fas fa-print text-[10px]"></i>
                 <span>Cetak Pengiriman</span>
             </a>
             <a href="{{ route('admin.stock-transfers.index') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 <span>Kembali</span>
             </a>
@@ -46,7 +46,7 @@
     </div>
 
     {{-- Main Activity Card (Status & Global Actions) --}}
-    <div class="bg-indigo-900 rounded-2xl shadow-lg border border-indigo-800 p-6 mb-8 text-white relative overflow-hidden">
+    <div class="ui-card bg-indigo-900 rounded-2xl shadow-lg border border-indigo-800 p-6 mb-8 text-white relative overflow-hidden">
         {{-- Background Decorations --}}
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 -mr-20 -mt-20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/10 -ml-10 -mb-10 rounded-full blur-2xl pointer-events-none"></div>
@@ -81,7 +81,7 @@
                     <form method="POST" action="{{ route('admin.stock-transfers.send', $stockTransfer->id) }}"
                           onsubmit="return handleSendSubmit(this)" class="w-full md:w-auto">
                         @csrf
-                        <button type="submit" class="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-xs font-normal text-indigo-900 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                        <button type="submit" class="ui-btn ui-btn-ghost w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-2.5 text-xs font-normal text-indigo-900 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                             <i class="fas fa-paper-plane text-[10px]"></i>
                             <span>KIRIM SEKARANG</span>
                         </button>
@@ -90,7 +90,7 @@
 
                 @if($stockTransfer->canBeReceived())
                     <a href="{{ route('admin.stock-transfers.receive-form', $stockTransfer->id) }}"
-                       class="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95">
+                       class="ui-btn ui-btn-primary w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95">
                         <i class="fas fa-box-open text-[10px]"></i>
                         <span>TERIMA BARANG</span>
                     </a>
@@ -98,7 +98,7 @@
 
                 @if($stockTransfer->canBeCancelled())
                     <button type="button" onclick="showCancelModal()"
-                            class="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500/20 px-6 py-2.5 text-xs font-normal text-white border border-rose-500/30 shadow-sm transition-all hover:bg-rose-500/30 active:scale-95">
+                            class="ui-btn w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500/20 px-6 py-2.5 text-xs font-normal text-white border border-rose-500/30 shadow-sm transition-all hover:bg-rose-500/30 active:scale-95">
                         <i class="fas fa-times-circle text-[10px]"></i>
                         <span>BATALKAN</span>
                     </button>
@@ -111,7 +111,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {{-- General Info --}}
         <div class="lg:col-span-2 space-y-8">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-info-circle text-indigo-500 text-[10px]"></i>
@@ -190,7 +190,7 @@
             @endif
 
             {{-- Items Table --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-box text-indigo-500 text-[10px]"></i>
@@ -198,7 +198,7 @@
                     </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200">
+                    <table class="ui-table min-w-full divide-y divide-slate-200">
                         <thead class="bg-slate-50">
                             <tr>
                                 <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">Item Produk</th>
@@ -279,7 +279,7 @@
 
         {{-- Sidebar Info (Timeline & Author) --}}
         <div class="lg:col-span-1 space-y-8">
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-stream text-indigo-500 text-[10px]"></i>
@@ -358,7 +358,7 @@
 
 {{-- Cancel Modal --}}
 <div id="cancelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200 border border-slate-200">
+    <div class="ui-card bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200 border border-slate-200">
         <div class="flex items-center gap-3 mb-4">
             <div class="h-10 w-10 rounded-xl bg-rose-100 text-rose-500 flex items-center justify-center text-lg shadow-inner">
                 <i class="fas fa-times-circle"></i>
@@ -374,14 +374,14 @@
             <div class="mb-6">
                 <label class="block text-[10px] font-normal text-slate-500 uppercase tracking-wider mb-2 ml-1">Alasan Pembatalan <span class="text-rose-500">*</span></label>
                 <textarea name="cancel_reason" rows="3" required
-                          class="w-full px-4 py-3 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all shadow-sm"
+                          class="ui-input w-full px-4 py-3 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all shadow-sm"
                           placeholder="Mohon sebutkan alasan pembatalan..."></textarea>
             </div>
             <div class="flex gap-3">
-                <button type="button" onclick="hideCancelModal()" class="flex-1 px-4 py-2.5 text-xs font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest border border-slate-100 rounded-xl hover:bg-slate-50">
+                <button type="button" onclick="hideCancelModal()" class="ui-btn ui-btn-ghost flex-1 px-4 py-2.5 text-xs font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest border border-slate-100 rounded-xl hover:bg-slate-50">
                     KEMBALI
                 </button>
-                <button type="submit" class="flex-1 bg-rose-600 text-white px-4 py-2.5 rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all font-normal text-xs active:scale-95 uppercase tracking-widest">
+                <button type="submit" class="ui-btn ui-btn-danger flex-1 bg-rose-600 text-white px-4 py-2.5 rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-200 transition-all font-normal text-xs active:scale-95 uppercase tracking-widest">
                     YA, BATALKAN
                 </button>
             </div>

@@ -20,7 +20,7 @@
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.stock-transfers.index') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 <span>Kembali ke Daftar</span>
             </a>
@@ -48,7 +48,7 @@
         @endif
 
         {{-- Route Info Card --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-route text-indigo-500 text-[10px]"></i>
@@ -60,7 +60,7 @@
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Asal (From) <span class="text-rose-500">*</span></label>
                         <select name="from_outlet_id" id="from_outlet_id" required
-                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Pengirim</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('from_outlet_id', $isEditMode ? $stockTransfer->from_outlet_id : null) == $outlet->id ? 'selected' : '' }}>
@@ -73,7 +73,7 @@
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tujuan (To) <span class="text-rose-500">*</span></label>
                         <select name="to_outlet_id" id="to_outlet_id" required
-                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih Outlet Penerima</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('to_outlet_id', $isEditMode ? $stockTransfer->to_outlet_id : null) == $outlet->id ? 'selected' : '' }}>
@@ -86,27 +86,27 @@
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tanggal <span class="text-rose-500">*</span></label>
                         <input type="date" name="transfer_date" id="transfer_date" required value="{{ old('transfer_date', $isEditMode ? optional($stockTransfer->transfer_date)->format('Y-m-d') : date('Y-m-d')) }}"
-                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
 
                     <div class="flex flex-col gap-1.5 lg:col-span-1">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan</label>
                         <input type="text" name="notes" id="notes" value="{{ old('notes', $isEditMode ? $stockTransfer->notes : null) }}" placeholder="Opsional..."
-                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Items Card --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-shopping-basket text-indigo-500 text-[10px]"></i>
                     <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Item Produk yang Di-transfer</h3>
                 </div>
                 <button type="button" id="addItemBtn"
-                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-plus"></i>
                     <span>TAMBAH PRODUK</span>
                 </button>
@@ -122,7 +122,7 @@
                 <div class="flex items-center gap-3">
                     <a href="{{ route('admin.stock-transfers.index') }}" class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest">Batalkan</a>
                     <button type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
+                        class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
                         <i class="fas fa-check text-[10px]"></i>
                         <span>{{ $isEditMode ? 'SIMPAN PERUBAHAN DRAFT' : 'SIMPAN & PROSES TRANSFER' }}</span>
                     </button>
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Produk / Bahan</label>
                         <div class="relative">
                             <input type="text"
-                                   class="product-search w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                   class="product-search ui-input w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                                    placeholder="Ketik nama produk, bahan, atau SKU..."
                                    autocomplete="off"
                                    required>
@@ -180,15 +180,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="md:col-span-2">
                         <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Qty Kirim</label>
                         <input type="number" name="items[${itemIndex}][quantity]" step="0.01" min="0.01" required
-                               class="quantity-input w-full px-4 py-2 text-[12px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" placeholder="0.00">
+                               class="quantity-input ui-input w-full px-4 py-2 text-[12px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" placeholder="0.00">
                     </div>
                     <div class="md:col-span-2">
                         <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Catatan Item</label>
                         <input type="text" name="items[${itemIndex}][notes]"
-                               class="w-full px-4 py-2 text-[11px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" placeholder="Catatan kecil...">
+                               class="ui-input w-full px-4 py-2 text-[11px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm" placeholder="Catatan kecil...">
                     </div>
                     <div class="md:col-span-1 flex justify-center pb-1">
-                        <button type="button" class="remove-item-btn h-9 w-9 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90 p-2">
+                        <button type="button" class="remove-item-btn ui-btn ui-btn-ghost h-9 w-9 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90 p-2">
                             <i class="fas fa-times text-[10px]"></i>
                         </button>
                     </div>

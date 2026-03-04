@@ -46,7 +46,7 @@
                     {{ $isBundleRecipe ? 'Edit Resep Bundle' : 'Edit Resep Produksi (BOM)' }}
                 </h1>
             </div>
-            <a href="{{ $backUrl }}" class="btn btn-secondary">
+            <a href="{{ $backUrl }}" class="ui-btn ui-btn-ghost btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -71,18 +71,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="form-label">Produk Utama</label>
-                        <input type="text" class="form-input bg-gray-100" value="{{ $bom->product->name }} ({{ $bom->product->sku }})" readonly>
+                        <input type="text" class="ui-input form-input bg-gray-100" value="{{ $bom->product->name }} ({{ $bom->product->sku }})" readonly>
                     </div>
 
                     <div>
                         <label for="name" class="form-label">Nama BOM</label>
-                        <input type="text" name="name" id="name" class="form-input" value="{{ old('name', $bom->name) }}" placeholder="Contoh: Resep Es Kopi Susu">
+                        <input type="text" name="name" id="name" class="ui-input form-input" value="{{ old('name', $bom->name) }}" placeholder="Contoh: Resep Es Kopi Susu">
                     </div>
                 </div>
 
                 <div>
                     <label for="notes" class="form-label">Catatan</label>
-                    <textarea name="notes" id="notes" rows="3" class="form-input" placeholder="Catatan tambahan">{{ old('notes', $bom->notes) }}</textarea>
+                    <textarea name="notes" id="notes" rows="3" class="ui-input form-input" placeholder="Catatan tambahan">{{ old('notes', $bom->notes) }}</textarea>
                 </div>
 
                 <div>
@@ -97,7 +97,7 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-slate-900">Komponen Bahan</h3>
-                        <button type="button" id="add-component" class="btn btn-secondary">
+                        <button type="button" id="add-component" class="ui-btn ui-btn-ghost btn btn-secondary">
                             <i class="fas fa-plus"></i> Tambah Komponen
                         </button>
                     </div>
@@ -108,7 +108,7 @@
                                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                                     <div class="md:col-span-5">
                                         <label class="form-label">Bahan</label>
-                                        <select name="components[{{ $index }}][component_product_id]" class="form-input" required>
+                                        <select name="components[{{ $index }}][component_product_id]" class="ui-input form-input" required>
                                             <option value="">Pilih bahan...</option>
                                             @foreach($rawMaterials as $raw)
                                                 <option value="{{ $raw->id }}"
@@ -122,12 +122,12 @@
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="form-label">Jumlah</label>
-                                        <input type="number" name="components[{{ $index }}][quantity]" class="form-input"
+                                        <input type="number" name="components[{{ $index }}][quantity]" class="ui-input form-input"
                                             min="0.0001" step="0.0001" value="{{ $component['quantity'] ?? '' }}" required>
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="form-label">Satuan</label>
-                                        <input type="text" name="components[{{ $index }}][uom]" class="form-input"
+                                        <input type="text" name="components[{{ $index }}][uom]" class="ui-input form-input"
                                             value="{{ $component['uom'] ?? '' }}" placeholder="gram/ml/pcs">
                                     </div>
                                     <div class="md:col-span-2">
@@ -155,8 +155,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">
-                    <a href="{{ $backUrl }}" class="btn btn-secondary">Batal</a>
-                    <button type="submit" class="btn btn-primary">
+                    <a href="{{ $backUrl }}" class="ui-btn ui-btn-ghost btn btn-secondary">Batal</a>
+                    <button type="submit" class="ui-btn ui-btn-primary btn btn-primary">
                         <i class="fas fa-save"></i> {{ $isBundleRecipe ? 'Update Resep Bundle' : 'Update Resep Produksi' }}
                     </button>
                 </div>
@@ -269,17 +269,17 @@
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                             <div class="md:col-span-5">
                                 <label class="form-label">Bahan</label>
-                                <select name="components[${rowIndex}][component_product_id]" class="form-input" required>
+                                <select name="components[${rowIndex}][component_product_id]" class="ui-input form-input" required>
                                     ${buildOptionsHtml()}
                                 </select>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Jumlah</label>
-                                <input type="number" name="components[${rowIndex}][quantity]" class="form-input" min="0.0001" step="0.0001" required>
+                                <input type="number" name="components[${rowIndex}][quantity]" class="ui-input form-input" min="0.0001" step="0.0001" required>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Satuan</label>
-                                <input type="text" name="components[${rowIndex}][uom]" class="form-input" placeholder="gram/ml/pcs">
+                                <input type="text" name="components[${rowIndex}][uom]" class="ui-input form-input" placeholder="gram/ml/pcs">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="form-label">Biaya</label>

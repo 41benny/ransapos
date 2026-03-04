@@ -14,7 +14,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.stocks.index') }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali ke Stok</span>
                 </a>
@@ -36,7 +36,7 @@
         </div>
 
         {{-- Filter Section --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-filter text-indigo-500 text-[10px]"></i>
@@ -53,7 +53,7 @@
                             <label
                                 class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
                             <select name="outlet_id"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">Semua Outlet</option>
                                 @foreach($outlets as $outlet)
                                     <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -67,7 +67,7 @@
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tipe
                                 Mutasi</label>
                             <select name="mutation_type"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">Semua Tipe</option>
                                 <option value="in" {{ request('mutation_type') == 'in' ? 'selected' : '' }}>Masuk (In)
                                 </option>
@@ -85,7 +85,7 @@
                             <label
                                 class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Referensi</label>
                             <select name="reference_type"
-                                class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">Semua</option>
                                 <option value="purchase" {{ request('reference_type') == 'purchase' ? 'selected' : '' }}>
                                     Pembelian</option>
@@ -101,7 +101,7 @@
                         <div class="flex flex-col gap-1.5 md:col-span-2">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Bahan Baku (Pilih Salah Satu)</label>
                             <select name="product_id" required
-                                class="tom-select w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                class="tom-select ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                                 <option value="">-- Pilih Bahan Baku --</option>
                                 @foreach($products as $prod)
                                     @if($prod->product_type === 'raw_material' || $prod->product_type === 'finished_good')
@@ -115,20 +115,20 @@
                         @else
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari Tanggal</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
                         
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai Tanggal</label>
-                            <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <input type="date" name="end_date" value="{{ request('end_date') }}" class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
                         
                         <div class="flex items-end gap-2">
-                            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            <button type="submit" class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                                 <i class="fas fa-search text-[10px]"></i>
                                 <span>Filter</span>
                             </button>
-                            <a href="{{ route('admin.stocks.mutations', ['tab' => $tab]) }}" class="inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                            <a href="{{ route('admin.stocks.mutations', ['tab' => $tab]) }}" class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                                 <i class="fas fa-redo text-[10px]"></i>
                             </a>
                         </div>
@@ -137,20 +137,20 @@
                         @if($tab === 'usage')
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari Tanggal</label>
-                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <input type="date" name="start_date" value="{{ request('start_date') }}" class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
                         
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai Tanggal</label>
-                            <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <input type="date" name="end_date" value="{{ request('end_date') }}" class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
                         
                         <div class="flex items-end gap-2 md:col-span-2">
-                            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            <button type="submit" class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                                 <i class="fas fa-search text-[10px]"></i>
                                 <span>Tampilkan Pemakaian</span>
                             </button>
-                            <a href="{{ route('admin.stocks.mutations', ['tab' => $tab]) }}" class="inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                            <a href="{{ route('admin.stocks.mutations', ['tab' => $tab]) }}" class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                                 <i class="fas fa-redo text-[10px]"></i>
                             </a>
                         </div>
@@ -163,7 +163,7 @@
                             Produk</label>
                         <input type="text" name="search" value="{{ request('search') }}"
                             placeholder="Cari berdasarkan nama produk atau SKU..."
-                            class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                     @endif
                 </form>
@@ -171,9 +171,9 @@
         </div>
 
         {{-- Mutations Table --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="ui-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
                         <tr>
                             @if($tab === 'usage')

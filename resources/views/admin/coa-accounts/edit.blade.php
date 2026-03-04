@@ -67,7 +67,7 @@
                     </label>
                     <select id="type" 
                             name="type" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
                             required>
                         <option value="income" {{ old('type', $coaAccount->type) == 'income' ? 'selected' : '' }}>Income (Pendapatan)</option>
                         <option value="expense" {{ old('type', $coaAccount->type) == 'expense' ? 'selected' : '' }}>Expense (Biaya)</option>
@@ -125,7 +125,7 @@
                     <textarea id="notes" 
                               name="notes" 
                               rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                               placeholder="Catatan tambahan">{{ old('notes', $coaAccount->notes) }}</textarea>
                 </div>
             </div>

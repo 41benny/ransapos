@@ -196,7 +196,7 @@
                         <form action="{{ route('admin.customers.add-points', $customer) }}" method="POST">
                             @csrf
                             <div class="flex gap-2">
-                                <input type="number" name="points" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Points to add" min="1" required>
+                                <input type="number" name="points" class="ui-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Points to add" min="1" required>
                                 <button type="submit" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-150 flex items-center">
                                     <i class="fas fa-plus mr-2"></i>Add
                                 </button>
@@ -205,7 +205,7 @@
                         <form action="{{ route('admin.customers.redeem-points', $customer) }}" method="POST">
                             @csrf
                             <div class="flex gap-2">
-                                <input type="number" name="points" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent" placeholder="Points to redeem" min="1" required>
+                                <input type="number" name="points" class="ui-input flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent" placeholder="Points to redeem" min="1" required>
                                 <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors duration-150 flex items-center">
                                     <i class="fas fa-gift mr-2"></i>Redeem
                                 </button>
@@ -223,7 +223,7 @@
                 <div class="p-6">
                     @if($customer->sales->count() > 0)
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="ui-table min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>

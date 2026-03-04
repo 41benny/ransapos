@@ -46,7 +46,7 @@
                         Parent Category
                     </label>
                     <select name="parent_id"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">-- None (Top Level) --</option>
                         @foreach($parentCategories as $parent)
                         <option value="{{ $parent->id }}"
@@ -66,7 +66,7 @@
                         COA Account
                     </label>
                     <select name="coa_account_id"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">-- Select COA Account --</option>
                         @foreach($coaAccounts as $account)
                         <option value="{{ $account->id }}"
@@ -108,7 +108,7 @@
                         Description
                     </label>
                     <textarea name="description" rows="3"
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('description', $expenseCategory->description) }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('description', $expenseCategory->description) }}</textarea>
                     @error('description')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror

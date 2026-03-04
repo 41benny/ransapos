@@ -73,7 +73,7 @@
                         </label>
                         <select id="transaction_category"
                                 name="transaction_category"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('transaction_category') border-red-500 @enderror"
+                                class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('transaction_category') border-red-500 @enderror"
                                 required>
                             <option value="general" {{ $transactionCategory === 'general' ? 'selected' : '' }}>Transaksi Umum</option>
                             <option value="purchase_payment" {{ $transactionCategory === 'purchase_payment' ? 'selected' : '' }}>Bayar Hutang Purchase</option>
@@ -90,7 +90,7 @@
                         </label>
                         <select id="cash_account_id"
                                 name="cash_account_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('cash_account_id') border-red-500 @enderror"
+                                class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('cash_account_id') border-red-500 @enderror"
                                 required>
                             <option value="">-- Pilih Akun --</option>
                             @foreach($accounts as $account)
@@ -109,7 +109,7 @@
                             Jenis Transaksi <span class="text-red-500">*</span>
                         </label>
                         <select id="type_display"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
+                                class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
                                 required>
                             <option value="">-- Pilih Jenis --</option>
                             <option value="in" {{ old('type') === 'in' ? 'selected' : '' }}>Kas Masuk</option>
@@ -128,7 +128,7 @@
                                id="transaction_date"
                                name="transaction_date"
                                value="{{ old('transaction_date', date('Y-m-d')) }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('transaction_date') border-red-500 @enderror"
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('transaction_date') border-red-500 @enderror"
                                required>
                         @error('transaction_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -171,7 +171,7 @@
                                         <td class="px-4 py-3 text-gray-500" data-role="row-number">{{ $i + 1 }}</td>
                                         <td class="px-4 py-3">
                                             <select name="rows[{{ $i }}][coa_account_id]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
+                                                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
                                                     data-role="coa"
                                                     data-selected="{{ $row['coa_account_id'] ?? '' }}"
                                                     required>
@@ -185,7 +185,7 @@
                                             <input type="text"
                                                    name="rows[{{ $i }}][description]"
                                                    value="{{ $row['description'] ?? '' }}"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.description') border-red-500 @enderror"
+                                                   class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.description') border-red-500 @enderror"
                                                    placeholder="Contoh: Pembayaran listrik"
                                                    required>
                                             @error('rows.'.$i.'.description')
@@ -240,7 +240,7 @@
                         <textarea id="notes"
                                   name="notes"
                                   rows="3"
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
+                                  class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
                                   placeholder="Catatan untuk seluruh transaksi (opsional)">{{ old('notes') }}</textarea>
                         @error('notes')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -260,7 +260,7 @@
                             </label>
                             <select id="purchase_id"
                                     name="purchase_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
+                                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
                                 <option value="">-- Pilih Purchase --</option>
                                 @foreach($outstandingPurchases as $purchase)
                                     <option value="{{ $purchase->id }}"
@@ -286,7 +286,7 @@
                                    id="purchase_description"
                                    name="purchase_description"
                                    value="{{ old('purchase_description') }}"
-                                   class="w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_description') border-red-500 @enderror"
+                                   class="ui-input w-full px-3 py-2 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_description') border-red-500 @enderror"
                                    placeholder="Otomatis terisi setelah pilih purchase"
                                    required>
                             @error('purchase_description')
@@ -306,7 +306,7 @@
                                    value="{{ old('purchase_amount') }}"
                                    inputmode="decimal"
                                    data-currency-input="1"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_amount') border-red-500 @enderror"
+                                   class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_amount') border-red-500 @enderror"
                                    placeholder="0">
                             @error('purchase_amount')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -320,7 +320,7 @@
                             <textarea id="purchase_notes"
                                       name="purchase_notes"
                                       rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
+                                      class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
                                       placeholder="Catatan tambahan (opsional)">{{ old('purchase_notes') }}</textarea>
                             @error('purchase_notes')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -341,7 +341,7 @@
                         </label>
                         <select id="transfer_to_cash_account_id"
                                 name="transfer_to_cash_account_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_to_cash_account_id') border-red-500 @enderror">
+                                class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_to_cash_account_id') border-red-500 @enderror">
                             <option value="">-- Pilih Rekening Tujuan --</option>
                             @foreach($accounts as $account)
                                 <option value="{{ $account->id }}" {{ (string) old('transfer_to_cash_account_id') === (string) $account->id ? 'selected' : '' }}>
@@ -365,7 +365,7 @@
                                    value="{{ old('transfer_amount') }}"
                                    inputmode="decimal"
                                    data-currency-input="1"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_amount') border-red-500 @enderror"
+                                   class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_amount') border-red-500 @enderror"
                                    placeholder="0">
                             @error('transfer_amount')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -378,7 +378,7 @@
                             <textarea id="transfer_notes"
                                       name="transfer_notes"
                                       rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_notes') border-red-500 @enderror"
+                                      class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_notes') border-red-500 @enderror"
                                       placeholder="Catatan pindah buku (opsional)">{{ old('transfer_notes') }}</textarea>
                             @error('transfer_notes')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -394,7 +394,7 @@
                                id="transfer_description"
                                name="transfer_description"
                                value="{{ old('transfer_description') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_description') border-red-500 @enderror"
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 @error('transfer_description') border-red-500 @enderror"
                                placeholder="Contoh: Pindah modal operasional outlet"
                                maxlength="500">
                         @error('transfer_description')
@@ -424,7 +424,7 @@
         <td class="px-4 py-3 text-gray-500" data-role="row-number"></td>
         <td class="px-4 py-3">
             <select name="rows[__INDEX__][coa_account_id]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     data-role="coa"
                     required>
                 <option value="">-- Pilih Akun --</option>
@@ -433,7 +433,7 @@
         <td class="px-4 py-3">
             <input type="text"
                    name="rows[__INDEX__][description]"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                   class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                    placeholder="Contoh: Pembayaran listrik"
                    required>
         </td>

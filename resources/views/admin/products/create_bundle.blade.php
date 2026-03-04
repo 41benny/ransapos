@@ -493,7 +493,7 @@
     <!-- Modal Templates (Outlet & User) -->
     <div id="outletModal"
         class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+        <div class="ui-card bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
             <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
                 <h3 class="text-sm font-bold text-gray-900">Pilih Outlet</h3>
                 <button type="button" class="close-modal text-gray-400 hover:text-gray-600" data-target="outletModal"><i
@@ -519,7 +519,7 @@
 
     <div id="userModal"
         class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm p-4 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
+        <div class="ui-card bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md">
             <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-lg">
                 <h3 class="text-sm font-bold text-gray-900">Pilih Pengguna</h3>
                 <button type="button" class="close-modal text-gray-400 hover:text-gray-600" data-target="userModal"><i

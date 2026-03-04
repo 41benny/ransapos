@@ -82,7 +82,7 @@
                 @endif
                 <div class="{{ $isStockMovement ? 'md:col-span-2' : 'md:col-span-5' }} flex items-center gap-2">
                     <button type="submit"
-                        class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                        class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
                         <i class="fas fa-sync-alt text-xs"></i>
                         TAMPILKAN
                     </button>
@@ -151,7 +151,7 @@
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-4 py-3">Metode Pembayaran</th>
@@ -514,7 +514,7 @@
 
                 @if(($summary['view_mode'] ?? 'summary') === 'summary')
                     <div class="overflow-x-auto rounded-xl border border-slate-200">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                                 <tr>
                                     <th class="px-4 py-3">Tipe Penjualan</th>
@@ -547,7 +547,7 @@
                     </div>
                 @else
                     <div class="overflow-x-auto rounded-xl border border-slate-200">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                                 <tr>
                                     <th class="px-4 py-3">No Transaksi</th>
@@ -1261,17 +1261,17 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                    <a class="ui-btn ui-btn-ghost inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.stocks.mutations', array_filter(array_merge($stockAuditBase, ['reference_scope' => 'sales_cogs']))) }}">
                         <i class="fas fa-percent text-xs"></i>
                         Audit HPP Penjualan (Kotor+Reversal)
                     </a>
-                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                    <a class="ui-btn ui-btn-ghost inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.stocks.mutations', $stockAuditBase) }}">
                         <i class="fas fa-list-ul text-xs"></i>
                         Audit Mutasi Stok
                     </a>
-                    <a class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                    <a class="ui-btn ui-btn-ghost inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
                         href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'sales-vs-hpp'], $auditBase))) }}">
                         <i class="fas fa-balance-scale text-xs"></i>
                         Audit Sales vs HPP

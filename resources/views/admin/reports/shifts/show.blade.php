@@ -9,7 +9,7 @@
 <!-- Back Button -->
 <div class="mb-4 no-print">
     <a href="{{ route('admin.reports.shifts.index', ['tab' => request('tab', 'penjualan')]) }}"
-       class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+       class="ui-btn ui-btn-ghost inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
        aria-label="Kembali ke Index Shift"
        title="Kembali ke Index Shift">
         <i class="fas fa-arrow-left text-sm"></i>
@@ -17,7 +17,7 @@
 </div>
 
 <!-- Print Header -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 print-header">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 print-header">
     <div class="text-center print-only hidden mb-6">
         <h1 class="text-2xl font-normal text-gray-900">DETAIL SHIFT KASIR</h1>
         <p class="text-gray-600 mt-1">{{ $cashSession->session_number }}</p>
@@ -117,7 +117,7 @@
 </div>
 
 <!-- Summary Box -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h3 class="text-lg font-normal text-gray-900 mb-4">Ringkasan Penjualan</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-gray-50 rounded-lg p-4">
@@ -138,7 +138,7 @@
 </div>
 
 <!-- Diagnostics Box -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h3 class="text-lg font-normal text-gray-900 mb-4">Diagnostics Shift</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-slate-50 rounded-lg p-4">
@@ -169,7 +169,7 @@
 
 <!-- Payment Breakdown -->
 @if($paymentBreakdown->count() > 0)
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h3 class="text-lg font-normal text-gray-900 mb-4">Breakdown Pembayaran</h3>
     <div class="grid grid-cols-1 md:grid-cols-{{ min($paymentBreakdown->count(), 4) }} gap-4">
         @foreach($paymentBreakdown as $breakdown)
@@ -185,10 +185,10 @@
 
 <!-- Top Products -->
 @if($topProducts->count() > 0)
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h3 class="text-lg font-normal text-gray-900 mb-4">Top 10 Produk di Shift Ini</h3>
     <div class="overflow-x-auto">
-        <table class="imperial-table w-full">
+        <table class="ui-table imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-normal text-gray-600 uppercase">Produk</th>
@@ -213,20 +213,20 @@
 @endif
 
 <!-- Transactions List -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100">
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-normal text-gray-900">Daftar Transaksi</h3>
             <div class="no-print flex items-center gap-2">
                 <a href="{{ route('admin.reports.shifts.show.export', ['cashSession' => $cashSession, 'format' => 'xlsx']) }}"
-                    class="px-4 py-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-lg transition">
+                    class="ui-btn ui-btn-ghost px-4 py-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded-lg transition">
                     Export Excel
                 </a>
                 <a href="{{ route('admin.reports.shifts.show.export', ['cashSession' => $cashSession, 'format' => 'pdf']) }}"
-                    class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition">
+                    class="ui-btn ui-btn-ghost px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition">
                     Export PDF
                 </a>
-                <button type="button" onclick="window.print()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+                <button type="button" onclick="window.print()" class="ui-btn ui-btn-primary px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
                     <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
@@ -237,7 +237,7 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class="imperial-table w-full">
+        <table class="ui-table imperial-table w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Waktu</th>

@@ -10,7 +10,7 @@
             @csrf
             @method('PUT')
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900">Informasi Produk</h3>
                     <p class="text-sm text-gray-500 mt-1">Perbarui data produk {{ $product->name }}</p>
@@ -81,7 +81,7 @@
                                         Kategori <span class="text-red-500">*</span>
                                     </label>
                                     <select name="category_id" id="category_id"
-                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('category_id') border-red-500 @enderror"
+                                        class="ui-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('category_id') border-red-500 @enderror"
                                         required>
                                         <option value="">-- Pilih Kategori --</option>
                                         @foreach($categories as $category)
@@ -100,7 +100,7 @@
                                         Jenis Produk <span class="text-red-500">*</span>
                                     </label>
                                     <select name="product_type" id="product_type"
-                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('product_type') border-red-500 @enderror"
+                                        class="ui-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('product_type') border-red-500 @enderror"
                                         required>
                                         <option value="finished_good" {{ old('product_type', $product->product_type) == 'finished_good' ? 'selected' : '' }}>Produk Jadi
                                         </option>
@@ -130,7 +130,7 @@
                                     Deskripsi
                                 </label>
                                 <textarea name="description" id="description" rows="3"
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('description') border-red-500 @enderror"
+                                    class="ui-input w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('description') border-red-500 @enderror"
                                     placeholder="Deskripsi produk (opsional)">{{ old('description', $product->description) }}</textarea>
                                 @error('description')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -237,7 +237,7 @@
                                             Pilih outlet
                                         </label>
                                         <select name="pos_outlet_ids[]" id="pos_outlet_ids" multiple
-                                            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-32">
+                                            class="ui-input w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-32">
                                             @foreach($outlets as $outlet)
                                                 <option value="{{ $outlet->id }}" {{ in_array($outlet->id, old('pos_outlet_ids', $product->pos_outlet_ids ?? [])) ? 'selected' : '' }}>
                                                     {{ $outlet->name }}
@@ -317,7 +317,7 @@
                                                         class="form-input rounded-l-none flex-1 text-sm @if($levelKey === 'regular') bg-blue-50/30 border-blue-200 font-semibold @endif price-default-input"
                                                         data-level="{{ $levelKey }}" placeholder="0">
                                                 </div>
-                                                <button type="button" class="btn btn-secondary btn-sm copy-to-all-outlets-btn"
+                                                <button type="button" class="ui-btn ui-btn-secondary ui-btn-sm btn btn-secondary btn-sm copy-to-all-outlets-btn"
                                                     data-level="{{ $levelKey }}"
                                                     title="Salin harga default ke semua outlet yang dipilih">
                                                     <i class="fas fa-copy mr-1"></i>Copy ke Semua
@@ -417,11 +417,11 @@
 
                     <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">
                         <a href="{{ session('product_index_url', route('admin.products.index')) }}"
-                            class="px-5 py-2.5 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition">
+                            class="ui-btn ui-btn-ghost px-5 py-2.5 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition">
                             Batal
                         </a>
                         <button type="submit"
-                            class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
+                            class="ui-btn ui-btn-primary px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>

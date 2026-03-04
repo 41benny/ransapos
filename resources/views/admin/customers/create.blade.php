@@ -29,7 +29,7 @@
                             Name <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="name" value="{{ old('name') }}" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror">
+                               class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror">
                         @error('name')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -40,7 +40,7 @@
                             Phone <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="phone" value="{{ old('phone') }}" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('phone') border-red-500 @enderror">
+                               class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('phone') border-red-500 @enderror">
                         @error('phone')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -49,7 +49,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
                         <input type="email" name="email" value="{{ old('email') }}"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('email') border-red-500 @enderror">
+                               class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('email') border-red-500 @enderror">
                         @error('email')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -58,7 +58,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Birth Date</label>
                         <input type="date" name="birth_date" value="{{ old('birth_date') }}"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('birth_date') border-red-500 @enderror">
+                               class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('birth_date') border-red-500 @enderror">
                         @error('birth_date')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -68,7 +68,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
                     <textarea name="address" rows="3"
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
                     @error('address')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -82,7 +82,7 @@
                             Customer Type <span class="text-red-500">*</span>
                         </label>
                         <select name="customer_type" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('customer_type') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('customer_type') border-red-500 @enderror">
                             <option value="">Select Type</option>
                             <option value="regular" {{ old('customer_type') == 'regular' ? 'selected' : '' }}>Regular</option>
                             <option value="member" {{ old('customer_type') == 'member' ? 'selected' : '' }}>Member</option>
@@ -96,7 +96,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Member Tier</label>
                         <select name="member_tier"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('member_tier') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('member_tier') border-red-500 @enderror">
                             <option value="">Auto (based on spending)</option>
                             <option value="bronze" {{ old('member_tier') == 'bronze' ? 'selected' : '' }}>Bronze</option>
                             <option value="silver" {{ old('member_tier') == 'silver' ? 'selected' : '' }}>Silver</option>
@@ -111,7 +111,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                         <select name="gender"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('gender') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('gender') border-red-500 @enderror">
                             <option value="">Select Gender</option>
                             <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
@@ -137,7 +137,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                     <textarea name="notes" rows="3"
                               placeholder="Preferences, allergies, special requirements..."
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
                     @error('notes')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror

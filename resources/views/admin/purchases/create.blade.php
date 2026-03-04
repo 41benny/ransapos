@@ -14,7 +14,7 @@
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.purchases.index') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 <span>Kembali</span>
             </a>
@@ -51,7 +51,7 @@
         @csrf
 
         {{-- Info Card --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-info-circle text-indigo-500 text-[10px]"></i>
@@ -62,7 +62,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet Tujuan <span class="text-rose-500">*</span></label>
-                        <select name="outlet_id" required class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                        <select name="outlet_id" required class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih outlet...</option>
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -74,7 +74,7 @@
 
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Supplier <span class="text-rose-500">*</span></label>
-                        <select name="supplier_id" required class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                        <select name="supplier_id" required class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <option value="">Pilih supplier...</option>
                             @foreach($suppliers as $supplier)
                                 <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
@@ -87,26 +87,26 @@
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Tanggal Pembelian <span class="text-rose-500">*</span></label>
                         <input type="date" name="purchase_date" value="{{ old('purchase_date', date('Y-m-d')) }}" required
-                               class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                               class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Item Card --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-shopping-basket text-indigo-500 text-[10px]"></i>
                     <h3 class="text-xs font-normal text-slate-400 uppercase tracking-widest leading-none">Daftar Item Pembelian</h3>
                 </div>
-                <button type="button" onclick="addItem()" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                <button type="button" onclick="addItem()" class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-plus"></i>
                     <span>TAMBAH ITEM</span>
                 </button>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200" id="itemsTable">
+                <table class="ui-table min-w-full divide-y divide-slate-200" id="itemsTable">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-400">Pilih Produk</th>
@@ -130,30 +130,30 @@
         {{-- Summary Grid --}}
         <div class="flex flex-col lg:flex-row gap-6">
             {{-- Notes & Adjustments --}}
-            <div class="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div class="ui-card w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Pajak (Tax Rp)</label>
                         <input type="text" name="tax_amount" value="{{ old('tax_amount', 0) }}" inputmode="decimal" data-currency-input="1"
                                onchange="calculateTotal()" id="taxAmount"
-                               class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                               class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Diskon Global (Rp)</label>
                         <input type="text" name="discount_amount" value="{{ old('discount_amount', 0) }}" inputmode="decimal" data-currency-input="1"
                                onchange="calculateTotal()" id="discountAmount"
-                               class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                               class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
                     </div>
                 </div>
                 <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan Tambahan</label>
                     <textarea name="notes" rows="3" placeholder="Contoh: Pembayaran tempo 30 hari..."
-                              class="w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes') }}</textarea>
+                              class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes') }}</textarea>
                 </div>
             </div>
 
             {{-- Calculations --}}
-            <div class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
+            <div class="ui-card w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-hidden flex flex-col justify-between">
                 <div class="space-y-4">
                     <div class="flex justify-between items-center text-sm font-normal text-slate-500">
                         <span class="uppercase tracking-widest">Subtotal Item</span>
@@ -181,7 +181,7 @@
         <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
             <a href="{{ route('admin.purchases.index') }}" class="text-sm font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest mr-2">Batalkan</a>
             <button type="submit" id="submitPurchaseBtn"
-                class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-10 py-3.5 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
+                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-10 py-3.5 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
                 <i class="fas fa-check text-[10px]"></i>
                 <span>Simpan Transaksi Pembelian</span>
             </button>
@@ -379,7 +379,7 @@ function addItem(initialData = {}) {
                        placeholder="Ketik nama atau SKU..."
                        oninput="syncProductInput(${currentIndex})"
                        onchange="syncProductInput(${currentIndex}, true)"
-                       class="w-full px-4 py-2 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                       class="ui-input w-full px-4 py-2 text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                 <input type="hidden" name="items[${currentIndex}][product_id]" id="product-id-${currentIndex}" value="${escapeHtml(selectedProductId)}">
                 <p class="text-[9px] text-slate-400 font-normal italic tracking-wider ml-1">Suggestion master produk otomatis muncul saat mengetik.</p>
             </div>
@@ -387,17 +387,17 @@ function addItem(initialData = {}) {
         <td class="px-5 py-4">
             <input type="number" name="items[${currentIndex}][quantity]" value="${quantity}" min="0.01" step="0.01" required
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="qty-${currentIndex}">
+                   class="ui-input w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="qty-${currentIndex}">
         </td>
         <td class="px-5 py-4">
             <input type="text" name="items[${currentIndex}][unit_price]" value="${unitPrice}" inputmode="decimal" data-currency-input="1" required
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="price-${currentIndex}">
+                   class="ui-input w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="price-${currentIndex}">
         </td>
         <td class="px-5 py-4">
             <input type="text" name="items[${currentIndex}][discount_amount]" value="${discountAmount}" inputmode="decimal" data-currency-input="1"
                    onchange="calculateItemSubtotal(${currentIndex})"
-                   class="w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="discount-${currentIndex}">
+                   class="ui-input w-full h-10 px-3 text-right text-sm font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums" id="discount-${currentIndex}">
         </td>
         <td class="px-5 py-4 text-right">
             <span class="text-sm font-normal text-slate-800 tabular-nums" id="subtotal-${currentIndex}">Rp 0</span>

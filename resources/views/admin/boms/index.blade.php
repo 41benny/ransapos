@@ -21,7 +21,7 @@
             </div>
         @endif
 
-        <div class="card p-0 overflow-hidden">
+        <div class="ui-card card p-0 overflow-hidden">
             <!-- Header -->
             <div
                 class="px-6 py-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/30">
@@ -58,7 +58,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('admin.boms.create', ['source_type' => 'production', 'return_to' => request()->fullUrl()]) }}" class="btn btn-primary shadow-lg shadow-blue-500/20">
+                    <a href="{{ route('admin.boms.create', ['source_type' => 'production', 'return_to' => request()->fullUrl()]) }}" class="ui-btn ui-btn-primary btn btn-primary shadow-lg shadow-blue-500/20">
                         <i class="fas fa-plus"></i>
                         <span>Buat Resep Produksi</span>
                     </a>
@@ -67,7 +67,7 @@
 
             <!-- Table -->
             <div class="table-container border-x-0 border-b-0 rounded-none">
-                <table class="table-modern">
+                <table class="ui-table table-modern">
                     <thead>
                         <tr>
                             <th class="pl-6 w-16">ID</th>
@@ -132,11 +132,13 @@
                                 </td>
                                 <td class="text-center pr-6">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('admin.boms.show', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-info btn-sm px-2.5"
+                                        <a href="{{ route('admin.boms.show', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}"
+                                            class="ui-action-icon ui-action-view"
                                             title="Lihat Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-warning btn-sm px-2.5"
+                                        <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $activeSourceType, 'return_to' => request()->fullUrl()]) }}"
+                                            class="ui-action-icon ui-action-edit"
                                             title="Edit Resep">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -144,7 +146,9 @@
                                             onsubmit="return confirm('Yakin hapus BOM ini? Aksi ini tidak dapat dibatalkan.')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm px-2.5" title="Hapus Permanen">
+                                            <button type="submit"
+                                                class="ui-action-icon ui-action-delete"
+                                                title="Hapus Permanen">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </form>
@@ -160,7 +164,7 @@
                                         </div>
                                         <h3 class="text-gray-900 font-medium mb-1">Belum ada Resep Produk</h3>
                                         <p class="text-gray-500 text-sm mb-4">Mulai dengan membuat BOM untuk produk Anda.</p>
-                                        <a href="{{ route('admin.boms.create') }}" class="btn btn-primary btn-sm">
+                                        <a href="{{ route('admin.boms.create') }}" class="ui-btn ui-btn-primary btn btn-primary btn-sm">
                                             <i class="fas fa-plus"></i> Buat Resep Baru
                                         </a>
                                     </div>

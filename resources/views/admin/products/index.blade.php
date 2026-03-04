@@ -16,14 +16,14 @@
             <div class="flex items-center gap-3 no-print">
                 <button
                     onclick="document.getElementById('importModal').classList.remove('hidden'); document.getElementById('importModal').style.display = 'block';"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-file-import text-[10px] text-slate-400"></i>
                     <span>Import Excel</span>
                 </button>
 
                 <div class="relative" id="productCreateDropdownWrapper">
                     <button type="button" id="productCreateDropdownButton"
-                        class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                        class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                         <i class="fas fa-plus text-[10px]"></i>
                         <span>Tambah Baru</span>
                         <i class="fas fa-chevron-down text-[8px] ml-1 opacity-70"></i>
@@ -61,9 +61,9 @@
         @endif
 
         {{-- Main Table Area --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200" id="productsTable">
+                <table class="ui-table min-w-full divide-y divide-slate-200" id="productsTable">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-700 resizable group"
@@ -103,27 +103,27 @@
                         <tr class="bg-white border-b border-slate-100 no-print">
                             <td class="px-3 py-2">
                                 <input type="text" data-name="sku" placeholder="Cari SKU..."
-                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="name" placeholder="Cari nama produk..."
-                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="category" placeholder="Kategori..."
-                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="price" placeholder="Harga..."
-                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="unit" placeholder="Satuan..."
-                                    class="filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-center">
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-center">
                             </td>
                             <td class="px-3 py-2">
                                 <select data-name="status"
-                                    class="filter-input w-full px-2 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
+                                    class="ui-input filter-input w-full px-2 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
                                     <option value="">Semua</option>
                                     <option value="aktif">Aktif</option>
                                     <option value="nonaktif">Nonaktif</option>
@@ -131,7 +131,7 @@
                             </td>
                             <td class="px-3 py-2 text-center">
                                 <button type="button" id="clearFilters" title="Reset filter"
-                                    class="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-rose-50 transition-all">
+                                    class="ui-btn ui-btn-ghost h-8 w-8 inline-flex items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:text-rose-500 hover:bg-rose-50 transition-all">
                                     <i class="fas fa-times-circle text-[12px]"></i>
                                 </button>
                             </td>
@@ -179,7 +179,7 @@
                                 <td class="px-5 py-3.5 text-center">
                                     <div class="relative inline-block text-left product-actions-dropdown">
                                         <button type="button"
-                                            class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                            class="action-dropdown-btn ui-btn ui-btn-ghost ui-btn-sm inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                             <span>Aksi</span>
                                             <i class="fas fa-chevron-down text-[8px] text-slate-400"></i>
                                         </button>

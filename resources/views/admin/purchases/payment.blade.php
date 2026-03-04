@@ -22,7 +22,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.purchases.show', $purchase) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali</span>
                 </a>
@@ -41,7 +41,7 @@
             {{-- Side info: Stats & History --}}
             <div class="md:col-span-4 space-y-6">
                 {{-- Summary Stats --}}
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="p-6 space-y-6">
                         <div class="flex flex-col gap-1">
                             <span class="text-[9px] font-normal text-slate-400 uppercase tracking-widest">Sisa
@@ -71,7 +71,7 @@
 
                 {{-- History List --}}
                 @if($purchase->cashTransactions && $purchase->cashTransactions->count() > 0)
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                             <div class="flex items-center gap-2">
                                 <i class="fas fa-history text-indigo-500 text-[10px]"></i>
@@ -100,10 +100,10 @@
                 @endif
             </div>
 
-            {{-- Form Area --}}
+                {{-- Form Area --}}
             <div class="md:col-span-8">
                 @if($remaining > 0)
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                             <div class="flex items-center gap-2">
                                 <i class="fas fa-plus-circle text-indigo-500 text-[10px]"></i>
@@ -122,7 +122,7 @@
                                             class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Bayar
                                             Dari Akun <span class="text-rose-500">*</span></label>
                                         <select name="cash_account_id" required
-                                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
                                             <option value="">-- Pilih Akun Kas/Bank --</option>
                                             @foreach($cashAccounts as $account)
                                                 <option value="{{ $account->id }}" {{ old('cash_account_id') == $account->id ? 'selected' : '' }}>
@@ -142,7 +142,7 @@
                                             Bayar <span class="text-rose-500">*</span></label>
                                         <input type="date" name="transaction_date"
                                             value="{{ old('transaction_date', date('Y-m-d')) }}" required
-                                            class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
+                                            class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">
                                     </div>
                                 </div>
 
@@ -155,7 +155,7 @@
                                             class="absolute left-4 top-1/2 -translate-y-1/2 text-[11.5px] font-normal text-slate-400 group-focus-within:text-indigo-500 transition-colors">Rp</span>
                                         <input type="number" name="amount" value="{{ old('amount', $remaining) }}" step="0.01"
                                             min="0.01" max="{{ $remaining }}" required
-                                            class="w-full pl-10 pr-4 py-3 text-[14px] font-normal bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all tabular-nums">
+                                            class="ui-input w-full pl-10 pr-4 py-3 text-[14px] font-normal bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all tabular-nums">
                                     </div>
                                     <p class="text-[9px] text-slate-400 italic font-normal ml-1">Nilai maksimal: Rp
                                         {{ number_format($remaining, 0, ',', '.') }}</p>
@@ -168,15 +168,15 @@
                                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Catatan
                                         Tambahan</label>
                                     <textarea name="notes" rows="3" placeholder="Contoh: Pembayaran cicilan ke-2..."
-                                        class="w-full px-4 py-3 text-xs font-normal bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes') }}</textarea>
+                                        class="ui-input w-full px-4 py-3 text-xs font-normal bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm">{{ old('notes') }}</textarea>
                                 </div>
                             </div>
 
                             <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3">
                                 <a href="{{ route('admin.purchases.show', $purchase) }}"
-                                    class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest mr-2">Batalkan</a>
+                                    class="ui-btn ui-btn-ghost text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest mr-2">Batalkan</a>
                                 <button type="submit"
-                                    class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
+                                    class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
                                     <i class="fas fa-check-circle text-[10px]"></i>
                                     <span>Simpan Pembayaran</span>
                                 </button>
@@ -193,7 +193,7 @@
                         <p class="text-xs font-normal text-slate-500 max-w-sm leading-relaxed mb-8">Pembelian ini telah dibayar
                             penuh. Tidak ada sisa tagihan yang perlu diselesaikan.</p>
                         <a href="{{ route('admin.purchases.show', $purchase) }}"
-                            class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
+                            class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 uppercase tracking-widest">
                             <span>Kembali ke Detail</span>
                             <i class="fas fa-arrow-right text-[10px]"></i>
                         </a>

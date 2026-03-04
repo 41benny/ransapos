@@ -148,8 +148,8 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2"
-            style="--dash-accent:#ea580c;--dash-accent-2:#f59e0b;--dash-accent-soft:rgba(234,88,12,0.13);">
+        <div class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2"
+            style="--dash-accent:#2563eb;--dash-accent-2:#3b82f6;--dash-accent-soft:rgba(37,99,235,0.16);">
             <div class="dash-card-head flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
@@ -243,8 +243,8 @@
         </div>
     </div>
 
-    <div id="outletPanel" class="dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-        style="--dash-accent:#ea580c;--dash-accent-2:#fb923c;--dash-accent-soft:rgba(234,88,12,0.13);">
+    <div id="outletPanel" class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+        style="--dash-accent:#2563eb;--dash-accent-2:#60a5fa;--dash-accent-soft:rgba(37,99,235,0.16);">
         <div class="dash-card-head flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
@@ -269,8 +269,8 @@
     <style>
         .dashboard-hero {
             background-image:
-                radial-gradient(circle at top right, rgba(249, 115, 22, 0.16), transparent 42%),
-                radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.1), transparent 38%);
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 42%),
+                radial-gradient(circle at bottom left, rgba(96, 165, 250, 0.1), transparent 38%);
         }
 
         .dash-panel {
@@ -286,7 +286,7 @@
             left: 0;
             width: 100%;
             height: 3px;
-            background: linear-gradient(90deg, var(--dash-accent, #ec4913), var(--dash-accent-2, #fb923c));
+            background: linear-gradient(90deg, var(--dash-accent, #2563eb), var(--dash-accent-2, #60a5fa));
         }
 
         .dash-panel:hover {
@@ -299,11 +299,36 @@
             margin: -0.5rem -0.5rem 1rem;
             padding: 0.75rem 0.75rem;
             border-radius: 0.9rem;
-            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236, 73, 19, 0.12)), rgba(255, 255, 255, 0));
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(37, 99, 235, 0.14)), rgba(255, 255, 255, 0));
         }
 
         .table-head-accent {
-            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(236, 73, 19, 0.12)), rgba(248, 250, 252, 0.85));
+            background: linear-gradient(90deg, var(--dash-accent-soft, rgba(37, 99, 235, 0.14)), rgba(248, 250, 252, 0.85));
+        }
+
+        .dark .dash-panel {
+            border-color: #334155;
+            background-color: #111827;
+        }
+
+        .dark .dash-panel:hover {
+            box-shadow: 0 14px 32px -18px rgba(2, 6, 23, 0.7);
+            border-color: #475569;
+        }
+
+        .dark .dash-card-head {
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.16), rgba(15, 23, 42, 0));
+        }
+
+        .dark #hourlyBars,
+        .dark #outletBars {
+            background: transparent;
+        }
+
+        .dark .apexcharts-tooltip {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
         }
 
         .hourly-chart-container {
@@ -439,6 +464,17 @@
             const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0, });
             const hourlyPalette = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
             const hourlyOthersColor = '#94A3B8';
+            const chartBlue = '#3b82f6';
+            const isDarkTheme = () => document.documentElement.classList.contains('dark');
+            const getChartTheme = () => {
+                const dark = isDarkTheme();
+                return {
+                    dark,
+                    axisText: dark ? '#94a3b8' : '#94a3b8',
+                    grid: dark ? 'rgba(148, 163, 184, 0.2)' : '#f1f5f9',
+                    tooltipTheme: dark ? 'dark' : 'light',
+                };
+            };
             let timer = null; let isLoading = false; let hourlyTooltipEl = null;
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text; statusTextEl.className = 'text-xs';
@@ -509,6 +545,7 @@
             function renderVelocityChart({ series, labels }) {
                 const isStacked = series.length > 1;
                 const hasData = series.some(s => s.data.some(v => v > 0));
+                const chartTheme = getChartTheme();
 
                 hourlyEmptyEl.classList.toggle('hidden', hasData);
 
@@ -522,12 +559,14 @@
                             toolbar: { show: false },
                             zoom: { enabled: false },
                             fontFamily: 'Inter, sans-serif',
+                            background: 'transparent',
                             animations: {
                                 enabled: true,
                                 easing: 'easeinout',
                                 speed: 800,
                             }
                         },
+                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
                         dataLabels: { enabled: false },
                         stroke: {
                             curve: 'smooth',
@@ -550,7 +589,7 @@
                         xaxis: {
                             categories: labels,
                             labels: {
-                                style: { colors: '#94a3b8', fontSize: '10px' },
+                                style: { colors: chartTheme.axisText, fontSize: '10px' },
                                 rotate: 0,
                                 hideOverlappingLabels: true,
                             },
@@ -564,32 +603,53 @@
                                     if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
                                     return val;
                                 },
-                                style: { colors: '#94a3b8', fontSize: '10px' }
+                                style: { colors: chartTheme.axisText, fontSize: '10px' }
                             },
                             tickAmount: 4,
                         },
                         grid: {
-                            borderColor: '#f1f5f9',
+                            borderColor: chartTheme.grid,
                             strokeDashArray: 4,
                             padding: { left: 10, right: 10 }
                         },
                         tooltip: {
-                            theme: 'light',
+                            theme: chartTheme.tooltipTheme,
                             x: { show: true },
                             y: {
                                 formatter: (val) => idr.format(val)
                             }
                         },
-                        colors: isStacked ? hourlyPalette : ['#4F46E5']
+                        colors: isStacked ? hourlyPalette : [chartBlue]
                     };
 
                     hourlyChart = new ApexCharts(document.querySelector("#hourlyBars"), options);
                     hourlyChart.render();
                 } else {
+                    const chartTheme = getChartTheme();
                     hourlyChart.updateOptions({
                         chart: { stacked: isStacked },
-                        xaxis: { categories: labels },
-                        colors: isStacked ? hourlyPalette : ['#4F46E5']
+                        xaxis: {
+                            categories: labels,
+                            labels: {
+                                style: { colors: chartTheme.axisText, fontSize: '10px' },
+                                rotate: 0,
+                                hideOverlappingLabels: true,
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                                    return val;
+                                },
+                                style: { colors: chartTheme.axisText, fontSize: '10px' }
+                            }
+                        },
+                        grid: { borderColor: chartTheme.grid },
+                        tooltip: { theme: chartTheme.tooltipTheme },
+                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
+                        colors: isStacked ? hourlyPalette : [chartBlue]
                     });
                     hourlyChart.updateSeries(series);
                 }
@@ -624,7 +684,7 @@
                                                                                                                                                                         <span class="text-sm font-bold text-slate-900">${idr.format(amount)}</span>
                                                                                                                                                                     </div>
                                                                                                                                                                     <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                                                                                                                                                        <div class="bg-orange-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-orange-600 relative" style="width: ${pct}%">
+                                                                                                                                                                        <div class="bg-blue-500 h-2.5 rounded-full transition-all duration-700 ease-out group-hover:bg-blue-600 relative" style="width: ${pct}%">
                                                                                                                                                                         </div>
                                                                                                                                                                     </div>
                                                                                                                                                             `;
@@ -733,6 +793,7 @@
             function renderOutletRows(rows, isAllOutlets) {
                 outletPanelEl.classList.toggle('hidden', !isAllOutlets);
                 if (!isAllOutlets) return;
+                const chartTheme = getChartTheme();
 
                 const amounts = rows.map(x => Number(x.amount || 0));
                 const labels = rows.map(x => simplifyOutletName(x.outlet_name));
@@ -752,17 +813,19 @@
                             toolbar: { show: false },
                             zoom: { enabled: false },
                             fontFamily: 'Inter, sans-serif',
+                            background: 'transparent',
                             animations: {
                                 enabled: true,
                                 easing: 'easeinout',
                                 speed: 800,
                             }
                         },
+                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
                         dataLabels: { enabled: false },
                         stroke: {
                             curve: 'smooth',
                             width: 3,
-                            colors: ['#f97316']
+                            colors: [chartBlue]
                         },
                         fill: {
                             type: 'gradient',
@@ -775,7 +838,7 @@
                         },
                         markers: {
                             size: 0,
-                            colors: ['#f97316'],
+                            colors: [chartBlue],
                             strokeColors: '#fff',
                             strokeWidth: 2,
                             hover: { size: 6 }
@@ -783,7 +846,7 @@
                         xaxis: {
                             categories: labels,
                             labels: {
-                                style: { colors: '#94a3b8', fontSize: '11px' },
+                                style: { colors: chartTheme.axisText, fontSize: '11px' },
                                 rotate: -45,
                                 rotateAlways: false,
                                 hideOverlappingLabels: true,
@@ -798,30 +861,54 @@
                                     if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
                                     return val;
                                 },
-                                style: { colors: '#94a3b8', fontSize: '10px' }
+                                style: { colors: chartTheme.axisText, fontSize: '10px' }
                             },
                             tickAmount: 4,
                         },
                         grid: {
-                            borderColor: '#f1f5f9',
+                            borderColor: chartTheme.grid,
                             strokeDashArray: 4,
                             padding: { left: 10, right: 10 }
                         },
                         tooltip: {
-                            theme: 'light',
+                            theme: chartTheme.tooltipTheme,
                             x: { show: true },
                             y: {
                                 formatter: (val) => idr.format(val)
                             }
                         },
-                        colors: ['#f97316']
+                        colors: [chartBlue]
                     };
 
                     outletChart = new ApexCharts(document.querySelector("#outletBars"), options);
                     outletChart.render();
                 } else {
+                    const chartTheme = getChartTheme();
                     outletChart.updateOptions({
-                        xaxis: { categories: labels }
+                        xaxis: {
+                            categories: labels,
+                            labels: {
+                                style: { colors: chartTheme.axisText, fontSize: '11px' },
+                                rotate: -45,
+                                rotateAlways: false,
+                                hideOverlappingLabels: true,
+                            }
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: (val) => {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                                    return val;
+                                },
+                                style: { colors: chartTheme.axisText, fontSize: '10px' }
+                            }
+                        },
+                        grid: { borderColor: chartTheme.grid },
+                        tooltip: { theme: chartTheme.tooltipTheme },
+                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
+                        stroke: { colors: [chartBlue] },
+                        colors: [chartBlue]
                     });
                     outletChart.updateSeries([{
                         data: amounts
@@ -985,6 +1072,7 @@
                 });
             });
             dateEl.addEventListener('change', () => fetchSummary(true));
+            window.addEventListener('theme:changed', () => fetchSummary(false));
 
             updateOutletLabel();
             fetchSummary(false);

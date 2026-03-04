@@ -34,7 +34,7 @@
                 </div>
             @endif
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <form method="GET" action="{{ route('admin.promo-vouchers.index') }}"
                     class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                     <div>

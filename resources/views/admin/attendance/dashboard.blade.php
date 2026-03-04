@@ -69,7 +69,7 @@
                 </div>
                 <div class="md:col-span-6 flex flex-wrap gap-2">
                     <button type="submit"
-                        class="inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 text-sm font-semibold text-white hover:from-orange-600 hover:to-orange-700 shadow-sm">
+                        class="ui-btn ui-btn-primary inline-flex h-10 items-center rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 text-sm font-semibold text-white hover:from-orange-600 hover:to-orange-700 shadow-sm">
                         <i class="fas fa-filter mr-2"></i>
                         Terapkan Filter
                     </button>

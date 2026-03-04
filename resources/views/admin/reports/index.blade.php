@@ -34,7 +34,7 @@
         @endphp
         @foreach($categories as $key => $category)
             <button type="button"
-                class="report-tab-btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-normal uppercase tracking-wider transition-all {{ $loop->first ? 'bg-white text-indigo-600 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700 hover:bg-white/50' }}"
+                class="ui-btn report-tab-btn ui-tab-btn {{ $loop->first ? 'is-active' : '' }} flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-normal uppercase tracking-wider transition-all"
                 data-target="{{ $key }}">
                 <i class="fas {{ $catIcons[$key] ?? 'fa-file-alt' }} text-[10px] {{ $loop->first ? 'text-indigo-500' : 'text-slate-400' }}"></i>
                 {{ $category['label'] }}
@@ -98,10 +98,7 @@
             if (!target) return;
 
             buttons.forEach(function (btn) {
-                btn.classList.remove('bg-white', 'text-indigo-600', 'shadow-md', 'ring-1', 'ring-slate-200');
-                btn.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:bg-white/50');
-                
-                // Also handle icon color if needed, but let's keep it simple
+                btn.classList.remove('is-active');
                 const icon = btn.querySelector('i');
                 if (icon) {
                     icon.classList.remove('text-indigo-500');
@@ -118,8 +115,7 @@
             const activePanel = document.querySelector(`.report-tab-panel[data-panel="${target}"]`);
             if (!activeButton || !activePanel) return;
 
-            activeButton.classList.add('bg-white', 'text-indigo-600', 'shadow-md', 'ring-1', 'ring-slate-200');
-            activeButton.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:bg-white/50');
+            activeButton.classList.add('is-active');
             
             const activeIcon = activeButton.querySelector('i');
             if (activeIcon) {

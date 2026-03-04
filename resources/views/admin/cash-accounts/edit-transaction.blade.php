@@ -108,7 +108,7 @@
                                 </label>
                                 <select id="purchase_id"
                                         name="purchase_id"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
+                                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_id') border-red-500 @enderror">
                                     <option value="">-- Pilih Purchase --</option>
                                     @foreach($outstandingPurchases as $purchase)
                                         <option value="{{ $purchase->id }}"
@@ -168,7 +168,7 @@
                                 <textarea id="purchase_notes"
                                           name="purchase_notes"
                                           rows="3"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
+                                          class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('purchase_notes') border-red-500 @enderror"
                                           placeholder="Catatan tambahan (opsional)">{{ old('purchase_notes', $cashTransaction->notes) }}</textarea>
                                 @error('purchase_notes')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -209,7 +209,7 @@
                                             <td class="px-4 py-3 text-gray-500" data-role="row-number">{{ $i + 1 }}</td>
                                             <td class="px-4 py-3">
                                                 <select name="rows[{{ $i }}][coa_account_id]"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
+                                                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.coa_account_id') border-red-500 @enderror"
                                                         data-role="coa"
                                                         data-selected="{{ $row['coa_account_id'] ?? '' }}"
                                                         required>
@@ -223,7 +223,7 @@
                                                 <input type="text"
                                                        name="rows[{{ $i }}][description]"
                                                        value="{{ $row['description'] ?? '' }}"
-                                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.description') border-red-500 @enderror"
+                                                       class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('rows.'.$i.'.description') border-red-500 @enderror"
                                                        placeholder="Contoh: Pembayaran listrik"
                                                        required>
                                                 @error('rows.'.$i.'.description')
@@ -277,7 +277,7 @@
                     <div>
                         <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Catatan Global</label>
                         <textarea id="notes" name="notes" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
                             placeholder="Catatan untuk seluruh transaksi">{{ old('notes', $cashTransaction->notes) }}</textarea>
                         @error('notes')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -305,7 +305,7 @@
             <td class="px-4 py-3 text-gray-500" data-role="row-number"></td>
             <td class="px-4 py-3">
                 <select name="rows[__INDEX__][coa_account_id]"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         data-role="coa"
                         required>
                     <option value="">-- Pilih Akun --</option>
@@ -314,7 +314,7 @@
             <td class="px-4 py-3">
                 <input type="text"
                        name="rows[__INDEX__][description]"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                       class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                        placeholder="Contoh: Pembayaran listrik"
                        required>
             </td>

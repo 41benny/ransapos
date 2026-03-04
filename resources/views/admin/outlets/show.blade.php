@@ -6,7 +6,7 @@
 
 @section('content')
 <div class="max-w-5xl space-y-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
         <!-- Header -->
         <div class="p-6 border-b border-gray-100 flex items-center justify-between">
             <div>

@@ -1,4 +1,4 @@
-<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+<div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
     <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/70">
         <div class="flex items-center justify-between gap-3">
             <div>
@@ -48,7 +48,7 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="relative inline-block text-left product-actions-dropdown">
-                                <button type="button" class="action-dropdown-btn inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                                <button type="button" class="action-dropdown-btn ui-btn ui-btn-ghost ui-btn-sm inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-normal text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                                     <span>Aksi</span>
                                     <i class="fas fa-chevron-down text-[8px] text-slate-400"></i>
                                 </button>

@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="w-full max-w-7xl mx-auto">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+        <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
 
             @if(session('success'))
                 <div class="p-6">
@@ -84,7 +84,7 @@
                     @csrf
                     <div>
                         <label for="outlet_id" class="block text-sm font-medium text-gray-700 mb-1">Outlet</label>
-                        <select id="outlet_id" name="outlet_id" class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+                        <select id="outlet_id" name="outlet_id" class="ui-input w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
                             @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}">{{ $outlet->name }}</option>
                             @endforeach
@@ -92,11 +92,11 @@
                     </div>
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nama Perangkat (opsional)</label>
-                        <input id="name" name="name" type="text" class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500" placeholder="Kasir Tablet 1">
+                        <input id="name" name="name" type="text" class="ui-input w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500" placeholder="Kasir Tablet 1">
                     </div>
                     <div>
                         <label for="device_type" class="block text-sm font-medium text-gray-700 mb-1">Jenis Perangkat</label>
-                        <select id="device_type" name="device_type" class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+                        <select id="device_type" name="device_type" class="ui-input w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
                             @foreach($deviceTypes as $type)
                                 <option value="{{ $type }}" {{ $type === 'kasir' ? 'selected' : '' }}>
                                     {{ ucfirst($type) }}
@@ -106,7 +106,7 @@
                     </div>
                     <div class="flex items-end">
                         <button type="submit"
-                            class="w-full px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-lg transition shadow-md hover:shadow-lg">
+                            class="ui-btn ui-btn-primary w-full px-4 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-lg transition shadow-md hover:shadow-lg">
                             Buat Kode Pairing
                         </button>
                     </div>
@@ -115,7 +115,7 @@
 
             <div class="p-6">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm text-left">
+                    <table class="ui-table min-w-full text-sm text-left">
                         <thead class="text-xs uppercase text-gray-500 border-b">
                             <tr>
                                 <th class="py-3 pr-4">Perangkat</th>
@@ -170,13 +170,13 @@
                                         @if($device->is_active)
                                             <form method="POST" action="{{ route('admin.pos-devices.revoke', $device) }}" onsubmit="return confirm('Nonaktifkan perangkat ini?')" class="inline-flex">
                                                 @csrf
-                                                <button type="submit" class="px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Nonaktifkan</button>
+                                                <button type="submit" class="ui-btn ui-btn-ghost ui-btn-sm px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Nonaktifkan</button>
                                             </form>
                                         @else
                                             <form method="POST" action="{{ route('admin.pos-devices.destroy', $device) }}" onsubmit="return confirm('Hapus perangkat nonaktif ini? Aksi ini tidak dapat dibatalkan.')" class="inline-flex">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Hapus</button>
+                                                <button type="submit" class="ui-btn ui-btn-ghost ui-btn-sm px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 rounded-lg">Hapus</button>
                                             </form>
                                         @endif
                                     </td>

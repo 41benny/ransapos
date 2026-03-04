@@ -37,7 +37,7 @@
                                 Outlet <span class="text-red-500">*</span>
                             </label>
                             <select name="outlet_id" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                 <option value="">-- Pilih Outlet --</option>
                                 @foreach($outlets as $outlet)
                                 <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -56,7 +56,7 @@
                                 Kategori Biaya <span class="text-red-500">*</span>
                             </label>
                             <select name="expense_category_id" required
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                 <option value="">-- Pilih Kategori --</option>
                                 @foreach($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('expense_category_id') == $category->id ? 'selected' : '' }}>
@@ -75,7 +75,7 @@
                                 Tanggal Pengajuan <span class="text-red-500">*</span>
                             </label>
                             <input type="date" name="expense_date" value="{{ old('expense_date', date('Y-m-d')) }}" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                   class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                             @error('expense_date')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
@@ -87,7 +87,7 @@
                                 Jumlah (Rp) <span class="text-red-500">*</span>
                             </label>
                             <input type="number" name="amount" value="{{ old('amount') }}" required min="0" step="0.01"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                   class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                    placeholder="0">
                             @error('amount')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -100,7 +100,7 @@
                                 No. Referensi / Invoice (opsional)
                             </label>
                             <input type="text" name="reference_no" value="{{ old('reference_no') }}"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                   class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                    placeholder="Contoh: INV-2024-001">
                             @error('reference_no')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -113,7 +113,7 @@
                                 Keterangan <span class="text-red-500">*</span>
                             </label>
                             <textarea name="description" rows="4" required
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                      class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                       placeholder="Jelaskan keperluan biaya...">{{ old('description') }}</textarea>
                             @error('description')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -126,7 +126,7 @@
                                 Lampiran (Bukti/Kwitansi)
                             </label>
                             <input type="file" name="attachment" accept="image/*,.pdf"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                   class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                             <p class="text-xs text-gray-500 mt-1">Max 2MB. Format: JPG, PNG, PDF</p>
                             @error('attachment')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

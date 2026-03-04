@@ -36,7 +36,7 @@
                            id="code" 
                            name="code" 
                            value="{{ old('code') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
+                           class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
                            placeholder="Contoh: 6-135"
                            required>
                     @error('code')
@@ -54,7 +54,7 @@
                            id="name" 
                            name="name" 
                            value="{{ old('name') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
+                           class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
                            placeholder="Contoh: Biaya Konsumsi"
                            required>
                     @error('name')
@@ -69,7 +69,7 @@
                     </label>
                     <select id="type" 
                             name="type" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
                             required>
                         <option value="">-- Pilih Type --</option>
                         <option value="income" {{ old('type') == 'income' ? 'selected' : '' }}>Income (Pendapatan)</option>
@@ -93,7 +93,7 @@
                            name="group" 
                            value="{{ old('group') }}"
                            list="group-suggestions"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('group') border-red-500 @enderror"
+                           class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('group') border-red-500 @enderror"
                            placeholder="Contoh: BIAYA OPERASIONAL"
                            required>
                     <datalist id="group-suggestions">
@@ -131,7 +131,7 @@
                     <textarea id="notes" 
                               name="notes" 
                               rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                               placeholder="Catatan tambahan (opsional)">{{ old('notes') }}</textarea>
                 </div>
             </div>

@@ -12,7 +12,7 @@
             <p class="text-gray-600 mt-1">Manage customer database and loyalty program</p>
         </div>
         <a href="{{ route('admin.customers.create') }}"
-           class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 shadow-md transition">
+           class="ui-btn ui-btn-primary px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 shadow-md transition">
             <i class="fas fa-plus mr-2"></i> Add Customer
         </a>
     </div>
@@ -81,20 +81,20 @@
     </div>
 
     <!-- Filter & Search -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="ui-card bg-white rounded-xl shadow-md p-6 mb-6">
         <form method="GET" action="{{ route('admin.customers.index') }}">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                     <input type="text" name="search"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                            placeholder="Name, phone, email..."
                            value="{{ request('search') }}">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
-                    <select name="customer_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="customer_type" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Types</option>
                         <option value="regular" {{ request('customer_type') == 'regular' ? 'selected' : '' }}>Regular</option>
                         <option value="member" {{ request('customer_type') == 'member' ? 'selected' : '' }}>Member</option>
@@ -104,7 +104,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Member Tier</label>
-                    <select name="member_tier" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="member_tier" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Tiers</option>
                         <option value="bronze" {{ request('member_tier') == 'bronze' ? 'selected' : '' }}>Bronze</option>
                         <option value="silver" {{ request('member_tier') == 'silver' ? 'selected' : '' }}>Silver</option>
@@ -115,7 +115,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select name="is_active" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="is_active" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Status</option>
                         <option value="1" {{ request('is_active') == '1' ? 'selected' : '' }}>Active</option>
                         <option value="0" {{ request('is_active') == '0' ? 'selected' : '' }}>Inactive</option>
@@ -123,10 +123,10 @@
                 </div>
 
                 <div class="flex items-end gap-2">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <button type="submit" class="ui-btn ui-btn-primary px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                         <i class="fas fa-search mr-2"></i>Filter
                     </button>
-                    <a href="{{ route('admin.customers.index') }}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+                    <a href="{{ route('admin.customers.index') }}" class="ui-btn ui-btn-ghost px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
                         <i class="fas fa-redo mr-2"></i>Reset
                     </a>
                 </div>
@@ -135,9 +135,9 @@
     </div>
 
     <!-- Customers Table -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="ui-card bg-white rounded-xl shadow-md overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="ui-table min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
@@ -220,12 +220,12 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
                                 <a href="{{ route('admin.customers.show', $customer) }}"
-                                   class="text-blue-600 hover:text-blue-900"
+                                   class="ui-action-icon ui-action-view"
                                    title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <a href="{{ route('admin.customers.edit', $customer) }}"
-                                   class="text-yellow-600 hover:text-yellow-900"
+                                   class="ui-action-icon ui-action-edit"
                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -236,7 +236,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
-                                            class="text-red-600 hover:text-red-900"
+                                            class="ui-action-icon ui-action-delete"
                                             title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>

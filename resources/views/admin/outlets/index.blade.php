@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="w-full">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
+        <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 page-card-fill">
 
             @if(session('success'))
                 <div class="p-6">
@@ -33,7 +33,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Semua Outlet</h3>
                         <p class="text-sm text-gray-500 mt-1">Total: {{ $outlets->total() }} outlet</p>
                     </div>
-                    <a href="{{ route('admin.outlets.create') }}" class="btn btn-primary inline-flex items-center">
+                    <a href="{{ route('admin.outlets.create') }}" class="ui-btn ui-btn-primary btn btn-primary inline-flex items-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -47,7 +47,7 @@
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @forelse($outlets as $outlet)
-                        <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                        <div class="ui-card border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex items-center">
                                     <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
@@ -110,11 +110,11 @@
 
                             <div class="flex items-center space-x-2 pt-4 border-t border-gray-100">
                                 <a href="{{ route('admin.outlets.edit', $outlet) }}"
-                                    class="flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition text-center">
+                                    class="ui-btn ui-btn-ghost ui-btn-sm flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition text-center">
                                     Edit
                                 </a>
                                 <a href="{{ route('admin.outlets.show', $outlet) }}"
-                                    class="flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition text-center">
+                                    class="ui-btn ui-btn-ghost ui-btn-sm flex-1 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 rounded-lg transition text-center">
                                     Detail
                                 </a>
                             </div>

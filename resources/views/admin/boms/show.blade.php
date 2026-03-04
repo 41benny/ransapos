@@ -26,10 +26,10 @@
                 <h1 class="text-2xl font-semibold text-slate-900">{{ $bom->name ?: 'Resep ' . ($bom->product->name ?? '-') }}</h1>
             </div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $recipeSourceType, 'return_to' => request()->fullUrl()]) }}" class="btn btn-primary">
+                <a href="{{ route('admin.boms.edit', ['bom' => $bom, 'source_type' => $recipeSourceType, 'return_to' => request()->fullUrl()]) }}" class="ui-btn ui-btn-primary btn btn-primary">
                     <i class="fas fa-edit"></i> Edit Resep
                 </a>
-                <a href="{{ $backUrl }}" class="btn btn-secondary">
+                <a href="{{ $backUrl }}" class="ui-btn ui-btn-ghost btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Kembali
                 </a>
             </div>
@@ -76,7 +76,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
+                <table class="ui-table min-w-full text-sm">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="text-left px-6 py-3 font-semibold text-slate-700">Bahan</th>

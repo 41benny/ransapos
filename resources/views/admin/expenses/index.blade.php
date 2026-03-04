@@ -12,7 +12,7 @@
             <p class="text-gray-600 mt-1">Kelola pengajuan biaya</p>
         </div>
         <a href="{{ route('admin.expenses.create') }}"
-           class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 shadow-md transition">
+           class="ui-btn ui-btn-primary px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 shadow-md transition">
             <i class="fas fa-plus mr-2"></i> Buat Pengajuan
         </a>
     </div>
@@ -83,12 +83,12 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="ui-card bg-white rounded-xl shadow-md p-6 mb-6">
         <form method="GET" action="{{ route('admin.expenses.index') }}">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Outlet</label>
-                    <select name="outlet_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <select name="outlet_id" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                         <option value="">All Outlets</option>
                         @foreach($outlets as $outlet)
                         <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -100,7 +100,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <select name="category_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <select name="category_id" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                         <option value="">All Categories</option>
                         @foreach($categories as $category)
                         <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -112,7 +112,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <select name="status" class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                         <option value="">All Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
@@ -124,23 +124,23 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                     <input type="date" name="start_date" value="{{ request('start_date') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                     <input type="date" name="end_date" value="{{ request('end_date') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
 
             <div class="flex justify-end space-x-3 mt-4">
                 <a href="{{ route('admin.expenses.index') }}"
-                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                   class="ui-btn ui-btn-ghost px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                     Reset
                 </a>
                 <button type="submit"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        class="ui-btn ui-btn-primary px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                     <i class="fas fa-filter mr-2"></i> Filter
                 </button>
             </div>
@@ -148,8 +148,8 @@
     </div>
 
     <!-- Expenses Table -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
+    <div class="ui-card bg-white rounded-xl shadow-md overflow-hidden">
+        <table class="ui-table min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expense No.</th>
@@ -194,25 +194,27 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <a href="{{ route('admin.expenses.show', $expense) }}"
-                           class="text-blue-600 hover:text-blue-800 mr-3">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        @if($expense->isPending())
-                        <a href="{{ route('admin.expenses.edit', $expense) }}"
-                           class="text-green-600 hover:text-green-800 mr-3">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <form action="{{ route('admin.expenses.destroy', $expense) }}"
-                              method="POST" class="inline-block"
-                              onsubmit="return confirm('Are you sure?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                        @endif
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ route('admin.expenses.show', $expense) }}"
+                               class="ui-action-icon ui-action-view">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            @if($expense->isPending())
+                            <a href="{{ route('admin.expenses.edit', $expense) }}"
+                               class="ui-action-icon ui-action-edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form action="{{ route('admin.expenses.destroy', $expense) }}"
+                                  method="POST" class="inline-block"
+                                  onsubmit="return confirm('Are you sure?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="ui-action-icon ui-action-delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty

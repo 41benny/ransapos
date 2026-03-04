@@ -9,7 +9,7 @@
     <form action="{{ route('admin.suppliers.store') }}" method="POST">
         @csrf
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
             <!-- Header -->
             <div class="p-6 border-b border-gray-100">
                 <h3 class="text-lg font-semibold text-gray-900">Informasi Supplier</h3>
@@ -29,7 +29,7 @@
                             name="code"
                             id="code"
                             value="{{ old('code') }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror"
                             placeholder="Contoh: SUP003"
                             required
                         >
@@ -47,7 +47,7 @@
                             name="name"
                             id="name"
                             value="{{ old('name') }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
                             placeholder="Contoh: PT Kopi Nusantara"
                             required
                         >
@@ -68,7 +68,7 @@
                             name="contact_person"
                             id="contact_person"
                             value="{{ old('contact_person') }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contact_person') border-red-500 @enderror"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contact_person') border-red-500 @enderror"
                             placeholder="Contoh: Budi Santoso"
                         >
                         @error('contact_person')
@@ -85,7 +85,7 @@
                             name="phone"
                             id="phone"
                             value="{{ old('phone') }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('phone') border-red-500 @enderror"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('phone') border-red-500 @enderror"
                             placeholder="Contoh: 021-12345678"
                         >
                         @error('phone')
@@ -104,7 +104,7 @@
                         name="email"
                         id="email"
                         value="{{ old('email') }}"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror"
+                        class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror"
                         placeholder="Contoh: supplier@domain.com"
                     >
                     @error('email')
@@ -121,7 +121,7 @@
                         name="address"
                         id="address"
                         rows="3"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('address') border-red-500 @enderror"
+                        class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('address') border-red-500 @enderror"
                         placeholder="Alamat lengkap supplier (opsional)"
                     >{{ old('address') }}</textarea>
                     @error('address')

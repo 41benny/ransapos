@@ -9,7 +9,7 @@
         <form action="{{ route('admin.sales-types.store') }}" method="POST">
             @csrf
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900">Informasi Metode Penjualan</h3>
                     <p class="text-sm text-gray-500 mt-1">Isi data metode penjualan yang ingin ditambahkan</p>
@@ -26,7 +26,7 @@
                                 name="code"
                                 id="code"
                                 value="{{ old('code') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror"
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror"
                                 placeholder="Contoh: TOKOPEDIA atau ONLINE_ORDER"
                                 required
                             >
@@ -45,7 +45,7 @@
                                 name="name"
                                 id="name"
                                 value="{{ old('name') }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
                                 placeholder="Contoh: Tokopedia"
                                 required
                             >
@@ -65,7 +65,7 @@
                             id="sort_order"
                             value="{{ old('sort_order', 0) }}"
                             min="0"
-                            class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sort_order') border-red-500 @enderror"
+                            class="ui-input w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sort_order') border-red-500 @enderror"
                         >
                         <p class="mt-1 text-xs text-gray-500">Semakin kecil angka, semakin atas posisinya di daftar.</p>
                         @error('sort_order')
@@ -94,13 +94,13 @@
                 <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">
                     <a
                         href="{{ route('admin.sales-types.index') }}"
-                        class="px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
+                        class="ui-btn ui-btn-ghost px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
                     >
                         Batal
                     </a>
                     <button
                         type="submit"
-                        class="px-5 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg"
+                        class="ui-btn ui-btn-primary px-5 py-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white rounded-lg transition shadow-md hover:shadow-lg"
                     >
                         Simpan Metode
                     </button>

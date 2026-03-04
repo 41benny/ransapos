@@ -16,12 +16,12 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.reports.attendance.index') }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-xs font-normal text-slate-600 shadow-sm transition-all hover:text-indigo-600 hover:border-indigo-100 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-xs font-normal text-slate-600 shadow-sm transition-all hover:text-indigo-600 hover:border-indigo-100 active:scale-95">
                     <i class="fas fa-calendar-check text-[10px]"></i>
                     <span>Rekap Absensi</span>
                 </a>
                 <a href="{{ route('admin.users.create') }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-plus text-[10px]"></i>
                     <span>Tambah User</span>
                 </a>
@@ -42,7 +42,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-5 mb-6">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-5 mb-6">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h3 class="text-[11px] font-normal uppercase tracking-widest text-slate-500">Filter Daftar Pengguna</h3>
                 <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-normal uppercase tracking-widest text-indigo-600">
@@ -51,20 +51,20 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                 <div class="md:col-span-5">
-                    <input type="text" data-name="name" class="filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Cari nama pengguna...">
+                    <input type="text" data-name="name" class="ui-input filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Cari nama pengguna...">
                 </div>
                 <div class="md:col-span-4">
-                    <input type="text" data-name="role" class="filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Filter role...">
+                    <input type="text" data-name="role" class="ui-input filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all placeholder:text-slate-400" placeholder="Filter role...">
                 </div>
                 <div class="md:col-span-2">
-                    <select data-name="status" class="filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select data-name="status" class="ui-input filter-input w-full px-3 py-2 text-xs font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Status</option>
                         <option value="aktif">Aktif</option>
                         <option value="nonaktif">Nonaktif</option>
                     </select>
                 </div>
                 <div class="md:col-span-1">
-                    <button type="button" id="clearFilters" class="h-[34px] w-full inline-flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 rounded-lg transition-all active:scale-95" title="Reset Filter">
+                    <button type="button" id="clearFilters" class="ui-btn ui-btn-ghost h-[34px] w-full inline-flex items-center justify-center bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-100 rounded-lg transition-all active:scale-95" title="Reset Filter">
                         <i class="fas fa-rotate-left text-[10px]"></i>
                     </button>
                 </div>

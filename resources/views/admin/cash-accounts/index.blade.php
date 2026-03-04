@@ -12,7 +12,7 @@
                     <p class="text-gray-600 mt-1">Kelola akun kas dan bank perusahaan</p>
                 </div>
                 <a href="{{ route('admin.cash-accounts.create') }}"
-                    class="bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow-md hover:shadow-lg">
+                    class="ui-btn ui-btn-primary bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow-md hover:shadow-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -88,9 +88,9 @@
             @endif
 
             <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow p-4 mb-6 flex space-x-4">
+            <div class="ui-card bg-white rounded-lg shadow p-4 mb-6 flex space-x-4">
                 <a href="{{ route('admin.cash-transactions.index') }}"
-                    class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
+                    class="ui-btn ui-btn-ghost flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -98,7 +98,7 @@
                     <span>Lihat Transaksi</span>
                 </a>
                 <a href="{{ route('admin.cash-transactions.create') }}"
-                    class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
+                    class="ui-btn ui-btn-ghost flex items-center space-x-2 text-gray-700 hover:text-indigo-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -107,14 +107,14 @@
             </div>
 
             <!-- Accounts List -->
-            <div class="t6-card shadow overflow-hidden">
+            <div class="ui-card t6-card shadow overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h2 class="text-lg font-semibold text-gray-900">Daftar Akun Kas & Bank</h2>
                 </div>
 
                 @if($accounts->count() > 0)
                     <div class="overflow-x-auto">
-                        <table class="imperial-table min-w-full">
+                        <table class="ui-table imperial-table min-w-full">
                             <thead class="">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -197,21 +197,21 @@
                                             <div class="flex space-x-2">
                                                 {{-- Detail --}}
                                                 <a href="{{ route('admin.cash-accounts.show', $account) }}"
-                                                    class="group flex items-center justify-center w-8 h-8 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                                                    class="ui-action-icon ui-action-view"
                                                     title="Detail">
-                                                    <i class="fas fa-eye text-sm"></i>
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                                 {{-- Mutasi --}}
                                                 <a href="{{ route('admin.cash-accounts.mutation-report', $account) }}"
-                                                    class="group flex items-center justify-center w-8 h-8 text-teal-500 bg-teal-50 hover:bg-teal-100 hover:text-teal-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                                                    class="ui-action-icon ui-action-list"
                                                     title="Laporan Mutasi">
-                                                    <i class="fas fa-list-ul text-sm"></i>
+                                                    <i class="fas fa-list-ul"></i>
                                                 </a>
                                                 {{-- Edit --}}
                                                 <a href="{{ route('admin.cash-accounts.edit', $account) }}"
-                                                    class="group flex items-center justify-center w-8 h-8 text-amber-500 bg-amber-50 hover:bg-amber-100 hover:text-amber-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                                                    class="ui-action-icon ui-action-edit"
                                                     title="Edit">
-                                                    <i class="fas fa-edit text-sm"></i>
+                                                    <i class="fas fa-edit"></i>
                                                 </a>
 
                                                 {{-- Hapus --}}
@@ -221,9 +221,9 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" 
-                                                        class="group flex items-center justify-center w-8 h-8 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
+                                                        class="ui-action-icon ui-action-delete"
                                                         title="Hapus Akun">
-                                                        <i class="fas fa-trash-alt text-sm"></i>
+                                                        <i class="fas fa-trash-alt"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -243,7 +243,7 @@
                         <p class="mt-1 text-sm text-gray-500">Mulai dengan membuat akun kas atau bank baru.</p>
                         <div class="mt-6">
                             <a href="{{ route('admin.cash-accounts.create') }}"
-                                class="inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:shadow-lg">
+                                class="ui-btn ui-btn-primary inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:shadow-lg">
                                 <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                 </svg>

@@ -26,7 +26,7 @@
                         </label>
                         <input type="date" id="transfer_date" name="transfer_date"
                             value="{{ old('transfer_date', date('Y-m-d')) }}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg" required>
                     </div>
 
                     <!-- From Account -->
@@ -34,7 +34,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Dari Rekening <span class="text-red-500">*</span>
                         </label>
-                        <select name="from_cash_account_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        <select name="from_cash_account_id" class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg"
                             required>
                             <option value="">-- Pilih Rekening Sumber --</option>
                             @foreach($accounts->groupBy('outlet_id') as $outletId => $outletAccounts)
@@ -55,7 +55,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Ke Rekening <span class="text-red-500">*</span>
                         </label>
-                        <select name="to_cash_account_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        <select name="to_cash_account_id" class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg"
                             required>
                             <option value="">-- Pilih Rekening Tujuan --</option>
                             @foreach($accounts->groupBy('outlet_id') as $outletId => $outletAccounts)
@@ -88,7 +88,7 @@
                             Deskripsi <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="description" maxlength="500"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Deskripsi transfer..."
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Deskripsi transfer..."
                             required>
                     </div>
 
@@ -96,7 +96,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Catatan</label>
                         <textarea name="notes" rows="3"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
                     </div>
                 </div>
 

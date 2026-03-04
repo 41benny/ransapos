@@ -20,7 +20,7 @@
                     <span>Edit</span>
                 </a>
                 <a href="{{ route('admin.cash-transactions.print', $cashTransaction) }}" target="_blank"
-                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
+                    class="ui-btn ui-btn-primary px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
                     <i class="fas fa-print"></i>
                     <span>Cetak Voucher</span>
                 </a>

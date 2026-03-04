@@ -7,7 +7,7 @@
 @section('content')
     <div class="max-w-5xl space-y-6">
         <!-- Info Produk Utama -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
             <!-- Header -->
             <div class="p-6 border-b border-gray-100 flex items-center justify-between">
                 <div>
@@ -80,7 +80,7 @@
 
         @if($isBundleProduct)
             <!-- Resep Bundle + HPP -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Komponen Resep Bundle</h3>
@@ -94,7 +94,7 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="imperial-table w-full">
+                    <table class="ui-table imperial-table w-full">
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -157,14 +157,14 @@
             </div>
         @else
             <!-- Stok per Outlet -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900">Stok per Outlet</h3>
                     <p class="text-sm text-gray-500 mt-1">Ketersediaan stok di setiap outlet</p>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="imperial-table w-full">
+                    <table class="ui-table imperial-table w-full">
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">

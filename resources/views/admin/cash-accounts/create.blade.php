@@ -36,7 +36,7 @@
                            id="name" 
                            name="name" 
                            value="{{ old('name') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
+                           class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
                            placeholder="Contoh: Kas Toko, Bank BCA, Bank BRI"
                            required>
                     @error('name')
@@ -53,7 +53,7 @@
                            id="code" 
                            name="code" 
                            value="{{ old('code') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
+                           class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
                            placeholder="Contoh: KAS-001, BANK-BCA"
                            required>
                     @error('code')
@@ -68,7 +68,7 @@
                         Outlet <span class="text-red-500">*</span>
                     </label>
                     <select id="outlet_id" name="outlet_id" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror"
                             required>
                         <option value="">-- Pilih Outlet --</option>
                         @foreach(\App\Models\Outlet::active()->orderBy('name')->get() as $outlet)
@@ -89,7 +89,7 @@
                     </label>
                     <select id="type" 
                             name="type" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
                             required>
                         <option value="">-- Pilih Jenis --</option>
                         <option value="cash" {{ old('type') == 'cash' ? 'selected' : '' }}>Kas Tunai</option>
@@ -107,7 +107,7 @@
                     </label>
                     <select id="usage_type"
                             name="usage_type"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
                             required>
                         <option value="operational" {{ old('usage_type', 'operational') == 'operational' ? 'selected' : '' }}>Operasional Umum</option>
                         <option value="petty_cash" {{ old('usage_type') == 'petty_cash' ? 'selected' : '' }}>Petty Cash Outlet</option>
@@ -123,23 +123,23 @@
                     <div>
                         <label for="bank_name" class="block text-sm font-medium text-gray-700 mb-2">Nama Bank</label>
                         <input type="text" id="bank_name" name="bank_name" value="{{ old('bank_name') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg"
                                placeholder="Contoh: BCA, Mandiri, BRI">
                     </div>
                     <div>
                         <label for="account_number" class="block text-sm font-medium text-gray-700 mb-2">Nomor Rekening</label>
                         <input type="text" id="account_number" name="account_number" value="{{ old('account_number') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label for="account_holder" class="block text-sm font-medium text-gray-700 mb-2">Nama Pemegang Rekening</label>
                         <input type="text" id="account_holder" name="account_holder" value="{{ old('account_holder') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label for="branch" class="block text-sm font-medium text-gray-700 mb-2">Cabang Bank (Opsional)</label>
                         <input type="text" id="branch" name="branch" value="{{ old('branch') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                               class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@
                     <textarea id="notes" 
                               name="notes" 
                               rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
+                              class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
                               placeholder="Catatan tambahan tentang akun ini (opsional)">{{ old('notes') }}</textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

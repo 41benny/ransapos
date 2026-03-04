@@ -6,12 +6,12 @@
 @section('content')
     <div class="w-full">
         <!-- Filter -->
-        <div class="card bg-white p-4 mb-6">
+        <div class="ui-card card bg-white p-4 mb-6">
             <form method="GET">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="form-label">Type</label>
-                        <select name="type" class="form-input">
+                        <select name="type" class="ui-input form-input">
                             <option value="">Semua Type</option>
                             <option value="income" {{ request('type') == 'income' ? 'selected' : '' }}>Income (Pendapatan)
                             </option>
@@ -25,7 +25,7 @@
                     </div>
                     <div>
                         <label class="form-label">Group</label>
-                        <select name="group" class="form-input">
+                        <select name="group" class="ui-input form-input">
                             <option value="">Semua Group</option>
                             @foreach($groups as $group)
                                 <option value="{{ $group }}" {{ request('group') == $group ? 'selected' : '' }}>
@@ -36,14 +36,14 @@
                     </div>
                     <div>
                         <label class="form-label">Status</label>
-                        <select name="is_active" class="form-input">
+                        <select name="is_active" class="ui-input form-input">
                             <option value="">Semua</option>
                             <option value="1" {{ request('is_active') === '1' ? 'selected' : '' }}>Aktif</option>
                             <option value="0" {{ request('is_active') === '0' ? 'selected' : '' }}>Nonaktif</option>
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="btn btn-primary w-full justify-center">
+                        <button type="submit" class="ui-btn ui-btn-primary btn btn-primary w-full justify-center">
                             Filter
                         </button>
                     </div>
@@ -67,7 +67,7 @@
         @endif
 
         <!-- COA List -->
-        <div class="card bg-white p-6">
+        <div class="ui-card card bg-white p-6">
 
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -83,7 +83,7 @@
                             <span>Generate Template Neraca</span>
                         </button>
                     </form>
-                    <a href="{{ route('admin.coa-accounts.create') }}" class="btn btn-primary">
+                    <a href="{{ route('admin.coa-accounts.create') }}" class="ui-btn ui-btn-primary btn btn-primary">
                         <i class="fas fa-plus"></i>
                         <span>Tambah Akun Baru</span>
                     </a>
@@ -91,7 +91,7 @@
             </div>
 
             <div class="table-container">
-                <table class="table-modern">
+                <table class="ui-table table-modern">
                     <thead>
                         <tr>
                             <th>Kode</th>
@@ -133,7 +133,7 @@
                                 <td>
                                     <div class="flex items-center gap-2">
                                         <a href="{{ route('admin.coa-accounts.edit', $coa) }}"
-                                            class="text-amber-600 hover:text-amber-800" title="Edit">
+                                            class="ui-action-icon ui-action-edit" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         @if($coa->cashTransactions->count() == 0)
@@ -141,7 +141,7 @@
                                                 class="inline" onsubmit="return confirm('Yakin hapus akun ini?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-800" title="Hapus">
+                                                <button type="submit" class="ui-action-icon ui-action-delete" title="Hapus">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>

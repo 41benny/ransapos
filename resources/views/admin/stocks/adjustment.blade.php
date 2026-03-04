@@ -15,7 +15,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.stocks.index') }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali ke Stok</span>
                 </a>
@@ -49,7 +49,7 @@
             @csrf
 
             {{-- General Info Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-info-circle text-indigo-500 text-[10px]"></i>
@@ -63,7 +63,7 @@
                             <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Pilih Outlet
                                 <span class="text-rose-500">*</span></label>
                             <select name="outlet_id" id="outlet_id" required
-                                class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                                class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                                 <option value="">Pilih Outlet Tujuan</option>
                                 @foreach($outlets as $outlet)
                                     <option value="{{ $outlet->id }}" {{ old('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -78,7 +78,7 @@
                                 Alasan <span class="text-rose-500">*</span></label>
                             <input type="text" name="notes" id="notes" required maxlength="500" value="{{ old('notes') }}"
                                 placeholder="Contoh: Hasil Stock Opname Bulanan - Februari 2026"
-                                class="w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                                class="ui-input w-full px-4 py-2.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                             <p class="text-[9px] text-slate-400 mt-1 italic">* Catatan ini akan diterapkan untuk semua item
                                 yang disesuaikan dalam form ini.</p>
                         </div>
@@ -87,7 +87,7 @@
             </div>
 
             {{-- Items Card --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <i class="fas fa-list text-indigo-500 text-[10px]"></i>
@@ -96,12 +96,12 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" id="add-row"
-                            class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                             <i class="fas fa-plus"></i>
                             <span>TAMBAH BARIS</span>
                         </button>
                         <button type="button" id="clear-rows"
-                            class="inline-flex items-center gap-2 rounded-lg bg-white border border-rose-100 px-4 py-2 text-[10px] font-normal text-rose-500 shadow-sm transition-all hover:bg-rose-50 active:scale-95">
+                            class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white border border-rose-100 px-4 py-2 text-[10px] font-normal text-rose-500 shadow-sm transition-all hover:bg-rose-50 active:scale-95">
                             <i class="fas fa-trash-alt"></i>
                             <span>RESET SEMUA</span>
                         </button>
@@ -109,7 +109,7 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50">
                             <tr>
                                 <th
@@ -147,7 +147,7 @@
                             terlebih dahulu, lalu masukkan nama atau SKU produk.</p>
                     </div>
                     <button type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
+                        class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
                         <i class="fas fa-save text-[10px]"></i>
                         <span>SIMPAN DATA PENYESUAIAN</span>
                     </button>
@@ -279,7 +279,7 @@
                         <td class="px-5 py-3.5">
                             <div class="relative" data-autocomplete-wrap>
                                 <input type="text"
-                                    class="w-full h-10 px-4 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                                    class="ui-input w-full h-10 px-4 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
                                     placeholder="Cari nama atau SKU produk..." data-product-input required autocomplete="off">
                                 <input type="hidden" data-product-id value="">
                                 <div class="absolute z-30 mt-1 w-full max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl text-sm hidden py-1"
@@ -293,12 +293,12 @@
                         <td class="px-5 py-3.5 text-right text-[11.5px] font-normal text-slate-500 tabular-nums" data-system>0,00</td>
                         <td class="px-5 py-3.5 text-right">
                             <input type="number" step="0.01" min="0"
-                                class="w-32 h-10 px-4 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums"
+                                class="ui-input w-32 h-10 px-4 text-right text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm tabular-nums"
                                 value="0" data-actual required>
                         </td>
                         <td class="px-5 py-3.5 text-right font-normal text-slate-400 tracking-tight tabular-nums" data-diff>0,00</td>
                         <td class="px-5 py-3.5 text-center">
-                            <button type="button" class="h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90" data-remove
+                            <button type="button" class="ui-btn ui-btn-ghost h-8 w-8 inline-flex items-center justify-center bg-white border border-rose-100 text-rose-400 hover:bg-rose-500 hover:text-white hover:border-rose-500 rounded-xl transition-all shadow-sm active:scale-90" data-remove
                                 title="Hapus item">
                                 <i class="fas fa-times text-[10px]"></i>
                             </button>

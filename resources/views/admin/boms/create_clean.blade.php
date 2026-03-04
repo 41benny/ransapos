@@ -20,7 +20,7 @@
                     {{ $isBundleRecipe ? 'Resep Bundle' : 'Resep Produksi (BOM)' }}
                 </h1>
             </div>
-            <a href="{{ $backUrl }}" class="btn btn-secondary !rounded-none">
+            <a href="{{ $backUrl }}" class="ui-btn ui-btn-ghost btn btn-secondary !rounded-none">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -57,7 +57,7 @@
                                 Produk Utama <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" id="product_id"
-                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Ketik produk..." value="{{ $selectedFinishedLabel }}" data-finished-input required>
                             <input type="hidden" name="product_id" value="{{ $selectedProductId }}" data-finished-id>
                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -67,14 +67,14 @@
                         <div>
                             <label for="name" class="form-label">Nama BOM</label>
                             <input type="text" name="name" id="name"
-                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Contoh: Resep Nasi Goreng Spesial" value="{{ old('name') }}">
                         </div>
 
                         <div>
                             <label for="notes" class="form-label">Catatan</label>
                             <textarea name="notes" id="notes" rows="3"
-                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                 placeholder="Catatan tambahan...">{{ old('notes') }}</textarea>
                         </div>
 
@@ -92,7 +92,7 @@
                                 <h2 class="text-lg font-semibold text-slate-900">Bahan Penyusun</h2>
                             </div>
                             <button type="button" id="add-component"
-                                class="btn btn-secondary !rounded-none">
+                                class="ui-btn ui-btn-ghost btn btn-secondary !rounded-none">
                                 <i class="fas fa-plus"></i> Tambah Komponen
                             </button>
                         </div>
@@ -109,7 +109,7 @@
                                                     $selectedLabel = $selectedRaw ? ($selectedRaw->name . ' (' . $selectedRaw->sku . ')') : '';
                                                 @endphp
                                                 <input type="text"
-                                                    class="w-full form-input !rounded-none"
+                                                    class="ui-input w-full form-input !rounded-none"
                                                     placeholder="Ketik bahan..." value="{{ $selectedLabel }}" data-raw-input required>
                                                 <input type="hidden" name="components[{{ $index }}][component_product_id]"
                                                     value="{{ $component['component_product_id'] ?? '' }}" data-raw-id>
@@ -119,17 +119,17 @@
                                             <div class="md:col-span-3">
                                                 <label class="form-label mb-1 block">Jumlah</label>
                                                 <input type="number" name="components[{{ $index }}][quantity]"
-                                                    class="w-full form-input !rounded-none"
+                                                    class="ui-input w-full form-input !rounded-none"
                                                     step="0.0001" min="0.0001" value="{{ $component['quantity'] }}" required>
                                             </div>
                                             <div class="md:col-span-2">
                                                 <label class="form-label mb-1 block">Satuan</label>
                                                 <input type="text" name="components[{{ $index }}][uom]"
-                                                    class="w-full form-input !rounded-none"
+                                                    class="ui-input w-full form-input !rounded-none"
                                                     placeholder="kg, pcs, liter..." value="{{ $component['uom'] ?? '' }}">
                                             </div>
                                             <div class="md:col-span-1 flex items-end">
-                                                <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                                <button type="button" class="ui-btn p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -142,7 +142,7 @@
                                         <div class="md:col-span-6 relative" data-autocomplete-wrap>
                                             <label class="form-label mb-1 block">Bahan/Komponen</label>
                                             <input type="text"
-                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 placeholder="Ketik bahan..." data-raw-input required>
                                             <input type="hidden" name="components[0][component_product_id]" value="" data-raw-id>
                                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -151,17 +151,17 @@
                                         <div class="md:col-span-3">
                                             <label class="form-label mb-1 block">Jumlah</label>
                                             <input type="number" name="components[0][quantity]"
-                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 step="0.0001" min="0.0001" required>
                                         </div>
                                         <div class="md:col-span-2">
                                             <label class="form-label mb-1 block">Satuan</label>
                                             <input type="text" name="components[0][uom]"
-                                                class="w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
+                                                class="ui-input w-full form-input !rounded-none bg-gray-50 shadow-sm transition-colors"
                                                 placeholder="kg, pcs, liter...">
                                         </div>
                                         <div class="md:col-span-1 flex items-end">
-                                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
+                                            <button type="button" class="ui-btn p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -177,9 +177,9 @@
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ $backUrl }}"
-                        class="btn btn-secondary !rounded-none">Batal</a>
+                        class="ui-btn ui-btn-ghost btn btn-secondary !rounded-none">Batal</a>
                     <button type="submit"
-                        class="btn btn-primary !rounded-none">
+                        class="ui-btn ui-btn-primary btn btn-primary !rounded-none">
                         <i class="fas fa-save"></i> {{ $isBundleRecipe ? 'Simpan Resep Bundle' : 'Simpan Resep Produksi' }}
                     </button>
                 </div>
@@ -297,7 +297,7 @@
                         <div class="md:col-span-6 relative" data-autocomplete-wrap>
                             <label class="form-label mb-1 block">Bahan/Komponen</label>
                             <input type="text"
-                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
+                                   class="ui-input w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    placeholder="Ketik bahan..." data-raw-input required>
                             <input type="hidden" name="components[${index}][component_product_id]" value="${data.component_product_id ?? ''}" data-raw-id>
                             <div class="autocomplete-panel absolute z-30 mt-1 w-full max-h-64 overflow-auto !rounded-none border border-slate-200 bg-white shadow-lg text-sm hidden"
@@ -306,17 +306,17 @@
                         <div class="md:col-span-3">
                             <label class="form-label mb-1 block">Jumlah</label>
                             <input type="number" name="components[${index}][quantity]"
-                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
+                                   class="ui-input w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    step="0.0001" min="0.0001" value="${data.quantity ?? ''}" required>
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label mb-1 block">Satuan</label>
                             <input type="text" name="components[${index}][uom]"
-                                   class="w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
+                                   class="ui-input w-full form-input !rounded-none bg-gray-50 text-sm shadow-sm"
                                    placeholder="kg, pcs, liter..." value="${data.uom ?? ''}">
                         </div>
                         <div class="md:col-span-1 flex items-end">
-                            <button type="button" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus"><i class="fas fa-trash"></i></button>
+                            <button type="button" class="ui-btn p-2 text-red-500 hover:text-red-700 hover:bg-red-50 !rounded-none transition-colors duration-150 remove-component flex items-center justify-center" title="Hapus"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>

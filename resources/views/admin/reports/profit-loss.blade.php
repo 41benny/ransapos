@@ -52,7 +52,7 @@
 
                 <div class="flex items-center gap-2 px-1">
                     <button type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
+                        class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all">
                         <i class="fas fa-sync-alt text-[10px]"></i>
                         <span>Update</span>
                     </button>
@@ -69,7 +69,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Total Pendapatan -->
             <a href="{{ route('admin.reports.sales.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId]) }}" target="_blank"
-                class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
+                class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Pendapatan</span>
                 <h3 class="text-2xl font-black text-slate-800 mt-2 tracking-tight flex items-center gap-2">
                     Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
@@ -82,7 +82,7 @@
 
             <!-- COGS -->
             <a href="{{ route('admin.stocks.mutations', ['start_date' => $dateFrom, 'end_date' => $dateTo, 'outlet_id' => $outletId, 'reference_scope' => 'sales_cogs']) }}" target="_blank"
-                class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500 hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
+                class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500 hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">COGS (HPP)</span>
                 <h3 class="text-2xl font-black text-rose-500 mt-2 tracking-tight flex items-center gap-2">
                     Rp {{ number_format($report['total_cogs'] ?? 0, 0, ',', '.') }}
@@ -94,7 +94,7 @@
             </a>
 
             <!-- Laba Kotor -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-emerald-500">
+            <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-emerald-500">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Laba Kotor</span>
                     <span class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
@@ -110,7 +110,7 @@
             </div>
 
             <!-- Laba Bersih -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-indigo-500">
+            <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-indigo-500">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Laba Bersih</span>
                     <span class="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">

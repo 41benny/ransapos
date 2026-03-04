@@ -84,7 +84,7 @@
                     </label>
                     <select id="outlet_id"
                             name="outlet_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror">
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('outlet_id') border-red-500 @enderror">
                         <option value="">-- Tanpa Outlet --</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" {{ (string) old('outlet_id', $cashAccount->outlet_id) === (string) $outlet->id ? 'selected' : '' }}>
@@ -104,7 +104,7 @@
                     </label>
                     <select id="type" 
                             name="type" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
                             required>
                         <option value="cash" {{ old('type', $cashAccount->type) == 'cash' ? 'selected' : '' }}>Kas Tunai</option>
                         <option value="bank" {{ old('type', $cashAccount->type) == 'bank' ? 'selected' : '' }}>Bank</option>
@@ -121,7 +121,7 @@
                     </label>
                     <select id="usage_type"
                             name="usage_type"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
+                            class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('usage_type') border-red-500 @enderror"
                             required>
                         <option value="operational" {{ old('usage_type', $cashAccount->usage_type ?? 'operational') == 'operational' ? 'selected' : '' }}>Operasional Umum</option>
                         <option value="petty_cash" {{ old('usage_type', $cashAccount->usage_type) == 'petty_cash' ? 'selected' : '' }}>Petty Cash Outlet</option>
@@ -205,7 +205,7 @@
                     <textarea id="notes" 
                               name="notes" 
                               rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
+                              class="ui-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
                               placeholder="Catatan tambahan">{{ old('notes', $cashAccount->notes) }}</textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

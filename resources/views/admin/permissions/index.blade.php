@@ -20,21 +20,21 @@
         @endif
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <p class="text-[10px] font-normal text-slate-500 uppercase tracking-widest">Jabatan Terdaftar</p>
                 <div class="flex items-baseline gap-2 mt-2">
                     <p class="text-2xl font-normal text-slate-900">{{ $roles->count() }}</p>
                     <p class="text-[10px] font-normal text-slate-400">Role</p>
                 </div>
             </div>
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <p class="text-[10px] font-normal text-slate-500 uppercase tracking-widest">Matriks Akses</p>
                 <div class="flex items-baseline gap-2 mt-2">
                     <p class="text-2xl font-normal text-slate-900">{{ $totalPermissions }}</p>
                     <p class="text-[10px] font-normal text-slate-400">Titik Kontrol</p>
                 </div>
             </div>
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm bg-indigo-50/30">
+            <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm bg-indigo-50/30">
                 <p class="text-[10px] font-normal text-indigo-600 uppercase tracking-widest">Cakupan Sistem</p>
                 <p class="text-[11px] font-normal text-slate-700 mt-3 flex items-center gap-2">
                     <i class="fas fa-shield-alt text-[10px] text-indigo-400"></i>
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             {{-- Table Header --}}
             <div class="p-6 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -55,7 +55,7 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="ui-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80">
                         <tr>
                             <th class="px-6 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-600">Nama Jabatan</th>
@@ -90,7 +90,7 @@
                                         <span class="text-[10px] text-slate-400 italic">Otomatis Terbuka</span>
                                     @else
                                         <a href="{{ route('admin.permissions.edit', $role) }}"
-                                            class="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-[10px] font-normal text-slate-700 shadow-sm transition-all hover:text-indigo-600 hover:border-indigo-100 active:scale-95">
+                                            class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-4 py-2 text-[10px] font-normal text-slate-700 shadow-sm transition-all hover:text-indigo-600 hover:border-indigo-100 active:scale-95">
                                             <i class="fas fa-sliders-h text-[9px]"></i>
                                             <span>Kelola Akses</span>
                                         </a>

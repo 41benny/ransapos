@@ -36,7 +36,7 @@
                         Outlet <span class="text-red-500">*</span>
                     </label>
                     <select name="outlet_id" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             {{ $expense->status !== 'pending' ? 'disabled' : '' }}>
                         <option value="">-- Pilih Outlet --</option>
                         @foreach($outlets as $outlet)
@@ -59,7 +59,7 @@
                         Kategori Biaya <span class="text-red-500">*</span>
                     </label>
                     <select name="expense_category_id" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             {{ $expense->status !== 'pending' ? 'disabled' : '' }}>
                         <option value="">-- Pilih Kategori --</option>
                         @foreach($categories as $category)
@@ -120,7 +120,7 @@
                         Keterangan <span class="text-red-500">*</span>
                     </label>
                     <textarea name="description" rows="4" required
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">{{ old('description', $expense->description) }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">{{ old('description', $expense->description) }}</textarea>
                     @error('description')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -140,7 +140,7 @@
                     </div>
                     @endif
                     <input type="file" name="attachment" accept="image/*,.pdf"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                           class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     <p class="text-xs text-gray-500 mt-1">Max 2MB. Format: JPG, PNG, PDF. Kosongkan jika tidak ingin mengubah.</p>
                     @error('attachment')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

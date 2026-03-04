@@ -14,7 +14,7 @@
             </div>
             <div class="flex items-center gap-3 no-print">
                 <a href="{{ route('admin.stocks.index') }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                    class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
                     <span>Kembali ke Stok</span>
                 </a>
@@ -22,7 +22,7 @@
         </div>
 
         {{-- Product Meta & Summary Card --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div class="flex flex-col gap-1">
@@ -67,7 +67,7 @@
         </div>
 
         {{-- Filter Period --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-calendar-alt text-indigo-500 text-[10px]"></i>
@@ -84,22 +84,22 @@
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
                             Tanggal</label>
                         <input type="date" name="start_date" value="{{ request('start_date') }}"
-                            class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Sampai
                             Tanggal</label>
                         <input type="date" name="end_date" value="{{ request('end_date') }}"
-                            class="w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                            class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
                     </div>
                     <div class="flex items-end gap-2 md:col-span-2">
                         <button type="submit"
-                            class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                             <i class="fas fa-filter text-[10px]"></i>
                             <span>Saring Periode</span>
                         </button>
                         <a href="{{ route('admin.stocks.card', ['product_id' => $product->id, 'outlet_id' => $outlet->id]) }}"
-                            class="inline-flex items-center justify-center h-[40px] w-[40px] rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                            class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[40px] w-[40px] rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                             <i class="fas fa-redo text-[10px]"></i>
                         </a>
                     </div>
@@ -108,7 +108,7 @@
         </div>
 
         {{-- Stock Card Table --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-history text-indigo-500 text-[10px]"></i>
@@ -118,7 +118,7 @@
                 <p class="text-[9px] font-normal text-slate-400 italic">Menampilkan {{ $mutations->count() }} transaksi</p>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200">
+                <table class="ui-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">
@@ -224,7 +224,7 @@
                 $netChange = $totalIn - $totalOut;
             @endphp
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div class="bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
+                <div class="ui-card bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
                     <p class="text-[10px] font-normal uppercase tracking-[0.2em] text-emerald-500 mb-2">Total Stok Masuk (+)</p>
                     <div class="flex items-baseline gap-1">
                         <span
@@ -233,7 +233,7 @@
                             class="text-[10px] font-normal text-emerald-400 uppercase tracking-widest">{{ $product->unit ?? 'pcs' }}</span>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl border border-rose-100 p-5 shadow-sm">
+                <div class="ui-card bg-white rounded-2xl border border-rose-100 p-5 shadow-sm">
                     <p class="text-[10px] font-normal uppercase tracking-[0.2em] text-rose-500 mb-2">Total Stok Keluar (-)</p>
                     <div class="flex items-baseline gap-1">
                         <span
@@ -242,7 +242,7 @@
                             class="text-[10px] font-normal text-rose-400 uppercase tracking-widest">{{ $product->unit ?? 'pcs' }}</span>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl border border-indigo-100 p-5 shadow-sm">
+                <div class="ui-card bg-white rounded-2xl border border-indigo-100 p-5 shadow-sm">
                     <p class="text-[10px] font-normal uppercase tracking-[0.2em] text-indigo-500 mb-2">Perubahan Neto</p>
                     <div class="flex items-baseline gap-1">
                         <span

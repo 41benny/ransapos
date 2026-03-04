@@ -10,7 +10,7 @@
             @csrf
             @method('PUT')
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900">Informasi Metode Pembayaran</h3>
                     <p class="text-sm text-gray-500 mt-1">Perbarui data metode pembayaran sesuai kebutuhan operasional</p>
@@ -27,7 +27,7 @@
                                 name="code"
                                 id="code"
                                 value="{{ old('code', $paymentMethod->code) }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror {{ $paymentMethod->code === 'CASH' ? 'bg-gray-100 text-gray-500' : '' }}"
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('code') border-red-500 @enderror {{ $paymentMethod->code === 'CASH' ? 'bg-gray-100 text-gray-500' : '' }}"
                                 placeholder="Contoh: QRIS atau TRANSFER_BANK"
                                 required
                                 {{ $paymentMethod->code === 'CASH' ? 'readonly' : '' }}
@@ -51,7 +51,7 @@
                                 name="name"
                                 id="name"
                                 value="{{ old('name', $paymentMethod->name) }}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror"
                                 placeholder="Contoh: QRIS"
                                 required
                             >
@@ -95,13 +95,13 @@
                 <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">
                     <a
                         href="{{ route('admin.payment-methods.index') }}"
-                        class="px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
+                        class="ui-btn ui-btn-ghost px-5 py-2 bg-white border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition"
                     >
                         Batal
                     </a>
                     <button
                         type="submit"
-                        class="px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg transition shadow-md hover:shadow-lg"
+                        class="ui-btn ui-btn-primary px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg transition shadow-md hover:shadow-lg"
                     >
                         Simpan Perubahan
                     </button>

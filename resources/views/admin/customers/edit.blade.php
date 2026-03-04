@@ -82,7 +82,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
                     <textarea name="address" rows="3"
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-500 @enderror">{{ old('address', $customer->address) }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-500 @enderror">{{ old('address', $customer->address) }}</textarea>
                     @error('address')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -96,7 +96,7 @@
                             Customer Type <span class="text-red-500">*</span>
                         </label>
                         <select name="customer_type" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('customer_type') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('customer_type') border-red-500 @enderror">
                             <option value="">Select Type</option>
                             <option value="regular" {{ old('customer_type', $customer->customer_type) == 'regular' ? 'selected' : '' }}>Regular</option>
                             <option value="member" {{ old('customer_type', $customer->customer_type) == 'member' ? 'selected' : '' }}>Member</option>
@@ -110,7 +110,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Member Tier</label>
                         <select name="member_tier"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('member_tier') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('member_tier') border-red-500 @enderror">
                             <option value="">Auto (based on spending)</option>
                             <option value="bronze" {{ old('member_tier', $customer->member_tier) == 'bronze' ? 'selected' : '' }}>Bronze</option>
                             <option value="silver" {{ old('member_tier', $customer->member_tier) == 'silver' ? 'selected' : '' }}>Silver</option>
@@ -125,7 +125,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
                         <select name="gender"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('gender') border-red-500 @enderror">
+                                class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('gender') border-red-500 @enderror">
                             <option value="">Select Gender</option>
                             <option value="male" {{ old('gender', $customer->gender) == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ old('gender', $customer->gender) == 'female' ? 'selected' : '' }}>Female</option>
@@ -172,7 +172,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                     <textarea name="notes" rows="3"
                               placeholder="Preferences, allergies, special requirements..."
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror">{{ old('notes', $customer->notes) }}</textarea>
+                              class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('notes') border-red-500 @enderror">{{ old('notes', $customer->notes) }}</textarea>
                     @error('notes')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror

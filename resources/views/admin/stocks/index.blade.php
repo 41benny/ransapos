@@ -14,12 +14,12 @@
         </div>
         <div class="flex items-center gap-3 no-print">
             <a href="{{ route('admin.stocks.adjustment') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-adjust text-xs text-indigo-500"></i>
                 <span>Stock Adjustment</span>
             </a>
             <a href="{{ route('admin.stock-transfers.create') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                 <i class="fas fa-exchange-alt text-xs"></i>
                 <span>Transfer Stok</span>
             </a>
@@ -86,7 +86,7 @@
     </div>
 
     {{-- Filter Section --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
+    <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
         <div class="p-4 border-b border-slate-100 bg-slate-50/50">
             <div class="flex items-center gap-2">
                 <i class="fas fa-filter text-indigo-500 text-[10px]"></i>
@@ -97,7 +97,7 @@
             <form method="GET" action="{{ route('admin.stocks.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Outlet</label>
-                    <select name="outlet_id" class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="outlet_id" class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Outlet</option>
                         @foreach($outlets as $outlet)
                             <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
@@ -109,7 +109,7 @@
 
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kategori</label>
-                    <select name="category_id" class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="category_id" class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Kategori</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -122,23 +122,23 @@
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Cari Produk</label>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama atau SKU..."
-                        class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                 </div>
 
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Kondisi Stok</label>
-                    <select name="low_stock" class="w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    <select name="low_stock" class="ui-input w-full px-3 py-1.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         <option value="">Semua Stok</option>
                         <option value="1" {{ request('low_stock') == '1' ? 'selected' : '' }}>Stok Limit / Habis</option>
                     </select>
                 </div>
 
                 <div class="flex items-end gap-2">
-                    <button type="submit" class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    <button type="submit" class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                         <i class="fas fa-search text-xs"></i>
                         <span>Filter</span>
                     </button>
-                    <a href="{{ route('admin.stocks.index') }}" class="inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                    <a href="{{ route('admin.stocks.index') }}" class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                         <i class="fas fa-redo text-xs"></i>
                     </a>
                 </div>
@@ -147,9 +147,9 @@
     </div>
 
     {{-- Stock Table --}}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+    <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200">
+            <table class="ui-table ui-table-standard min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
                         <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-500">Produk</th>
@@ -161,7 +161,7 @@
                         <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-500">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody class="divide-y divide-slate-100">
                     @forelse($stocks as $stock)
                         <tr class="group hover:bg-slate-50/50 transition-colors">
                             <td class="px-5 py-3.5">
