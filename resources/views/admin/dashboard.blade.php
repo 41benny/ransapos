@@ -255,6 +255,11 @@
         <div id="outletBars" class="flex-1 w-full min-h-[400px]"></div>
 
         <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
+
+        <div id="outletMarginContainer" class="hidden mt-6 pt-6 border-t border-slate-100">
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Margin vs HPP</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="outletMarginList"></div>
+        </div>
     </div>
 
     <noscript>
@@ -913,6 +918,36 @@
                     outletChart.updateSeries([{
                         data: amounts
                     }]);
+                }
+
+                const marginContainer = document.getElementById('outletMarginContainer');
+                const marginList = document.getElementById('outletMarginList');
+                if (marginContainer && marginList) {
+                    if (hasData) {
+                        marginContainer.classList.remove('hidden');
+                        marginList.innerHTML = rows.map(r => {
+                            const rev = Number(r.amount || 0);
+                            const cogs = Number(r.cogs || 0);
+                            const margin = rev - cogs;
+                            const marginPct = rev > 0 ? (margin / rev * 100).toFixed(1) : 0;
+                            const cogsPct = rev > 0 ? (cogs / rev * 100).toFixed(1) : 0;
+                            return `
+                                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                    <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
+                                    <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
+                                        <div class="flex justify-between items-center text-emerald-600"><span class="uppercase tracking-wide opacity-80">Margin</span><span>${marginPct}%</span></div>
+                                        <div class="flex justify-between items-center text-rose-600"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-1.5 flex overflow-hidden opacity-80">
+                                        <div class="bg-emerald-500 h-1.5" style="width: ${marginPct}%"></div>
+                                        <div class="bg-rose-500 h-1.5" style="width: ${cogsPct}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        marginContainer.classList.add('hidden');
+                    }
                 }
             }
 

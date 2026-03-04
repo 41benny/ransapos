@@ -262,6 +262,15 @@ class DashboardController extends Controller
 
             $outletSales = collect();
             if ($showBreakdown) {
+                $cogsByOutlet = SaleItem::query()
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->where('sales.sale_date', $date)
+                    ->where('sales.status', 'completed')
+                    ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
+                    ->groupBy('sales.outlet_id')
+                    ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs * sale_items.quantity), 0) as total_cogs')
+                    ->pluck('total_cogs', 'outlet_id');
+
                 $outletSalesBase = Sale::query()
                     ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
                     ->where('sales.sale_date', $date)
@@ -277,6 +286,7 @@ class DashboardController extends Controller
                         'outlet_id' => (int) $row->outlet_id,
                         'outlet_name' => (string) $row->outlet_name,
                         'amount' => (float) $row->amount,
+                        'cogs' => (float) ($cogsByOutlet[$row->outlet_id] ?? 0),
                         'transactions' => (int) $row->transactions,
                         'last_sale_at' => $row->last_sale_at ? Carbon::parse($row->last_sale_at)->toIso8601String() : null,
                     ])
