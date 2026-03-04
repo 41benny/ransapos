@@ -148,9 +148,9 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2"
+        <div class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2 flex flex-col"
             style="--dash-accent:#2563eb;--dash-accent-2:#3b82f6;--dash-accent-soft:rgba(37,99,235,0.16);">
-            <div class="dash-card-head flex items-center justify-between mb-4">
+            <div class="dash-card-head flex items-center justify-between mb-4 shrink-0">
                 <div>
                     <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
                     <p class="text-xs text-slate-500">Berdasarkan jam transaksi (created_at)</p>
@@ -158,7 +158,7 @@
                 <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
             </div>
 
-            <div class="h-64 w-full" id="hourlyBars"></div>
+            <div class="flex-1 w-full min-h-[400px]" id="hourlyBars"></div>
             <div id="hourlyEmpty" class="hidden mt-2 text-xs font-semibold text-orange-700 text-center">Data per jam belum
                 tersedia untuk filter ini.</div>
         </div>
@@ -243,16 +243,16 @@
         </div>
     </div>
 
-    <div id="outletPanel" class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
+    <div id="outletPanel" class="ui-card dash-panel bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col"
         style="--dash-accent:#2563eb;--dash-accent-2:#60a5fa;--dash-accent-soft:rgba(37,99,235,0.16);">
-        <div class="dash-card-head flex items-center justify-between mb-4">
+        <div class="dash-card-head flex items-center justify-between mb-4 shrink-0">
             <div>
                 <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
                 <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
             </div>
         </div>
 
-        <div id="outletBars" class="h-64 w-full"></div>
+        <div id="outletBars" class="flex-1 w-full min-h-[400px]"></div>
 
         <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
     </div>
@@ -554,7 +554,7 @@
                         series: series,
                         chart: {
                             type: 'area',
-                            height: 250,
+                            height: '100%',
                             stacked: isStacked,
                             toolbar: { show: false },
                             zoom: { enabled: false },
@@ -809,7 +809,7 @@
                         }],
                         chart: {
                             type: 'area',
-                            height: 250,
+                            height: '100%',
                             toolbar: { show: false },
                             zoom: { enabled: false },
                             fontFamily: 'Inter, sans-serif',
