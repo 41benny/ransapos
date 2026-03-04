@@ -268,7 +268,7 @@ class DashboardController extends Controller
                     ->where('sales.status', 'completed')
                     ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                     ->groupBy('sales.outlet_id')
-                    ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs * sale_items.quantity), 0) as total_cogs')
+                    ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs), 0) as total_cogs')
                     ->pluck('total_cogs', 'outlet_id');
 
                 $outletSalesBase = Sale::query()

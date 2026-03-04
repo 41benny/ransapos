@@ -257,13 +257,8 @@
         <div id="outletEmpty" class="hidden text-center text-sm text-slate-500 py-6">Belum ada data.</div>
 
         <div id="outletMarginContainer" class="hidden mt-6 pt-6 border-t border-slate-100">
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Margin vs HPP</h4>
+            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Penjualan vs HPP</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="outletMarginList"></div>
-        </div>
-
-        <div id="salesCogsChartContainer" class="hidden mt-6 pt-6 border-t border-slate-100">
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Penjualan vs HPP per Outlet</h4>
-            <div id="salesCogsBars" class="w-full h-[300px]"></div>
         </div>
     </div>
 
@@ -485,7 +480,7 @@
                     tooltipTheme: dark ? 'dark' : 'light',
                 };
             };
-            let timer = null; let isLoading = false; let hourlyTooltipEl = null; let cogsChart = null;
+            let timer = null; let isLoading = false; let hourlyTooltipEl = null;
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text; statusTextEl.className = 'text-xs';
                 if (type === 'error') { statusTextEl.classList.add('text-red-600'); } else if (type === 'success') { statusTextEl.classList.add('text-green-600'); } else { statusTextEl.classList.add('text-slate-500'); }
@@ -940,11 +935,11 @@
                                 <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
                                     <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
                                     <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
-                                        <div class="flex justify-between items-center text-emerald-600"><span class="uppercase tracking-wide opacity-80">Margin</span><span>${marginPct}%</span></div>
+                                        <div class="flex justify-between items-center text-blue-600"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>${marginPct}%</span></div>
                                         <div class="flex justify-between items-center text-rose-600"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>
                                     </div>
                                     <div class="w-full bg-slate-200 rounded-full h-1.5 flex overflow-hidden opacity-80">
-                                        <div class="bg-emerald-500 h-1.5" style="width: ${marginPct}%"></div>
+                                        <div class="bg-blue-500 h-1.5" style="width: ${marginPct}%"></div>
                                         <div class="bg-rose-500 h-1.5" style="width: ${cogsPct}%"></div>
                                     </div>
                                 </div>
@@ -952,52 +947,6 @@
                         }).join('');
                     } else {
                         marginContainer.classList.add('hidden');
-                    }
-                }
-
-                // Sales vs COGS chart
-                const scContainer = document.getElementById('salesCogsChartContainer');
-                const scEl = document.getElementById('salesCogsBars');
-                if (scContainer && scEl) {
-                    if (hasData) {
-                        scContainer.classList.remove('hidden');
-                        const scLabels = rows.map(r => simplifyOutletName(r.outlet_name));
-                        const scRevenues = rows.map(r => Number(r.amount || 0));
-                        const scCogs = rows.map(r => Number(r.cogs || 0));
-                        const scTheme = getChartTheme();
-                        if (!cogsChart) {
-                            cogsChart = new ApexCharts(scEl, {
-                                series: [
-                                    { name: 'Penjualan', data: scRevenues },
-                                    { name: 'HPP', data: scCogs },
-                                ],
-                                chart: { type: 'bar', height: '100%', toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent', animations: { enabled: true, easing: 'easeinout', speed: 600 } },
-                                plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
-                                theme: { mode: scTheme.dark ? 'dark' : 'light' },
-                                dataLabels: { enabled: false },
-                                stroke: { show: true, width: 2, colors: ['transparent'] },
-                                xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-                                yaxis: { labels: { formatter: val => val >= 1000000 ? (val/1000000).toFixed(1)+'M' : val >= 1000 ? (val/1000).toFixed(0)+'k' : val, style: { colors: scTheme.axisText, fontSize: '10px' } } },
-                                grid: { borderColor: scTheme.grid, strokeDashArray: 4, padding: { left: 10, right: 10 } },
-                                tooltip: { theme: scTheme.tooltipTheme, y: { formatter: val => idr.format(val) } },
-                                colors: ['#3b82f6', '#f43f5e'],
-                                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', fontWeight: 600 },
-                            });
-                            cogsChart.render();
-                        } else {
-                            cogsChart.updateOptions({
-                                xaxis: { categories: scLabels, labels: { style: { colors: scTheme.axisText, fontSize: '10px' } } },
-                                theme: { mode: scTheme.dark ? 'dark' : 'light' },
-                                grid: { borderColor: scTheme.grid },
-                                tooltip: { theme: scTheme.tooltipTheme },
-                            });
-                            cogsChart.updateSeries([
-                                { name: 'Penjualan', data: scRevenues },
-                                { name: 'HPP', data: scCogs },
-                            ]);
-                        }
-                    } else {
-                        scContainer.classList.add('hidden');
                     }
                 }
             }
