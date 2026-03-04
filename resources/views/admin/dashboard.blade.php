@@ -928,19 +928,16 @@
                         marginList.innerHTML = rows.map(r => {
                             const rev = Number(r.amount || 0);
                             const cogs = Number(r.cogs || 0);
-                            const margin = rev - cogs;
-                            const marginPct = rev > 0 ? (margin / rev * 100).toFixed(1) : 0;
                             const cogsPct = rev > 0 ? (cogs / rev * 100).toFixed(1) : 0;
                             return `
                                 <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
                                     <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
                                     <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
-                                        <div class="flex justify-between items-center text-blue-600"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>${marginPct}%</span></div>
+                                        <div class="flex justify-between items-center text-blue-600"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>100%</span></div>
                                         <div class="flex justify-between items-center text-rose-600"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>
                                     </div>
-                                    <div class="w-full bg-slate-200 rounded-full h-1.5 flex overflow-hidden opacity-80">
-                                        <div class="bg-blue-500 h-1.5" style="width: ${marginPct}%"></div>
-                                        <div class="bg-rose-500 h-1.5" style="width: ${cogsPct}%"></div>
+                                    <div class="w-full bg-blue-500 rounded-full h-1.5 overflow-hidden opacity-80">
+                                        <div class="bg-rose-500 h-1.5 rounded-full" style="width: ${cogsPct}%"></div>
                                     </div>
                                 </div>
                             `;
