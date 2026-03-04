@@ -113,37 +113,32 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-between gap-4 pt-5 border-t border-slate-100">
-                        <div class="flex items-center gap-2">
-                            <button type="submit"
-                                class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95">
-                                <i class="fas fa-magnifying-glass text-[10px]"></i>
-                                <span>Terapkan Filter</span>
-                            </button>
-                            <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}"
-                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-500 border border-slate-200 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-95">
-                                <i class="fas fa-rotate-left text-[10px]"></i>
-                                <span>Reset</span>
-                            </a>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-2">
-                            <select name="view_mode" onchange="this.form.submit()"
-                                class="ui-input px-3 py-2.5 text-[11px] font-bold bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all">
-                                <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
-                                <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
-                            </select>
-                            <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
-                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
-                                <i class="fas fa-file-excel text-[10px]"></i>
-                                <span>EXCEL</span>
-                            </a>
-                            <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
-                                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-[11px] font-bold text-rose-700 border border-rose-100 transition-all hover:bg-rose-500 hover:text-white active:scale-95">
-                                <i class="fas fa-file-pdf text-[10px]"></i>
-                                <span>PDF</span>
-                            </a>
-                        </div>
+                    <div class="flex flex-wrap items-center gap-2 pt-5 border-t border-slate-100">
+                        <button type="submit"
+                            class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-600 active:scale-95">
+                            <i class="fas fa-magnifying-glass text-[10px]"></i>
+                            <span>Terapkan Filter</span>
+                        </button>
+                        <a href="{{ route('admin.reports.sales.index', ['tab' => request('tab', 'penjualan')]) }}"
+                            class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-500 border border-slate-200 transition-all hover:bg-slate-50 hover:text-rose-500 active:scale-95">
+                            <i class="fas fa-rotate-left text-[10px]"></i>
+                            <span>Reset</span>
+                        </a>
+                        <select name="view_mode" onchange="this.form.submit()"
+                            class="ui-input px-3 py-2.5 text-[11px] font-bold bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="ringkas" {{ ($viewMode ?? 'ringkas') === 'ringkas' ? 'selected' : '' }}>Ringkas</option>
+                            <option value="detail" {{ ($viewMode ?? 'ringkas') === 'detail' ? 'selected' : '' }}>Detil</option>
+                        </select>
+                        <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+                            class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-[11px] font-bold text-emerald-700 border border-emerald-100 transition-all hover:bg-emerald-500 hover:text-white active:scale-95">
+                            <i class="fas fa-file-excel text-[10px]"></i>
+                            <span>EXCEL</span>
+                        </a>
+                        <a href="{{ route('admin.reports.sales.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
+                            class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-2.5 text-[11px] font-bold text-rose-700 border border-rose-100 transition-all hover:bg-rose-500 hover:text-white active:scale-95">
+                            <i class="fas fa-file-pdf text-[10px]"></i>
+                            <span>PDF</span>
+                        </a>
                     </div>
                 </form>
             </div>
