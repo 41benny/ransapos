@@ -105,12 +105,40 @@
         .dark .ui-admin-body .bg-white\/80,
         .dark .ui-admin-body .bg-slate-50,
         .dark .ui-admin-body .bg-gray-50,
+        .dark .ui-admin-body .bg-gray-50\/20,
+        .dark .ui-admin-body .bg-gray-50\/30,
+        .dark .ui-admin-body .bg-gray-50\/40,
+        .dark .ui-admin-body .bg-gray-50\/50,
+        .dark .ui-admin-body .bg-gray-50\/60,
+        .dark .ui-admin-body .bg-gray-50\/80,
         .dark .ui-admin-body .bg-slate-100,
         .dark .ui-admin-body .bg-gray-100,
+        .dark .ui-admin-body .bg-slate-100\/20,
+        .dark .ui-admin-body .bg-slate-100\/30,
+        .dark .ui-admin-body .bg-slate-100\/40,
+        .dark .ui-admin-body .bg-slate-100\/50,
+        .dark .ui-admin-body .bg-slate-100\/60,
+        .dark .ui-admin-body .bg-slate-100\/80,
+        .dark .ui-admin-body .bg-gray-100\/20,
+        .dark .ui-admin-body .bg-gray-100\/30,
+        .dark .ui-admin-body .bg-gray-100\/40,
+        .dark .ui-admin-body .bg-gray-100\/50,
+        .dark .ui-admin-body .bg-gray-100\/60,
+        .dark .ui-admin-body .bg-gray-100\/80,
         .dark .ui-admin-body .bg-slate-50\/30,
         .dark .ui-admin-body .bg-slate-50\/40,
         .dark .ui-admin-body .bg-slate-50\/50,
-        .dark .ui-admin-body .bg-slate-50\/80 {
+        .dark .ui-admin-body .bg-slate-50\/80,
+        .dark .ui-admin-body .bg-blue-50,
+        .dark .ui-admin-body .bg-blue-100,
+        .dark .ui-admin-body .bg-blue-50\/20,
+        .dark .ui-admin-body .bg-blue-50\/30,
+        .dark .ui-admin-body .bg-blue-50\/40,
+        .dark .ui-admin-body .bg-blue-50\/50,
+        .dark .ui-admin-body .bg-blue-50\/60,
+        .dark .ui-admin-body .bg-blue-50\/80,
+        .dark .ui-admin-body .bg-indigo-50,
+        .dark .ui-admin-body .bg-indigo-100 {
             background-color: var(--runtime-ui-surface) !important;
         }
 
@@ -118,8 +146,71 @@
         .dark .ui-admin-body .border-slate-100,
         .dark .ui-admin-body .border-gray-200,
         .dark .ui-admin-body .border-gray-100,
-        .dark .ui-admin-body .border-white {
+        .dark .ui-admin-body .border-white,
+        .dark .ui-admin-body .border-blue-200,
+        .dark .ui-admin-body .border-blue-100 {
             border-color: var(--runtime-ui-border) !important;
+        }
+
+        .dark .ui-admin-body .from-gray-50,
+        .dark .ui-admin-body .from-gray-100,
+        .dark .ui-admin-body .from-slate-50,
+        .dark .ui-admin-body .from-slate-100 {
+            --tw-gradient-from: var(--runtime-ui-surface-muted) var(--tw-gradient-from-position) !important;
+            --tw-gradient-to: color-mix(in srgb, var(--runtime-ui-surface-muted) 0%, transparent) var(--tw-gradient-to-position) !important;
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+        }
+
+        .dark .ui-admin-body .to-gray-50,
+        .dark .ui-admin-body .to-gray-100,
+        .dark .ui-admin-body .to-slate-50,
+        .dark .ui-admin-body .to-slate-100 {
+            --tw-gradient-to: var(--runtime-ui-surface-muted) var(--tw-gradient-to-position) !important;
+        }
+
+        .dark .ui-admin-body .hover\:bg-gray-50:hover,
+        .dark .ui-admin-body .hover\:bg-slate-50:hover,
+        .dark .ui-admin-body .hover\:bg-blue-50:hover {
+            background-color: color-mix(in srgb, var(--runtime-ui-surface-muted) 82%, transparent) !important;
+        }
+
+        .dark .ui-admin-body .ts-wrapper .ts-control {
+            background: var(--runtime-ui-surface) !important;
+            border-color: var(--runtime-ui-border) !important;
+            color: var(--runtime-ui-text) !important;
+            box-shadow: none !important;
+        }
+
+        .dark .ui-admin-body .ts-wrapper.single .ts-control::after {
+            border-color: var(--runtime-ui-text-muted) transparent transparent transparent !important;
+        }
+
+        .dark .ui-admin-body .ts-wrapper .ts-control .item,
+        .dark .ui-admin-body .ts-wrapper .ts-control .placeholder,
+        .dark .ui-admin-body .ts-wrapper .ts-control > input {
+            color: var(--runtime-ui-text) !important;
+            -webkit-text-fill-color: var(--runtime-ui-text) !important;
+        }
+
+        .dark .ui-admin-body .ts-wrapper .ts-control .placeholder {
+            color: color-mix(in srgb, var(--runtime-ui-text-muted) 80%, transparent) !important;
+        }
+
+        .dark .ui-admin-body .ts-dropdown {
+            background: var(--runtime-ui-surface) !important;
+            border-color: var(--runtime-ui-border) !important;
+            color: var(--runtime-ui-text) !important;
+        }
+
+        .dark .ui-admin-body .ts-dropdown .option,
+        .dark .ui-admin-body .ts-dropdown .create {
+            color: var(--runtime-ui-text) !important;
+        }
+
+        .dark .ui-admin-body .ts-dropdown .option.active,
+        .dark .ui-admin-body .ts-dropdown .option:hover {
+            background: color-mix(in srgb, var(--runtime-ui-surface-muted) 88%, transparent) !important;
+            color: var(--runtime-ui-text) !important;
         }
 
         .dark .ui-admin-body .text-slate-900,

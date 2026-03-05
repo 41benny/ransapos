@@ -434,6 +434,8 @@
             let hourlyChart = null;
             let outletChart = null;
             const endpoint = @json(route('admin.dashboard.summary'));
+            const salesVsHppEndpoint = @json(route('admin.reports.catalog.show', ['slug' => 'sales-vs-hpp']));
+            const canOpenSalesVsHppReport = @json((bool) (auth()->user()?->hasPermission('reports.sales.view') ?? false));
             const outletFilterWrapEl = document.getElementById('outletFilterWrap');
             const outletDropdownBtnEl = document.getElementById('outletDropdownBtn');
             const outletDropdownLabelEl = document.getElementById('outletDropdownLabel');
@@ -544,6 +546,19 @@
                 selectedOutletIds.forEach((outletId) => {
                     url.searchParams.append('outlet_ids[]', String(outletId));
                 });
+
+                return url.toString();
+            }
+            function buildSalesVsHppUrl(outletId = null) {
+                const date = dateEl.value || @json($defaultDate);
+                const url = new URL(salesVsHppEndpoint, window.location.origin);
+                url.searchParams.set('date_from', date);
+                url.searchParams.set('date_to', date);
+
+                const normalizedOutletId = Number(outletId);
+                if (Number.isInteger(normalizedOutletId) && normalizedOutletId > 0) {
+                    url.searchParams.set('outlet_id', String(normalizedOutletId));
+                }
 
                 return url.toString();
             }
@@ -929,8 +944,16 @@
                             const rev = Number(r.amount || 0);
                             const cogs = Number(r.cogs || 0);
                             const cogsPct = rev > 0 ? (cogs / rev * 100).toFixed(1) : 0;
+                            const reportUrl = buildSalesVsHppUrl(r.outlet_id);
+                            const cardTag = canOpenSalesVsHppReport ? 'a' : 'div';
+                            const cardAttrs = canOpenSalesVsHppReport
+                                ? `href="${escapeHtml(reportUrl)}" title="Lihat laporan Sales vs HPP"`
+                                : '';
+                            const cardClass = canOpenSalesVsHppReport
+                                ? 'group block bg-slate-50 rounded-xl p-3 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/40 transition-colors'
+                                : 'bg-slate-50 rounded-xl p-3 border border-slate-100';
                             return `
-                                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                <${cardTag} ${cardAttrs} class="${cardClass}">
                                     <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
                                     <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
                                         <div class="flex justify-between items-center text-blue-600"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>100%</span></div>
@@ -939,7 +962,7 @@
                                     <div class="w-full bg-blue-500 rounded-full h-1.5 overflow-hidden opacity-80">
                                         <div class="bg-rose-500 h-1.5 rounded-full" style="width: ${cogsPct}%"></div>
                                     </div>
-                                </div>
+                                </${cardTag}>
                             `;
                         }).join('');
                     } else {

@@ -154,7 +154,7 @@ class SalesReportController extends Controller
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
                     'outlets.name as outlet_name',
-                    'sales.customer_name',
+                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), 'Walk-in') as customer_name"),
                     'sale_items.product_name',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as price',
@@ -188,6 +188,9 @@ class SalesReportController extends Controller
             }
             if ($request->filled('filter_outlet')) {
                 $detailRows = $detailRows->filter(fn($r) => stripos($r->outlet_name ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_customer')) {
+                $detailRows = $detailRows->filter(fn($r) => stripos($r->customer_name ?? '', $request->filter_customer) !== false);
             }
             if ($request->filled('filter_produk')) {
                 $detailRows = $detailRows->filter(fn($r) => stripos($r->product_name ?? '', $request->filter_produk) !== false);
@@ -482,6 +485,7 @@ class SalesReportController extends Controller
                     'sales.invoice_number as no_transaksi',
                     'sales.sale_date as tanggal',
                     'outlets.name as outlet',
+                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), 'Walk-in') as customer"),
                     'sale_items.product_name as produk',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as harga',
@@ -505,6 +509,9 @@ class SalesReportController extends Controller
             }
             if ($request->filled('filter_outlet')) {
                 $rows = $rows->filter(fn($r) => stripos($r->outlet ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_customer')) {
+                $rows = $rows->filter(fn($r) => stripos($r->customer ?? '', $request->filter_customer) !== false);
             }
             if ($request->filled('filter_produk')) {
                 $rows = $rows->filter(fn($r) => stripos($r->produk ?? '', $request->filter_produk) !== false);
@@ -539,6 +546,7 @@ class SalesReportController extends Controller
                 ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
                 ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
                 ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'customer', 'label' => 'Customer', 'type' => 'text'],
                 ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
                 ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'harga', 'label' => 'Harga', 'type' => 'number', 'decimals' => 2],

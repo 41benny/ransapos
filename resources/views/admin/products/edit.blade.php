@@ -186,7 +186,7 @@
                             </div>
 
                         <div
-                            class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-gray-50/60">
+                            class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-white">
                             <div>
                                 <h4 class="text-base font-semibold text-gray-900">Informasi Produk</h4>
                                 <p class="text-xs text-gray-500 mt-1">Atur status jual produk ini</p>
@@ -265,7 +265,7 @@
                                 menggunakan Reguler.</p>
 
                             <!-- Info Banner -->
-                            <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="mb-4 p-4 bg-white border border-gray-200 rounded-lg">
                                 <p class="text-sm text-gray-700">
                                     <i class="fas fa-info-circle text-blue-600 mr-1"></i>
                                     <strong>Pengaturan Harga Per Outlet:</strong><br>
@@ -286,7 +286,7 @@
                                 <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
                                     <!-- Header Price Level -->
                                     <div
-                                        class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                        class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                                         <h4 class="text-sm font-bold text-gray-900">
                                             <i class="fas fa-tag text-gray-500 mr-2"></i>{{ $levelLabel }}
                                         </h4>

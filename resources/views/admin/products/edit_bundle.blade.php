@@ -215,7 +215,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-gray-50/60">
+                    <div class="ui-card grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 border border-gray-200 rounded-xl bg-white">
                         <div>
                             <h4 class="text-base font-semibold text-gray-900">Informasi Produk</h4>
                             <p class="text-xs text-gray-500 mt-1">Atur status jual bundle ini</p>

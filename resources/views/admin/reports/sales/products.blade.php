@@ -204,7 +204,7 @@
                                         $initials = $clean;
                                     }
                                 @endphp
-                                <th class="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100/50 border-r border-slate-200 resizable group" title="{{ $outletCol->name }}" style="min-width: 70px; position:relative;">
+                                <th class="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-50/80 border-r border-slate-200 resizable group" title="{{ $outletCol->name }}" style="min-width: 70px; position:relative;">
                                     {{ $initials }}
                                     <div class="resize-handle"></div>
                                 </th>
@@ -239,7 +239,7 @@
                                     class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             @foreach($outletsForColumns as $outletCol)
-                                <td class="px-2 py-2 bg-slate-100/30 border-r border-slate-200">
+                                <td class="px-2 py-2 bg-slate-50/40 border-r border-slate-200">
                                     <input type="text" data-name="filter_outlet_{{ $outletCol->id }}" placeholder=""
                                         class="filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all text-right placeholder:text-slate-300">
                                 </td>

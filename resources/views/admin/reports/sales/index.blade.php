@@ -246,6 +246,9 @@
                                 <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
                                     Outlet <div class="resize-handle"></div>
                                 </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 110px; position:relative;">
+                                    Customer <div class="resize-handle"></div>
+                                </th>
                                 <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 120px; position:relative;">
                                     Produk <div class="resize-handle"></div>
                                 </th>
@@ -282,6 +285,7 @@
                                 </td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_tanggal" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_customer" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_produk" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_qty" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_harga" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
@@ -338,6 +342,7 @@
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-800">{{ $row->transaction_number }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ \Carbon\Carbon::parse($row->sale_date)->format('d M Y') }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ $row->customer_name ?? 'Walk-in' }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-800 font-normal uppercase tracking-tighter">{{ $row->product_name }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-800 font-normal">{{ number_format($row->qty, 0, ',', '.') }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-right text-[11px] text-slate-500 italic">Rp {{ number_format($row->price, 0, ',', '.') }}</td>
@@ -354,7 +359,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="px-6 py-16 text-center">
+                                    <td colspan="13" class="px-6 py-16 text-center">
                                         <div class="flex flex-col items-center justify-center opacity-40">
                                             <i class="fas fa-receipt text-4xl mb-4 text-slate-300"></i>
                                             <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada detail penjualan pada periode ini</p>
