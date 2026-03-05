@@ -243,6 +243,14 @@
             letter-spacing: -0.5px;
         }
 
+        .terbilang {
+            font-size: 9px;
+            font-style: italic;
+            color: var(--slate-500);
+            margin-top: 6px;
+            text-align: right;
+        }
+
         /* Signatures */
         .signatures {
             margin-top: 30px;
@@ -328,6 +336,41 @@
         $firstLine = $voucherTransactions->first() ?? $cashTransaction;
         $isIncome = $firstLine->type == 'in';
         $brandColor = $isIncome ? 'var(--brand-in)' : 'var(--brand-out)';
+
+        // Fungsi terbilang (angka ke kata dalam Bahasa Indonesia)
+        if (!function_exists('terbilang')) {
+            function terbilang($angka) {
+            $angka = abs($angka);
+            $huruf = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+            $temp = '';
+
+            if ($angka < 12) {
+                $temp = ' ' . $huruf[$angka];
+            } elseif ($angka < 20) {
+                $temp = terbilang($angka - 10) . ' Belas';
+            } elseif ($angka < 100) {
+                $temp = terbilang(intval($angka / 10)) . ' Puluh' . terbilang($angka % 10);
+            } elseif ($angka < 200) {
+                $temp = ' Seratus' . terbilang($angka - 100);
+            } elseif ($angka < 1000) {
+                $temp = terbilang(intval($angka / 100)) . ' Ratus' . terbilang($angka % 100);
+            } elseif ($angka < 2000) {
+                $temp = ' Seribu' . terbilang($angka - 1000);
+            } elseif ($angka < 1000000) {
+                $temp = terbilang(intval($angka / 1000)) . ' Ribu' . terbilang($angka % 1000);
+            } elseif ($angka < 1000000000) {
+                $temp = terbilang(intval($angka / 1000000)) . ' Juta' . terbilang($angka % 1000000);
+            } elseif ($angka < 1000000000000) {
+                $temp = terbilang(intval($angka / 1000000000)) . ' Miliar' . terbilang($angka % 1000000000);
+            } elseif ($angka < 1000000000000000) {
+                $temp = terbilang(intval($angka / 1000000000000)) . ' Triliun' . terbilang($angka % 1000000000000);
+            }
+
+            return $temp;
+            }
+        }
+
+        $terbilangText = trim(terbilang($totalAmount)) . ' Rupiah';
     @endphp
 
     <div class="controls">
@@ -403,6 +446,9 @@
                     <div class="total-display" style="border-left: 4px solid {{ $brandColor }}">
                         <span class="t-label">Total {{ $isIncome ? 'Diterima' : 'Dibayarkan' }}</span>
                         <span class="t-amount">Rp {{ number_format($totalAmount, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="terbilang">
+                        <em>Terbilang: {{ $terbilangText }}</em>
                     </div>
                 </div>
             </div>
