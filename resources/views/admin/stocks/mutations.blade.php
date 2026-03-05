@@ -47,6 +47,9 @@
             <div class="p-5">
                 <form method="GET" action="{{ route('admin.stocks.mutations') }}" class="space-y-4">
                     <input type="hidden" name="tab" value="{{ $tab }}">
+                    @if(request()->filled('reference_scope'))
+                        <input type="hidden" name="reference_scope" value="{{ request('reference_scope') }}">
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         @if($tab === 'all')
                         <div class="flex flex-col gap-1.5">
@@ -158,17 +161,31 @@
                     </div>
 
                     @if($tab === 'all')
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Cari
-                            Produk</label>
-                        <input type="text" name="search" value="{{ request('search') }}"
-                            placeholder="Cari berdasarkan nama produk atau SKU..."
-                            class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Cari
+                                Produk</label>
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                placeholder="Cari berdasarkan nama produk atau SKU..."
+                                class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Reference ID</label>
+                            <input type="number" name="reference_id" value="{{ request('reference_id') }}"
+                                placeholder="Contoh: 12345"
+                                class="ui-input w-full px-4 py-2 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm">
+                        </div>
                     </div>
                     @endif
                 </form>
             </div>
         </div>
+
+        @if(request('reference_scope') === 'sales_cogs')
+            <div class="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-xs text-indigo-700">
+                Mode audit HPP aktif: menampilkan mutasi referensi <code>sale</code> dan <code>sale_cancellation</code>.
+            </div>
+        @endif
 
         {{-- Mutations Table --}}
         <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
@@ -182,6 +199,8 @@
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Outlet</th>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Menu Terjual</th>
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Qty Terpakai</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">HPP/Unit</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nominal HPP</th>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Kasir</th>
                             @else
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Tanggal & Waktu</th>
@@ -190,6 +209,8 @@
                             <th class="px-5 py-3 text-center text-[9px] font-normal uppercase tracking-widest text-slate-500">Tipe</th>
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Qty Mutasi</th>
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Stok Akhir</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">HPP/Unit</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nominal HPP</th>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Referensi & Catatan</th>
                             @endif
                         </tr>
@@ -235,6 +256,26 @@
                                         {{ number_format(abs($mutation->quantity), 2, ',', '.') }}
                                     </span>
                                     <span class="text-[9px] font-normal text-slate-400 ml-0.5 uppercase tracking-widest">{{ $mutation->product->unit ?? 'pcs' }}</span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php $unitCost = (float) ($mutation->unit_cost ?? 0); @endphp
+                                    @if($unitCost > 0)
+                                        <span class="text-[11.5px] font-normal text-slate-700">Rp {{ number_format($unitCost, 2, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php
+                                        $nominalHpp = abs((float) ($mutation->total_cost ?? 0));
+                                        $nominalClass = ((float) $mutation->quantity < 0) ? 'text-rose-600' : 'text-emerald-600';
+                                        $nominalSign = ((float) $mutation->quantity < 0) ? '-' : '+';
+                                    @endphp
+                                    @if($nominalHpp > 0)
+                                        <span class="text-[11.5px] font-normal {{ $nominalClass }}">{{ $nominalSign }}Rp {{ number_format($nominalHpp, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <span class="text-[10px] font-normal text-slate-600 uppercase tracking-widest">{{ $mutation->creator->name ?? '-' }}</span>
@@ -301,14 +342,46 @@
                                             {{ number_format($mutation->stock_before, 2, ',', '.') }}</span>
                                     </div>
                                 </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php $unitCost = (float) ($mutation->unit_cost ?? 0); @endphp
+                                    @if($unitCost > 0)
+                                        <span class="text-[11.5px] font-normal text-slate-700">Rp {{ number_format($unitCost, 2, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php
+                                        $nominalHpp = abs((float) ($mutation->total_cost ?? 0));
+                                        $nominalClass = ((float) $mutation->quantity < 0) ? 'text-rose-600' : 'text-emerald-600';
+                                        $nominalSign = ((float) $mutation->quantity < 0) ? '-' : '+';
+                                    @endphp
+                                    @if($nominalHpp > 0)
+                                        <span class="text-[11.5px] font-normal {{ $nominalClass }}">{{ $nominalSign }}Rp {{ number_format($nominalHpp, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3.5">
                                     <div class="flex flex-col gap-0.5">
                                         <div class="flex items-center gap-1.5">
                                             <span
                                                 class="text-[10px] font-normal text-slate-700 uppercase tracking-wider">{{ str_replace('_', ' ', $mutation->reference_type ?? 'Manual') }}</span>
                                             @if($mutation->reference_id)
-                                                <span
-                                                    class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1 border border-slate-100 rounded">#{{ $mutation->reference_id }}</span>
+                                                @php
+                                                    $referenceAuditParams = array_filter([
+                                                        'tab' => 'all',
+                                                        'start_date' => request('start_date'),
+                                                        'end_date' => request('end_date'),
+                                                        'outlet_id' => request('outlet_id'),
+                                                        'reference_scope' => request('reference_scope'),
+                                                        'reference_id' => $mutation->reference_id,
+                                                    ], fn($value) => !is_null($value) && $value !== '');
+                                                @endphp
+                                                <a href="{{ route('admin.stocks.mutations', $referenceAuditParams) }}"
+                                                    class="text-[9px] font-mono text-indigo-500 bg-indigo-50 px-1 border border-indigo-100 rounded hover:bg-indigo-100">
+                                                    #{{ $mutation->reference_id }}
+                                                </a>
                                             @endif
                                         </div>
                                         @if($mutation->notes)
@@ -326,7 +399,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-16 text-center">
+                                <td colspan="{{ $tab === 'usage' ? 8 : 9 }}" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-40">
                                         <i class="fas fa-history text-4xl mb-4 text-slate-300"></i>
                                         <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Tidak

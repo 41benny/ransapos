@@ -55,12 +55,16 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-1">
+                        @php
+                            $latestUnitCost = (float) ($mutations->last()->unit_cost ?? $product->purchase_price ?? 0);
+                            $estimatedInventoryValue = (float) ($currentStock->quantity ?? 0) * $latestUnitCost;
+                        @endphp
                         <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Nilai Persediaan
                             (HPP)</span>
                         <span class="text-lg font-normal text-slate-800 tracking-tight">Rp
-                            {{ number_format(($currentStock->quantity ?? 0) * ($product->purchase_price ?? 0), 0, ',', '.') }}</span>
+                            {{ number_format($estimatedInventoryValue, 0, ',', '.') }}</span>
                         <span class="text-[9px] font-normal text-slate-400 italic">Est.
-                            {{ number_format($product->purchase_price ?? 0, 0, ',', '.') }}/unit</span>
+                            {{ number_format($latestUnitCost, 2, ',', '.') }}/unit</span>
                     </div>
                 </div>
             </div>
@@ -135,6 +139,10 @@
                             <th
                                 class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">
                                 Saldo Akhir</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">
+                                HPP/Unit</th>
+                            <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-400">
+                                Nominal HPP</th>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-400">
                                 Referensi & Catatan</th>
                         </tr>
@@ -187,6 +195,26 @@
                                     <span
                                         class="text-[11.5px] font-normal text-slate-800 tracking-tight tabular-nums">{{ number_format($mutation->stock_after, 2, ',', '.') }}</span>
                                 </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php $unitCost = (float) ($mutation->unit_cost ?? 0); @endphp
+                                    @if($unitCost > 0)
+                                        <span class="text-[11.5px] font-normal text-slate-700">Rp {{ number_format($unitCost, 2, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3.5 text-right">
+                                    @php
+                                        $nominalHpp = abs((float) ($mutation->total_cost ?? 0));
+                                        $nominalClass = ((float) $mutation->quantity < 0) ? 'text-rose-600' : 'text-emerald-600';
+                                        $nominalSign = ((float) $mutation->quantity < 0) ? '-' : '+';
+                                    @endphp
+                                    @if($nominalHpp > 0)
+                                        <span class="text-[11.5px] font-normal {{ $nominalClass }}">{{ $nominalSign }}Rp {{ number_format($nominalHpp, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="text-[11px] font-normal text-slate-300">-</span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3.5">
                                     <div class="flex flex-col gap-0.5">
                                         <span
@@ -202,7 +230,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-16 text-center">
+                                <td colspan="8" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-40">
                                         <i class="fas fa-history text-4xl mb-4 text-slate-300"></i>
                                         <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Tidak

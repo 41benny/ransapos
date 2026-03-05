@@ -575,8 +575,10 @@ class CatalogReportController extends Controller
 
             $rows = (clone $salesItemBase)
                 ->select(
+                    'sales.id as sale_id',
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
+                    'sales.outlet_id',
                     'outlets.name as outlet_name',
                     'sale_items.product_name',
                     'sale_items.quantity as qty',

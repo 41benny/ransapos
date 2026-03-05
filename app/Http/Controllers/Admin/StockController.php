@@ -106,6 +106,11 @@ class StockController extends Controller
             if ($request->filled('end_date')) {
                 $query->where('mutation_date', '<=', $request->end_date);
             }
+
+            // Filter by reference id (sale id)
+            if ($request->filled('reference_id')) {
+                $query->where('stock_mutations.reference_id', (int) $request->reference_id);
+            }
             
             // It's safer to join sales to get invoice number and sort by it or just fetch them later since sale_id = reference_id.
             $query->leftJoin('sales', 'stock_mutations.reference_id', '=', 'sales.id')
@@ -132,6 +137,11 @@ class StockController extends Controller
             // Filter by reference type
             if ($request->filled('reference_type')) {
                 $query->where('reference_type', $request->reference_type);
+            }
+
+            // Filter by reference id (sale id, purchase id, etc.)
+            if ($request->filled('reference_id')) {
+                $query->where('stock_mutations.reference_id', (int) $request->reference_id);
             }
     
             // Scope audit khusus COGS penjualan (termasuk reversal pembatalan)

@@ -1821,7 +1821,20 @@
                         <tbody class="divide-y divide-slate-100">
                             @forelse($rows as $row)
                                 <tr>
-                                    <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ $row->transaction_number }}</td>
+                                    <td class="px-4 py-3 font-mono text-xs">
+                                        <a href="{{ route('admin.stocks.mutations', array_filter([
+                                            'tab' => 'all',
+                                            'start_date' => $dateFrom,
+                                            'end_date' => $dateTo,
+                                            'outlet_id' => $row->outlet_id ?? null,
+                                            'reference_scope' => 'sales_cogs',
+                                            'reference_id' => $row->sale_id ?? null,
+                                        ])) }}"
+                                            class="text-indigo-600 hover:text-indigo-800 hover:underline">
+                                            {{ $row->transaction_number }}
+                                        </a>
+                                        <div class="mt-1 text-[10px] text-slate-400">Ref ID: {{ $row->sale_id ?? '-' }}</div>
+                                    </td>
                                     <td class="px-4 py-3 text-slate-700">
                                         {{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}
                                     </td>
