@@ -149,14 +149,17 @@ class Product extends Model
      */
     public function getPriceByLevelAndOutlet(string $priceLevel, ?int $outletId = null): float
     {
-        $normalizedLevel = strtolower(trim($priceLevel));
+        $requestedLevel = trim($priceLevel);
+        $normalizedLevel = strtolower($requestedLevel);
         $priceMap = $this->price_levels ?? [];
 
-        if (!array_key_exists($normalizedLevel, $priceMap)) {
+        $resolvedLevel = $this->resolvePriceLevelKey($requestedLevel, $priceMap);
+
+        if ($resolvedLevel === null) {
             return (float) $this->selling_price;
         }
 
-        $levelData = $priceMap[$normalizedLevel];
+        $levelData = $priceMap[$resolvedLevel];
 
         // Backward compatible: jika masih format lama (number)
         if (is_numeric($levelData)) {
@@ -180,6 +183,31 @@ class Product extends Model
         }
 
         return (float) $this->selling_price;
+    }
+
+    /**
+     * Resolve price level key without assuming the stored JSON key casing.
+     *
+     * Existing data may contain uppercase codes such as MEMBER_2 while newer
+     * lookups may pass lowercase or mixed-case values.
+     *
+     * @param array<string, mixed> $priceMap
+     */
+    private function resolvePriceLevelKey(string $requestedLevel, array $priceMap): ?string
+    {
+        if (array_key_exists($requestedLevel, $priceMap)) {
+            return $requestedLevel;
+        }
+
+        $lowerRequestedLevel = strtolower(trim($requestedLevel));
+
+        foreach (array_keys($priceMap) as $storedLevel) {
+            if (strtolower((string) $storedLevel) === $lowerRequestedLevel) {
+                return (string) $storedLevel;
+            }
+        }
+
+        return null;
     }
 
     /**
