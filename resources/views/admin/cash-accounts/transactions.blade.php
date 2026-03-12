@@ -162,6 +162,16 @@
                         <span>Catat Transaksi</span>
                         <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full"></div>
                     </a>
+                    <a href="{{ route('admin.cash-transactions.export-excel', request()->query()) }}"
+                        class="ui-btn group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-emerald-700 hover:shadow-md active:scale-95">
+                        <i class="fas fa-file-excel text-[9px]"></i>
+                        <span>Excel</span>
+                    </a>
+                    <a href="{{ route('admin.cash-transactions.export-pdf', request()->query()) }}"
+                        class="ui-btn group relative inline-flex items-center gap-2 overflow-hidden rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white transition-all hover:bg-rose-700 hover:shadow-md active:scale-95">
+                        <i class="fas fa-file-pdf text-[9px]"></i>
+                        <span>PDF</span>
+                    </a>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>

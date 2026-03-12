@@ -613,6 +613,20 @@ class CashAccountService
             ->toArray();
     }
 
+    /**
+     * Get raw transactions for export (without grouping)
+     */
+    public function getExportTransactions(array $filters = [])
+    {
+        $query = CashTransaction::with(['cashAccount.outlet', 'creator', 'coaAccount'])
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('id', 'asc');
+
+        $this->applyTransactionFilters($query, $filters);
+
+        return $query->get();
+    }
+
     protected function applyTransactionFilters(Builder $query, array $filters): void
     {
         // Filter by transaction number

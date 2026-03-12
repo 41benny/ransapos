@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
+use App\Support\ReportExport;
+
 class CashAccountController extends Controller
 {
     protected $cashAccountService;
@@ -747,5 +749,77 @@ class CashAccountController extends Controller
         $report = $this->cashAccountService->getMutationReport($cashAccount->id, $dateFrom, $dateTo);
 
         return view('admin.cash-accounts.mutation-report', $report);
+    }
+
+    /**
+     * Export transactions to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $filters = $request->all();
+        $transactions = $this->cashAccountService->getExportTransactions($filters);
+        
+        $columns = [
+            ['key' => 'voucher_number', 'label' => 'Voucher Number'],
+            ['key' => 'transaction_date', 'label' => 'Date'],
+            ['key' => 'cash_account_name', 'label' => 'Account'],
+            ['key' => 'description', 'label' => 'Description'],
+            ['key' => 'amount_in', 'label' => 'Debit (In)', 'type' => 'number'],
+            ['key' => 'amount_out', 'label' => 'Credit (Out)', 'type' => 'number'],
+            ['key' => 'balance_after', 'label' => 'Balance', 'type' => 'number'],
+            ['key' => 'coa_account_code', 'label' => 'COA'],
+            ['key' => 'notes', 'label' => 'Notes'],
+        ];
+
+        $rows = $transactions->map(function ($t) {
+            return [
+                'voucher_number' => $t->voucher_number ?: $t->transaction_number,
+                'transaction_date' => $t->transaction_date->format('Y-m-d'),
+                'cash_account_name' => $t->cashAccount->name ?? '-',
+                'description' => $t->description,
+                'amount_in' => $t->type === 'in' ? $t->amount : 0,
+                'amount_out' => $t->type === 'out' ? $t->amount : 0,
+                'balance_after' => $t->balance_after,
+                'coa_account_code' => $t->coaAccount ? ($t->coaAccount->code . ' - ' . $t->coaAccount->name) : '-',
+                'notes' => $t->notes,
+            ];
+        });
+
+        ReportExport::xlsx('kasbank_transactions_' . now()->format('Ymd_His') . '.xlsx', 'Transactions', $columns, $rows);
+    }
+
+    /**
+     * Export transactions to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $filters = $request->all();
+        $transactions = $this->cashAccountService->getExportTransactions($filters);
+
+        $columns = [
+            ['key' => 'voucher_number', 'label' => 'Voucher'],
+            ['key' => 'transaction_date', 'label' => 'Date'],
+            ['key' => 'cash_account_name', 'label' => 'Account'],
+            ['key' => 'description', 'label' => 'Description'],
+            ['key' => 'amount_in', 'label' => 'In', 'type' => 'number'],
+            ['key' => 'amount_out', 'label' => 'Out', 'type' => 'number'],
+            ['key' => 'balance_after', 'label' => 'Balance', 'type' => 'number'],
+            ['key' => 'coa_account_code', 'label' => 'COA'],
+        ];
+
+        $rows = $transactions->map(function ($t) {
+            return [
+                'voucher_number' => $t->voucher_number ?: $t->transaction_number,
+                'transaction_date' => $t->transaction_date->format('Y-m-d'),
+                'cash_account_name' => $t->cashAccount->name ?? '-',
+                'description' => $t->description,
+                'amount_in' => $t->type === 'in' ? $t->amount : 0,
+                'amount_out' => $t->type === 'out' ? $t->amount : 0,
+                'balance_after' => $t->balance_after,
+                'coa_account_code' => $t->coaAccount ? $t->coaAccount->code : '-',
+            ];
+        });
+
+        ReportExport::pdf('kasbank_transactions_' . now()->format('Ymd_His') . '.pdf', 'Laporan Transaksi Kas & Bank', $columns, $rows);
     }
 }

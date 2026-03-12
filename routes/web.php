@@ -188,6 +188,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::get('cash-transactions', [\App\Http\Controllers\Admin\CashAccountController::class, 'transactions'])
         ->name('cash-transactions.index')
         ->middleware('permission:cash-transactions.view');
+    Route::get('cash-transactions/export-excel', [\App\Http\Controllers\Admin\CashAccountController::class, 'exportExcel'])
+        ->name('cash-transactions.export-excel')
+        ->middleware('permission:cash-transactions.view');
+    Route::get('cash-transactions/export-pdf', [\App\Http\Controllers\Admin\CashAccountController::class, 'exportPdf'])
+        ->name('cash-transactions.export-pdf')
+        ->middleware('permission:cash-transactions.view');
     Route::get('cash-transactions/create', [\App\Http\Controllers\Admin\CashAccountController::class, 'createTransaction'])
         ->name('cash-transactions.create')
         ->middleware('permission:cash-transactions.create');

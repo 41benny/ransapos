@@ -10,7 +10,6 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExport
 {
@@ -18,61 +17,61 @@ class ReportExport
      * @param array<int, array<string, mixed>> $columns
      * @param iterable<mixed> $rows
      */
-    public static function xlsx(string $filename, string $sheetTitle, array $columns, iterable $rows): StreamedResponse
+    public static function xlsx(string $filename, string $sheetTitle, array $columns, iterable $rows): void
     {
-        return new StreamedResponse(function () use ($sheetTitle, $columns, $rows) {
-            $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-            $sheet->setTitle(substr($sheetTitle, 0, 31));
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(substr($sheetTitle, 0, 31));
 
+        foreach ($columns as $index => $column) {
+            $col = self::columnLetter($index + 1);
+            $sheet->setCellValue($col . '1', (string) ($column['label'] ?? $column['key'] ?? ''));
+            $sheet->getStyle($col . '1')->getFont()->setBold(true);
+        }
+
+        $rowNum = 2;
+        foreach ($rows as $row) {
             foreach ($columns as $index => $column) {
                 $col = self::columnLetter($index + 1);
-                $sheet->setCellValue($col . '1', (string) ($column['label'] ?? $column['key'] ?? ''));
-                $sheet->getStyle($col . '1')->getFont()->setBold(true);
-            }
+                $cell = $col . $rowNum;
+                $value = Arr::get((array) $row, $column['key']);
+                $type = $column['type'] ?? 'text';
+                $decimals = (int) ($column['decimals'] ?? 0);
 
-            $rowNum = 2;
-            foreach ($rows as $row) {
-                foreach ($columns as $index => $column) {
-                    $col = self::columnLetter($index + 1);
-                    $cell = $col . $rowNum;
-                    $value = Arr::get((array) $row, $column['key']);
-                    $type = $column['type'] ?? 'text';
-                    $decimals = (int) ($column['decimals'] ?? 0);
-
-                    if ($type === 'number' && is_numeric($value)) {
-                        $numValue = (float) $value;
-                        $sheet->setCellValue($cell, $numValue);
-                        $formatCode = $decimals > 0
-                            ? '#,##0.' . str_repeat('0', $decimals)
-                            : '#,##0';
-                        $sheet->getStyle($cell)->getNumberFormat()->setFormatCode($formatCode);
-                    } else {
-                        $sheet->setCellValueExplicit($cell, (string) ($value ?? ''), DataType::TYPE_STRING);
-                    }
+                if ($type === 'number' && is_numeric($value)) {
+                    $numValue = (float) $value;
+                    $sheet->setCellValue($cell, $numValue);
+                    $formatCode = $decimals > 0
+                        ? '#,##0.' . str_repeat('0', $decimals)
+                        : '#,##0';
+                    $sheet->getStyle($cell)->getNumberFormat()->setFormatCode($formatCode);
+                } else {
+                    $sheet->setCellValueExplicit($cell, (string) ($value ?? ''), DataType::TYPE_STRING);
                 }
-                $rowNum++;
             }
+            $rowNum++;
+        }
 
-            foreach (range(1, count($columns)) as $index) {
-                $sheet->getColumnDimension(self::columnLetter($index))->setAutoSize(true);
-            }
+        foreach (range(1, count($columns)) as $index) {
+            $sheet->getColumnDimension(self::columnLetter($index))->setAutoSize(true);
+        }
 
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-            $spreadsheet->disconnectWorksheets();
-            unset($spreadsheet);
-        }, 200, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        // Save to temp file
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx_') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+
+        // Send file using raw PHP headers to guarantee correct filename
+        self::sendFile($tempFile, $filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     /**
      * @param array<int, array<string, mixed>> $columns
      * @param iterable<mixed> $rows
      */
-    public static function pdf(string $filename, string $title, array $columns, iterable $rows): \Illuminate\Http\Response
+    public static function pdf(string $filename, string $title, array $columns, iterable $rows): void
     {
         $htmlRows = '';
         foreach ($rows as $row) {
@@ -131,10 +130,41 @@ HTML;
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
-        return response($dompdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        // Save to temp file
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdf_') . '.pdf';
+        file_put_contents($tempFile, $dompdf->output());
+
+        // Send file using raw PHP headers to guarantee correct filename
+        self::sendFile($tempFile, $filename, 'application/pdf');
+    }
+
+    /**
+     * Send a file download using raw PHP headers (bypasses Laravel response layer).
+     */
+    private static function sendFile(string $filePath, string $downloadName, string $contentType): void
+    {
+        // Clean ALL output buffers
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $fileSize = filesize($filePath);
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $contentType);
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        header('Content-Length: ' . $fileSize);
+
+        readfile($filePath);
+
+        // Cleanup temp file
+        @unlink($filePath);
+
+        exit;
     }
 
     private static function columnLetter(int $index): string
