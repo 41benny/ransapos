@@ -962,7 +962,7 @@
                                     <div class="w-full rounded-full bg-blue-500 h-1.5 overflow-hidden opacity-80 transition-all duration-300 group-hover:opacity-100">
                                         <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-500" style="width: ${cogsPct}%"></div>
                                     </div>
-                                    <div class="absolute bottom-0 left-0 h-1 w-0 bg-amber-400 transition-all duration-500 group-hover:w-full"></div>
+                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
                                 </${cardTag}>
                             `;
                         }).join('');
