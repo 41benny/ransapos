@@ -950,18 +950,19 @@
                                 ? `href="${escapeHtml(reportUrl)}" title="Lihat laporan Sales vs HPP"`
                                 : '';
                             const cardClass = canOpenSalesVsHppReport
-                                ? 'group block bg-slate-50 rounded-xl p-3 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/40 transition-colors'
-                                : 'bg-slate-50 rounded-xl p-3 border border-slate-100';
+                                ? 'group relative block overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-xl hover:shadow-blue-100/40 active:scale-[0.98]'
+                                : 'group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-xl hover:shadow-blue-100/40';
                             return `
                                 <${cardTag} ${cardAttrs} class="${cardClass}">
-                                    <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
+                                    <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 transition-colors duration-300 group-hover:text-blue-700 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
                                     <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
-                                        <div class="flex justify-between items-center text-blue-600"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>100%</span></div>
-                                        <div class="flex justify-between items-center text-rose-600"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>
+                                        <div class="flex justify-between items-center text-blue-600 transition-colors duration-300 group-hover:text-blue-700"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>100%</span></div>
+                                        <div class="flex justify-between items-center text-rose-600 transition-colors duration-300 group-hover:text-rose-700"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>
                                     </div>
-                                    <div class="w-full bg-blue-500 rounded-full h-1.5 overflow-hidden opacity-80">
-                                        <div class="bg-rose-500 h-1.5 rounded-full" style="width: ${cogsPct}%"></div>
+                                    <div class="w-full rounded-full bg-blue-500/90 h-1.5 overflow-hidden opacity-80 transition-all duration-300 group-hover:opacity-100">
+                                        <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-500" style="width: ${cogsPct}%"></div>
                                     </div>
+                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
                                 </${cardTag}>
                             `;
                         }).join('');
