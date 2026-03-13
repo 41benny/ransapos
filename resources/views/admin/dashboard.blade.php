@@ -950,8 +950,8 @@
                                 ? `href="${escapeHtml(reportUrl)}" title="Lihat laporan Sales vs HPP"`
                                 : '';
                             const cardClass = canOpenSalesVsHppReport
-                                ? 'group relative block cursor-pointer overflow-hidden rounded-xl border-2 border-slate-200 bg-white p-3 transition-all duration-500 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-100/40 active:scale-[0.97]'
-                                : 'group relative overflow-hidden rounded-xl border-2 border-slate-200 bg-white p-3 transition-all duration-500 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-100/40';
+                                ? 'group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50'
+                                : 'group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50';
                             return `
                                 <${cardTag} ${cardAttrs} class="${cardClass}">
                                     <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 transition-colors duration-300 group-hover:text-blue-700 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
@@ -962,7 +962,7 @@
                                     <div class="w-full rounded-full bg-blue-500 h-1.5 overflow-hidden opacity-80 transition-all duration-300 group-hover:opacity-100">
                                         <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-500" style="width: ${cogsPct}%"></div>
                                     </div>
-                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+                                    <div class="absolute bottom-0 left-0 h-1 w-0 bg-blue-600 transition-all duration-500 group-hover:w-full"></div>
                                 </${cardTag}>
                             `;
                         }).join('');
