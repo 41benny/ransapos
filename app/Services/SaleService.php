@@ -44,6 +44,22 @@ class SaleService
                 throw new Exception('Sesi kasir sudah ditutup. Silakan buka sesi baru.');
             }
 
+            $customer = null;
+            $resolvedCustomerName = trim((string) ($data['customer_name'] ?? ''));
+            if (!empty($data['customer_id'])) {
+                $customer = Customer::query()
+                    ->select(['id', 'name'])
+                    ->find($data['customer_id']);
+
+                if (!$customer) {
+                    throw new Exception('Customer tidak ditemukan.');
+                }
+
+                if ($resolvedCustomerName === '') {
+                    $resolvedCustomerName = trim((string) $customer->name);
+                }
+            }
+
             // 1. Generate invoice number
             $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
 
@@ -186,7 +202,7 @@ class SaleService
                 'cash_session_id' => $data['cash_session_id'],
                 // Gunakan auth()->id() (helper standar Laravel) jika tersedia
                 'user_id' => \Illuminate\Support\Facades\Auth::id() ?? $data['user_id'] ?? null,
-                'customer_id' => $data['customer_id'] ?? null,
+                'customer_id' => $customer?->id,
                 'promotion_id' => $promotion?->id,
                 'voucher_id' => $voucher?->id,
                 'voucher_code' => $voucher?->code,
@@ -200,7 +216,7 @@ class SaleService
                 'rounding_amount' => $roundingAmount,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
-                'customer_name' => $data['customer_name'] ?? null,
+                'customer_name' => $resolvedCustomerName !== '' ? $resolvedCustomerName : null,
                 'notes' => $data['notes'] ?? null,
                 'status' => 'completed',
             ]);

@@ -16,9 +16,12 @@ class KitchenController extends Controller
     {
         $date = $request->input('date', Carbon::today()->toDateString());
 
-        $query = Sale::with(['items' => function ($q) {
-                $q->orderBy('id');
-            }])
+        $query = Sale::with([
+                'items' => function ($q) {
+                    $q->orderBy('id');
+                },
+                'customer',
+            ])
             ->whereDate('sale_date', $date)
             ->where('status', 'completed')
             ->orderByDesc('created_at');
@@ -59,7 +62,7 @@ class KitchenController extends Controller
      */
     public function print(Sale $sale)
     {
-        $sale->load(['items', 'outlet', 'user']);
+        $sale->load(['items', 'outlet', 'user', 'customer']);
 
         return view('pos.kitchen.print', compact('sale'));
     }

@@ -257,7 +257,7 @@
                         {{ $sale->invoice_number }}
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
-                        {{ $sale->customer_name ?? 'Walk-in' }}
+                        {{ $sale->resolved_customer_name }}
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">
                         {{ $sale->payments->first()->paymentMethod->name ?? '-' }}

@@ -53,8 +53,8 @@
                             <div class="text-right space-y-1">
                                 <div class="text-xs text-slate-400">
                                     <p>{{ $sale->created_at?->format('H:i') ?? '-' }}</p>
-                                    @if($sale->customer_name)
-                                        <p class="mt-1 text-amber-300 font-medium">{{ $sale->customer_name }}</p>
+                                    @if(filled($sale->customer_name) || $sale->customer_id)
+                                        <p class="mt-1 text-amber-300 font-medium">{{ $sale->resolved_customer_name }}</p>
                                     @endif
                                 </div>
                                 <div>

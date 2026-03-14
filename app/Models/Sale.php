@@ -111,4 +111,22 @@ class Sale extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    /**
+     * Nama customer yang ditampilkan pada UI/laporan.
+     */
+    public function getResolvedCustomerNameAttribute(): string
+    {
+        $snapshotName = trim((string) $this->customer_name);
+        if ($snapshotName !== '') {
+            return $snapshotName;
+        }
+
+        $customerName = trim((string) optional($this->customer)->name);
+        if ($customerName !== '') {
+            return $customerName;
+        }
+
+        return 'Walk-in';
+    }
 }

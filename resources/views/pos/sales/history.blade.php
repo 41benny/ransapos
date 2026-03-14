@@ -197,7 +197,7 @@
 
                                                 @if($index === 0)
                                                     <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-900 align-top">
-                                                        {{ $sale->customer_name ?? 'Walk-in' }}
+                                                        {{ $sale->resolved_customer_name }}
                                                     </td>
                                                     <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-600 align-top">
                                                         @foreach($sale->payments as $payment)
@@ -246,7 +246,7 @@
                                             <td class="px-6 py-4 text-gray-700 text-xs">-</td>
                                             <td class="px-6 py-4 text-right font-semibold text-gray-800">0</td>
                                             <td class="px-6 py-4 text-gray-900">
-                                                {{ $sale->customer_name ?? 'Walk-in' }}
+                                                {{ $sale->resolved_customer_name }}
                                             </td>
                                             <td class="px-6 py-4 text-gray-600">
                                                 @foreach($sale->payments as $payment)

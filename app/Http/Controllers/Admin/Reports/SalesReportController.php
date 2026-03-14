@@ -121,6 +121,7 @@ class SalesReportController extends Controller
             $detailQuery = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
                     $join->on('sales.id', '=', 'pay_agg.sale_id');
                 })
@@ -154,7 +155,7 @@ class SalesReportController extends Controller
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
                     'outlets.name as outlet_name',
-                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), 'Walk-in') as customer_name"),
+                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer_name"),
                     'sale_items.product_name',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as price',
@@ -454,6 +455,7 @@ class SalesReportController extends Controller
             $detailQuery = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
                     $join->on('sales.id', '=', 'pay_agg.sale_id');
                 })
@@ -485,7 +487,7 @@ class SalesReportController extends Controller
                     'sales.invoice_number as no_transaksi',
                     'sales.sale_date as tanggal',
                     'outlets.name as outlet',
-                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), 'Walk-in') as customer"),
+                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer"),
                     'sale_items.product_name as produk',
                     'sale_items.quantity as qty',
                     'sale_items.unit_price as harga',

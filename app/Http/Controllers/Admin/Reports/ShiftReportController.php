@@ -73,7 +73,7 @@ class ShiftReportController extends Controller
             'closedDevice',
             'sales' => function ($query) {
                 $query->where('status', 'completed')
-                    ->with(['payments.paymentMethod', 'items.product']);
+                    ->with(['payments.paymentMethod', 'items.product', 'customer']);
             },
         ]);
 
@@ -180,7 +180,7 @@ class ShiftReportController extends Controller
             'user',
             'sales' => function ($query) {
                 $query->where('status', 'completed')
-                    ->with(['payments.paymentMethod', 'items.product']);
+                    ->with(['payments.paymentMethod', 'items.product', 'customer']);
             },
         ]);
 
@@ -188,7 +188,7 @@ class ShiftReportController extends Controller
             return [
                 'no_transaksi' => $sale->invoice_number,
                 'tanggal' => optional($sale->sale_date)->format('Y-m-d'),
-                'customer' => $sale->customer_name ?? '-',
+                'customer' => $sale->resolved_customer_name,
                 'total' => (float) $sale->total_amount,
                 'payment' => $sale->payments->map(fn ($payment) => $payment->paymentMethod?->name)->filter()->unique()->implode(', '),
             ];

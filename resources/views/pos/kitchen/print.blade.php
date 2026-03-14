@@ -57,10 +57,10 @@
                 <span class="muted">Tanggal</span>
                 <span>{{ $sale->created_at?->format('d/m/Y H:i') ?? '-' }}</span>
             </div>
-            @if($sale->customer_name)
+            @if(filled($sale->customer_name) || $sale->customer_id)
             <div class="row">
                 <span class="muted">Customer</span>
-                <span>{{ $sale->customer_name }}</span>
+                <span>{{ $sale->resolved_customer_name }}</span>
             </div>
             @endif
             @if($sale->user)
@@ -111,4 +111,3 @@
     </div>
 </body>
 </html>
-
