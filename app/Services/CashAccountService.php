@@ -547,6 +547,17 @@ class CashAccountService
                 $isGeneralBatch = $rowCount > 1 && $representative->reference_type === 'general_batch';
                 $isLegacyBatch = $rowCount > 1 && Str::startsWith($groupKey, 'legacy:');
                 $isBatch = $isGeneralBatch || $isLegacyBatch;
+                $detailTooltip = $isBatch
+                    ? "Breakdown transaksi gabungan:\n" . $group->values()->map(function ($line, $index) {
+                        $coaLabel = $line->coaAccount
+                            ? trim($line->coaAccount->code . ' - ' . $line->coaAccount->name)
+                            : 'Tanpa COA';
+
+                        return ($index + 1) . '. ' . trim((string) $line->description) .
+                            ' | ' . $coaLabel .
+                            ' | Rp ' . number_format((float) $line->amount, 0, ',', '.');
+                    })->implode("\n")
+                    : (string) $representative->description;
 
                 $representative->setAttribute('display_amount', (float) $group->sum('amount'));
                 $representative->setAttribute('display_row_count', $rowCount);
@@ -561,6 +572,7 @@ class CashAccountService
                     'display_description',
                     $isBatch ? 'Transaksi Umum (' . $rowCount . ' baris)' : $representative->description
                 );
+                $representative->setAttribute('display_description_tooltip', $detailTooltip);
 
                 return $representative;
             })

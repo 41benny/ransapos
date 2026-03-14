@@ -321,7 +321,12 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-2 text-sm font-normal text-slate-600 overflow-hidden">
-                                    <div class="truncate w-full" title="{{ $transaction->display_description }}">
+                                    @php
+                                        $descriptionTooltipText = $transaction->display_description_tooltip ?? $transaction->display_description;
+                                    @endphp
+                                    <div
+                                        class="truncate w-full cursor-help cash-description-tooltip-trigger"
+                                        data-description-tooltip='@json($descriptionTooltipText)'>
                                         {{ $transaction->display_description }}
                                     </div>
                                     @if($isBatchRow)
@@ -428,6 +433,43 @@
 
 @push('scripts')
     <style>
+        .cash-batch-tooltip-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 140;
+            max-width: min(28rem, calc(100vw - 1.5rem));
+            padding: 0.875rem 1rem;
+            border-radius: 0.875rem;
+            border: 1px solid color-mix(in srgb, var(--runtime-ui-border) 92%, transparent);
+            background: color-mix(in srgb, var(--runtime-ui-surface) 96%, transparent);
+            color: var(--runtime-ui-text);
+            box-shadow: 0 24px 45px -28px rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+            white-space: pre-line;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transform: translate3d(0, 6px, 0);
+            transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+        }
+
+        .cash-batch-tooltip-overlay.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .dark .cash-batch-tooltip-overlay {
+            box-shadow: 0 28px 55px -30px rgba(2, 6, 23, 0.92);
+        }
+
         .resize-handle {
             position: absolute;
             top: 0;
@@ -462,6 +504,79 @@
         const STORAGE_KEY = 'cash_transactions_table_column_widths';
         const filterInputs = document.querySelectorAll('#cashTransactionsTable .filter-input');
         const clearFiltersBtn = document.getElementById('clearFilters');
+        const descriptionTooltipTriggers = document.querySelectorAll('.cash-description-tooltip-trigger');
+        let descriptionTooltipEl = null;
+        let activeDescriptionTooltipTrigger = null;
+
+        function getDescriptionTooltipEl() {
+            if (descriptionTooltipEl) {
+                return descriptionTooltipEl;
+            }
+
+            descriptionTooltipEl = document.createElement('div');
+            descriptionTooltipEl.className = 'cash-batch-tooltip-overlay';
+            descriptionTooltipEl.setAttribute('role', 'tooltip');
+            document.body.appendChild(descriptionTooltipEl);
+
+            return descriptionTooltipEl;
+        }
+
+        function readDescriptionTooltipText(trigger) {
+            const raw = trigger.getAttribute('data-description-tooltip');
+            if (!raw) {
+                return '';
+            }
+
+            try {
+                return JSON.parse(raw);
+            } catch (error) {
+                return raw;
+            }
+        }
+
+        function positionDescriptionTooltip(clientX, clientY) {
+            if (!descriptionTooltipEl) {
+                return;
+            }
+
+            const offset = 18;
+            const maxLeft = Math.max(8, window.innerWidth - descriptionTooltipEl.offsetWidth - 8);
+            const maxTop = Math.max(8, window.innerHeight - descriptionTooltipEl.offsetHeight - 8);
+            const nextLeft = Math.min(clientX + offset, maxLeft);
+            const nextTop = Math.min(clientY + offset, maxTop);
+
+            descriptionTooltipEl.style.left = `${nextLeft}px`;
+            descriptionTooltipEl.style.top = `${nextTop}px`;
+        }
+
+        function showDescriptionTooltip(trigger, clientX, clientY) {
+            const tooltipText = readDescriptionTooltipText(trigger);
+            if (!tooltipText) {
+                return;
+            }
+
+            const tooltip = getDescriptionTooltipEl();
+            tooltip.textContent = tooltipText;
+            tooltip.classList.add('is-visible');
+            activeDescriptionTooltipTrigger = trigger;
+
+            if (typeof clientX === 'number' && typeof clientY === 'number') {
+                positionDescriptionTooltip(clientX, clientY);
+                return;
+            }
+
+            const rect = trigger.getBoundingClientRect();
+            positionDescriptionTooltip(rect.left, rect.bottom);
+        }
+
+        function hideDescriptionTooltip() {
+            if (!descriptionTooltipEl) {
+                return;
+            }
+
+            descriptionTooltipEl.classList.remove('is-visible');
+            activeDescriptionTooltipTrigger = null;
+        }
 
         function computeColgroupWidth() {
             if (!colgroup) {
@@ -637,6 +752,28 @@
                 window.location.href = url.toString();
             });
         }
+
+        descriptionTooltipTriggers.forEach(trigger => {
+            trigger.addEventListener('mouseenter', event => {
+                showDescriptionTooltip(trigger, event.clientX, event.clientY);
+            });
+
+            trigger.addEventListener('mousemove', event => {
+                if (activeDescriptionTooltipTrigger === trigger) {
+                    positionDescriptionTooltip(event.clientX, event.clientY);
+                }
+            });
+
+            trigger.addEventListener('mouseleave', hideDescriptionTooltip);
+        });
+
+        window.addEventListener('scroll', hideDescriptionTooltip, true);
+        window.addEventListener('resize', hideDescriptionTooltip);
+        window.addEventListener('theme:changed', () => {
+            if (activeDescriptionTooltipTrigger) {
+                hideDescriptionTooltip();
+            }
+        });
 
         loadColumnWidths();
         initResizableColumns();
