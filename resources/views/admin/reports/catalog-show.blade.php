@@ -23,6 +23,15 @@
 
             @php
                 $isStockMovement = $viewType === 'stock-movement';
+                $isStockAdjustment = $viewType === 'stock-adjustment';
+                $usesProductFilter = $isStockMovement || $isStockAdjustment;
+                $outletColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-3' : 'md:col-span-3');
+                $productColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
+                $actionColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-2' : 'md:col-span-5');
+                $selectedProductOption = collect($products ?? collect())->firstWhere('id', $selectedProductId ?? null);
+                $selectedProductLabel = $selectedProductOption
+                    ? $selectedProductOption->name . (!empty($selectedProductOption->sku) ? ' - ' . $selectedProductOption->sku : '')
+                    : '';
             @endphp
             <form method="GET" class="mt-8 grid grid-cols-1 items-end gap-4 md:grid-cols-12">
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
@@ -44,7 +53,7 @@
                             class="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
                     </div>
                 </div>
-                <div class="md:col-span-3">
+                <div class="{{ $outletColClass }}">
                     <label
                         class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet</label>
                     <div class="relative">
@@ -61,17 +70,38 @@
                             class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
                     </div>
                 </div>
-                @if($isStockMovement)
-                    <div class="md:col-span-3">
+                @if($usesProductFilter)
+                    <div class="{{ $productColClass }}">
                         <label
                             class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Produk</label>
                         <div class="relative">
-                            <select name="product_id"
-                                class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
-                                <option value="">Semua Produk</option>
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" list="report-product-options" value="{{ $selectedProductLabel }}"
+                                placeholder="Ketik nama atau SKU produk..." autocomplete="off"
+                                data-report-product-input
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                            <input type="hidden" name="product_id" value="{{ $selectedProductId ?? '' }}"
+                                data-report-product-id>
+                            <datalist id="report-product-options">
                                 @foreach(($products ?? collect()) as $product)
-                                    <option value="{{ $product->id }}" @selected((string) ($selectedProductId ?? '') === (string) $product->id)>
-                                        {{ $product->name }}{{ !empty($product->sku) ? ' - ' . $product->sku : '' }}
+                                    <option value="{{ $product->name }}{{ !empty($product->sku) ? ' - ' . $product->sku : '' }}"
+                                        data-id="{{ $product->id }}"></option>
+                                @endforeach
+                            </datalist>
+                        </div>
+                    </div>
+                @endif
+                @if($isStockAdjustment)
+                    <div class="md:col-span-2">
+                        <label
+                            class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">User Input</label>
+                        <div class="relative">
+                            <select name="user_id"
+                                class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                                <option value="">Semua User</option>
+                                @foreach(($users ?? collect()) as $user)
+                                    <option value="{{ $user->id }}" @selected((string) ($selectedUserId ?? '') === (string) $user->id)>
+                                        {{ $user->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -80,7 +110,7 @@
                         </div>
                     </div>
                 @endif
-                <div class="{{ $isStockMovement ? 'md:col-span-2' : 'md:col-span-5' }} flex items-center gap-2">
+                <div class="{{ $actionColClass }} flex items-center gap-2">
                     <button type="submit"
                         class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-normal text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
                         <i class="fas fa-sync-alt text-xs"></i>
@@ -1417,6 +1447,161 @@
                     </div>
                 @endif
             </div>
+        @elseif($viewType === 'stock-adjustment')
+            @php
+                $qty = fn($value) => number_format((float) $value, 2, ',', '.');
+                $nominal = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+                $adjustmentAuditBase = array_filter([
+                    'tab' => 'all',
+                    'start_date' => $dateFrom,
+                    'end_date' => $dateTo,
+                    'outlet_id' => $outletId,
+                    'product_id' => $selectedProductId ?? null,
+                    'mutation_type' => 'adjustment',
+                    'reference_type' => 'stock_opname',
+                ]);
+                $netQty = (float) ($summary['net_qty'] ?? 0);
+                $netValue = (float) ($summary['net_value'] ?? 0);
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-6">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Adjustment</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            {{ number_format($summary['row_count'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Baris mutasi adjustment</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Produk Terdampak</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            {{ number_format($summary['product_count'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Produk unik pada periode ini</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">User Input</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            {{ number_format($summary['user_count'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">User unik yang melakukan input</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Adjustment Plus</div>
+                        <div class="mt-2 text-xl font-normal text-emerald-700">
+                            {{ $nominal($summary['plus_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['plus_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Adjustment Minus</div>
+                        <div class="mt-2 text-xl font-normal text-rose-700">
+                            {{ $nominal($summary['minus_value'] ?? 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['minus_qty'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Net Adjustment</div>
+                        <div class="mt-2 text-xl font-normal {{ $netValue >= 0 ? 'text-indigo-700' : 'text-rose-700' }}">
+                            {{ $nominal($netValue) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $netQty >= 0 ? '+' : '' }}{{ $qty($netQty) }}</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <a class="ui-btn ui-btn-ghost inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
+                        href="{{ route('admin.stocks.mutations', $adjustmentAuditBase) }}">
+                        <i class="fas fa-list-ul text-xs"></i>
+                        Audit Mutasi Adjustment
+                    </a>
+                    @if(!empty($summary['selected_product_name']))
+                        <span class="rounded-lg bg-indigo-50 px-3 py-1.5 text-indigo-700">
+                            Produk: {{ $summary['selected_product_name'] }}
+                        </span>
+                    @endif
+                    @if(!empty($summary['selected_user_name']))
+                        <span class="rounded-lg bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                            User: {{ $summary['selected_user_name'] }}
+                        </span>
+                    @endif
+                    <span class="rounded-lg bg-slate-100 px-3 py-1.5 text-slate-600">
+                        Periode: {{ \Carbon\Carbon::parse($dateFrom)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d/m/Y') }}
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    <table class="min-w-[1700px] text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">No</th>
+                                <th class="px-4 py-3">Tanggal & Jam</th>
+                                <th class="px-4 py-3">Produk</th>
+                                <th class="px-4 py-3">Outlet</th>
+                                <th class="px-4 py-3 text-right">Stok Sebelum</th>
+                                <th class="px-4 py-3 text-right">Stok Sesudah</th>
+                                <th class="px-4 py-3 text-right">Selisih Qty</th>
+                                <th class="px-4 py-3 text-center">Arah</th>
+                                <th class="px-4 py-3 text-right">Unit Cost</th>
+                                <th class="px-4 py-3 text-right">Nominal</th>
+                                <th class="px-4 py-3">Diinput Oleh</th>
+                                <th class="px-4 py-3">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-500">{{ $loop->iteration }}</td>
+                                    <td class="px-4 py-3 text-slate-700">
+                                        <div>{{ $row->mutation_date_display }}</div>
+                                        <div class="text-xs text-slate-500">{{ $row->mutation_time_display }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-normal text-slate-800">{{ $row->product_name }}</div>
+                                        <div class="text-xs text-slate-500">
+                                            {{ $row->product_sku ?: '-' }} | {{ strtoupper($row->product_unit ?? 'pcs') }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ $qty($row->stock_before) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-900">{{ $qty($row->stock_after) }}</td>
+                                    <td class="px-4 py-3 text-right {{ $row->quantity > 0 ? 'text-emerald-700' : ($row->quantity < 0 ? 'text-rose-700' : 'text-slate-700') }}">
+                                        {{ $row->quantity > 0 ? '+' : '' }}{{ $qty($row->quantity) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide {{ $row->direction_label === 'PLUS' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : ($row->direction_label === 'MINUS' ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200' : 'bg-slate-100 text-slate-700 ring-1 ring-slate-200') }}">
+                                            {{ $row->direction_label }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ $nominal($row->unit_cost) }}</td>
+                                    <td class="px-4 py-3 text-right {{ $row->quantity > 0 ? 'text-emerald-700' : ($row->quantity < 0 ? 'text-rose-700' : 'text-slate-700') }}">
+                                        {{ $nominal($row->total_cost) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->creator_name }}</td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->notes }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="12" class="px-4 py-8 text-center text-slate-500">
+                                        Belum ada data adjustment stok untuk filter yang dipilih.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if(!empty($meta['notes']))
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Catatan Laporan</div>
+                        <ul class="mt-2 space-y-1 text-sm text-slate-700">
+                            @foreach($meta['notes'] as $note)
+                                <li>{{ $note }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
         @elseif($viewType === 'inventory-reconciliation')
             @php
                 $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
@@ -1877,3 +2062,49 @@
         @endif
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const productInput = document.querySelector('[data-report-product-input]');
+            const productIdInput = document.querySelector('[data-report-product-id]');
+            const optionNodes = document.querySelectorAll('#report-product-options option');
+
+            if (!productInput || !productIdInput || optionNodes.length === 0) {
+                return;
+            }
+
+            const productOptions = Array.from(optionNodes).map(function (option) {
+                return {
+                    id: option.dataset.id || '',
+                    label: option.value || '',
+                };
+            });
+
+            function syncSelectedProduct() {
+                const matched = productOptions.find(function (option) {
+                    return option.label === productInput.value;
+                });
+
+                productIdInput.value = matched ? matched.id : '';
+
+                if (productInput.value && !matched) {
+                    productInput.setCustomValidity('Pilih produk dari daftar autocomplete yang tersedia.');
+                } else {
+                    productInput.setCustomValidity('');
+                }
+            }
+
+            productInput.addEventListener('input', syncSelectedProduct);
+            productInput.addEventListener('change', syncSelectedProduct);
+            productInput.form?.addEventListener('submit', function (event) {
+                syncSelectedProduct();
+                if (productInput.value && !productIdInput.value) {
+                    event.preventDefault();
+                    productInput.reportValidity();
+                    productInput.focus();
+                }
+            });
+        });
+    </script>
+@endpush

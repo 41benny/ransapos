@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Product;
+use App\Models\User;
 use App\Support\ReportExport;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
@@ -75,6 +76,7 @@ class CatalogReportController extends Controller
                 'label' => 'Produk',
                 'items' => [
                     'stock-movement',
+                    'stock-adjustments',
                     'top-products',
                     'low-selling-products',
                     'inventory-value',
@@ -140,6 +142,7 @@ class CatalogReportController extends Controller
             'purchase-by-category' => ['title' => 'Pembelian per Kategori', 'implemented' => true],
             'purchase-unpaid' => ['title' => 'Pembelian Belum Lunas', 'implemented' => true],
             'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => true],
+            'stock-adjustments' => ['title' => 'Riwayat Adjustment Stok', 'implemented' => true],
             'top-products' => ['title' => 'Produk Terlaris', 'implemented' => false],
             'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
             'inventory-value' => ['title' => 'Nilai Persediaan', 'implemented' => true],
@@ -200,6 +203,7 @@ class CatalogReportController extends Controller
 
             // Produk
             'stock-movement' => 'stocks.view',
+            'stock-adjustments' => 'stocks.view',
             'top-products' => 'stocks.view',
             'low-selling-products' => 'stocks.view',
             'inventory-value' => 'stocks.view',
@@ -349,21 +353,29 @@ class CatalogReportController extends Controller
         }
 
         $report = $reports[$slug] ?? $allReports[$slug];
-        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary', 'stock-movement', 'inventory-value'];
+        $financeSlugs = ['balance-sheet', 'profit-loss', 'cash-bank', 'cash-bank-detail', 'ledger-detail', 'cash-flow', 'sales-summary', 'stock-movement', 'stock-adjustments', 'inventory-value'];
         $defaultDateFrom = in_array($slug, $financeSlugs, true) ? now()->startOfMonth()->toDateString() : now()->toDateString();
         $defaultDateTo = in_array($slug, $financeSlugs, true) ? now()->endOfMonth()->toDateString() : now()->toDateString();
 
         $dateFrom = $request->input('date_from', $defaultDateFrom);
         $dateTo = $request->input('date_to', $defaultDateTo);
         $outletId = $request->input('outlet_id');
+        $selectedUserId = $request->input('user_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
         $selectedProductId = $request->input('product_id');
         $products = collect();
-        if ($slug === 'stock-movement') {
+        $users = collect();
+        if (in_array($slug, ['stock-movement', 'stock-adjustments'], true)) {
             $products = Product::query()
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'sku']);
+        }
+        if ($slug === 'stock-adjustments') {
+            $users = User::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']);
         }
 
         $rows = collect();
@@ -631,6 +643,28 @@ class CatalogReportController extends Controller
                     'Nominal mutasi memakai snapshot total_cost; jika kosong akan fallback ke avg_cost outlet atau purchase_price produk.',
                     'Kolom Penjualan Keluar (Nominal) dapat dipakai untuk rekonsiliasi HPP dengan laporan Laba Rugi pada filter tanggal/outlet yang sama.',
                     'Metrik HPP eksplisit: hpp_penjualan_kotor (out sale), hpp_reversal_void (in sale_cancellation), hpp_penjualan_bersih (kotor - reversal).',
+                ],
+            ];
+        }
+
+        if ($slug === 'stock-adjustments') {
+            $viewType = 'stock-adjustment';
+            $selectedProductId = $request->filled('product_id') ? (int) $request->input('product_id') : null;
+            $selectedUserId = $request->filled('user_id') ? (int) $request->input('user_id') : null;
+
+            [$rows, $summary] = $this->stockAdjustmentReport(
+                dateFrom: $dateFrom,
+                dateTo: $dateTo,
+                outletId: !empty($outletId) ? (int) $outletId : null,
+                productId: $selectedProductId,
+                userId: $selectedUserId,
+            );
+
+            $meta = [
+                'notes' => [
+                    'Laporan ini menampilkan detail adjustment stok manual per baris mutasi, termasuk user input, stok sebelum/sesudah, selisih, dan catatan.',
+                    'Nilai nominal adjustment memakai total_cost snapshot pada mutasi; jika qty berubah tetapi total_cost nol, periksa histori cost produk/outlet terkait.',
+                    'Satu aksi bulk adjustment dapat menghasilkan beberapa baris jika user menyesuaikan lebih dari satu produk sekaligus.',
                 ],
             ];
         }
@@ -1096,8 +1130,10 @@ class CatalogReportController extends Controller
             'dateTo' => $dateTo,
             'outletId' => $outletId,
             'selectedProductId' => $selectedProductId,
+            'selectedUserId' => $selectedUserId,
             'outlets' => $outlets,
             'products' => $products,
+            'users' => $users,
             'rows' => $rows,
             'summary' => $summary,
             'meta' => $meta,
@@ -1171,6 +1207,26 @@ class CatalogReportController extends Controller
                 ['key' => 'closing_qty', 'label' => 'Stok Akhir Qty', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'closing_value', 'label' => 'Stok Akhir Nominal', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'current_avg_cost', 'label' => 'Avg Cost Saat Ini', 'type' => 'number', 'decimals' => 4],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'stock-adjustment') {
+            return [[
+                ['key' => 'mutation_date_display', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'mutation_time_display', 'label' => 'Jam Input', 'type' => 'text'],
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'product_sku', 'label' => 'SKU', 'type' => 'text'],
+                ['key' => 'product_unit', 'label' => 'Satuan', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'stock_before', 'label' => 'Stok Sebelum', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'stock_after', 'label' => 'Stok Sesudah', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'quantity', 'label' => 'Selisih Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'quantity_abs', 'label' => 'Qty Absolut', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'direction_label', 'label' => 'Arah', 'type' => 'text'],
+                ['key' => 'unit_cost', 'label' => 'Unit Cost', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_cost', 'label' => 'Nominal Adjustment', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'creator_name', 'label' => 'Diinput Oleh', 'type' => 'text'],
+                ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
@@ -1266,6 +1322,121 @@ class CatalogReportController extends Controller
             ['key' => 'metric', 'label' => 'Metric', 'type' => 'text'],
             ['key' => 'value', 'label' => 'Value', 'type' => 'text'],
         ], $fallbackRows];
+    }
+
+    private function stockAdjustmentReport(
+        string $dateFrom,
+        string $dateTo,
+        ?int $outletId = null,
+        ?int $productId = null,
+        ?int $userId = null
+    ): array {
+        $query = DB::table('stock_mutations')
+            ->join('products', 'stock_mutations.product_id', '=', 'products.id')
+            ->join('outlets', 'stock_mutations.outlet_id', '=', 'outlets.id')
+            ->leftJoin('users', 'stock_mutations.created_by', '=', 'users.id')
+            ->where('stock_mutations.mutation_type', 'adjustment')
+            ->whereBetween('stock_mutations.mutation_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletId)) {
+            $query->where('stock_mutations.outlet_id', $outletId);
+        }
+
+        if (!empty($productId)) {
+            $query->where('stock_mutations.product_id', $productId);
+        }
+
+        if (!empty($userId)) {
+            $query->where('stock_mutations.created_by', $userId);
+        }
+
+        $rows = $query
+            ->select(
+                'stock_mutations.id',
+                'stock_mutations.mutation_date',
+                'stock_mutations.created_at',
+                'stock_mutations.quantity',
+                'stock_mutations.unit_cost',
+                'stock_mutations.total_cost',
+                'stock_mutations.stock_before',
+                'stock_mutations.stock_after',
+                'stock_mutations.notes',
+                'stock_mutations.created_by',
+                'products.id as product_id',
+                'products.name as product_name',
+                'products.sku as product_sku',
+                'products.unit as product_unit',
+                'outlets.id as outlet_id',
+                'outlets.name as outlet_name',
+                'users.name as creator_name'
+            )
+            ->orderByDesc('stock_mutations.mutation_date')
+            ->orderByDesc('stock_mutations.created_at')
+            ->orderByDesc('stock_mutations.id')
+            ->get()
+            ->map(function ($row) {
+                $createdAt = $row->created_at ? \Carbon\Carbon::parse($row->created_at) : null;
+                $mutationDate = $row->mutation_date ? \Carbon\Carbon::parse($row->mutation_date) : null;
+                $qty = round((float) ($row->quantity ?? 0), 2);
+                $totalCost = round((float) ($row->total_cost ?? 0), 2);
+
+                return (object) [
+                    'id' => (int) $row->id,
+                    'mutation_date' => $mutationDate?->toDateString(),
+                    'mutation_date_display' => $mutationDate?->format('d/m/Y') ?? '-',
+                    'mutation_time_display' => $createdAt?->format('H:i') ?? '-',
+                    'created_at' => $createdAt?->toDateTimeString(),
+                    'product_id' => (int) $row->product_id,
+                    'product_name' => $row->product_name,
+                    'product_sku' => $row->product_sku,
+                    'product_unit' => $row->product_unit ?: 'pcs',
+                    'outlet_id' => (int) $row->outlet_id,
+                    'outlet_name' => $row->outlet_name,
+                    'stock_before' => round((float) ($row->stock_before ?? 0), 2),
+                    'stock_after' => round((float) ($row->stock_after ?? 0), 2),
+                    'quantity' => $qty,
+                    'quantity_abs' => abs($qty),
+                    'direction_label' => $qty > 0 ? 'PLUS' : ($qty < 0 ? 'MINUS' : 'NETRAL'),
+                    'direction_color' => $qty > 0 ? 'emerald' : ($qty < 0 ? 'rose' : 'slate'),
+                    'unit_cost' => round((float) ($row->unit_cost ?? 0), 2),
+                    'total_cost' => $totalCost,
+                    'creator_name' => $row->creator_name ?: 'System',
+                    'created_by' => $row->created_by ? (int) $row->created_by : null,
+                    'notes' => $row->notes ?: '-',
+                ];
+            })
+            ->values();
+
+        $selectedProductName = null;
+        if (!empty($productId)) {
+            $selectedProductName = Product::query()->whereKey($productId)->value('name');
+        }
+
+        $selectedUserName = null;
+        if (!empty($userId)) {
+            $selectedUserName = User::query()->whereKey($userId)->value('name');
+        }
+
+        $positiveRows = $rows->filter(fn($row) => (float) $row->quantity > 0);
+        $negativeRows = $rows->filter(fn($row) => (float) $row->quantity < 0);
+
+        $summary = [
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'row_count' => $rows->count(),
+            'product_count' => $rows->pluck('product_id')->unique()->count(),
+            'user_count' => $rows->pluck('created_by')->filter()->unique()->count(),
+            'selected_product_name' => $selectedProductName,
+            'selected_user_name' => $selectedUserName,
+            'plus_qty' => (float) $positiveRows->sum('quantity_abs'),
+            'plus_value' => (float) $positiveRows->sum('total_cost'),
+            'minus_qty' => (float) $negativeRows->sum('quantity_abs'),
+            'minus_value' => (float) $negativeRows->sum('total_cost'),
+            'net_qty' => (float) $rows->sum('quantity'),
+            'net_value' => (float) ($positiveRows->sum('total_cost') - $negativeRows->sum('total_cost')),
+        ];
+
+        return [$rows, $summary];
     }
 
     private function stockMovementReport(string $dateFrom, string $dateTo, ?int $outletId = null, ?int $productId = null): array
