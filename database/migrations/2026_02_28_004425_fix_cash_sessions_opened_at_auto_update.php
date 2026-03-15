@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            return;
+        }
+
         if (!Schema::hasTable('cash_sessions')) {
             return;
         }
@@ -45,6 +49,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            return;
+        }
+
         if (!Schema::hasTable('cash_sessions')) {
             return;
         }

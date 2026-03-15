@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\SalesType;
+use App\Support\SpecialPromotion;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -35,7 +36,7 @@ class StoreSaleRequest extends FormRequest
      */
     public function rules(): array
     {
-        $salesTypeKeys = array_keys(SalesType::priceLevels());
+        $salesTypeKeys = array_keys(SpecialPromotion::filterRuntimeSalesTypes(SalesType::priceLevels()));
         $user = $this->user();
 
         $outletRule = ['required', 'exists:outlets,id'];
@@ -113,5 +114,17 @@ class StoreSaleRequest extends FormRequest
             'payment_amount.required' => 'Jumlah pembayaran harus diisi',
             'payment_amount.min' => 'Jumlah pembayaran minimal 0',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if (SpecialPromotion::isSpecialSalesType($this->input('sales_type'))) {
+                $validator->errors()->add(
+                    'sales_type',
+                    'Meal karyawan dan compliment sekarang harus diproses melalui promo, bukan metode penjualan.'
+                );
+            }
+        });
     }
 }

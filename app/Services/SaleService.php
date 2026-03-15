@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Promotion;
 use App\Models\Voucher;
+use App\Support\SpecialPromotion;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -102,6 +103,11 @@ class SaleService
                         return [(int) $rule->product_category_id => (float) $rule->discount_percent];
                     })
                     ->all();
+            }
+
+            $resolvedSalesType = trim((string) ($data['sales_type'] ?? 'regular'));
+            if ($resolvedSalesType === '' || SpecialPromotion::isSpecialSalesType($resolvedSalesType)) {
+                $resolvedSalesType = 'regular';
             }
 
             // 4. Hitung subtotal dari items (termasuk diskon item dari promo kategori)
@@ -207,7 +213,7 @@ class SaleService
                 'voucher_id' => $voucher?->id,
                 'voucher_code' => $voucher?->code,
                 'sale_date' => now()->toDateString(),
-                'sales_type' => $data['sales_type'] ?? 'regular',
+                'sales_type' => $resolvedSalesType,
                 'subtotal' => $subtotal,
                 'discount_type' => $discountType,
                 'discount_value' => $discountValue,

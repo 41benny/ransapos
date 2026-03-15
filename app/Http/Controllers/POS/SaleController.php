@@ -17,6 +17,7 @@ use App\Models\Payment;
 use App\Models\SaleItem;
 use App\Services\SaleService;
 use App\Models\Sale;
+use App\Support\SpecialPromotion;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class SaleController extends Controller
      */
     public function create()
     {
-        $priceLevels = SalesType::priceLevels();
+        $priceLevels = SpecialPromotion::filterRuntimeSalesTypes(SalesType::priceLevels());
         $currentOutletId = (int) (auth()->user()->outlet_id ?? 0);
         $currentUserId = (int) (auth()->id() ?? 0);
 
@@ -166,10 +167,14 @@ class SaleController extends Controller
             ->orderBy('name')
             ->get()
             ->map(function (Promotion $promotion) {
+                $specialType = SpecialPromotion::classify($promotion->code, $promotion->name);
+
                 return [
                     'id' => $promotion->id,
                     'name' => $promotion->name,
                     'code' => $promotion->code,
+                    'special_type' => $specialType,
+                    'requires_confirmation' => $specialType !== null,
                     'rules' => $promotion->categoryRules->map(function ($rule) {
                         return [
                             'category_id' => (int) $rule->product_category_id,

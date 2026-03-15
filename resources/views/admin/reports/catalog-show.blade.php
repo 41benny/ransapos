@@ -216,7 +216,7 @@
 
                 // Prepare Sales Type Data for Chart
                 $totalSalesType = collect($summary['sales_type_rows'] ?? [])->sum('total_amount');
-                $salesTypeLabels = collect($summary['sales_type_rows'] ?? [])->map(fn($r) => ucfirst($r->sales_type))->toArray();
+                $salesTypeLabels = collect($summary['sales_type_rows'] ?? [])->map(fn($r) => ucfirst(str_replace('_', ' ', $r->sales_type)))->toArray();
                 $salesTypeData = collect($summary['sales_type_rows'] ?? [])->map(fn($r) => (float) $r->total_amount)->toArray();
                 $dominantType = collect($summary['sales_type_rows'] ?? [])->sortByDesc('total_amount')->first();
                 $dominantPercent = ($totalSalesType > 0 && $dominantType) ? round(($dominantType->total_amount / $totalSalesType) * 100, 1) : 0;
@@ -242,13 +242,19 @@
                         <div class="grid grid-cols-1 gap-8 md:grid-cols-5">
                             <div class="md:col-span-3 space-y-4">
                                 <div class="flex items-center justify-between text-sm">
-                                    <span class="text-slate-500">Total Sales</span>
+                                    <span class="text-slate-500">Gross Sales</span>
                                     <span
                                         class="font-normal text-slate-900 text-lg">{{ $fmt($summary['total_sales'] ?? 0) }}</span>
                                 </div>
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-slate-500">Total Discount</span>
-                                    <span class="font-normal text-rose-500">{{ $fmt($summary['total_discount'] ?? 0) }}</span>
+                                    <div class="text-right">
+                                        <span class="font-normal text-rose-500">{{ $fmt($summary['total_discount'] ?? 0) }}</span>
+                                        <div class="text-[10px] text-slate-400 mt-0.5">
+                                            Item {{ $fmt($summary['item_discount_total'] ?? 0) }} | Header
+                                            {{ $fmt($summary['header_discount_total'] ?? 0) }}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="flex items-center justify-between text-sm">
                                     <span class="text-slate-500">Total Service Charge</span>
@@ -358,6 +364,13 @@
                             </div>
                         </div>
                     </div>
+
+                    @if(($summary['discount_anomaly_transactions'] ?? 0) > 0)
+                        <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                            Audit diskon: {{ number_format($summary['discount_anomaly_transactions']) }} transaksi spesial
+                            tidak memiliki promo/diskon aktual. Transaksi ini perlu direview terpisah dari diskon valid.
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Row 2: Sales Type, Payment, Product --}}
@@ -374,7 +387,7 @@
                                 @if($dominantType)
                                     <div class="flex items-center gap-2 mb-1">
                                         <div class="h-2 w-2 rounded-full bg-indigo-600"></div>
-                                        <span class="text-xs font-normal text-slate-500">{{ ucfirst($dominantType->sales_type) }}
+                                        <span class="text-xs font-normal text-slate-500">{{ ucfirst(str_replace('_', ' ', $dominantType->sales_type)) }}
                                             Sales Dominant</span>
                                     </div>
                                     <div class="text-3xl font-normal text-slate-800">{{ $dominantPercent }}%</div>
@@ -385,7 +398,7 @@
                         <div class="space-y-3">
                             @foreach($summary['sales_type_rows'] ?? [] as $typeRow)
                                 <div class="flex items-center justify-between text-sm">
-                                    <span class="text-slate-600">{{ ucfirst($typeRow->sales_type) }}</span>
+                                    <span class="text-slate-600">{{ ucfirst(str_replace('_', ' ', $typeRow->sales_type)) }}</span>
                                     <span class="font-normal text-slate-800">{{ $fmt($typeRow->total_amount) }}</span>
                                 </div>
                             @endforeach
@@ -519,7 +532,7 @@
                 </div>
 
                 {{-- Cards --}}
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-5 mb-6">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Transaksi</div>
                         <div class="mt-1 text-2xl font-normal text-slate-900">
@@ -540,6 +553,16 @@
                         <div class="mt-1 text-2xl font-normal text-indigo-600">Rp
                             {{ number_format($summary['total_net_sales'] ?? 0, 0, ',', '.') }}</div>
                     </div>
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-amber-600">Transaksi Anomali</div>
+                        <div class="mt-1 text-2xl font-normal text-amber-700">
+                            {{ number_format($summary['discount_anomaly_transactions'] ?? 0) }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                    Diskon efektif = diskon item + diskon header. Status <strong>Anomali</strong> berarti transaksi
+                    spesial lama tampil di laporan, tetapi tidak memiliki promo atau diskon aktual.
                 </div>
 
                 @if(($summary['view_mode'] ?? 'summary') === 'summary')
@@ -547,29 +570,63 @@
                         <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                                 <tr>
-                                    <th class="px-4 py-3">Tipe Penjualan</th>
+                                    <th class="px-4 py-3">Tipe Diskon</th>
+                                    <th class="px-4 py-3">Status Data</th>
+                                    <th class="px-4 py-3">Metode Penjualan</th>
                                     <th class="px-4 py-3 text-right">Jumlah Transaksi</th>
                                     <th class="px-4 py-3 text-right">Nilai Jual (Gross)</th>
                                     <th class="px-4 py-3 text-right">Total Diskon</th>
                                     <th class="px-4 py-3 text-right">Net Sales</th>
                                 </tr>
+                                <tr class="bg-white border-b border-slate-100 no-print">
+                                    <td class="px-1 py-1 relative">
+                                        <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                            <i class="fas fa-times text-[10px]"></i>
+                                        </button>
+                                        <input type="text" data-name="filter_tipe_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_status_data" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_metode_penjualan" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_jumlah_transaksi" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_gross" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_net_sales" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @forelse($rows as $row)
                                     <tr>
-                                        <td class="px-4 py-3 font-medium text-slate-800">{{ ucfirst($row['sales_type']) }}</td>
+                                        <td class="px-4 py-3 font-medium text-slate-800">{{ $row['discount_source_label'] }}</td>
+                                        <td class="px-4 py-3 text-slate-700">
+                                            <span class="rounded px-2 py-0.5 text-xs font-medium {{ !empty($row['is_discount_anomaly']) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                                {{ $row['data_status_label'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-700">{{ $row['sales_type_label'] }}</td>
                                         <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row['transaction_count']) }}
                                         </td>
                                         <td class="px-4 py-3 text-right text-slate-700">Rp
                                             {{ number_format($row['gross_value'], 0, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right text-rose-600">Rp
-                                            {{ number_format($row['total_discount'], 0, ',', '.') }}</td>
+                                            {{ number_format($row['effective_discount'], 0, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right font-medium text-indigo-600">Rp
                                             {{ number_format($row['net_sales'], 0, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Tidak ada data</td>
+                                        <td colspan="7" class="px-4 py-8 text-center text-slate-500">Tidak ada data</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -580,37 +637,82 @@
                         <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                                 <tr>
+                                    <th class="px-4 py-3">Tipe Diskon</th>
+                                    <th class="px-4 py-3">Status Data</th>
                                     <th class="px-4 py-3">No Transaksi</th>
                                     <th class="px-4 py-3">Tanggal</th>
                                     <th class="px-4 py-3">Outlet</th>
-                                    <th class="px-4 py-3">Tipe</th>
+                                    <th class="px-4 py-3">Metode Penjualan</th>
                                     <th class="px-4 py-3">Pelanggan</th>
                                     <th class="px-4 py-3 text-right">Nilai Jual (Gross)</th>
                                     <th class="px-4 py-3 text-right">Diskon</th>
                                     <th class="px-4 py-3 text-right">Bayar (Net)</th>
                                 </tr>
+                                <tr class="bg-white border-b border-slate-100 no-print">
+                                    <td class="px-1 py-1 relative">
+                                        <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                            <i class="fas fa-times text-[10px]"></i>
+                                        </button>
+                                        <input type="text" data-name="filter_tipe_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_status_data" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_transaksi" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_tanggal" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_outlet" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_metode_penjualan" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_pelanggan" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_gross" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_net_sales" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @forelse($rows as $row)
                                     <tr>
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <span
+                                                class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{{ $row['discount_source_label'] }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <span
+                                                class="rounded px-2 py-0.5 text-xs font-medium {{ !empty($row['is_discount_anomaly']) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">{{ $row['data_status_label'] }}</span>
+                                        </td>
                                         <td class="px-4 py-3 font-medium text-slate-800">{{ $row['invoice_number'] }}</td>
                                         <td class="px-4 py-3 text-slate-600">{{ $row['sale_date'] }}</td>
                                         <td class="px-4 py-3 text-slate-600">{{ $row['outlet_name'] }}</td>
                                         <td class="px-4 py-3 text-slate-600">
                                             <span
-                                                class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{{ ucfirst($row['sales_type']) }}</span>
+                                                class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{{ $row['sales_type_label'] }}</span>
                                         </td>
                                         <td class="px-4 py-3 text-slate-600">{{ $row['customer_name'] }}</td>
                                         <td class="px-4 py-3 text-right text-slate-700">Rp
                                             {{ number_format($row['gross_value'], 0, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right text-rose-600">Rp
-                                            {{ number_format($row['total_discount'], 0, ',', '.') }}</td>
+                                            {{ number_format($row['effective_discount'], 0, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right font-medium text-indigo-600">Rp
                                             {{ number_format($row['net_sales'], 0, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">Tidak ada data</td>
+                                        <td colspan="10" class="px-4 py-8 text-center text-slate-500">Tidak ada data</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -2070,41 +2172,99 @@
             const productIdInput = document.querySelector('[data-report-product-id]');
             const optionNodes = document.querySelectorAll('#report-product-options option');
 
-            if (!productInput || !productIdInput || optionNodes.length === 0) {
-                return;
-            }
-
-            const productOptions = Array.from(optionNodes).map(function (option) {
-                return {
-                    id: option.dataset.id || '',
-                    label: option.value || '',
-                };
-            });
-
-            function syncSelectedProduct() {
-                const matched = productOptions.find(function (option) {
-                    return option.label === productInput.value;
+            if (productInput && productIdInput && optionNodes.length > 0) {
+                const productOptions = Array.from(optionNodes).map(function (option) {
+                    return {
+                        id: option.dataset.id || '',
+                        label: option.value || '',
+                    };
                 });
 
-                productIdInput.value = matched ? matched.id : '';
+                function syncSelectedProduct() {
+                    const matched = productOptions.find(function (option) {
+                        return option.label === productInput.value;
+                    });
 
-                if (productInput.value && !matched) {
-                    productInput.setCustomValidity('Pilih produk dari daftar autocomplete yang tersedia.');
-                } else {
-                    productInput.setCustomValidity('');
+                    productIdInput.value = matched ? matched.id : '';
+
+                    if (productInput.value && !matched) {
+                        productInput.setCustomValidity('Pilih produk dari daftar autocomplete yang tersedia.');
+                    } else {
+                        productInput.setCustomValidity('');
+                    }
                 }
+
+                productInput.addEventListener('input', syncSelectedProduct);
+                productInput.addEventListener('change', syncSelectedProduct);
+                productInput.form?.addEventListener('submit', function (event) {
+                    syncSelectedProduct();
+                    if (productInput.value && !productIdInput.value) {
+                        event.preventDefault();
+                        productInput.reportValidity();
+                        productInput.focus();
+                    }
+                });
             }
 
-            productInput.addEventListener('input', syncSelectedProduct);
-            productInput.addEventListener('change', syncSelectedProduct);
-            productInput.form?.addEventListener('submit', function (event) {
-                syncSelectedProduct();
-                if (productInput.value && !productIdInput.value) {
-                    event.preventDefault();
-                    productInput.reportValidity();
-                    productInput.focus();
+            const tableFilterInputs = document.querySelectorAll('[data-report-table-filter-input]');
+            const clearTableFiltersButton = document.querySelector('[data-report-table-clear-filters]');
+
+            if (tableFilterInputs.length > 0) {
+                const tableFilterParamNames = [
+                    'filter_tipe_diskon',
+                    'filter_metode_penjualan',
+                    'filter_jumlah_transaksi',
+                    'filter_gross',
+                    'filter_diskon',
+                    'filter_net_sales',
+                    'filter_transaksi',
+                    'filter_tanggal',
+                    'filter_outlet',
+                    'filter_pelanggan',
+                ];
+                const params = new URLSearchParams(window.location.search);
+
+                tableFilterInputs.forEach(function (input) {
+                    if (params.has(input.dataset.name)) {
+                        input.value = params.get(input.dataset.name);
+                    }
+                });
+
+                let tableFilterTimer = null;
+
+                function updateTableFilter(name, value) {
+                    const url = new URL(window.location.href);
+
+                    if (value.trim()) {
+                        url.searchParams.set(name, value.trim());
+                    } else {
+                        url.searchParams.delete(name);
+                    }
+
+                    window.location.href = url.toString();
                 }
-            });
+
+                tableFilterInputs.forEach(function (input) {
+                    input.addEventListener('input', function (event) {
+                        clearTimeout(tableFilterTimer);
+                        tableFilterTimer = setTimeout(function () {
+                            updateTableFilter(input.dataset.name, event.target.value);
+                        }, 500);
+                    });
+                });
+
+                if (clearTableFiltersButton) {
+                    clearTableFiltersButton.addEventListener('click', function () {
+                        const url = new URL(window.location.href);
+
+                        tableFilterParamNames.forEach(function (paramName) {
+                            url.searchParams.delete(paramName);
+                        });
+
+                        window.location.href = url.toString();
+                    });
+                }
+            }
         });
     </script>
 @endpush

@@ -7,6 +7,7 @@ use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\ReportExport;
+use App\Support\SpecialPromotion;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Http\Request;
@@ -442,15 +443,35 @@ class CatalogReportController extends Controller
                 $salesBaseQuery->where('sales.outlet_id', $outletId);
             }
 
-            $totals = (clone $salesBaseQuery)
+            $saleItemMetricsSub = DB::table('sale_items')
+                ->selectRaw('sale_items.sale_id')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal + sale_items.discount_amount), 0) as gross_value')
+                ->selectRaw('COALESCE(SUM(sale_items.discount_amount), 0) as item_discount_amount')
+                ->groupBy('sale_items.sale_id');
+
+            $salesSummaryBaseQuery = (clone $salesBaseQuery)
+                ->leftJoinSub($saleItemMetricsSub, 'sale_item_metrics', function ($join) {
+                    $join->on('sale_item_metrics.sale_id', '=', 'sales.id');
+                });
+
+            $totals = (clone $salesSummaryBaseQuery)
                 ->selectRaw('COUNT(*) as total_transactions')
-                ->selectRaw('COALESCE(SUM(sales.subtotal), 0) as subtotal')
-                ->selectRaw('COALESCE(SUM(sales.discount_amount), 0) as total_discount')
+                ->selectRaw('COALESCE(SUM(COALESCE(sale_item_metrics.gross_value, sales.subtotal)), 0) as gross_sales')
+                ->selectRaw('COALESCE(SUM(sales.discount_amount), 0) as header_discount_total')
+                ->selectRaw('COALESCE(SUM(COALESCE(sale_item_metrics.item_discount_amount, 0)), 0) as item_discount_total')
+                ->selectRaw('COALESCE(SUM(COALESCE(sale_item_metrics.item_discount_amount, 0) + sales.discount_amount), 0) as total_discount')
                 ->selectRaw('COALESCE(SUM(sales.tax_amount), 0) as total_tax')
                 ->selectRaw('COALESCE(SUM(sales.service_charge_amount), 0) as total_service_charge')
                 ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
                 ->selectRaw('COALESCE(AVG(sales.total_amount), 0) as avg_transaction')
                 ->first();
+
+            $discountAnomalyTransactions = (clone $salesSummaryBaseQuery)
+                ->whereIn('sales.sales_type', SpecialPromotion::blockedRuntimeSalesTypes())
+                ->whereNull('sales.promotion_id')
+                ->whereNull('sales.voucher_id')
+                ->whereRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) + COALESCE(sales.discount_amount, 0) = 0')
+                ->count();
 
             $dailyRows = (clone $salesBaseQuery)
                 ->selectRaw('sales.sale_date')
@@ -551,13 +572,16 @@ class CatalogReportController extends Controller
                 'date_to' => $dateTo,
                 'selected_outlet_name' => $selectedOutletName,
                 'total_transactions' => (int) ($totals->total_transactions ?? 0),
-                'total_sales' => (float) ($totals->subtotal ?? 0),
+                'total_sales' => (float) ($totals->gross_sales ?? 0),
                 'total_discount' => (float) ($totals->total_discount ?? 0),
+                'header_discount_total' => (float) ($totals->header_discount_total ?? 0),
+                'item_discount_total' => (float) ($totals->item_discount_total ?? 0),
                 'total_tax' => (float) ($totals->total_tax ?? 0),
                 'total_service_charge' => (float) ($totals->total_service_charge ?? 0),
                 'total_adjustment' => 0.0,
                 'total_amount' => (float) ($totals->total_amount ?? 0),
                 'avg_transaction' => (float) ($totals->avg_transaction ?? 0),
+                'discount_anomaly_transactions' => (int) $discountAnomalyTransactions,
                 'void_invoices' => (int) ($voidTotals->total_invoices ?? 0),
                 'void_items' => (float) ($voidItems ?? 0),
                 'void_total' => (float) ($voidTotals->total_amount ?? 0),
@@ -683,9 +707,42 @@ class CatalogReportController extends Controller
             $viewType = 'sales-discount';
             $viewMode = $request->input('view_mode', 'summary'); // summary | detail
             $filterType = $request->input('filter_type', 'all'); // all | compliment | meal_karyawan
+            $specialFilterType = $filterType !== 'all' ? SpecialPromotion::classify($filterType) : null;
+            $matchesText = static function ($value, ?string $keyword): bool {
+                $keyword = trim((string) $keyword);
+
+                if ($keyword === '') {
+                    return true;
+                }
+
+                return stripos((string) $value, $keyword) !== false;
+            };
+            $matchesNumber = static function ($value, ?string $keyword): bool {
+                $keyword = trim((string) $keyword);
+
+                if ($keyword === '') {
+                    return true;
+                }
+
+                $number = (float) $value;
+                $variants = array_unique([
+                    (string) $value,
+                    (string) $number,
+                    number_format($number, 0, ',', '.'),
+                    number_format($number, 2, ',', '.'),
+                ]);
+
+                foreach ($variants as $variant) {
+                    if (stripos($variant, $keyword) !== false) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
 
             $salesQuery = \App\Models\Sale::query()
-                ->with(['items.product', 'outlet', 'user', 'customer'])
+                ->with(['items.product', 'outlet', 'user', 'customer', 'promotion:id,name,code', 'voucher:id,name,code'])
                 ->where('status', 'completed')
                 ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
@@ -693,109 +750,117 @@ class CatalogReportController extends Controller
                 $salesQuery->where('outlet_id', $outletId);
             }
 
-            // Optional: Filter by specific sales types if needed, but report typically shows all "discounted" transactions
-            if ($filterType !== 'all') {
-                $salesQuery->where('sales_type', $filterType);
-            }
-
             $allSales = $salesQuery->orderByDesc('sale_date')->orderByDesc('created_at')->get();
 
-            // Process data to calculate "Real Value" vs "Paid Value"
-            $processedData = $allSales->map(function ($sale) {
-                $grossValue = 0;
-                $totalDiscount = 0;
+            $processedData = $allSales->map(fn($sale) => $this->buildSalesDiscountRow($sale));
 
-                foreach ($sale->items as $item) {
-                    // Estimate normal price from product master if item price is 0 (compliment)
-                    // Or use item subtotal + item discount if available
-                    // Use product selling price as baseline for value
-                    $normalPrice = $item->product ? (float) $item->product->selling_price : (float) $item->unit_price;
-
-                    // If unit_price is 0, we assume it's a full discount/compliment
-                    // If unit_price > 0, we trust it, but check if discount_amount exists
-
-                    // Logic: Value = Quantity * Normal Price (Highest logic)
-                    // But product price might have changed.
-                    // Fallback: If unit_price > 0, Value = (Unit Price * Qty). If Unit Price == 0, Value = (Product Price * Qty).
-
-                    $itemPrice = (float) $item->unit_price;
-                    $isSpecialType = in_array($sale->sales_type, ['compliment', 'meal_karyawan']);
-
-                    // If it's a special type or price is 0, use master price to show full value
-                    if (($isSpecialType || $itemPrice == 0) && $item->product) {
-                        $itemGross = ($item->quantity * $item->product->selling_price);
-                    } else {
-                        // Regular sales: respect historical price snapshot (subtotal + discount)
-                        $itemGross = ((float) $item->subtotal) + ((float) $item->discount_amount);
-                    }
-
-                    $paidAmount = (float) $item->subtotal;
-                    // Safety check
-                    if ($itemGross < $paidAmount) {
-                        $itemGross = $paidAmount;
-                    }
-
-                    $grossValue += $itemGross;
-                }
-
-                // Add global discount from header if any (already deducted from items? No, SaleService splits it? No, SaleService discount_amount is global)
-                // SaleService structure:
-                // Subtotal (sum of item subtotals)
-                // Discount Amount (Global)
-                // Tax Base = Subtotal - Discount Amount
-
-                // So Total Discount = (Sum of (Item Value - Item Paid)) + Global Discount Amount
-                // Item Paid = Item Subtotal.
-
-                $itemsPaid = $sale->items->sum('subtotal');
-                $itemsPotentialValue = $grossValue;
-                $itemLevelDiscount = $itemsPotentialValue - $itemsPaid;
-
-                $totalDiscount = $itemLevelDiscount + (float) $sale->discount_amount;
-
-                return [
-                    'id' => $sale->id,
-                    'invoice_number' => $sale->invoice_number,
-                    'sale_date' => $sale->sale_date->format('Y-m-d'),
-                    'outlet_name' => $sale->outlet->name ?? '-',
-                    'sales_type' => $sale->sales_type ?? 'regular', // compliment, meal_karyawan, etc
-                    'customer_name' => $sale->customer_name ?? '-',
-                    'gross_value' => $itemsPotentialValue, // Nilai seharusnya (Normal Price)
-                    'net_sales' => (float) $sale->total_amount, // Yang dibayar
-                    'total_discount' => $totalDiscount, // Selisih
-                    'notes' => $sale->notes,
-                    'items_count' => $sale->items->count(),
-                ];
-            });
-
-            // Filter only transactions with discount or specific types
-            $filteredData = $processedData->filter(function ($row) use ($filterType) {
+            $filteredData = $processedData->filter(function ($row) use ($filterType, $specialFilterType) {
                 if ($filterType !== 'all') {
-                    return $row['sales_type'] === $filterType;
+                    return $row['sales_type'] === $filterType
+                        || ($specialFilterType !== null && ($row['special_discount_type'] ?? null) === $specialFilterType);
                 }
-                // Show if there is discount OR sales_type is special
-                return $row['total_discount'] > 0 || in_array($row['sales_type'], ['compliment', 'meal_karyawan']);
+
+                return $row['effective_discount'] > 0 || $row['is_discount_anomaly'];
             });
 
             if ($viewMode === 'summary') {
-                $rows = $filteredData->groupBy('sales_type')->map(function ($group, $type) {
+                $rows = $filteredData->groupBy(function ($row) {
+                    return implode('|', [
+                        $row['discount_source_key'] ?? 'none',
+                        $row['sales_type'] ?? 'regular',
+                        !empty($row['is_discount_anomaly']) ? 'anomaly' : 'valid',
+                    ]);
+                })->map(function ($group) {
+                    $first = $group->first();
+
                     return [
-                        'sales_type' => $type,
+                        'discount_source_key' => $first['discount_source_key'] ?? 'none',
+                        'discount_source_kind' => $first['discount_source_kind'] ?? 'none',
+                        'discount_type' => $first['discount_type'] ?? 'none',
+                        'discount_type_label' => $first['discount_type_label'] ?? 'None',
+                        'discount_source_label' => $first['discount_source_label'] ?? 'None',
+                        'sales_type' => $first['sales_type'] ?? 'regular',
+                        'sales_type_label' => $first['sales_type_label'] ?? 'Regular',
+                        'is_discount_anomaly' => !empty($first['is_discount_anomaly']),
+                        'data_status_label' => $first['data_status_label'] ?? 'Valid',
                         'transaction_count' => $group->count(),
                         'gross_value' => $group->sum('gross_value'),
                         'net_sales' => $group->sum('net_sales'),
-                        'total_discount' => $group->sum('total_discount'),
+                        'effective_discount' => $group->sum('effective_discount'),
+                        'total_discount' => $group->sum('effective_discount'),
                     ];
                 })->values();
+
+                if ($request->filled('filter_tipe_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon')));
+                }
+                if ($request->filled('filter_metode_penjualan')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['sales_type_label'] ?? '', $request->input('filter_metode_penjualan')));
+                }
+                if ($request->filled('filter_status_data')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['data_status_label'] ?? '', $request->input('filter_status_data')));
+                }
+                if ($request->filled('filter_jumlah_transaksi')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['transaction_count'] ?? 0, $request->input('filter_jumlah_transaksi')));
+                }
+                if ($request->filled('filter_gross')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['gross_value'] ?? 0, $request->input('filter_gross')));
+                }
+                if ($request->filled('filter_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon')));
+                }
+                if ($request->filled('filter_net_sales')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales')));
+                }
+
+                $rows = $rows->values();
             } else {
                 $rows = $filteredData->values();
+
+                if ($request->filled('filter_tipe_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon')));
+                }
+                if ($request->filled('filter_transaksi')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['invoice_number'] ?? '', $request->input('filter_transaksi')));
+                }
+                if ($request->filled('filter_tanggal')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['sale_date'] ?? '', $request->input('filter_tanggal')));
+                }
+                if ($request->filled('filter_outlet')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['outlet_name'] ?? '', $request->input('filter_outlet')));
+                }
+                if ($request->filled('filter_metode_penjualan')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['sales_type_label'] ?? '', $request->input('filter_metode_penjualan')));
+                }
+                if ($request->filled('filter_status_data')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['data_status_label'] ?? '', $request->input('filter_status_data')));
+                }
+                if ($request->filled('filter_pelanggan')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['customer_name'] ?? '', $request->input('filter_pelanggan')));
+                }
+                if ($request->filled('filter_gross')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['gross_value'] ?? 0, $request->input('filter_gross')));
+                }
+                if ($request->filled('filter_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon')));
+                }
+                if ($request->filled('filter_net_sales')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales')));
+                }
+
+                $rows = $rows->values();
             }
 
             $summary = [
-                'total_transactions' => $filteredData->count(),
-                'total_gross_value' => $filteredData->sum('gross_value'),
-                'total_net_sales' => $filteredData->sum('net_sales'),
-                'total_discount' => $filteredData->sum('total_discount'),
+                'total_transactions' => $viewMode === 'summary'
+                    ? $rows->sum('transaction_count')
+                    : $rows->count(),
+                'total_gross_value' => $rows->sum('gross_value'),
+                'total_net_sales' => $rows->sum('net_sales'),
+                'total_discount' => $rows->sum('effective_discount'),
+                'discount_anomaly_transactions' => $viewMode === 'summary'
+                    ? $rows->where('is_discount_anomaly', true)->sum('transaction_count')
+                    : $rows->where('is_discount_anomaly', true)->count(),
                 'view_mode' => $viewMode,
             ];
         }
@@ -1159,14 +1224,55 @@ class CatalogReportController extends Controller
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
-        if ($viewType === 'sales-discount') {
+        if ($viewType === 'sales-summary') {
             return [[
-                ['key' => 'sales_type', 'label' => 'Tipe Penjualan', 'type' => 'text'],
+                ['key' => 'gross_value', 'label' => 'Gross Sales', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'effective_discount', 'label' => 'Total Diskon Efektif', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'item_discount_total', 'label' => 'Diskon Item', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'header_discount_total', 'label' => 'Diskon Header', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_service_charge', 'label' => 'Service Charge', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_tax', 'label' => 'Tax', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'net_sales', 'label' => 'Net Sales', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_transactions', 'label' => 'Jumlah Transaksi', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'avg_transaction', 'label' => 'Rata-rata per Invoice', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'discount_anomaly_transactions', 'label' => 'Transaksi Anomali Diskon', 'type' => 'number', 'decimals' => 0],
+            ], [[
+                'gross_value' => (float) ($summary['total_sales'] ?? 0),
+                'effective_discount' => (float) ($summary['total_discount'] ?? 0),
+                'item_discount_total' => (float) ($summary['item_discount_total'] ?? 0),
+                'header_discount_total' => (float) ($summary['header_discount_total'] ?? 0),
+                'total_service_charge' => (float) ($summary['total_service_charge'] ?? 0),
+                'total_tax' => (float) ($summary['total_tax'] ?? 0),
+                'net_sales' => (float) ($summary['total_amount'] ?? 0),
+                'total_transactions' => (int) ($summary['total_transactions'] ?? 0),
+                'avg_transaction' => (float) ($summary['avg_transaction'] ?? 0),
+                'discount_anomaly_transactions' => (int) ($summary['discount_anomaly_transactions'] ?? 0),
+            ]]];
+        }
+
+        if ($viewType === 'sales-discount') {
+            if (($summary['view_mode'] ?? 'summary') === 'summary') {
+                return [[
+                    ['key' => 'discount_source_label', 'label' => 'Tipe Diskon', 'type' => 'text'],
+                    ['key' => 'data_status_label', 'label' => 'Status Data', 'type' => 'text'],
+                    ['key' => 'sales_type_label', 'label' => 'Metode Penjualan', 'type' => 'text'],
+                    ['key' => 'transaction_count', 'label' => 'Jumlah Transaksi', 'type' => 'number', 'decimals' => 0],
+                    ['key' => 'gross_value', 'label' => 'Nilai Jual (Gross)', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'effective_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'net_sales', 'label' => 'Net Sales', 'type' => 'number', 'decimals' => 2],
+                ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+            }
+
+            return [[
+                ['key' => 'discount_source_label', 'label' => 'Tipe Diskon', 'type' => 'text'],
+                ['key' => 'data_status_label', 'label' => 'Status Data', 'type' => 'text'],
                 ['key' => 'invoice_number', 'label' => 'No Transaksi', 'type' => 'text'],
                 ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
                 ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'sales_type_label', 'label' => 'Metode Penjualan', 'type' => 'text'],
+                ['key' => 'customer_name', 'label' => 'Pelanggan', 'type' => 'text'],
                 ['key' => 'gross_value', 'label' => 'Nilai Jual (Gross)', 'type' => 'number', 'decimals' => 2],
-                ['key' => 'total_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'effective_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'net_sales', 'label' => 'Total Bayar', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
@@ -1322,6 +1428,146 @@ class CatalogReportController extends Controller
             ['key' => 'metric', 'label' => 'Metric', 'type' => 'text'],
             ['key' => 'value', 'label' => 'Value', 'type' => 'text'],
         ], $fallbackRows];
+    }
+
+    private function buildSalesDiscountRow(\App\Models\Sale $sale): array
+    {
+        $grossValue = 0.0;
+
+        foreach ($sale->items as $item) {
+            $itemPrice = (float) $item->unit_price;
+            $itemGross = ((float) $item->subtotal) + ((float) $item->discount_amount);
+
+            if ($itemPrice <= 0 && $item->product) {
+                $itemGross = (float) $item->quantity * (float) $item->product->selling_price;
+            }
+
+            $paidAmount = (float) $item->subtotal;
+            if ($itemGross < $paidAmount) {
+                $itemGross = $paidAmount;
+            }
+
+            $grossValue += $itemGross;
+        }
+
+        $itemsPaid = (float) $sale->items->sum('subtotal');
+        $itemLevelDiscount = max(0, $grossValue - $itemsPaid);
+        $effectiveDiscount = $itemLevelDiscount + (float) $sale->discount_amount;
+
+        $isDiscountAnomaly = SpecialPromotion::isSpecialSalesType($sale->sales_type)
+            && $sale->promotion === null
+            && $sale->voucher === null
+            && $effectiveDiscount <= 0.0001;
+
+        $discountMeta = $this->resolveDiscountTypeMeta(
+            promotionName: $sale->promotion?->name,
+            voucherName: $sale->voucher?->name,
+            voucherCode: $sale->voucher_code ?? $sale->voucher?->code,
+            salesType: $sale->sales_type,
+            discountType: $sale->discount_type,
+            totalDiscount: $effectiveDiscount,
+            isDiscountAnomaly: $isDiscountAnomaly,
+        );
+
+        return [
+            'id' => $sale->id,
+            'invoice_number' => $sale->invoice_number,
+            'sale_date' => $sale->sale_date->format('Y-m-d'),
+            'outlet_name' => $sale->outlet->name ?? '-',
+            'sales_type' => $sale->sales_type ?? 'regular',
+            'sales_type_label' => $this->formatSalesTypeLabel($sale->sales_type),
+            'special_discount_type' => SpecialPromotion::classify(
+                $sale->promotion?->code,
+                $sale->promotion?->name,
+                $sale->sales_type
+            ),
+            'discount_type' => $sale->discount_type ?? 'none',
+            'discount_source_key' => $discountMeta['key'],
+            'discount_source_kind' => $discountMeta['kind'] ?? 'none',
+            'discount_type_label' => $discountMeta['label'],
+            'discount_source_label' => $discountMeta['label'],
+            'customer_name' => $sale->resolved_customer_name,
+            'gross_value' => $grossValue,
+            'net_sales' => (float) $sale->total_amount,
+            'effective_discount' => $effectiveDiscount,
+            'total_discount' => $effectiveDiscount,
+            'is_discount_anomaly' => $isDiscountAnomaly,
+            'data_status_label' => $isDiscountAnomaly ? 'Anomali' : 'Valid',
+            'notes' => $sale->notes,
+            'items_count' => $sale->items->count(),
+        ];
+    }
+
+    private function formatSalesTypeLabel(?string $salesType): string
+    {
+        $normalized = trim((string) $salesType);
+
+        if ($normalized === '') {
+            return 'Regular';
+        }
+
+        if (SpecialPromotion::isSpecialSalesType($normalized)) {
+            return SpecialPromotion::formatLabel($normalized);
+        }
+
+        return ucfirst(str_replace('_', ' ', $normalized));
+    }
+
+    private function resolveDiscountTypeMeta(
+        ?string $promotionName,
+        ?string $voucherName,
+        ?string $voucherCode,
+        ?string $salesType,
+        ?string $discountType,
+        float $totalDiscount,
+        bool $isDiscountAnomaly = false
+    ): array
+    {
+        $promotionName = trim((string) $promotionName);
+        if ($promotionName !== '') {
+            return [
+                'key' => 'promotion:' . strtolower($promotionName),
+                'label' => $promotionName,
+                'kind' => 'promotion',
+            ];
+        }
+
+        $voucherName = trim((string) $voucherName);
+        if ($voucherName !== '') {
+            return [
+                'key' => 'voucher:' . strtolower($voucherName),
+                'label' => $voucherName,
+                'kind' => 'voucher',
+            ];
+        }
+
+        $voucherCode = trim((string) $voucherCode);
+        if ($voucherCode !== '') {
+            return [
+                'key' => 'voucher-code:' . strtolower($voucherCode),
+                'label' => $voucherCode,
+                'kind' => 'voucher_code',
+            ];
+        }
+
+        if ($isDiscountAnomaly) {
+            $salesTypeLabel = $this->formatSalesTypeLabel($salesType);
+            return [
+                'key' => 'anomaly:' . strtolower(trim((string) $salesType)),
+                'label' => $salesTypeLabel . ' (Anomali)',
+                'kind' => 'anomaly',
+            ];
+        }
+
+        $discountTypeKey = strtolower(trim((string) $discountType));
+
+        return match ($discountTypeKey) {
+            'percentage' => ['key' => 'discount-type:percentage', 'label' => 'Persentase', 'kind' => 'discount_type'],
+            'fixed' => ['key' => 'discount-type:fixed', 'label' => 'Nominal', 'kind' => 'discount_type'],
+            default => $totalDiscount > 0
+                ? ['key' => 'discount-type:item-level', 'label' => 'Diskon Item', 'kind' => 'item_level']
+                : ['key' => 'discount-type:none', 'label' => 'Tanpa Diskon', 'kind' => 'none'],
+        };
     }
 
     private function stockAdjustmentReport(

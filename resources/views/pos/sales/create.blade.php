@@ -367,6 +367,9 @@
                         <p v-if="selectedPromotion" class="text-xs text-primary mt-1">
                             Promo aktif: <strong>@{{ selectedPromotion.name }}</strong>
                         </p>
+                        <p v-if="selectedPromotionRequiresConfirmation" class="text-xs text-amber-600 mt-1">
+                            Promo spesial operasional. Sistem akan meminta konfirmasi sebelum transaksi diproses.
+                        </p>
                     </div>
 
                     <div v-if="hasVoucherInput">
@@ -956,6 +959,9 @@
                         if (!this.selectedPromotionId) return null;
                         return this.activePromotions.find(p => Number(p.id) === Number(this.selectedPromotionId)) || null;
                     },
+                    selectedPromotionRequiresConfirmation() {
+                        return Boolean(this.selectedPromotion && this.selectedPromotion.requires_confirmation);
+                    },
                     cartGrossSubtotal() {
                         return this.cart.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0);
                     },
@@ -1453,6 +1459,21 @@
                         this.voucherErrorMessage = '';
                         this.voucherCodeInput = '';
                     },
+                    buildSpecialPromotionConfirmationMessage() {
+                        if (!this.selectedPromotionRequiresConfirmation) {
+                            return '';
+                        }
+
+                        const promotionName = this.selectedPromotion?.name || 'promo spesial';
+                        return `Konfirmasi promo ${promotionName}. Promo ini adalah jalur resmi untuk Meal Karyawan/Compliment dan dapat mengubah nilai transaksi secara penuh. Lanjutkan pembayaran?`;
+                    },
+                    confirmSpecialPromotionBeforePayment() {
+                        if (!this.selectedPromotionRequiresConfirmation) {
+                            return true;
+                        }
+
+                        return window.confirm(this.buildSpecialPromotionConfirmationMessage());
+                    },
                     refreshAppliedVoucher() {
                         if (!this.appliedVoucher) return;
 
@@ -1598,6 +1619,10 @@
                                 alert(this.voucherErrorMessage || 'Voucher belum valid.');
                                 return;
                             }
+                        }
+
+                        if (!this.confirmSpecialPromotionBeforePayment()) {
+                            return;
                         }
 
                         this.isProcessing = true;
