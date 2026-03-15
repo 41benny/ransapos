@@ -308,6 +308,9 @@
                                     Outlet <div class="resize-handle"></div>
                                 </th>
                                 <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
+                                    Customer <div class="resize-handle"></div>
+                                </th>
+                                <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
                                     Kasir <div class="resize-handle"></div>
                                 </th>
                                 <th class="px-4 py-2.5 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500 resizable group" style="min-width: 100px; position:relative;">
@@ -328,6 +331,7 @@
                                 </td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_invoice" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_outlet" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_customer" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_kasir" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_pembayaran" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_bulat" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
@@ -380,6 +384,9 @@
                                         {{ $sale->outlet->name }}
                                     </td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">
+                                        {{ $sale->resolved_customer_name }}
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-500">
                                         {{ $sale->user->name }}
                                     </td>
                                     <td class="px-4 py-2.5 whitespace-nowrap">
@@ -396,7 +403,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-16 text-center">
+                                    <td colspan="8" class="px-6 py-16 text-center">
                                         <div class="flex flex-col items-center justify-center opacity-40">
                                             <i class="fas fa-file-invoice-dollar text-4xl mb-4 text-slate-300"></i>
                                             <p class="text-[11px] font-normal text-slate-500 italic">Tidak ada transaksi pada periode ini</p>
@@ -409,7 +416,7 @@
                     @if(($viewMode ?? 'ringkas') !== 'detail' && $sales->count() > 0)
                         <tfoot class="bg-indigo-50/30">
                             <tr>
-                                <td colspan="6" class="px-4 py-3 text-right text-[10px] font-normal text-slate-600 uppercase tracking-wider">
+                                <td colspan="7" class="px-4 py-3 text-right text-[10px] font-normal text-slate-600 uppercase tracking-wider">
                                     TOTAL ({{ $summary['total_transactions'] }} transaksi):
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm font-normal text-indigo-700">

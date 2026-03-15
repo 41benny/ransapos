@@ -32,7 +32,7 @@ class SalesReportController extends Controller
             : 'ringkas';
         
         // Build query
-        $query = Sale::with(['outlet', 'user', 'payments.paymentMethod'])
+        $query = Sale::with(['outlet', 'user', 'customer', 'payments.paymentMethod'])
             ->where('status', 'completed')
             ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
@@ -73,6 +73,9 @@ class SalesReportController extends Controller
             }
             if ($request->filled('filter_outlet')) {
                 $sales = $sales->filter(fn($s) => stripos($s->outlet->name ?? '', $request->filter_outlet) !== false);
+            }
+            if ($request->filled('filter_customer')) {
+                $sales = $sales->filter(fn($s) => stripos($s->resolved_customer_name, $request->filter_customer) !== false);
             }
             if ($request->filled('filter_kasir')) {
                 $sales = $sales->filter(fn($s) => stripos($s->user->name ?? '', $request->filter_kasir) !== false);
@@ -420,7 +423,7 @@ class SalesReportController extends Controller
             ? $request->input('view_mode')
             : 'ringkas';
 
-        $query = Sale::with(['outlet', 'user', 'payments.paymentMethod'])
+        $query = Sale::with(['outlet', 'user', 'customer', 'payments.paymentMethod'])
             ->where('status', 'completed')
             ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
@@ -572,6 +575,9 @@ class SalesReportController extends Controller
             if ($request->filled('filter_outlet')) {
                 $sales = $sales->filter(fn($s) => stripos($s->outlet->name ?? '', $request->filter_outlet) !== false);
             }
+            if ($request->filled('filter_customer')) {
+                $sales = $sales->filter(fn($s) => stripos($s->resolved_customer_name, $request->filter_customer) !== false);
+            }
             if ($request->filled('filter_kasir')) {
                 $sales = $sales->filter(fn($s) => stripos($s->user->name ?? '', $request->filter_kasir) !== false);
             }
@@ -591,6 +597,7 @@ class SalesReportController extends Controller
                     'no_transaksi' => $sale->invoice_number,
                     'tanggal' => optional($sale->sale_date)->format('Y-m-d'),
                     'outlet' => $sale->outlet?->name ?? '-',
+                    'customer' => $sale->resolved_customer_name,
                     'kasir' => $sale->user?->name ?? '-',
                     'total' => (float) $sale->total_amount,
                     'metode_bayar' => $paymentMethods ?: '-',
@@ -601,6 +608,7 @@ class SalesReportController extends Controller
                 ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
                 ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
                 ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'customer', 'label' => 'Customer', 'type' => 'text'],
                 ['key' => 'kasir', 'label' => 'Kasir', 'type' => 'text'],
                 ['key' => 'total', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'metode_bayar', 'label' => 'Metode Bayar', 'type' => 'text'],
