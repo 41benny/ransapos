@@ -279,6 +279,86 @@ class CatalogReportController extends Controller
     }
 
     /**
+     * Detail penjualan per bill (JSON) untuk modal popup.
+     */
+    public function saleDetail(\App\Models\Sale $sale)
+    {
+        $sale->load(['items.product', 'payments.paymentMethod', 'outlet', 'user', 'customer', 'promotion', 'voucher']);
+
+        $items = $sale->items->map(function ($item) use ($sale) {
+            $unitPrice = (float) $item->unit_price;
+            $originalPrice = $unitPrice;
+
+            // Reconstruct original selling price if unit_price was zeroed (e.g. compliment)
+            if ($unitPrice <= 0 && $item->product) {
+                $originalPrice = (float) $item->product->selling_price;
+            }
+
+            $grossAmount = $originalPrice * (float) $item->quantity;
+            $paidAmount = (float) $item->subtotal;
+            $itemDiscount = (float) $item->discount_amount;
+
+            // If originalPrice was reconstructed and gross < paid, use paid amount
+            if ($grossAmount < $paidAmount) {
+                $grossAmount = $paidAmount;
+            }
+
+            return [
+                'product_name' => $item->product_name,
+                'product_sku' => $item->product_sku,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => $unitPrice,
+                'original_price' => $originalPrice,
+                'discount_amount' => $itemDiscount,
+                'subtotal' => $paidAmount,
+                'gross_amount' => $grossAmount,
+                'notes' => $item->notes,
+            ];
+        });
+
+        $payments = $sale->payments->map(fn($p) => [
+            'method' => $p->paymentMethod->name ?? '-',
+            'amount' => (float) $p->amount,
+            'reference_number' => $p->reference_number,
+        ]);
+
+        $grossValue = $items->sum('gross_amount');
+        $itemsPaid = $items->sum('subtotal');
+        $itemLevelDiscount = max(0, $grossValue - $itemsPaid);
+        $headerDiscount = (float) $sale->discount_amount;
+        $effectiveDiscount = $itemLevelDiscount + $headerDiscount;
+
+        return response()->json([
+            'id' => $sale->id,
+            'invoice_number' => $sale->invoice_number,
+            'sale_date' => $sale->sale_date->format('Y-m-d'),
+            'status' => $sale->status,
+            'sales_type' => $sale->sales_type ?? 'regular',
+            'sales_type_label' => $this->formatSalesTypeLabel($sale->sales_type),
+            'outlet_name' => $sale->outlet->name ?? '-',
+            'cashier_name' => $sale->user->name ?? '-',
+            'customer_name' => $sale->resolved_customer_name,
+            'promotion_name' => $sale->promotion->name ?? null,
+            'voucher_name' => $sale->voucher->name ?? null,
+            'voucher_code' => $sale->voucher_code ?? $sale->voucher?->code,
+            'discount_type' => $sale->discount_type,
+            'discount_value' => (float) $sale->discount_value,
+            'header_discount' => $headerDiscount,
+            'subtotal' => (float) $sale->subtotal,
+            'tax_amount' => (float) $sale->tax_amount,
+            'service_charge_amount' => (float) $sale->service_charge_amount,
+            'rounding_amount' => (float) $sale->rounding_amount,
+            'total_amount' => (float) $sale->total_amount,
+            'gross_value' => $grossValue,
+            'item_level_discount' => $itemLevelDiscount,
+            'effective_discount' => $effectiveDiscount,
+            'notes' => $sale->notes,
+            'items' => $items->values(),
+            'payments' => $payments->values(),
+        ]);
+    }
+
+    /**
      * Halaman detail laporan per item katalog.
      */
     public function show(Request $request, string $slug)

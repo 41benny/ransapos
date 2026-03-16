@@ -385,6 +385,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         // Katalog (semua yang punya reports.view bisa lihat)
         Route::get('/', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'index'])->name('index')
             ->middleware('permission:reports.view');
+        Route::get('/catalog/sale/{sale}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'saleDetail'])->name('catalog.sale-detail')
+            ->middleware('permission:reports.sales.view');
         Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show')
             ->middleware('permission:reports.view');
 
