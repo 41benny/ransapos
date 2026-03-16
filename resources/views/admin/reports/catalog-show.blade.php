@@ -944,14 +944,26 @@
                             }
 
                             // Totals
-                            document.getElementById('sdm-gross').textContent = fmt(data.gross_value);
-                            document.getElementById('sdm-item-disc').textContent = fmt(data.item_level_discount);
-                            document.getElementById('sdm-header-disc').textContent = fmt(data.header_discount);
-                            document.getElementById('sdm-subtotal').textContent = fmt(data.subtotal);
-                            document.getElementById('sdm-tax').textContent = fmt(data.tax_amount);
-                            document.getElementById('sdm-sc').textContent = fmt(data.service_charge_amount);
-                            document.getElementById('sdm-rounding').textContent = fmt(data.rounding_amount);
-                            document.getElementById('sdm-total').textContent = fmt(data.total_amount);
+                            const setSummaryRow = (id, val) => {
+                                const el = document.getElementById(id);
+                                if (!el) return;
+                                el.textContent = fmt(val);
+                                // Sembunyikan baris jika nilai 0, kecuali Total & Subtotal (untuk anchor visual)
+                                if (['sdm-total', 'sdm-subtotal', 'sdm-gross'].includes(id)) {
+                                    el.parentElement.classList.remove('hidden');
+                                } else {
+                                    el.parentElement.classList.toggle('hidden', Number(val) === 0);
+                                }
+                            };
+
+                            setSummaryRow('sdm-gross', data.gross_value);
+                            setSummaryRow('sdm-item-disc', data.item_level_discount);
+                            setSummaryRow('sdm-header-disc', data.header_discount);
+                            setSummaryRow('sdm-subtotal', data.subtotal);
+                            setSummaryRow('sdm-tax', data.tax_amount);
+                            setSummaryRow('sdm-sc', data.service_charge_amount);
+                            setSummaryRow('sdm-rounding', data.rounding_amount);
+                            setSummaryRow('sdm-total', data.total_amount);
 
                             // Notes
                             const notesSection = document.getElementById('sdm-notes-section');
