@@ -387,6 +387,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
             ->middleware('permission:reports.view');
         Route::get('/catalog/sale/{sale}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'saleDetail'])->name('catalog.sale-detail')
             ->middleware('permission:reports.sales.view');
+        Route::get('/catalog/sale/{sale}/print', [SaleController::class, 'print'])->name('catalog.sale-print')
+            ->middleware('permission:reports.sales.view');
         Route::get('/catalog/{slug}', [\App\Http\Controllers\Admin\Reports\CatalogReportController::class, 'show'])->name('catalog.show')
             ->middleware('permission:reports.view');
 

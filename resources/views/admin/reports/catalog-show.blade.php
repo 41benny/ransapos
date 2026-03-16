@@ -738,18 +738,24 @@
                         <div id="saleDetailBody" class="hidden">
                             {{-- Header --}}
                             <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 rounded-t-2xl">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-slate-800" id="sdm-invoice">-</h3>
-                                    <div class="flex items-center gap-3 mt-1">
-                                        <span class="text-xs text-slate-400" id="sdm-date">-</span>
-                                        <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600" id="sdm-salestype">-</span>
-                                        <span class="rounded px-2 py-0.5 text-[10px] font-medium" id="sdm-status">-</span>
-                                    </div>
-                                </div>
-                                <button type="button" id="saleDetailClose" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
-                                    <i class="fas fa-times text-sm"></i>
-                                </button>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800" id="sdm-invoice">-</h3>
+                            <div class="flex items-center gap-3 mt-1">
+                                <span class="text-xs text-slate-400" id="sdm-date">-</span>
+                                <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600" id="sdm-salestype">-</span>
+                                <span class="rounded px-2 py-0.5 text-[10px] font-medium" id="sdm-status">-</span>
                             </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="saleDetailPrint" class="flex h-8 items-center gap-2 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all text-[11px] font-medium shadow-sm hover:shadow-indigo-100">
+                                <i class="fas fa-print"></i>
+                                <span>Print Bill</span>
+                            </button>
+                            <button type="button" id="saleDetailClose" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                                <i class="fas fa-times text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
 
                             {{-- Info Cards --}}
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-6 py-4">
@@ -858,14 +864,18 @@
                 const modal = document.getElementById('saleDetailModal');
                 const overlay = document.getElementById('saleDetailOverlay');
                 const closeBtn = document.getElementById('saleDetailClose');
+                const printBtn = document.getElementById('saleDetailPrint');
                 const loadingEl = document.getElementById('saleDetailLoading');
                 const bodyEl = document.getElementById('saleDetailBody');
+
+                let currentSaleId = null;
 
                 function fmt(n) {
                     return 'Rp ' + Number(n || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                 }
 
                 function openModal(saleId) {
+                    currentSaleId = saleId;
                     modal.classList.remove('hidden');
                     document.body.style.overflow = 'hidden';
                     loadingEl.classList.remove('hidden');
@@ -963,6 +973,15 @@
                 function closeModal() {
                     modal.classList.add('hidden');
                     document.body.style.overflow = '';
+                    currentSaleId = null;
+                }
+
+                if (printBtn) {
+                    printBtn.addEventListener('click', function() {
+                        if (!currentSaleId) return;
+                        const url = '{{ url("/admin/reports/catalog/sale") }}/' + currentSaleId + '/print?autoprint=1';
+                        window.open(url, 'ReceiptPrint', 'width=400,height=600,scrollbars=yes');
+                    });
                 }
 
                 // Event: click invoice number
