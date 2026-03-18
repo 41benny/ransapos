@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Stock;
 use App\Models\StockMutation;
 use App\Models\Product;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -27,11 +28,14 @@ class StockService
         float $quantity,
         int $saleId,
         ?int $userId = null,
-        ?string $notes = 'Penjualan'
+        ?string $notes = 'Penjualan',
+        ?string $mutationDate = null
     ): void {
         DB::beginTransaction();
 
         try {
+            $mutationDate = $this->normalizeMutationDate($mutationDate);
+
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
                 [
@@ -43,8 +47,13 @@ class StockService
                     'last_mutation_at' => now(),
                 ]
             );
-            // BOM concept: Stok boleh negatif, validasi dihapus
-            // Pembelian bahan baku dilakukan kemudian untuk menutupi stok negatif
+
+            if (! config('app.allow_negative_stock', false) && (float) $stock->quantity < $quantity) {
+                $productName = Product::query()->find($productId)?->name ?? 'produk';
+                throw new Exception(
+                    'Stok ' . $productName . ' tidak mencukupi. Tersedia: ' . rtrim(rtrim(number_format((float) $stock->quantity, 4, '.', ''), '0'), '.')
+                );
+            }
 
             // Simpan stok sebelumnya
             $stockBefore = $stock->quantity;
@@ -70,10 +79,12 @@ class StockService
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'sale',
                 'reference_id' => $saleId,
-                'mutation_date' => now()->toDateString(),
+                'mutation_date' => $mutationDate,
                 'notes' => $notes,
                 'created_by' => $userId,
             ]);
+
+            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -90,11 +101,14 @@ class StockService
         float $quantity,
         int $saleId,
         ?int $userId = null,
-        ?string $notes = null
+        ?string $notes = null,
+        ?string $mutationDate = null
     ): void {
         DB::beginTransaction();
 
         try {
+            $mutationDate = $this->normalizeMutationDate($mutationDate);
+
             $stock = Stock::firstOrCreate(
                 [
                     'product_id' => $productId,
@@ -133,10 +147,12 @@ class StockService
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'sale_cancellation',
                 'reference_id' => $saleId,
-                'mutation_date' => now()->toDateString(),
+                'mutation_date' => $mutationDate,
                 'notes' => $notes ?: 'Pembatalan transaksi',
                 'created_by' => $userId,
             ]);
+
+            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -161,11 +177,14 @@ class StockService
         float $quantity,
         int $purchaseId,
         ?int $userId = null,
-        float $unitPrice = 0
+        float $unitPrice = 0,
+        ?string $mutationDate = null
     ): void {
         DB::beginTransaction();
 
         try {
+            $mutationDate = $this->normalizeMutationDate($mutationDate);
+
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
                 [
@@ -198,10 +217,12 @@ class StockService
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'purchase',
                 'reference_id' => $purchaseId,
-                'mutation_date' => now()->toDateString(),
+                'mutation_date' => $mutationDate,
                 'notes' => 'Pembelian',
                 'created_by' => $userId,
             ]);
+
+            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -225,11 +246,14 @@ class StockService
         int $outletId,
         float $newQuantity,
         string $notes = '',
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $mutationDate = null
     ): void {
         DB::beginTransaction();
 
         try {
+            $mutationDate = $this->normalizeMutationDate($mutationDate);
+
             // Ambil atau buat stok
             $stock = Stock::firstOrCreate(
                 [
@@ -267,15 +291,120 @@ class StockService
                 'stock_after' => $stock->quantity,
                 'reference_type' => 'stock_opname',
                 'reference_id' => null,
-                'mutation_date' => now()->toDateString(),
+                'mutation_date' => $mutationDate,
                 'notes' => $notes ?: 'Adjustment stok manual',
                 'created_by' => $userId,
             ]);
+
+            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
+        }
+    }
+
+    public function recalculateMutationBalances(int $productId, int $outletId, string $fromDate): void
+    {
+        $fromDate = $this->normalizeMutationDate($fromDate);
+        $stock = Stock::query()
+            ->where('product_id', $productId)
+            ->where('outlet_id', $outletId)
+            ->first();
+
+        $mutations = StockMutation::query()
+            ->where('product_id', $productId)
+            ->where('outlet_id', $outletId)
+            ->whereDate('mutation_date', '>=', $fromDate)
+            ->orderBy('mutation_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $lastMutationBefore = StockMutation::query()
+            ->where('product_id', $productId)
+            ->where('outlet_id', $outletId)
+            ->whereDate('mutation_date', '<', $fromDate)
+            ->orderBy('mutation_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($lastMutationBefore) {
+            $runningStock = (float) $lastMutationBefore->stock_after;
+        } else {
+            $netMutationFromDate = (float) StockMutation::query()
+                ->where('product_id', $productId)
+                ->where('outlet_id', $outletId)
+                ->whereDate('mutation_date', '>=', $fromDate)
+                ->sum('quantity');
+
+            $runningStock = round((float) ($stock?->quantity ?? 0) - $netMutationFromDate, 2);
+        }
+
+        foreach ($mutations as $mutation) {
+            $stockBefore = round($runningStock, 2);
+            $runningStock = round($runningStock + (float) $mutation->quantity, 2);
+            $stockAfter = round($runningStock, 2);
+
+            if (
+                round((float) $mutation->stock_before, 2) === $stockBefore
+                && round((float) $mutation->stock_after, 2) === $stockAfter
+            ) {
+                continue;
+            }
+
+            $mutation->stock_before = $stockBefore;
+            $mutation->stock_after = $stockAfter;
+            $mutation->save();
+        }
+
+        $latestMutation = StockMutation::query()
+            ->where('product_id', $productId)
+            ->where('outlet_id', $outletId)
+            ->orderBy('mutation_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $stock = Stock::firstOrCreate(
+            [
+                'product_id' => $productId,
+                'outlet_id' => $outletId,
+            ],
+            [
+                'quantity' => 0,
+                'last_mutation_at' => now(),
+            ]
+        );
+
+        if ($latestMutation) {
+            $stock->quantity = $latestMutation->stock_after;
+            $stock->last_mutation_at = $latestMutation->created_at ?? Carbon::parse($latestMutation->mutation_date);
+        } else {
+            $stock->quantity = 0;
+            $stock->last_mutation_at = now();
+        }
+
+        $stock->save();
+    }
+
+    public function recalculateAllMutationBalances(): void
+    {
+        $pairs = StockMutation::query()
+            ->select('product_id', 'outlet_id', DB::raw('MIN(mutation_date) as first_mutation_date'))
+            ->groupBy('product_id', 'outlet_id')
+            ->orderBy('product_id')
+            ->orderBy('outlet_id')
+            ->get();
+
+        foreach ($pairs as $pair) {
+            $this->recalculateMutationBalances(
+                (int) $pair->product_id,
+                (int) $pair->outlet_id,
+                (string) $pair->first_mutation_date
+            );
         }
     }
 
@@ -293,5 +422,10 @@ class StockService
             ->first();
 
         return $stock ? $stock->quantity : 0;
+    }
+
+    protected function normalizeMutationDate(?string $mutationDate = null): string
+    {
+        return Carbon::parse($mutationDate ?? now())->toDateString();
     }
 }

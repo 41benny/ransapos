@@ -193,7 +193,7 @@
                                 </td>
                                 <td class="px-5 py-3.5 text-right">
                                     <span
-                                        class="text-[11.5px] font-normal text-slate-800 tracking-tight tabular-nums">{{ number_format($mutation->stock_after, 2, ',', '.') }}</span>
+                                        class="text-[11.5px] font-normal text-slate-800 tracking-tight tabular-nums">{{ number_format($mutation->display_stock_after ?? $mutation->stock_after, 2, ',', '.') }}</span>
                                 </td>
                                 <td class="px-5 py-3.5 text-right">
                                     @php $unitCost = (float) ($mutation->unit_cost ?? 0); @endphp

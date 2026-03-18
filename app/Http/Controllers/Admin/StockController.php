@@ -167,6 +167,7 @@ class StockController extends Controller
 
         $mutations = $query->orderBy('mutation_date', 'desc')
             ->orderBy('stock_mutations.created_at', 'desc')
+            ->orderBy('stock_mutations.id', 'desc')
             ->paginate(50);
 
         // Load data for filters
@@ -318,11 +319,48 @@ class StockController extends Controller
 
         $mutations = $query->orderBy('mutation_date', 'asc')
             ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $currentStock = Stock::where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id)
             ->first();
+
+        $openingStock = 0.0;
+        if ($request->filled('start_date')) {
+            $lastMutationBefore = StockMutation::query()
+                ->where('product_id', $request->product_id)
+                ->where('outlet_id', $request->outlet_id)
+                ->whereDate('mutation_date', '<', $request->start_date)
+                ->orderBy('mutation_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($lastMutationBefore) {
+                $openingStock = (float) $lastMutationBefore->stock_after;
+            } else {
+                $netMutationFromStart = (float) StockMutation::query()
+                    ->where('product_id', $request->product_id)
+                    ->where('outlet_id', $request->outlet_id)
+                    ->whereDate('mutation_date', '>=', $request->start_date)
+                    ->sum('quantity');
+
+                $openingStock = round((float) ($currentStock->quantity ?? 0) - $netMutationFromStart, 2);
+            }
+        } elseif ($mutations->isNotEmpty()) {
+            $netMutationInRange = (float) $mutations->sum('quantity');
+            $openingStock = round((float) ($currentStock->quantity ?? 0) - $netMutationInRange, 2);
+        }
+
+        $runningStock = $openingStock;
+        $mutations = $mutations->map(function (StockMutation $mutation) use (&$runningStock) {
+            $mutation->display_stock_before = round($runningStock, 2);
+            $runningStock = round($runningStock + (float) $mutation->quantity, 2);
+            $mutation->display_stock_after = round($runningStock, 2);
+
+            return $mutation;
+        });
 
         return view('admin.stocks.stock-card', compact('product', 'outlet', 'mutations', 'currentStock'));
     }

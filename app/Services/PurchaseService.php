@@ -219,7 +219,8 @@ class PurchaseService
                     quantity: $item->quantity,
                     purchaseId: $purchase->id,
                     userId: auth()->id(),
-                    unitPrice: $netUnitPrice
+                    unitPrice: $netUnitPrice,
+                    mutationDate: optional($purchase->received_at)->toDateString() ?? now()->toDateString()
                 );
 
                 // Update moving average cost

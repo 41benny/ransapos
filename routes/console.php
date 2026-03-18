@@ -4,6 +4,8 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\CashAccountService;
+use App\Services\StockService;
 use App\Models\Product;
 
 Artisan::command('inspire', function () {
@@ -145,3 +147,27 @@ Artisan::command('products:generate-thumbnails {--force : Regenerate even if thu
 
     return $failed > 0 ? self::FAILURE : self::SUCCESS;
 })->purpose('Generate thumbnail produk untuk image lama yang belum punya thumbnail_path');
+
+Artisan::command('balances:recalculate {--cash : Hitung ulang saldo kas/bank saja} {--stock : Hitung ulang mutasi stok saja}', function () {
+    $cashOnly = (bool) $this->option('cash');
+    $stockOnly = (bool) $this->option('stock');
+    $runCash = $cashOnly || (!$cashOnly && !$stockOnly);
+    $runStock = $stockOnly || (!$cashOnly && !$stockOnly);
+
+    if ($runCash) {
+        $this->info('Recalculate saldo kas/bank dimulai...');
+        app(CashAccountService::class)->recalculateAllBalances();
+        $this->info('Saldo kas/bank selesai dihitung ulang.');
+    }
+
+    if ($runStock) {
+        $this->info('Recalculate mutasi stok dimulai...');
+        app(StockService::class)->recalculateAllMutationBalances();
+        $this->info('Mutasi stok selesai dihitung ulang.');
+    }
+
+    $this->newLine();
+    $this->info('Recalculate selesai.');
+
+    return self::SUCCESS;
+})->purpose('Hitung ulang saldo historis kas/bank dan mutasi stok');

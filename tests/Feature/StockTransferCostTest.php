@@ -152,6 +152,83 @@ class StockTransferCostTest extends TestCase
         $this->assertEquals(20, (float) $stock->quantity, 'Stock should be restored');
     }
 
+    /** @test */
+    public function backdated_transfer_recalculates_sender_running_balance()
+    {
+        $product = $this->createProduct('Kecap', 12000);
+
+        ProductCost::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'avg_cost' => 12000,
+            'last_calculated_at' => now(),
+        ]);
+
+        Stock::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'quantity' => 20,
+            'last_mutation_at' => now(),
+        ]);
+
+        StockMutation::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'mutation_type' => 'adjustment',
+            'quantity' => 20,
+            'unit_cost' => 12000,
+            'total_cost' => 240000,
+            'stock_before' => 0,
+            'stock_after' => 20,
+            'reference_type' => 'stock_opname',
+            'reference_id' => null,
+            'mutation_date' => '2026-03-10',
+            'notes' => 'Saldo awal',
+            'created_by' => $this->user->id,
+        ]);
+
+        $laterTransfer = $this->transferService->createTransfer([
+            'from_outlet_id' => $this->outletA->id,
+            'to_outlet_id' => $this->outletB->id,
+            'transfer_date' => '2026-03-15',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 5],
+            ],
+        ]);
+        $this->transferService->sendTransfer($laterTransfer->fresh());
+
+        $backdatedTransfer = $this->transferService->createTransfer([
+            'from_outlet_id' => $this->outletA->id,
+            'to_outlet_id' => $this->outletB->id,
+            'transfer_date' => '2026-03-14',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 2],
+            ],
+        ]);
+        $this->transferService->sendTransfer($backdatedTransfer->fresh());
+
+        $rows = StockMutation::query()
+            ->where('product_id', $product->id)
+            ->where('outlet_id', $this->outletA->id)
+            ->orderBy('mutation_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $this->assertCount(3, $rows);
+        $this->assertEquals(20.0, (float) $rows[1]->stock_before);
+        $this->assertEquals(18.0, (float) $rows[1]->stock_after);
+        $this->assertEquals(18.0, (float) $rows[2]->stock_before);
+        $this->assertEquals(13.0, (float) $rows[2]->stock_after);
+
+        $stock = Stock::query()
+            ->where('product_id', $product->id)
+            ->where('outlet_id', $this->outletA->id)
+            ->firstOrFail();
+
+        $this->assertEquals(13.0, (float) $stock->quantity);
+    }
+
     private function createProduct(string $name, float $purchasePrice): Product
     {
         return Product::create([

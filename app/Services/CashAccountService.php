@@ -184,6 +184,10 @@ class CashAccountService
 
             $account = CashAccount::findOrFail($data['cash_account_id']);
             $transaction = $this->applyTransaction($account, $data);
+            $this->recalculateBalances(
+                $account,
+                Carbon::parse($data['transaction_date'] ?? now())->toDateString()
+            );
 
             DB::commit();
 
@@ -229,6 +233,11 @@ class CashAccountService
                 $transactions[] = $this->applyTransaction($account, $data)
                     ->fresh(['cashAccount', 'creator', 'coaAccount']);
             }
+
+            $this->recalculateBalances(
+                $account,
+                Carbon::parse($header['transaction_date'] ?? now())->toDateString()
+            );
 
             DB::commit();
 
@@ -389,10 +398,13 @@ class CashAccountService
      */
     public function recalculateBalances(CashAccount $account, string $fromDate)
     {
+        $fromDate = Carbon::parse($fromDate)->toDateString();
+
         // Ambil semua transaksi mulai dari tanggal tersebut, urutkan ascending
         $transactions = CashTransaction::where('cash_account_id', $account->id)
             ->where('transaction_date', '>=', $fromDate)
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
             ->get();
 
@@ -400,6 +412,7 @@ class CashAccountService
         $lastTransactionBefore = CashTransaction::where('cash_account_id', $account->id)
             ->where('transaction_date', '<', $fromDate)
             ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->first();
 
@@ -423,6 +436,28 @@ class CashAccountService
         // Update saldo akhir akun
         $account->current_balance = $runningBalance;
         $account->save();
+    }
+
+    public function recalculateAllBalances(): void
+    {
+        CashAccount::query()
+            ->select('id', 'opening_balance', 'current_balance')
+            ->orderBy('id')
+            ->chunkById(100, function ($accounts): void {
+                foreach ($accounts as $account) {
+                    $firstTransactionDate = CashTransaction::query()
+                        ->where('cash_account_id', $account->id)
+                        ->min('transaction_date');
+
+                    if ($firstTransactionDate) {
+                        $this->recalculateBalances($account, (string) $firstTransactionDate);
+                        continue;
+                    }
+
+                    $account->current_balance = $account->opening_balance;
+                    $account->save();
+                }
+            });
     }
 
     /**
@@ -508,6 +543,7 @@ class CashAccountService
     {
         $query = CashTransaction::with(['cashAccount.outlet', 'creator', 'coaAccount'])
             ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
 
         $this->applyTransactionFilters($query, $filters);
@@ -632,6 +668,7 @@ class CashAccountService
     {
         $query = CashTransaction::with(['cashAccount.outlet', 'creator', 'coaAccount'])
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
 
         $this->applyTransactionFilters($query, $filters);
@@ -781,17 +818,33 @@ class CashAccountService
         $beginningBalance = $account->opening_balance + $priorIn - $priorOut;
 
         // Get transactions dalam periode
+        $runningBalance = $beginningBalance;
+
         $transactions = CashTransaction::where('cash_account_id', $cashAccountId)
             ->whereBetween('transaction_date', [$dateFrom, $dateTo])
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
-            ->get();
+            ->get()
+            ->map(function (CashTransaction $transaction) use (&$runningBalance) {
+                $transaction->balance_before = $runningBalance;
+
+                if ($transaction->type === 'in') {
+                    $runningBalance += (float) $transaction->amount;
+                } else {
+                    $runningBalance -= (float) $transaction->amount;
+                }
+
+                $transaction->balance_after = $runningBalance;
+
+                return $transaction;
+            });
 
         // Calculate summary
         $totalIn = $transactions->where('type', 'in')->sum('amount');
         $totalOut = $transactions->where('type', 'out')->sum('amount');
 
-        $endingBalance = $beginningBalance + $totalIn - $totalOut;
+        $endingBalance = $runningBalance;
 
         return [
             'account' => $account,

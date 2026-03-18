@@ -228,6 +228,8 @@ class SaleService
             ]);
 
             // 8. Buat sale items & logika BOM / pengurangan stok
+            $allowNegativeStock = (bool) config('app.allow_negative_stock', false);
+
             foreach ($normalizedItems as $item) {
                 /** @var Product $product */
                 $product = $item['product'];
@@ -260,14 +262,31 @@ class SaleService
                         quantity: $item['quantity'],
                         saleId: $sale->id,
                         userId: $sale->user_id,
-                        notes: "Penjualan: {$product->name}"
+                        notes: "Penjualan: {$product->name}",
+                        mutationDate: $sale->sale_date->toDateString()
                     );
                 } elseif ($type === 'finished_good') {
                     // Cek BOM aktif
                     $bom = $product->bomHeader && $product->bomHeader->is_active ? $product->bomHeader : null;
                     if ($bom) {
-                        // BOM concept: Validasi stok dihapus - stok boleh negatif
-                        // Pembelian bahan baku dilakukan kemudian untuk menutupi stok negatif
+                        if (! $allowNegativeStock) {
+                            foreach ($bom->details as $detail) {
+                                $consumeQty = (float) $detail->quantity * (float) $item['quantity'];
+                                $availableQty = (float) $this->stockService->getAvailableStock(
+                                    productId: (int) $detail->component_product_id,
+                                    outletId: (int) $data['outlet_id'],
+                                );
+
+                                if ($availableQty < $consumeQty) {
+                                    $componentName = $detail->component?->name ?? 'komponen';
+                                    throw new Exception(
+                                        'Stok bahan ' . $componentName . ' tidak mencukupi. Tersedia: ' .
+                                            rtrim(rtrim(number_format($availableQty, 4, '.', ''), '0'), '.')
+                                    );
+                                }
+                            }
+                        }
+
                         foreach ($bom->details as $detail) {
                             $consumeQty = $detail->quantity * $item['quantity'];
                             $this->stockService->reduceSaleStock(
@@ -276,7 +295,8 @@ class SaleService
                                 quantity: $consumeQty,
                                 saleId: $sale->id,
                                 userId: $sale->user_id,
-                                notes: "Penjualan: {$product->name}"
+                                notes: "Penjualan: {$product->name}",
+                                mutationDate: $sale->sale_date->toDateString()
                             );
                         }
                     } else {
@@ -294,7 +314,8 @@ class SaleService
                                 quantity: $item['quantity'],
                                 saleId: $sale->id,
                                 userId: $sale->user_id,
-                                notes: "Penjualan: {$product->name}"
+                                notes: "Penjualan: {$product->name}",
+                                mutationDate: $sale->sale_date->toDateString()
                             );
                         }
                     }

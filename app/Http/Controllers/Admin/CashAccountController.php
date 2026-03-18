@@ -365,6 +365,15 @@ class CashAccountController extends Controller
             $toAccount->current_balance += $amount;
             $toAccount->save();
 
+            $this->cashAccountService->recalculateBalances(
+                $fromAccount,
+                Carbon::parse($data['transaction_date'])->toDateString()
+            );
+            $this->cashAccountService->recalculateBalances(
+                $toAccount,
+                Carbon::parse($data['transaction_date'])->toDateString()
+            );
+
             DB::commit();
 
             return redirect()
@@ -684,6 +693,7 @@ class CashAccountController extends Controller
             ->where('cash_account_id', $cashTransaction->cash_account_id)
             ->where('type', $cashTransaction->type)
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
             ->get();
 
@@ -729,6 +739,7 @@ class CashAccountController extends Controller
             ->whereBetween('created_at', [$createdAtStart, $createdAtEnd])
             ->whereRaw('COALESCE(TRIM(notes), \'\') = ?', [$notes])
             ->orderBy('transaction_date', 'asc')
+            ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
             ->get();
     }

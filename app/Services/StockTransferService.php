@@ -171,6 +171,8 @@ class StockTransferService
         DB::beginTransaction();
 
         try {
+            $stockService = app(StockService::class);
+
             // Kurangi stok di outlet pengirim
             foreach ($transfer->items as $item) {
                 $stock = Stock::firstOrCreate(
@@ -210,6 +212,12 @@ class StockTransferService
                     'notes' => "Transfer ke {$transfer->toOutlet->name}",
                     'created_by' => auth()->id(),
                 ]);
+
+                $stockService->recalculateMutationBalances(
+                    (int) $item->product_id,
+                    (int) $transfer->from_outlet_id,
+                    (string) $transfer->transfer_date
+                );
             }
 
             // Update transfer status
@@ -239,6 +247,8 @@ class StockTransferService
         DB::beginTransaction();
 
         try {
+            $stockService = app(StockService::class);
+
             // Update received quantities dan tambah stok di outlet penerima
             foreach ($receivedItems as $itemId => $receivedQty) {
                 $item = StockTransferItem::findOrFail($itemId);
@@ -291,6 +301,12 @@ class StockTransferService
                     'created_by' => auth()->id(),
                 ]);
 
+                $stockService->recalculateMutationBalances(
+                    (int) $item->product_id,
+                    (int) $transfer->to_outlet_id,
+                    now()->toDateString()
+                );
+
                 // Update avg cost outlet penerima (seperti menerima pembelian)
                 $costService = app(CostService::class);
                 $costService->updateAvgCostOnReceive(
@@ -339,6 +355,12 @@ class StockTransferService
                             : 'Selisih terima lebih: koreksi stok outlet pengirim',
                         'created_by' => auth()->id(),
                     ]);
+
+                    $stockService->recalculateMutationBalances(
+                        (int) $item->product_id,
+                        (int) $transfer->from_outlet_id,
+                        now()->toDateString()
+                    );
                 }
             }
 
@@ -369,6 +391,8 @@ class StockTransferService
         DB::beginTransaction();
 
         try {
+            $stockService = app(StockService::class);
+
             // Jika sudah dikirim (in_transit), kembalikan stok ke outlet pengirim
             if ($transfer->status === 'in_transit') {
                 foreach ($transfer->items as $item) {
@@ -407,6 +431,12 @@ class StockTransferService
                             'notes' => "Pembatalan transfer: {$reason}",
                             'created_by' => auth()->id(),
                         ]);
+
+                        $stockService->recalculateMutationBalances(
+                            (int) $item->product_id,
+                            (int) $transfer->from_outlet_id,
+                            now()->toDateString()
+                        );
                     }
                 }
             }
