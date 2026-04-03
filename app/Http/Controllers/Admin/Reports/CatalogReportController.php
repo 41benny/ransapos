@@ -11,6 +11,7 @@ use App\Support\SpecialPromotion;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Facades\DB;
 
 class CatalogReportController extends Controller
@@ -774,6 +775,7 @@ class CatalogReportController extends Controller
 
         if ($slug === 'sales-vs-hpp') {
             $viewType = 'sales-vs-hpp';
+            $isExporting = in_array($request->input('format'), ['xlsx', 'pdf'], true);
 
             $salesItemBase = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -785,7 +787,14 @@ class CatalogReportController extends Controller
                 $salesItemBase->where('sales.outlet_id', $outletId);
             }
 
-            $rows = (clone $salesItemBase)
+            $totals = (clone $salesItemBase)
+                ->selectRaw('COUNT(DISTINCT sale_items.product_name) as total_items')
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_sales')
+                ->selectRaw('COALESCE(SUM(sale_items.cogs), 0) as total_hpp')
+                ->first();
+
+            $rowsQuery = (clone $salesItemBase)
                 ->select(
                     'sales.id as sale_id',
                     'sales.invoice_number as transaction_number',
@@ -797,29 +806,23 @@ class CatalogReportController extends Controller
                     'sale_items.subtotal as total_amount',
                     'sale_items.cogs as hpp_amount'
                 )
+                ->selectRaw('COALESCE(sale_items.subtotal - sale_items.cogs, 0) as gross_profit')
+                ->selectRaw("CASE WHEN COALESCE(sale_items.subtotal, 0) > 0 THEN ROUND(((sale_items.subtotal - sale_items.cogs) / sale_items.subtotal) * 100, 2) ELSE 0 END as margin_percent")
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.id')
-                ->orderByDesc('sale_items.id')
-                ->get()
-                ->map(function ($row) {
-                    $grossProfit = (float) $row->total_amount - (float) $row->hpp_amount;
-                    $margin = (float) $row->total_amount > 0
-                        ? round(($grossProfit / (float) $row->total_amount) * 100, 2)
-                        : 0;
+                ->orderByDesc('sale_items.id');
 
-                    $row->gross_profit = $grossProfit;
-                    $row->margin_percent = $margin;
+            $rows = $isExporting
+                ? $rowsQuery->get()
+                : $rowsQuery->paginate(250)->withQueryString();
 
-                    return $row;
-                });
-
-            $totalSales = (float) $rows->sum('total_amount');
-            $totalHpp = (float) $rows->sum('hpp_amount');
+            $totalSales = (float) ($totals->total_sales ?? 0);
+            $totalHpp = (float) ($totals->total_hpp ?? 0);
             $totalGrossProfit = $totalSales - $totalHpp;
 
             $summary = [
-                'total_items' => (int) $rows->pluck('product_name')->unique()->count(),
-                'total_qty' => (float) $rows->sum('qty'),
+                'total_items' => (int) ($totals->total_items ?? 0),
+                'total_qty' => (float) ($totals->total_qty ?? 0),
                 'total_sales' => $totalSales,
                 'total_hpp' => $totalHpp,
                 'total_gross_profit' => $totalGrossProfit,
@@ -1633,7 +1636,13 @@ class CatalogReportController extends Controller
 
     private function buildExportPayload(string $viewType, $rows, array $summary): array
     {
-        $rowsCollection = $rows instanceof \Illuminate\Support\Collection ? $rows : collect($rows);
+        if ($rows instanceof AbstractPaginator) {
+            $rowsCollection = $rows->getCollection();
+        } elseif ($rows instanceof \Illuminate\Support\Collection) {
+            $rowsCollection = $rows;
+        } else {
+            $rowsCollection = collect($rows);
+        }
 
         if ($viewType === 'sales-vs-hpp') {
             return [[

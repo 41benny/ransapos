@@ -9,6 +9,7 @@ use App\Models\SaleItem;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Tests\TestCase;
@@ -108,5 +109,42 @@ class CatalogReportControllerTest extends TestCase
         $this->assertTrue($row['is_discount_anomaly']);
         $this->assertSame('Compliment (Anomali)', $row['discount_source_label']);
         $this->assertSame(35000.0, $row['gross_value']);
+    }
+
+    public function test_build_export_payload_accepts_paginated_sales_vs_hpp_rows(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $rows = new LengthAwarePaginator(
+            items: collect([
+                (object) [
+                    'transaction_number' => 'INV-001',
+                    'sale_date' => '2026-04-03',
+                    'outlet_name' => 'Outlet A',
+                    'product_name' => 'Produk A',
+                    'qty' => 2,
+                    'total_amount' => 40000,
+                    'hpp_amount' => 25000,
+                    'gross_profit' => 15000,
+                    'margin_percent' => 37.5,
+                ],
+            ]),
+            total: 1,
+            perPage: 250,
+            currentPage: 1,
+        );
+
+        $method = new \ReflectionMethod($controller, 'buildExportPayload');
+        $method->setAccessible(true);
+
+        [$columns, $exportRows] = $method->invoke($controller, 'sales-vs-hpp', $rows, []);
+
+        $this->assertCount(9, $columns);
+        $this->assertCount(1, $exportRows);
+        $this->assertSame('INV-001', $exportRows[0]['transaction_number']);
+        $this->assertSame(15000, $exportRows[0]['gross_profit']);
     }
 }
