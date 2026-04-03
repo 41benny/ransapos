@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Reports;
 
+use App\Exports\GeneratorReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Product;
@@ -15,6 +16,8 @@ use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Excel as ExcelWriter;
+use Generator;
 
 class CatalogReportController extends Controller
 {
@@ -777,7 +780,8 @@ class CatalogReportController extends Controller
 
         if ($slug === 'sales-vs-hpp') {
             $viewType = 'sales-vs-hpp';
-            $isExporting = in_array($request->input('format'), ['xlsx', 'pdf'], true);
+            $format = $request->input('format');
+            $isExporting = in_array($format, ['xlsx', 'pdf'], true);
 
             $salesItemBase = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
@@ -813,6 +817,13 @@ class CatalogReportController extends Controller
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.id')
                 ->orderByDesc('sale_items.id');
+
+            if ($format === 'xlsx') {
+                return $this->downloadSalesVsHppXlsx(
+                    rowsQuery: $rowsQuery,
+                    filename: sprintf('sales-vs-hpp-%s-sd-%s.xlsx', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo)),
+                );
+            }
 
             $rows = $isExporting
                 ? $rowsQuery->get()
@@ -886,6 +897,7 @@ class CatalogReportController extends Controller
         // Implementasi: Laporan Diskon Penjualan (Compliment / Meal Karyawan / dll)
         if ($slug === 'sales-discount') {
             $viewType = 'sales-discount';
+            $format = $request->input('format');
             $viewMode = $request->input('view_mode', 'summary'); // summary | detail
             $filterType = $request->input('filter_type', 'all'); // all | compliment | meal_karyawan
             $specialFilterType = $filterType !== 'all' ? SpecialPromotion::classify($filterType) : null;
@@ -973,6 +985,17 @@ class CatalogReportController extends Controller
                 ->selectRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) as item_discount_amount')
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.created_at');
+
+            if ($format === 'xlsx') {
+                return $this->downloadSalesDiscountXlsx(
+                    salesQuery: $salesQuery,
+                    request: $request,
+                    filename: sprintf('sales-discount-%s-sd-%s.xlsx', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo)),
+                    viewMode: $viewMode,
+                    filterType: $filterType,
+                    specialFilterType: $specialFilterType,
+                );
+            }
 
             if ($viewMode === 'summary') {
                 $groupedRows = [];
@@ -1636,6 +1659,229 @@ class CatalogReportController extends Controller
             'meta' => $meta,
             'viewType' => $viewType,
         ]);
+    }
+
+    private function downloadSalesVsHppXlsx($rowsQuery, string $filename)
+    {
+        return (new GeneratorReportExport(
+            headings: ['No Transaksi', 'Tanggal', 'Outlet', 'Produk', 'Qty', 'Total', 'HPP', 'Laba Kotor', 'Margin'],
+            generatorFactory: fn () => $this->generateSalesVsHppExportRows($rowsQuery),
+            columnFormats: [
+                'E' => '#,##0.00',
+                'F' => '#,##0.00',
+                'G' => '#,##0.00',
+                'H' => '#,##0.00',
+                'I' => '#,##0.00',
+            ],
+        ))->download($filename, ExcelWriter::XLSX);
+    }
+
+    private function generateSalesVsHppExportRows($rowsQuery): Generator
+    {
+        foreach ((clone $rowsQuery)->lazy(1000) as $row) {
+            yield [
+                $row->transaction_number,
+                $row->sale_date,
+                $row->outlet_name,
+                $row->product_name,
+                (float) ($row->qty ?? 0),
+                (float) ($row->total_amount ?? 0),
+                (float) ($row->hpp_amount ?? 0),
+                (float) ($row->gross_profit ?? 0),
+                (float) ($row->margin_percent ?? 0),
+            ];
+        }
+    }
+
+    private function downloadSalesDiscountXlsx(
+        $salesQuery,
+        Request $request,
+        string $filename,
+        string $viewMode,
+        string $filterType,
+        ?string $specialFilterType
+    ) {
+        $isSummary = $viewMode === 'summary';
+
+        return (new GeneratorReportExport(
+            headings: $isSummary
+                ? ['Tipe Diskon', 'Status Data', 'Metode Penjualan', 'Jumlah Transaksi', 'Nilai Jual (Gross)', 'Total Diskon', 'Net Sales']
+                : ['Tipe Diskon', 'Status Data', 'No Transaksi', 'Tanggal', 'Outlet', 'Metode Penjualan', 'Pelanggan', 'Nilai Jual (Gross)', 'Total Diskon', 'Total Bayar', 'Catatan'],
+            generatorFactory: $isSummary
+                ? fn () => $this->generateSalesDiscountSummaryExportRows($salesQuery, $request, $filterType, $specialFilterType)
+                : fn () => $this->generateSalesDiscountDetailExportRows($salesQuery, $request, $filterType, $specialFilterType),
+            columnFormats: $isSummary
+                ? [
+                    'D' => '#,##0',
+                    'E' => '#,##0.00',
+                    'F' => '#,##0.00',
+                    'G' => '#,##0.00',
+                ]
+                : [
+                    'H' => '#,##0.00',
+                    'I' => '#,##0.00',
+                    'J' => '#,##0.00',
+                ],
+        ))->download($filename, ExcelWriter::XLSX);
+    }
+
+    private function generateSalesDiscountSummaryExportRows(
+        $salesQuery,
+        Request $request,
+        string $filterType,
+        ?string $specialFilterType
+    ): Generator {
+        $groupedRows = [];
+
+        foreach ((clone $salesQuery)->lazy(1000) as $sale) {
+            $row = $this->buildSalesDiscountRowFromRecord($sale);
+
+            if (!$this->passesSalesDiscountPrimaryFilter($row, $filterType, $specialFilterType)) {
+                continue;
+            }
+
+            $groupKey = implode('|', [
+                $row['discount_source_key'] ?? 'none',
+                $row['sales_type'] ?? 'regular',
+                !empty($row['is_discount_anomaly']) ? 'anomaly' : 'valid',
+            ]);
+
+            if (!isset($groupedRows[$groupKey])) {
+                $groupedRows[$groupKey] = [
+                    'discount_source_label' => $row['discount_source_label'] ?? 'None',
+                    'data_status_label' => $row['data_status_label'] ?? 'Valid',
+                    'sales_type_label' => $row['sales_type_label'] ?? 'Regular',
+                    'transaction_count' => 0,
+                    'gross_value' => 0.0,
+                    'effective_discount' => 0.0,
+                    'net_sales' => 0.0,
+                ];
+            }
+
+            $groupedRows[$groupKey]['transaction_count']++;
+            $groupedRows[$groupKey]['gross_value'] += (float) ($row['gross_value'] ?? 0);
+            $groupedRows[$groupKey]['effective_discount'] += (float) ($row['effective_discount'] ?? 0);
+            $groupedRows[$groupKey]['net_sales'] += (float) ($row['net_sales'] ?? 0);
+        }
+
+        foreach ($groupedRows as $row) {
+            if (!$this->passesSalesDiscountSummaryFilters($row, $request)) {
+                continue;
+            }
+
+            yield [
+                $row['discount_source_label'] ?? '',
+                $row['data_status_label'] ?? '',
+                $row['sales_type_label'] ?? '',
+                (int) ($row['transaction_count'] ?? 0),
+                (float) ($row['gross_value'] ?? 0),
+                (float) ($row['effective_discount'] ?? 0),
+                (float) ($row['net_sales'] ?? 0),
+            ];
+        }
+    }
+
+    private function generateSalesDiscountDetailExportRows(
+        $salesQuery,
+        Request $request,
+        string $filterType,
+        ?string $specialFilterType
+    ): Generator {
+        foreach ((clone $salesQuery)->lazy(1000) as $sale) {
+            $row = $this->buildSalesDiscountRowFromRecord($sale);
+
+            if (
+                !$this->passesSalesDiscountPrimaryFilter($row, $filterType, $specialFilterType)
+                || !$this->passesSalesDiscountDetailFilters($row, $request)
+            ) {
+                continue;
+            }
+
+            yield [
+                $row['discount_source_label'] ?? '',
+                $row['data_status_label'] ?? '',
+                $row['invoice_number'] ?? '',
+                $row['sale_date'] ?? '',
+                $row['outlet_name'] ?? '',
+                $row['sales_type_label'] ?? '',
+                $row['customer_name'] ?? '',
+                (float) ($row['gross_value'] ?? 0),
+                (float) ($row['effective_discount'] ?? 0),
+                (float) ($row['net_sales'] ?? 0),
+                $row['notes'] ?? '',
+            ];
+        }
+    }
+
+    private function passesSalesDiscountPrimaryFilter(array $row, string $filterType, ?string $specialFilterType): bool
+    {
+        if ($filterType !== 'all') {
+            return ($row['sales_type'] ?? null) === $filterType
+                || ($specialFilterType !== null && ($row['special_discount_type'] ?? null) === $specialFilterType);
+        }
+
+        return (float) ($row['effective_discount'] ?? 0) > 0 || !empty($row['is_discount_anomaly']);
+    }
+
+    private function passesSalesDiscountSummaryFilters(array $row, Request $request): bool
+    {
+        return $this->matchesReportText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon'))
+            && $this->matchesReportText($row['sales_type_label'] ?? '', $request->input('filter_metode_penjualan'))
+            && $this->matchesReportText($row['data_status_label'] ?? '', $request->input('filter_status_data'))
+            && $this->matchesReportNumber($row['transaction_count'] ?? 0, $request->input('filter_jumlah_transaksi'))
+            && $this->matchesReportNumber($row['gross_value'] ?? 0, $request->input('filter_gross'))
+            && $this->matchesReportNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon'))
+            && $this->matchesReportNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales'));
+    }
+
+    private function passesSalesDiscountDetailFilters(array $row, Request $request): bool
+    {
+        return $this->matchesReportText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon'))
+            && $this->matchesReportText($row['invoice_number'] ?? '', $request->input('filter_transaksi'))
+            && $this->matchesReportText($row['sale_date'] ?? '', $request->input('filter_tanggal'))
+            && $this->matchesReportText($row['outlet_name'] ?? '', $request->input('filter_outlet'))
+            && $this->matchesReportText($row['sales_type_label'] ?? '', $request->input('filter_metode_penjualan'))
+            && $this->matchesReportText($row['data_status_label'] ?? '', $request->input('filter_status_data'))
+            && $this->matchesReportText($row['customer_name'] ?? '', $request->input('filter_pelanggan'))
+            && $this->matchesReportNumber($row['gross_value'] ?? 0, $request->input('filter_gross'))
+            && $this->matchesReportNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon'))
+            && $this->matchesReportNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales'));
+    }
+
+    private function matchesReportText($value, ?string $keyword): bool
+    {
+        $keyword = trim((string) $keyword);
+
+        if ($keyword === '') {
+            return true;
+        }
+
+        return stripos((string) $value, $keyword) !== false;
+    }
+
+    private function matchesReportNumber($value, ?string $keyword): bool
+    {
+        $keyword = trim((string) $keyword);
+
+        if ($keyword === '') {
+            return true;
+        }
+
+        $number = (float) $value;
+        $variants = array_unique([
+            (string) $value,
+            (string) $number,
+            number_format($number, 0, ',', '.'),
+            number_format($number, 2, ',', '.'),
+        ]);
+
+        foreach ($variants as $variant) {
+            if (stripos($variant, $keyword) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function paginateRowsForView($rows, Request $request, int $perPage = 100)
