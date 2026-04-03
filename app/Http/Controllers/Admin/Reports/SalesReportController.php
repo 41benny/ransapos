@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\PaymentMethod;
 use App\Support\ReportExport;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -226,6 +228,12 @@ class SalesReportController extends Controller
             $detailRows = $detailRows->values();
         }
 
+        if ($viewMode === 'detail') {
+            $detailRows = $this->paginateCollection($detailRows, $request, 100);
+        } else {
+            $sales = $this->paginateCollection($sales, $request, 100);
+        }
+
         // Data untuk filter
         $outlets = $this->resolveAccessibleOutlets();
         $usersQuery = User::whereHas('role', function($query) {
@@ -343,6 +351,12 @@ class SalesReportController extends Controller
             'total_qty' => $products->sum('total_qty'),
             'total_amount' => $products->sum('total_amount'),
         ];
+        $outletGrandTotals = [];
+        foreach ($outletsForColumns as $outletCol) {
+            $outletGrandTotals[$outletCol->id] = (float) $products->sum("outlet_{$outletCol->id}_qty");
+        }
+
+        $products = $this->paginateCollection($products, $request, 100);
 
         // Data untuk filter
         $outlets = $this->resolveAccessibleOutlets();
@@ -363,6 +377,7 @@ class SalesReportController extends Controller
             'grandTotal',
             'outlets',
             'outletsForColumns',
+            'outletGrandTotals',
             'users',
             'filters',
             'dateFrom',
@@ -404,6 +419,18 @@ class SalesReportController extends Controller
             ->orderBy('sale_date', 'asc')
             ->get();
 
+        $dailyTotals = [
+            'row_count' => $dailySales->count(),
+            'total_sales' => (float) $dailySales->sum('total_sales'),
+            'total_discount' => (float) $dailySales->sum('total_discount'),
+            'total_service_charge' => (float) $dailySales->sum('total_service_charge'),
+            'total_tax' => (float) $dailySales->sum('total_tax'),
+            'total_adjustment' => (float) $dailySales->sum('total_adjustment'),
+            'total_grand' => (float) $dailySales->sum('total_grand'),
+        ];
+
+        $dailySales = $this->paginateCollection($dailySales, $request, 100);
+
         $outlets = $this->resolveAccessibleOutlets();
         $salesTypes = \App\Models\SalesType::where('is_active', true)->pluck('name', 'code');
         
@@ -411,7 +438,7 @@ class SalesReportController extends Controller
         $filters['outlet_ids'] = $outletIds;
         $filters['outlet_id'] = count($outletIds) === 1 ? $outletIds[0] : null;
 
-        return view('admin.reports.sales.daily', compact('dailySales', 'outlets', 'salesTypes', 'filters', 'dateFrom', 'dateTo'));
+        return view('admin.reports.sales.daily', compact('dailySales', 'dailyTotals', 'outlets', 'salesTypes', 'filters', 'dateFrom', 'dateTo'));
     }
 
     public function exportIndex(Request $request)
@@ -1041,5 +1068,25 @@ class SalesReportController extends Controller
             ->exists();
 
         return $outletExists ? [$userOutletId] : [];
+    }
+
+    private function paginateCollection($items, Request $request, int $perPage = 100): LengthAwarePaginator
+    {
+        $collection = $items instanceof Collection
+            ? $items->values()
+            : collect($items)->values();
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        return new LengthAwarePaginator(
+            $collection->forPage($page, $perPage)->values(),
+            $collection->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 }

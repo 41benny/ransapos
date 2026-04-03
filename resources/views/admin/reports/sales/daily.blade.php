@@ -236,19 +236,19 @@
                             </tr>
                         @endforelse
                     </tbody>
-                    @if($dailySales->count() > 0)
+                    @if(($dailyTotals['row_count'] ?? 0) > 0)
                         <tfoot>
                             <tr class="bg-indigo-900">
                                 <td class="px-8 py-6 text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em]">Total Akumulasi</td>
-                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailySales->sum('total_sales'), 0, ',', '.') }}</td>
-                                <td class="px-8 py-6 text-right text-base font-black text-rose-300">Rp {{ number_format($dailySales->sum('total_discount'), 0, ',', '.') }}</td>
-                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailySales->sum('total_service_charge'), 0, ',', '.') }}</td>
-                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailySales->sum('total_tax'), 0, ',', '.') }}</td>
-                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailySales->sum('total_adjustment'), 0, ',', '.') }}</td>
+                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailyTotals['total_sales'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="px-8 py-6 text-right text-base font-black text-rose-300">Rp {{ number_format($dailyTotals['total_discount'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailyTotals['total_service_charge'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailyTotals['total_tax'] ?? 0, 0, ',', '.') }}</td>
+                                <td class="px-8 py-6 text-right text-base font-black text-white">Rp {{ number_format($dailyTotals['total_adjustment'] ?? 0, 0, ',', '.') }}</td>
                                 <td class="px-8 py-6 text-right">
                                     <div class="flex flex-col items-end">
                                         <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Grand Total</span>
-                                        <span class="text-lg font-black text-white">Rp {{ number_format($dailySales->sum('total_grand'), 0, ',', '.') }}</span>
+                                        <span class="text-lg font-black text-white">Rp {{ number_format($dailyTotals['total_grand'] ?? 0, 0, ',', '.') }}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -256,6 +256,14 @@
                     @endif
                 </table>
             </div>
+            @if(method_exists($dailySales, 'links'))
+                <div class="border-t border-slate-100 px-8 py-5">
+                    <div class="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">
+                        Baris harian dipaginasi otomatis.
+                    </div>
+                    {{ $dailySales->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 

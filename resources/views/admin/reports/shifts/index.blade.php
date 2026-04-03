@@ -208,6 +208,14 @@
                 </tbody>
             </table>
         </div>
+        @if(method_exists($sessions, 'links'))
+            <div class="border-t border-gray-100 p-4">
+                <div class="mb-3 text-xs text-gray-500">
+                    Daftar shift dipaginasi otomatis untuk menjaga performa.
+                </div>
+                {{ $sessions->onEachSide(1)->links() }}
+            </div>
+        @endif
     @else
         <div class="p-6 border-b border-gray-100">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -325,6 +333,14 @@
                 </tbody>
             </table>
         </div>
+        @if(method_exists($sessions, 'links'))
+            <div class="border-t border-gray-100 p-4">
+                <div class="mb-3 text-xs text-gray-500">
+                    Daftar shift dipaginasi otomatis untuk menjaga performa.
+                </div>
+                {{ $sessions->onEachSide(1)->links() }}
+            </div>
+        @endif
     @endif
 </div>
 

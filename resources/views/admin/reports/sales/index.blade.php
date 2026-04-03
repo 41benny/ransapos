@@ -413,7 +413,7 @@
                             @endforelse
                         @endif
                     </tbody>
-                    @if(($viewMode ?? 'ringkas') !== 'detail' && $sales->count() > 0)
+                    @if(($viewMode ?? 'ringkas') !== 'detail' && ($summary['total_transactions'] ?? 0) > 0)
                         <tfoot class="bg-indigo-50/30">
                             <tr>
                                 <td colspan="7" class="px-4 py-3 text-right text-[10px] font-normal text-slate-600 uppercase tracking-wider">
@@ -427,6 +427,17 @@
                     @endif
                 </table>
             </div>
+            @php
+                $activeRows = ($viewMode ?? 'ringkas') === 'detail' ? $detailRows : $sales;
+            @endphp
+            @if(method_exists($activeRows, 'links'))
+                <div class="border-t border-slate-100 p-4">
+                    <div class="mb-3 text-xs text-slate-500">
+                        Data transaksi dipaginasi otomatis agar halaman tetap ringan saat filter besar.
+                    </div>
+                    {{ $activeRows->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 

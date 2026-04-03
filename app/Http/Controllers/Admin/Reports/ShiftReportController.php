@@ -11,6 +11,7 @@ use App\Support\ReportExport;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,8 @@ class ShiftReportController extends Controller
             'shifts_with_anomaly' => $sessions->where('anomaly_count', '>', 0)->count(),
         ];
 
+        $sessions = $this->paginateCollection($sessions, $request, 100);
+
         $outlets = Outlet::where('is_active', true)->get();
         $users = User::whereHas('role', function ($query) {
             $query->whereIn('name', ['kasir', 'admin']);
@@ -71,11 +74,23 @@ class ShiftReportController extends Controller
             'user',
             'openedDevice',
             'closedDevice',
-            'sales' => function ($query) {
-                $query->where('status', 'completed')
-                    ->with(['payments.paymentMethod', 'items.product', 'customer']);
-            },
         ]);
+
+        $salesMetrics = $cashSession->sales()
+            ->where('status', 'completed')
+            ->selectRaw('COUNT(*) as total_transactions')
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales')
+            ->selectRaw('MIN(sale_date) as first_sale_date')
+            ->selectRaw('MAX(sale_date) as last_sale_date')
+            ->first();
+
+        $sales = $cashSession->sales()
+            ->where('status', 'completed')
+            ->with(['payments.paymentMethod', 'customer'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(100)
+            ->withQueryString();
 
         $paymentBreakdown = DB::table('payments')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
@@ -105,10 +120,12 @@ class ShiftReportController extends Controller
             ->limit(10)
             ->get();
 
-        $sessionDiagnostics = $this->buildSessionDiagnostics($cashSession);
+        $sessionDiagnostics = $this->buildSessionDiagnostics($cashSession, $salesMetrics);
 
         return view('admin.reports.shifts.show', compact(
             'cashSession',
+            'sales',
+            'salesMetrics',
             'paymentBreakdown',
             'topProducts',
             'sessionDiagnostics'
@@ -319,11 +336,11 @@ class ShiftReportController extends Controller
         });
     }
 
-    private function buildSessionDiagnostics(CashSession $cashSession): array
+    private function buildSessionDiagnostics(CashSession $cashSession, $salesMetrics): array
     {
-        $firstSaleDate = $cashSession->sales->min('sale_date');
-        $lastSaleDate = $cashSession->sales->max('sale_date');
-        $totalFromSales = (float) $cashSession->sales->sum('total_amount');
+        $firstSaleDate = $salesMetrics->first_sale_date ?? null;
+        $lastSaleDate = $salesMetrics->last_sale_date ?? null;
+        $totalFromSales = (float) ($salesMetrics->total_sales ?? 0);
         $totalFromSession = (float) $cashSession->total_sales;
         $durationMinutes = $cashSession->opened_at
             ? (int) $cashSession->opened_at->diffInMinutes($cashSession->closed_at ?? now(), false)
@@ -407,5 +424,22 @@ class ShiftReportController extends Controller
         }
 
         return '-';
+    }
+
+    private function paginateCollection(Collection $items, Request $request, int $perPage = 100): LengthAwarePaginator
+    {
+        $collection = $items->values();
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        return new LengthAwarePaginator(
+            $collection->forPage($page, $perPage)->values(),
+            $collection->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 }

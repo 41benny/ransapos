@@ -122,7 +122,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-gray-50 rounded-lg p-4">
             <p class="text-sm text-gray-600 mb-1">Total Transaksi</p>
-            <p class="text-2xl font-normal text-gray-900">{{ $cashSession->sales->count() }}</p>
+            <p class="text-2xl font-normal text-gray-900">{{ $salesMetrics->total_transactions ?? 0 }}</p>
         </div>
         <div class="bg-gray-50 rounded-lg p-4">
             <p class="text-sm text-gray-600 mb-1">Total Omzet</p>
@@ -131,7 +131,7 @@
         <div class="bg-gray-50 rounded-lg p-4">
             <p class="text-sm text-gray-600 mb-1">Rata-rata Transaksi</p>
             <p class="text-2xl font-normal text-gray-900">
-                Rp {{ $cashSession->sales->count() > 0 ? number_format($cashSession->total_sales / $cashSession->sales->count(), 0, ',', '.') : 0 }}
+                Rp {{ ($salesMetrics->total_transactions ?? 0) > 0 ? number_format($cashSession->total_sales / $salesMetrics->total_transactions, 0, ',', '.') : 0 }}
             </p>
         </div>
     </div>
@@ -248,7 +248,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @forelse($cashSession->sales as $sale)
+                @forelse($sales as $sale)
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-900">
                         {{ $sale->created_at->format('H:i:s') }}
@@ -274,7 +274,7 @@
                 </tr>
                 @endforelse
             </tbody>
-            @if($cashSession->sales->count() > 0)
+            @if(($salesMetrics->total_transactions ?? 0) > 0)
             <tfoot class="bg-gray-50 border-t-2 border-gray-300">
                 <tr>
                     <td colspan="4" class="px-6 py-4 text-right text-sm font-normal text-gray-900">
@@ -288,6 +288,14 @@
             @endif
         </table>
     </div>
+    @if(method_exists($sales, 'links'))
+        <div class="border-t border-gray-100 p-4">
+            <div class="mb-3 text-xs text-gray-500">
+                Daftar transaksi shift dipaginasi otomatis agar detail shift tetap ringan dibuka.
+            </div>
+            {{ $sales->onEachSide(1)->links() }}
+        </div>
+    @endif
 </div>
 
 <!-- Print CSS -->

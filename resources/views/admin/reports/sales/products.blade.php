@@ -260,8 +260,9 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @php
-                            $groupedProducts = $products->groupBy('category_name');
-                            $globalIndex = 0;
+                            $productRows = method_exists($products, 'getCollection') ? $products->getCollection() : $products;
+                            $groupedProducts = $productRows->groupBy('category_name');
+                            $globalIndex = method_exists($products, 'firstItem') ? max(($products->firstItem() ?? 1) - 1, 0) : 0;
                         @endphp
 
                         @forelse($groupedProducts as $categoryName => $items)
@@ -324,7 +325,7 @@
                             </tr>
                         @endforelse
                     </tbody>
-                    @if($products->count() > 0)
+                    @if(method_exists($products, 'total') ? $products->total() > 0 : $products->count() > 0)
                         <tfoot class="bg-indigo-50/30">
                             <tr>
                                 <td colspan="3"
@@ -333,7 +334,7 @@
                                 </td>
                                 @foreach($outletsForColumns as $outletCol)
                                     @php
-                                        $oGrandQty = $products->sum("outlet_{$outletCol->id}_qty");
+                                        $oGrandQty = $outletGrandTotals[$outletCol->id] ?? 0;
                                     @endphp
                                     <td class="px-4 py-3 text-right text-sm font-bold tracking-tight text-indigo-600 border-r border-slate-200 bg-indigo-50/40">
                                         {{ $oGrandQty > 0 ? number_format($oGrandQty, 0, ',', '.') : '-' }}
@@ -350,6 +351,14 @@
                     @endif
                 </table>
             </div>
+            @if(method_exists($products, 'links'))
+                <div class="border-t border-slate-100 p-4">
+                    <div class="mb-3 text-xs text-slate-500">
+                        Daftar produk dipaginasi otomatis agar tabel tetap cepat dibuka saat semua outlet dipilih.
+                    </div>
+                    {{ $products->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 

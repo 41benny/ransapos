@@ -12,6 +12,8 @@ use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CatalogReportController extends Controller
@@ -1615,6 +1617,8 @@ class CatalogReportController extends Controller
             return ReportExport::xlsx($filename, $report['title'], $exportColumns, $exportRows);
         }
 
+        $rows = $this->paginateRowsForView($rows, $request);
+
         return view('admin.reports.catalog-show', [
             'slug' => $slug,
             'report' => $report,
@@ -1632,6 +1636,30 @@ class CatalogReportController extends Controller
             'meta' => $meta,
             'viewType' => $viewType,
         ]);
+    }
+
+    private function paginateRowsForView($rows, Request $request, int $perPage = 100)
+    {
+        if ($rows instanceof AbstractPaginator || $rows === null) {
+            return $rows;
+        }
+
+        $collection = $rows instanceof Collection
+            ? $rows->values()
+            : collect($rows)->values();
+
+        $page = LengthAwarePaginator::resolveCurrentPage();
+
+        return new LengthAwarePaginator(
+            $collection->forPage($page, $perPage)->values(),
+            $collection->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 
     private function buildExportPayload(string $viewType, $rows, array $summary): array

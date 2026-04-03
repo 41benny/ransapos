@@ -3290,14 +3290,6 @@
                         </tbody>
                     </table>
                 </div>
-                @if(method_exists($rows, 'links'))
-                    <div class="mt-4">
-                        <div class="mb-3 text-xs text-slate-500">
-                            Detail transaksi dipaginasi otomatis untuk menjaga performa saat filter semua outlet dan range tanggal besar.
-                        </div>
-                        {{ $rows->onEachSide(1)->links() }}
-                    </div>
-                @endif
             </div>
         @else
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
@@ -3306,6 +3298,15 @@
                     Query data untuk laporan ini belum diimplementasikan. Halaman ini siap dipakai untuk tahap integrasi data
                     berikutnya.
                 </div>
+            </div>
+        @endif
+
+        @if(method_exists($rows, 'links'))
+            <div class="mt-4">
+                <div class="mb-3 text-xs text-slate-500">
+                    Hasil report dipaginasi otomatis untuk menjaga performa saat filter semua outlet atau range tanggal besar.
+                </div>
+                {{ $rows->onEachSide(1)->links() }}
             </div>
         @endif
     </div>
