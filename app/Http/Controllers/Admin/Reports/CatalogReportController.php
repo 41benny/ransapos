@@ -133,7 +133,7 @@ class CatalogReportController extends Controller
             'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => true, 'existing_route' => 'admin.reports.shifts.index'],
             'sales-custom-item' => ['title' => 'Penjualan per Custom Item', 'implemented' => false],
             'receivables' => ['title' => 'Piutang', 'implemented' => false],
-            'promo' => ['title' => 'Promo', 'implemented' => false],
+            'promo' => ['title' => 'Promo', 'implemented' => true],
             'sales-by-service-charge' => ['title' => 'Penjualan per Biaya Layanan', 'implemented' => false],
             'daily-outlet-summary' => ['title' => 'Ringkasan Penjualan Harian Per Outlet', 'implemented' => false],
             'credit-card' => ['title' => 'Kartu Kredit', 'implemented' => false],
@@ -1041,6 +1041,191 @@ class CatalogReportController extends Controller
             ];
         }
 
+        if ($slug === 'promo') {
+            $viewType = 'promo-report';
+            $viewMode = in_array($request->input('view_mode'), ['summary', 'detail'], true)
+                ? $request->input('view_mode')
+                : 'summary';
+
+            $matchesText = static function ($value, ?string $keyword): bool {
+                $keyword = trim((string) $keyword);
+
+                if ($keyword === '') {
+                    return true;
+                }
+
+                return stripos((string) $value, $keyword) !== false;
+            };
+            $matchesNumber = static function ($value, ?string $keyword): bool {
+                $keyword = trim((string) $keyword);
+
+                if ($keyword === '') {
+                    return true;
+                }
+
+                $number = (float) $value;
+                $variants = array_unique([
+                    (string) $value,
+                    (string) $number,
+                    number_format($number, 0, ',', '.'),
+                    number_format($number, 2, ',', '.'),
+                ]);
+
+                foreach ($variants as $variant) {
+                    if (stripos($variant, $keyword) !== false) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            $salesQuery = \App\Models\Sale::query()
+                ->with(['items.product', 'outlet', 'user', 'customer', 'promotion:id,name,code', 'voucher:id,name,code'])
+                ->where('status', 'completed')
+                ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                ->where(function ($query) {
+                    $query
+                        ->whereNotNull('promotion_id')
+                        ->orWhereNotNull('voucher_id')
+                        ->orWhereNotNull('voucher_code');
+                });
+
+            if (!empty($outletId)) {
+                $salesQuery->where('outlet_id', $outletId);
+            }
+
+            $processedData = $salesQuery
+                ->orderByDesc('sale_date')
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn($sale) => $this->buildSalesDiscountRow($sale))
+                ->filter(fn($row) => in_array($row['discount_source_kind'] ?? '', ['promotion', 'voucher', 'voucher_code'], true))
+                ->map(function ($row) {
+                    $row['promo_source_label'] = $row['discount_source_label'] ?? 'Tanpa Promo';
+                    $row['promo_source_kind_label'] = $this->formatPromoSourceKindLabel($row['discount_source_kind'] ?? null);
+
+                    return $row;
+                })
+                ->values();
+
+            if ($viewMode === 'summary') {
+                $rows = $processedData
+                    ->groupBy(function ($row) {
+                        return implode('|', [
+                            $row['discount_source_kind'] ?? 'none',
+                            $row['discount_source_key'] ?? 'none',
+                        ]);
+                    })
+                    ->map(function ($group) {
+                        $first = $group->first();
+
+                        return [
+                            'promo_source_key' => $first['discount_source_key'] ?? 'none',
+                            'promo_source_kind' => $first['discount_source_kind'] ?? 'none',
+                            'promo_source_kind_label' => $first['promo_source_kind_label'] ?? 'Promo',
+                            'promo_source_label' => $first['promo_source_label'] ?? 'Tanpa Promo',
+                            'transaction_count' => $group->count(),
+                            'gross_value' => $group->sum('gross_value'),
+                            'effective_discount' => $group->sum('effective_discount'),
+                            'net_sales' => $group->sum('net_sales'),
+                        ];
+                    })
+                    ->sortByDesc('effective_discount')
+                    ->values();
+
+                if ($request->filled('filter_jenis_promo')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['promo_source_kind_label'] ?? '', $request->input('filter_jenis_promo')));
+                }
+                if ($request->filled('filter_promo')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['promo_source_label'] ?? '', $request->input('filter_promo')));
+                }
+                if ($request->filled('filter_jumlah_transaksi')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['transaction_count'] ?? 0, $request->input('filter_jumlah_transaksi')));
+                }
+                if ($request->filled('filter_gross')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['gross_value'] ?? 0, $request->input('filter_gross')));
+                }
+                if ($request->filled('filter_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon')));
+                }
+                if ($request->filled('filter_net_sales')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales')));
+                }
+
+                $rows = $rows->values();
+            } else {
+                $rows = $processedData->values();
+
+                if ($request->filled('filter_jenis_promo')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['promo_source_kind_label'] ?? '', $request->input('filter_jenis_promo')));
+                }
+                if ($request->filled('filter_promo')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['promo_source_label'] ?? '', $request->input('filter_promo')));
+                }
+                if ($request->filled('filter_transaksi')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['invoice_number'] ?? '', $request->input('filter_transaksi')));
+                }
+                if ($request->filled('filter_tanggal')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['sale_date'] ?? '', $request->input('filter_tanggal')));
+                }
+                if ($request->filled('filter_outlet')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['outlet_name'] ?? '', $request->input('filter_outlet')));
+                }
+                if ($request->filled('filter_metode_penjualan')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['sales_type_label'] ?? '', $request->input('filter_metode_penjualan')));
+                }
+                if ($request->filled('filter_pelanggan')) {
+                    $rows = $rows->filter(fn($row) => $matchesText($row['customer_name'] ?? '', $request->input('filter_pelanggan')));
+                }
+                if ($request->filled('filter_gross')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['gross_value'] ?? 0, $request->input('filter_gross')));
+                }
+                if ($request->filled('filter_diskon')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon')));
+                }
+                if ($request->filled('filter_net_sales')) {
+                    $rows = $rows->filter(fn($row) => $matchesNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales')));
+                }
+
+                $rows = $rows->values();
+            }
+
+            $sourceKindBreakdown = ($viewMode === 'summary'
+                ? $rows->groupBy('promo_source_kind_label')->map(fn($group) => [
+                    'source_count' => $group->count(),
+                    'transaction_count' => (int) $group->sum('transaction_count'),
+                    'discount_total' => (float) $group->sum('effective_discount'),
+                ])
+                : $rows->groupBy('promo_source_kind_label')->map(fn($group) => [
+                    'source_count' => $group->pluck('discount_source_key')->filter()->unique()->count(),
+                    'transaction_count' => $group->count(),
+                    'discount_total' => (float) $group->sum('effective_discount'),
+                ]))
+                ->all();
+
+            $summary = [
+                'total_sources' => $viewMode === 'summary'
+                    ? $rows->count()
+                    : $rows->pluck('discount_source_key')->filter()->unique()->count(),
+                'total_transactions' => $viewMode === 'summary'
+                    ? (int) $rows->sum('transaction_count')
+                    : $rows->count(),
+                'total_gross_value' => (float) $rows->sum('gross_value'),
+                'total_discount' => (float) $rows->sum('effective_discount'),
+                'total_net_sales' => (float) $rows->sum('net_sales'),
+                'source_kind_breakdown' => $sourceKindBreakdown,
+                'view_mode' => $viewMode,
+            ];
+
+            $meta = [
+                'notes' => [
+                    'Report ini hanya menampilkan transaksi yang memakai promo kategori atau voucher eksplisit.',
+                    'Diskon manual, diskon item biasa, dan transaksi tanpa promotion/voucher tidak masuk ke laporan promo.',
+                ],
+            ];
+        }
+
         if ($slug === 'cash-bank') {
             $viewType = 'cash-bank-summary';
             $rows = $this->cashAccountSnapshots($dateFrom, $dateTo, !empty($outletId) ? (int) $outletId : null);
@@ -1474,6 +1659,33 @@ class CatalogReportController extends Controller
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
+        if ($viewType === 'promo-report') {
+            if (($summary['view_mode'] ?? 'summary') === 'summary') {
+                return [[
+                    ['key' => 'promo_source_kind_label', 'label' => 'Jenis', 'type' => 'text'],
+                    ['key' => 'promo_source_label', 'label' => 'Promo/Voucher', 'type' => 'text'],
+                    ['key' => 'transaction_count', 'label' => 'Jumlah Transaksi', 'type' => 'number', 'decimals' => 0],
+                    ['key' => 'gross_value', 'label' => 'Nilai Jual (Gross)', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'effective_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'net_sales', 'label' => 'Net Sales', 'type' => 'number', 'decimals' => 2],
+                ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+            }
+
+            return [[
+                ['key' => 'promo_source_kind_label', 'label' => 'Jenis', 'type' => 'text'],
+                ['key' => 'promo_source_label', 'label' => 'Promo/Voucher', 'type' => 'text'],
+                ['key' => 'invoice_number', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'sales_type_label', 'label' => 'Metode Penjualan', 'type' => 'text'],
+                ['key' => 'customer_name', 'label' => 'Pelanggan', 'type' => 'text'],
+                ['key' => 'gross_value', 'label' => 'Nilai Jual (Gross)', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'effective_discount', 'label' => 'Total Diskon', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'net_sales', 'label' => 'Net Sales', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
         if ($viewType === 'stock-movement') {
             return [[
                 ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
@@ -1707,6 +1919,16 @@ class CatalogReportController extends Controller
         }
 
         return ucfirst(str_replace('_', ' ', $normalized));
+    }
+
+    private function formatPromoSourceKindLabel(?string $kind): string
+    {
+        return match (trim((string) $kind)) {
+            'promotion' => 'Promo',
+            'voucher' => 'Voucher',
+            'voucher_code' => 'Voucher Code',
+            default => 'Promo',
+        };
     }
 
     private function resolveDiscountTypeMeta(

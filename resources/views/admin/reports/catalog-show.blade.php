@@ -1015,6 +1015,187 @@
             </script>
             @endpush
 
+        @elseif($viewType === 'promo-report')
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-normal text-slate-800">Laporan Promo</h3>
+                    <div class="flex rounded-lg bg-slate-100 p-1">
+                        <a href="{{ request()->fullUrlWithQuery(['view_mode' => 'summary']) }}"
+                            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all {{ ($summary['view_mode'] ?? 'summary') === 'summary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            Ringkas
+                        </a>
+                        <a href="{{ request()->fullUrlWithQuery(['view_mode' => 'detail']) }}"
+                            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all {{ ($summary['view_mode'] ?? 'summary') === 'detail' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            Detil
+                        </a>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-5 mb-6">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Sumber Promo</div>
+                        <div class="mt-1 text-2xl font-normal text-slate-900">{{ number_format($summary['total_sources'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Transaksi</div>
+                        <div class="mt-1 text-2xl font-normal text-slate-900">{{ number_format($summary['total_transactions'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Gross Value</div>
+                        <div class="mt-1 text-2xl font-normal text-slate-900">Rp
+                            {{ number_format($summary['total_gross_value'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Diskon Promo</div>
+                        <div class="mt-1 text-2xl font-normal text-rose-600">Rp
+                            {{ number_format($summary['total_discount'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Net Sales</div>
+                        <div class="mt-1 text-2xl font-normal text-indigo-600">Rp
+                            {{ number_format($summary['total_net_sales'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                    Laporan ini hanya menghitung transaksi yang memakai <strong>promo kategori</strong> atau <strong>voucher</strong>.
+                    Diskon manual dan diskon item biasa tidak masuk ke laporan promo.
+                </div>
+
+                @if(($summary['view_mode'] ?? 'summary') === 'summary')
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Jenis</th>
+                                    <th class="px-4 py-3">Promo / Voucher</th>
+                                    <th class="px-4 py-3 text-right">Jumlah Transaksi</th>
+                                    <th class="px-4 py-3 text-right">Nilai Jual (Gross)</th>
+                                    <th class="px-4 py-3 text-right">Total Diskon</th>
+                                    <th class="px-4 py-3 text-right">Net Sales</th>
+                                </tr>
+                                <tr class="bg-white border-b border-slate-100 no-print">
+                                    <td class="px-1 py-1 relative">
+                                        <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                            <i class="fas fa-times text-[10px]"></i>
+                                        </button>
+                                        <input type="text" data-name="filter_jenis_promo" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_promo" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_jumlah_transaksi" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_gross" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_net_sales" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-700">{{ $row['promo_source_kind_label'] }}</td>
+                                        <td class="px-4 py-3 font-medium text-slate-800">{{ $row['promo_source_label'] }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row['transaction_count']) }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">Rp {{ number_format($row['gross_value'], 0, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-600">Rp {{ number_format($row['effective_discount'], 0, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-indigo-600">Rp {{ number_format($row['net_sales'], 0, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">Tidak ada data promo</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Jenis</th>
+                                    <th class="px-4 py-3">Promo / Voucher</th>
+                                    <th class="px-4 py-3">No Transaksi</th>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Outlet</th>
+                                    <th class="px-4 py-3">Metode Penjualan</th>
+                                    <th class="px-4 py-3">Pelanggan</th>
+                                    <th class="px-4 py-3 text-right">Nilai Jual (Gross)</th>
+                                    <th class="px-4 py-3 text-right">Diskon</th>
+                                    <th class="px-4 py-3 text-right">Net Sales</th>
+                                </tr>
+                                <tr class="bg-white border-b border-slate-100 no-print">
+                                    <td class="px-1 py-1 relative">
+                                        <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                            <i class="fas fa-times text-[10px]"></i>
+                                        </button>
+                                        <input type="text" data-name="filter_jenis_promo" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_promo" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_transaksi" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_tanggal" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_outlet" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_metode_penjualan" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_pelanggan" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_gross" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_diskon" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-1 py-1">
+                                        <input type="text" data-name="filter_net_sales" data-report-table-filter-input placeholder="Cari..." class="filter-input w-full px-1 py-1.5 text-[10px] text-right bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                    </td>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 text-slate-700">{{ $row['promo_source_kind_label'] }}</td>
+                                        <td class="px-4 py-3 font-medium text-slate-800">{{ $row['promo_source_label'] }}</td>
+                                        <td class="px-4 py-3 font-medium text-indigo-600">
+                                            <a href="{{ route('admin.reports.catalog.sale-print', ['sale' => $row['id']]) }}" target="_blank" rel="noopener" class="hover:text-indigo-800 hover:underline transition-colors">
+                                                {{ $row['invoice_number'] }}
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row['sale_date'] }}</td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row['outlet_name'] }}</td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row['sales_type_label'] }}</td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row['customer_name'] }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">Rp {{ number_format($row['gross_value'], 0, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-600">Rp {{ number_format($row['effective_discount'], 0, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-indigo-600">Rp {{ number_format($row['net_sales'], 0, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="10" class="px-4 py-8 text-center text-slate-500">Tidak ada data promo</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
         @elseif($viewType === 'balance-sheet-final')
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 flex items-center justify-between gap-3">
@@ -2897,6 +3078,9 @@
             if (tableFilterInputs.length > 0) {
                 const tableFilterParamNames = [
                     'filter_tipe_diskon',
+                    'filter_status_data',
+                    'filter_jenis_promo',
+                    'filter_promo',
                     'filter_metode_penjualan',
                     'filter_jumlah_transaksi',
                     'filter_gross',
