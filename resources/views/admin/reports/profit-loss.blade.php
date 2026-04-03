@@ -131,7 +131,12 @@
             <div class="lg:col-span-8 flex flex-col gap-6">
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                     <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                        <h3 class="text-lg font-black text-slate-800">Rincian Keuangan</h3>
+                        <div>
+                            <h3 class="text-lg font-black text-slate-800">Rincian Keuangan</h3>
+                            <p class="mt-1 text-[11px] font-medium text-slate-400">
+                                Subtotal biaya grup hanya ditampilkan jika grup memiliki lebih dari satu akun.
+                            </p>
+                        </div>
                     </div>
                     
                     <div class="overflow-x-auto">
@@ -184,28 +189,59 @@
 
                                 {{-- EXPENSES BY GROUP --}}
                                 @foreach($report['expenses_by_group'] as $group)
-                                    <tr class="bg-slate-50/30">
-                                        <td class="px-6 py-4" colspan="2">
-                                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ $group['group_name'] }}</span>
-                                        </td>
-                                        <td class="px-6 py-4 text-right">
-                                            <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_type' => 'expense', 'coa_group' => $group['group_name']]) }}" target="_blank"
-                                                class="text-[11px] font-black text-slate-600 hover:text-indigo-600 transition-colors">
-                                                Rp {{ number_format($group['total'], 0, ',', '.') }}
-                                            </a>
-                                        </td>
-                                    </tr>
+                                    @php
+                                        $accountCount = count($group['accounts']);
+                                        $hasMultipleAccounts = $accountCount > 1;
+                                    @endphp
+
+                                    @if($hasMultipleAccounts)
+                                        <tr class="bg-slate-50/70 border-t border-slate-100">
+                                            <td class="px-6 py-4" colspan="2">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="inline-flex items-center rounded-full bg-slate-200/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                                        {{ $group['group_name'] }}
+                                                    </span>
+                                                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                        Subtotal {{ $accountCount }} akun
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_type' => 'expense', 'coa_group' => $group['group_name']]) }}" target="_blank"
+                                                    class="text-sm font-black text-slate-700 hover:text-indigo-600 transition-colors">
+                                                    Rp {{ number_format($group['total'], 0, ',', '.') }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endif
+
                                     @foreach($group['accounts'] as $account)
                                         <tr class="group hover:bg-slate-50 transition-colors">
-                                            <td class="px-10 py-3">
-                                                <span class="text-sm text-slate-600">{{ $account['name'] }}</span>
+                                            <td class="{{ $hasMultipleAccounts ? 'px-10' : 'px-6' }} py-3">
+                                                <div class="flex items-center gap-3">
+                                                    @if($hasMultipleAccounts)
+                                                        <span class="h-2 w-2 rounded-full bg-slate-300"></span>
+                                                    @endif
+
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="{{ $hasMultipleAccounts ? 'text-sm text-slate-600' : 'text-sm font-semibold text-slate-700' }}">
+                                                            {{ $account['name'] }}
+                                                        </span>
+
+                                                        @unless($hasMultipleAccounts)
+                                                            <span class="inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                                                                {{ $group['group_name'] }}
+                                                            </span>
+                                                        @endunless
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="px-6 py-3 text-center">
                                                 <span class="text-[10px] font-medium text-slate-400 tracking-widest">{{ $account['code'] }}</span>
                                             </td>
                                             <td class="px-6 py-3 text-right">
                                                 <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_account_id' => $account['id']]) }}" target="_blank"
-                                                    class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors">
+                                                    class="{{ $hasMultipleAccounts ? 'text-sm font-medium text-slate-700' : 'text-sm font-semibold text-slate-800' }} hover:text-indigo-600 transition-colors">
                                                     Rp {{ number_format($account['amount'], 0, ',', '.') }}
                                                 </a>
                                             </td>
