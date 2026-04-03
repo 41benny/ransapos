@@ -250,6 +250,14 @@
                 <h3 class="text-lg font-bold text-slate-900">Omzet per Outlet</h3>
                 <p class="text-xs text-slate-500">Muncul saat memilih "Semua Outlet"</p>
             </div>
+            <button id="outletChartModeToggle" type="button"
+                class="outlet-chart-toggle inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600"
+                aria-pressed="false">
+                <span id="outletChartModeText">Mode omzet</span>
+                <span class="outlet-chart-toggle__track">
+                    <span class="outlet-chart-toggle__thumb"></span>
+                </span>
+            </button>
         </div>
 
         <div id="outletBars" class="w-full h-[400px]"></div>
@@ -325,9 +333,58 @@
             background: linear-gradient(90deg, rgba(37, 99, 235, 0.16), rgba(15, 23, 42, 0));
         }
 
+        .outlet-chart-toggle__track {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 2.9rem;
+            height: 1.5rem;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #cbd5e1, #e2e8f0);
+            transition: background 180ms ease;
+            flex: none;
+        }
+
+        .outlet-chart-toggle__thumb {
+            position: absolute;
+            left: 0.2rem;
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 9999px;
+            background: #fff;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.18);
+            transition: transform 180ms ease;
+        }
+
+        .outlet-chart-toggle.is-active {
+            border-color: rgba(37, 99, 235, 0.28);
+            color: #2563eb;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        .outlet-chart-toggle.is-active .outlet-chart-toggle__track {
+            background: linear-gradient(90deg, #2563eb, #60a5fa);
+        }
+
+        .outlet-chart-toggle.is-active .outlet-chart-toggle__thumb {
+            transform: translateX(1.35rem);
+        }
+
         .dark #hourlyBars,
         .dark #outletBars {
             background: transparent;
+        }
+
+        .dark .outlet-chart-toggle {
+            border-color: #334155;
+            background: rgba(15, 23, 42, 0.92);
+            color: #94a3b8;
+        }
+
+        .dark .outlet-chart-toggle.is-active {
+            border-color: rgba(96, 165, 250, 0.42);
+            color: #bfdbfe;
+            background: rgba(15, 23, 42, 0.98);
         }
 
         .dark .apexcharts-tooltip {
@@ -468,10 +525,13 @@
             const outletPanelEl = document.getElementById('outletPanel');
             const outletBarsEl = document.getElementById('outletBars');
             const outletEmptyEl = document.getElementById('outletEmpty');
+            const outletChartModeToggleEl = document.getElementById('outletChartModeToggle');
+            const outletChartModeTextEl = document.getElementById('outletChartModeText');
             const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0, });
             const hourlyPalette = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
             const hourlyOthersColor = '#94A3B8';
             const chartBlue = '#3b82f6';
+            const chartRose = '#f43f5e';
             const isDarkTheme = () => document.documentElement.classList.contains('dark');
             const getChartTheme = () => {
                 const dark = isDarkTheme();
@@ -483,6 +543,9 @@
                 };
             };
             let timer = null; let isLoading = false;
+            let outletChartMode = 'area';
+            let latestOutletRows = [];
+            let latestOutletIsAllOutlets = false;
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text; statusTextEl.className = 'text-xs';
                 if (type === 'error') { statusTextEl.classList.add('text-red-600'); } else if (type === 'success') { statusTextEl.classList.add('text-green-600'); } else { statusTextEl.classList.add('text-slate-500'); }
@@ -567,6 +630,139 @@
                         return buildCurrencyTooltipHtml(title, items);
                     }
                 };
+            }
+            function syncOutletChartModeToggle() {
+                if (!outletChartModeToggleEl || !outletChartModeTextEl) return;
+                const isCompareMode = outletChartMode === 'bar';
+                outletChartModeToggleEl.classList.toggle('is-active', isCompareMode);
+                outletChartModeToggleEl.setAttribute('aria-pressed', isCompareMode ? 'true' : 'false');
+                outletChartModeTextEl.textContent = isCompareMode ? 'Mode omzet vs hpp' : 'Mode omzet';
+            }
+            function getCompactCurrencyLabel(val) {
+                if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
+                return val;
+            }
+            function buildOutletChartOptions(rows) {
+                const chartTheme = getChartTheme();
+                const labels = rows.map(x => simplifyOutletName(x.outlet_name));
+                const fullLabels = rows.map(x => x.outlet_name || 'Outlet');
+                const amounts = rows.map(x => Number(x.amount || 0));
+                const cogsAmounts = rows.map(x => Number(x.cogs || 0));
+                const compareMode = outletChartMode === 'bar';
+
+                const options = {
+                    series: compareMode
+                        ? [
+                            { name: 'Omzet', data: amounts },
+                            { name: 'HPP', data: cogsAmounts },
+                        ]
+                        : [
+                            { name: 'Omzet', data: amounts },
+                        ],
+                    chart: {
+                        type: compareMode ? 'bar' : 'area',
+                        height: 400,
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        fontFamily: 'Inter, sans-serif',
+                        background: 'transparent',
+                        stacked: false,
+                        animations: {
+                            enabled: true,
+                            easing: 'easeinout',
+                            speed: 800,
+                        }
+                    },
+                    theme: { mode: chartTheme.dark ? 'dark' : 'light' },
+                    dataLabels: { enabled: false },
+                    legend: compareMode ? {
+                        show: true,
+                        position: 'top',
+                        horizontalAlign: 'right',
+                        labels: { colors: chartTheme.axisText },
+                        markers: { radius: 12 },
+                    } : {
+                        show: false,
+                    },
+                    xaxis: {
+                        categories: labels,
+                        labels: {
+                            style: { colors: chartTheme.axisText, fontSize: compareMode ? '10px' : '11px' },
+                            rotate: -45,
+                            rotateAlways: false,
+                            hideOverlappingLabels: true,
+                            trim: true,
+                        },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: (val) => getCompactCurrencyLabel(val),
+                            style: { colors: chartTheme.axisText, fontSize: '10px' }
+                        },
+                        tickAmount: 4,
+                    },
+                    grid: {
+                        borderColor: chartTheme.grid,
+                        strokeDashArray: compareMode ? 0 : 4,
+                        padding: { left: 10, right: 10 }
+                    },
+                    tooltip: {
+                        theme: chartTheme.tooltipTheme,
+                        ...createCurrencyTooltip(fullLabels, {
+                            filterZero: compareMode,
+                            sortByValue: compareMode,
+                            titlePrefix: 'Outlet',
+                        }),
+                    },
+                    colors: compareMode ? [chartBlue, chartRose] : [chartBlue],
+                };
+
+                if (compareMode) {
+                    options.plotOptions = {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '52%',
+                            borderRadius: 6,
+                            borderRadiusApplication: 'end',
+                            dataLabels: { position: 'top' },
+                        }
+                    };
+                    options.stroke = {
+                        show: true,
+                        width: 1,
+                        colors: ['transparent']
+                    };
+                    options.fill = {
+                        opacity: 0.92,
+                    };
+                } else {
+                    options.stroke = {
+                        curve: 'smooth',
+                        width: 3,
+                        colors: [chartBlue]
+                    };
+                    options.fill = {
+                        type: 'gradient',
+                        gradient: {
+                            shadeIntensity: 1,
+                            opacityFrom: 0.45,
+                            opacityTo: 0.05,
+                            stops: [20, 100],
+                        }
+                    };
+                    options.markers = {
+                        size: 0,
+                        colors: [chartBlue],
+                        strokeColors: '#fff',
+                        strokeWidth: 2,
+                        hover: { size: 6 }
+                    };
+                }
+
+                return options;
             }
             function updateOutletLabel() {
                 const selectedNames = outletCheckboxEls
@@ -885,134 +1081,25 @@
             }
 
             function renderOutletRows(rows, isAllOutlets) {
+                latestOutletRows = Array.isArray(rows) ? rows : [];
+                latestOutletIsAllOutlets = Boolean(isAllOutlets);
                 outletPanelEl.classList.toggle('hidden', !isAllOutlets);
                 if (!isAllOutlets) return;
-                const chartTheme = getChartTheme();
+                syncOutletChartModeToggle();
 
                 const amounts = rows.map(x => Number(x.amount || 0));
-                const labels = rows.map(x => simplifyOutletName(x.outlet_name));
-                const fullLabels = rows.map(x => x.outlet_name || 'Outlet');
                 const hasData = amounts.some(a => a > 0);
 
                 outletEmptyEl.classList.toggle('hidden', hasData);
 
-                if (!outletChart) {
-                    const options = {
-                        series: [{
-                            name: 'Omzet',
-                            data: amounts
-                        }],
-                        chart: {
-                            type: 'area',
-                            height: 400,
-                            toolbar: { show: false },
-                            zoom: { enabled: false },
-                            fontFamily: 'Inter, sans-serif',
-                            background: 'transparent',
-                            animations: {
-                                enabled: true,
-                                easing: 'easeinout',
-                                speed: 800,
-                            }
-                        },
-                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
-                        dataLabels: { enabled: false },
-                        stroke: {
-                            curve: 'smooth',
-                            width: 3,
-                            colors: [chartBlue]
-                        },
-                        fill: {
-                            type: 'gradient',
-                            gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.45,
-                                opacityTo: 0.05,
-                                stops: [20, 100],
-                            }
-                        },
-                        markers: {
-                            size: 0,
-                            colors: [chartBlue],
-                            strokeColors: '#fff',
-                            strokeWidth: 2,
-                            hover: { size: 6 }
-                        },
-                        xaxis: {
-                            categories: labels,
-                            labels: {
-                                style: { colors: chartTheme.axisText, fontSize: '11px' },
-                                rotate: -45,
-                                rotateAlways: false,
-                                hideOverlappingLabels: true,
-                            },
-                            axisBorder: { show: false },
-                            axisTicks: { show: false }
-                        },
-                        yaxis: {
-                            labels: {
-                                formatter: (val) => {
-                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
-                                    return val;
-                                },
-                                style: { colors: chartTheme.axisText, fontSize: '10px' }
-                            },
-                            tickAmount: 4,
-                        },
-                        grid: {
-                            borderColor: chartTheme.grid,
-                            strokeDashArray: 4,
-                            padding: { left: 10, right: 10 }
-                        },
-                        tooltip: {
-                            theme: chartTheme.tooltipTheme,
-                            ...createCurrencyTooltip(fullLabels, {
-                                titlePrefix: 'Outlet',
-                            }),
-                        },
-                        colors: [chartBlue]
-                    };
+                if (outletChart) {
+                    outletChart.destroy();
+                    outletChart = null;
+                }
 
-                    outletChart = new ApexCharts(document.querySelector("#outletBars"), options);
+                if (hasData) {
+                    outletChart = new ApexCharts(document.querySelector("#outletBars"), buildOutletChartOptions(rows));
                     outletChart.render();
-                } else {
-                    const chartTheme = getChartTheme();
-                    outletChart.updateOptions({
-                        xaxis: {
-                            categories: labels,
-                            labels: {
-                                style: { colors: chartTheme.axisText, fontSize: '11px' },
-                                rotate: -45,
-                                rotateAlways: false,
-                                hideOverlappingLabels: true,
-                            }
-                        },
-                        yaxis: {
-                            labels: {
-                                formatter: (val) => {
-                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
-                                    return val;
-                                },
-                                style: { colors: chartTheme.axisText, fontSize: '10px' }
-                            }
-                        },
-                        grid: { borderColor: chartTheme.grid },
-                        tooltip: {
-                            theme: chartTheme.tooltipTheme,
-                            ...createCurrencyTooltip(fullLabels, {
-                                titlePrefix: 'Outlet',
-                            }),
-                        },
-                        theme: { mode: chartTheme.dark ? 'dark' : 'light' },
-                        stroke: { colors: [chartBlue] },
-                        colors: [chartBlue]
-                    });
-                    outletChart.updateSeries([{
-                        name: 'Omzet',
-                        data: amounts
-                    }]);
                 }
 
                 const marginContainer = document.getElementById('outletMarginContainer');
@@ -1189,6 +1276,13 @@
             outletDropdownBtnEl.addEventListener('click', () => {
                 outletDropdownMenuEl.classList.toggle('hidden');
             });
+            outletChartModeToggleEl?.addEventListener('click', () => {
+                outletChartMode = outletChartMode === 'area' ? 'bar' : 'area';
+                syncOutletChartModeToggle();
+                if (latestOutletIsAllOutlets) {
+                    renderOutletRows(latestOutletRows, latestOutletIsAllOutlets);
+                }
+            });
             document.addEventListener('click', (event) => {
                 if (outletFilterWrapEl.contains(event.target)) {
                     return;
@@ -1210,6 +1304,7 @@
             window.addEventListener('theme:changed', () => fetchSummary(false));
 
             updateOutletLabel();
+            syncOutletChartModeToggle();
             fetchSummary(false);
             startAutoRefresh();
         })();
