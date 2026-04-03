@@ -1542,6 +1542,9 @@ class CatalogReportController extends Controller
                         return $row;
                     });
 
+                $rows = $rows->filter(fn($row) => $this->passesPurchaseByProductFilters($row, $request))
+                    ->values();
+
                 $summary = [
                     'product_count' => (int) $rows->count(),
                     'total_purchase_count' => (int) $rows->sum('total_purchase_count'),
@@ -1846,6 +1849,20 @@ class CatalogReportController extends Controller
             && $this->matchesReportNumber($row['gross_value'] ?? 0, $request->input('filter_gross'))
             && $this->matchesReportNumber($row['effective_discount'] ?? 0, $request->input('filter_diskon'))
             && $this->matchesReportNumber($row['net_sales'] ?? 0, $request->input('filter_net_sales'));
+    }
+
+    private function passesPurchaseByProductFilters(object $row, Request $request): bool
+    {
+        $productSearch = trim(implode(' ', array_filter([
+            (string) ($row->product_name ?? ''),
+            (string) ($row->product_sku ?? ''),
+        ])));
+
+        return $this->matchesReportText($productSearch, $request->input('filter_product'))
+            && $this->matchesReportNumber($row->total_purchase_count ?? 0, $request->input('filter_jumlah_po'))
+            && $this->matchesReportNumber($row->total_qty ?? 0, $request->input('filter_qty'))
+            && $this->matchesReportNumber($row->avg_unit_price ?? 0, $request->input('filter_avg'))
+            && $this->matchesReportNumber($row->total_amount ?? 0, $request->input('filter_amount'));
     }
 
     private function matchesReportText($value, ?string $keyword): bool

@@ -10,6 +10,7 @@ use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Tests\TestCase;
@@ -146,5 +147,44 @@ class CatalogReportControllerTest extends TestCase
         $this->assertCount(1, $exportRows);
         $this->assertSame('INV-001', $exportRows[0]['transaction_number']);
         $this->assertSame(15000, $exportRows[0]['gross_profit']);
+    }
+
+    public function test_passes_purchase_by_product_filters_matches_product_text_and_numeric_columns(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $row = (object) [
+            'product_name' => 'Nasi',
+            'product_sku' => '000182',
+            'total_purchase_count' => 3,
+            'total_qty' => 2000,
+            'avg_unit_price' => 16.30,
+            'total_amount' => 32600,
+        ];
+
+        $request = new Request([
+            'filter_product' => '182',
+            'filter_jumlah_po' => '3',
+            'filter_qty' => '2.000',
+            'filter_avg' => '16,30',
+            'filter_amount' => '32.600',
+        ]);
+
+        $method = new \ReflectionMethod($controller, 'passesPurchaseByProductFilters');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($controller, $row, $request));
+        $this->assertTrue($method->invoke($controller, $row, new Request([
+            'filter_product' => 'Nasi',
+        ])));
+
+        $nonMatchingRequest = new Request([
+            'filter_product' => 'Minyak',
+        ]);
+
+        $this->assertFalse($method->invoke($controller, $row, $nonMatchingRequest));
     }
 }

@@ -36,96 +36,70 @@
         </div>
     @endif
 
+    {{-- Filter Section --}}
+    <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
+        <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-filter text-indigo-500 text-xs"></i>
+                <h3 class="text-xs font-normal text-slate-400 uppercase tracking-widest leading-none">Filter Pembelian</h3>
+            </div>
+        </div>
+        <div class="p-5">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-normal text-slate-600 uppercase tracking-wider ml-1">Outlet</label>
+                    <select name="outlet_id" class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Outlet</option>
+                        @foreach($outlets as $outlet)
+                            <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
+                                {{ $outlet->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-normal text-slate-600 uppercase tracking-wider ml-1">Supplier</label>
+                    <select name="supplier_id" class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Supplier</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                {{ $supplier->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-normal text-slate-500 uppercase tracking-wider ml-1">Status</label>
+                    <select name="status" class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        <option value="">Semua Status</option>
+                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft (PO)</option>
+                        <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received (Diterima)</option>
+                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95 text-xs font-normal">
+                        <i class="fas fa-search mr-2 text-xs"></i>Filter
+                    </button>
+                    <a href="{{ route('admin.purchases.index') }}" class="ui-btn ui-btn-ghost inline-flex items-center justify-center px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
+                        <i class="fas fa-redo text-xs"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {{-- Table Section --}}
     <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
         <div class="overflow-x-auto">
             <table class="ui-table min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
                     <tr>
-                        <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-600">No. Purchase / Tgl PO / Receive</th>
+                        <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-600">No. Purchase / Tgl</th>
                         <th class="px-5 py-3 text-left text-xs font-normal uppercase tracking-widest text-slate-600">Outlet & Supplier</th>
                         <th class="px-5 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-600">Total Transaksi</th>
                         <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-600">Status</th>
                         <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-600">Aksi</th>
-                    </tr>
-                    <tr class="bg-white border-b border-slate-100 no-print align-top">
-                        <td class="px-2 py-2 relative">
-                            <button type="button" id="clearPurchaseFilters" title="Reset filter tabel"
-                                class="absolute left-2 top-2 h-7 w-7 inline-flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all">
-                                <i class="fas fa-times text-[10px]"></i>
-                            </button>
-                            <div class="space-y-2 pl-9">
-                                <input type="text" data-name="keyword" value="{{ request('keyword') }}"
-                                    placeholder="PO / produk / supplier / SKU..."
-                                    class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="date" data-name="date_from" value="{{ request('date_from') }}"
-                                        title="Tanggal PO dari"
-                                        class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                    <input type="date" data-name="date_to" value="{{ request('date_to') }}"
-                                        title="Tanggal PO sampai"
-                                        class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                </div>
-                                <p class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Cari + Tgl PO</p>
-                            </div>
-                        </td>
-                        <td class="px-2 py-2">
-                            <div class="space-y-2">
-                                <select data-name="outlet_id"
-                                    class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                    <option value="">Semua Outlet</option>
-                                    @foreach($outlets as $outlet)
-                                        <option value="{{ $outlet->id }}" {{ request('outlet_id') == $outlet->id ? 'selected' : '' }}>
-                                            {{ $outlet->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <select data-name="supplier_id"
-                                    class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                    <option value="">Semua Supplier</option>
-                                    @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                            {{ $supplier->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <p class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Outlet + Supplier</p>
-                            </div>
-                        </td>
-                        <td class="px-2 py-2">
-                            <div class="space-y-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="date" data-name="received_from" value="{{ request('received_from') }}"
-                                        title="Tanggal receive dari"
-                                        class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-emerald-50 border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all">
-                                    <input type="date" data-name="received_to" value="{{ request('received_to') }}"
-                                        title="Tanggal receive sampai"
-                                        class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-emerald-50 border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all">
-                                </div>
-                                <p class="text-[9px] font-normal uppercase tracking-widest text-emerald-500">Tanggal Receive</p>
-                            </div>
-                        </td>
-                        <td class="px-2 py-2">
-                            <div class="space-y-2">
-                                <select data-name="status"
-                                    class="ui-input purchase-table-filter w-full px-2 py-1.5 text-[10px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all">
-                                    <option value="">Semua Status</option>
-                                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                                    <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received</option>
-                                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
-                                <p class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Status Dokumen</p>
-                            </div>
-                        </td>
-                        <td class="px-2 py-2 text-center">
-                            <div class="flex h-full min-h-[74px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 px-2">
-                                <p class="text-[9px] font-normal leading-relaxed text-slate-400">
-                                    Mutasi stok masuk mengikuti
-                                    <span class="font-medium text-slate-600">tanggal receive</span>,
-                                    bukan tanggal PO.
-                                </p>
-                            </div>
-                        </td>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -134,15 +108,7 @@
                             <td class="px-5 py-3.5">
                                 <div class="flex flex-col">
                                     <span class="text-sm font-mono text-indigo-600 tracking-tight leading-none mb-1">{{ $purchase->purchase_number }}</span>
-                                    <span class="text-xs font-normal text-slate-400 uppercase tracking-widest">PO: {{ $purchase->purchase_date->format('d M Y') }}</span>
-                                    <span class="text-[11px] font-normal text-slate-600 mt-1">
-                                        Receive:
-                                        @if($purchase->received_at)
-                                            {{ $purchase->received_at->format('d M Y H:i') }}
-                                        @else
-                                            -
-                                        @endif
-                                    </span>
+                                    <span class="text-xs font-normal text-slate-400 uppercase tracking-widest">{{ $purchase->purchase_date->format('d M Y') }}</span>
                                 </div>
                             </td>
                             <td class="px-5 py-3.5">
@@ -216,51 +182,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const filters = Array.from(document.querySelectorAll('.purchase-table-filter'));
-    const clearButton = document.getElementById('clearPurchaseFilters');
-    const filterKeys = ['keyword', 'outlet_id', 'supplier_id', 'status', 'date_from', 'date_to', 'received_from', 'received_to'];
-
-    const updateFilter = (name, value) => {
-        const url = new URL(window.location.href);
-
-        if (value && value.trim() !== '') {
-            url.searchParams.set(name, value.trim());
-        } else {
-            url.searchParams.delete(name);
-        }
-
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
-    };
-
-    let debounceTimer;
-
-    filters.forEach((input) => {
-        const name = input.dataset.name;
-
-        if (input.tagName === 'SELECT' || input.type === 'date') {
-            input.addEventListener('change', (event) => updateFilter(name, event.target.value));
-            return;
-        }
-
-        input.addEventListener('input', (event) => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => updateFilter(name, event.target.value), 500);
-        });
-    });
-
-    if (clearButton) {
-        clearButton.addEventListener('click', () => {
-            const url = new URL(window.location.href);
-            filterKeys.forEach((key) => url.searchParams.delete(key));
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
-        });
-    }
-});
-</script>
-@endpush

@@ -2722,6 +2722,28 @@
                                     <th class="px-4 py-3 text-right">Rata-rata Harga</th>
                                     <th class="px-4 py-3 text-right">Total Pembelian</th>
                                 </tr>
+                                <tr class="bg-white border-b border-slate-100 no-print">
+                                    <td class="px-2 py-2">
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="h-8 w-8 inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-all">
+                                                <i class="fas fa-times-circle text-[12px]"></i>
+                                            </button>
+                                            <input type="text" data-name="filter_product" data-report-table-filter-input placeholder="Cari produk / SKU..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <input type="text" data-name="filter_jumlah_po" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <input type="text" data-name="filter_qty" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-indigo-50/30 border border-indigo-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-indigo-300">
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <input type="text" data-name="filter_avg" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    </td>
+                                    <td class="px-2 py-2">
+                                        <input type="text" data-name="filter_amount" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-emerald-50/30 border border-emerald-100 rounded-lg focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-emerald-300">
+                                    </td>
+                                </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @forelse($rows as $row)
@@ -3371,6 +3393,11 @@
                     'filter_tanggal',
                     'filter_outlet',
                     'filter_pelanggan',
+                    'filter_product',
+                    'filter_jumlah_po',
+                    'filter_qty',
+                    'filter_avg',
+                    'filter_amount',
                 ];
                 const params = new URLSearchParams(window.location.search);
 

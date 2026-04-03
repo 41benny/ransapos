@@ -339,22 +339,6 @@ class PurchaseService
     {
         $query = Purchase::with(['outlet', 'supplier', 'creator', 'items']);
 
-        if (!empty($filters['keyword'])) {
-            $keyword = trim((string) $filters['keyword']);
-
-            $query->where(function ($purchaseQuery) use ($keyword) {
-                $purchaseQuery->where('purchase_number', 'like', '%' . $keyword . '%')
-                    ->orWhere('notes', 'like', '%' . $keyword . '%')
-                    ->orWhereHas('supplier', function ($supplierQuery) use ($keyword) {
-                        $supplierQuery->where('name', 'like', '%' . $keyword . '%');
-                    })
-                    ->orWhereHas('items.product', function ($productQuery) use ($keyword) {
-                        $productQuery->where('name', 'like', '%' . $keyword . '%')
-                            ->orWhere('sku', 'like', '%' . $keyword . '%');
-                    });
-            });
-        }
-
         // Filter by outlet
         if (!empty($filters['outlet_id'])) {
             $query->where('outlet_id', $filters['outlet_id']);
@@ -379,19 +363,8 @@ class PurchaseService
             $query->whereDate('purchase_date', '<=', $filters['date_to']);
         }
 
-        if (!empty($filters['received_from'])) {
-            $query->whereNotNull('received_at')
-                ->whereDate('received_at', '>=', $filters['received_from']);
-        }
-
-        if (!empty($filters['received_to'])) {
-            $query->whereNotNull('received_at')
-                ->whereDate('received_at', '<=', $filters['received_to']);
-        }
-
         return $query->orderBy('purchase_date', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(15);
     }
 }
