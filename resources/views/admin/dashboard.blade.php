@@ -482,7 +482,7 @@
                     tooltipTheme: dark ? 'dark' : 'light',
                 };
             };
-            let timer = null; let isLoading = false; let hourlyTooltipEl = null;
+            let timer = null; let isLoading = false;
             function setStatus(text, type = 'info') {
                 statusTextEl.textContent = text; statusTextEl.className = 'text-xs';
                 if (type === 'error') { statusTextEl.classList.add('text-red-600'); } else if (type === 'success') { statusTextEl.classList.add('text-green-600'); } else { statusTextEl.classList.add('text-slate-500'); }
@@ -497,11 +497,76 @@
             function simplifyOutletName(name) {
                 if (!name) return '';
                 let clean = name.replace(/moresto/gi, '').trim();
+                if (!clean) clean = String(name).trim();
                 if (clean.toLowerCase() === 'ciplaz') return 'Cplz';
                 if (clean.length > 10 && clean.includes(' ')) {
                     return clean.split(/\s+/).map(w => w[0].toUpperCase()).join('');
                 }
                 return clean;
+            }
+            function buildCurrencyTooltipHtml(title, items, emptyMessage = 'Tidak ada data untuk titik ini.') {
+                const dark = isDarkTheme();
+                const borderColor = dark ? '#334155' : '#dbeafe';
+                const panelColor = dark ? '#0f172a' : '#ffffff';
+                const titleColor = dark ? '#94a3b8' : '#64748b';
+                const textColor = dark ? '#e2e8f0' : '#0f172a';
+                const mutedColor = dark ? '#94a3b8' : '#64748b';
+                const dividerColor = dark ? '#1e293b' : '#e2e8f0';
+                const shadowColor = dark ? 'rgba(15, 23, 42, 0.55)' : 'rgba(15, 23, 42, 0.12)';
+
+                const rowsHtml = items.length > 0
+                    ? items.map((item) => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;line-height:1.45;">
+                            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                                <span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${escapeHtml(item.color || chartBlue)};flex:none;"></span>
+                                <span style="font-weight:600;color:${textColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.label)}</span>
+                            </div>
+                            <span style="font-weight:700;color:${textColor};white-space:nowrap;">${escapeHtml(idr.format(Number(item.value || 0)))}</span>
+                        </div>
+                    `).join('')
+                    : `<div style="font-size:12px;color:${mutedColor};">${escapeHtml(emptyMessage)}</div>`;
+
+                return `
+                    <div style="min-width:220px;max-width:320px;border:1px solid ${borderColor};border-radius:14px;background:${panelColor};box-shadow:0 14px 32px ${shadowColor};overflow:hidden;">
+                        <div style="padding:10px 12px;border-bottom:1px solid ${dividerColor};font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:${titleColor};">
+                            ${escapeHtml(title)}
+                        </div>
+                        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:8px;">
+                            ${rowsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            function createCurrencyTooltip(labels, options = {}) {
+                const {
+                    filterZero = false,
+                    sortByValue = false,
+                    titlePrefix = '',
+                } = options;
+
+                return {
+                    shared: true,
+                    intersect: false,
+                    custom: ({ series, dataPointIndex, w }) => {
+                        const label = Array.isArray(labels) ? labels[dataPointIndex] : '';
+                        const title = titlePrefix && label ? `${titlePrefix}: ${label}` : (label || titlePrefix || 'Detail');
+                        const seriesNames = Array.isArray(w?.globals?.seriesNames) ? w.globals.seriesNames : [];
+                        const colors = Array.isArray(w?.globals?.colors) ? w.globals.colors : [];
+                        const items = seriesNames
+                            .map((seriesName, index) => ({
+                                label: seriesName || `Seri ${index + 1}`,
+                                value: Number(Array.isArray(series[index]) ? (series[index][dataPointIndex] ?? 0) : 0),
+                                color: colors[index] || chartBlue,
+                            }))
+                            .filter((item) => !filterZero || item.value > 0);
+
+                        if (sortByValue) {
+                            items.sort((a, b) => b.value - a.value);
+                        }
+
+                        return buildCurrencyTooltipHtml(title, items);
+                    }
+                };
             }
             function updateOutletLabel() {
                 const selectedNames = outletCheckboxEls
@@ -566,6 +631,7 @@
                 const isStacked = series.length > 1;
                 const hasData = series.some(s => s.data.some(v => v > 0));
                 const chartTheme = getChartTheme();
+                const tooltipLabels = labels;
 
                 hourlyEmptyEl.classList.toggle('hidden', hasData);
 
@@ -634,10 +700,11 @@
                         },
                         tooltip: {
                             theme: chartTheme.tooltipTheme,
-                            x: { show: true },
-                            y: {
-                                formatter: (val) => idr.format(val)
-                            }
+                            ...createCurrencyTooltip(tooltipLabels, {
+                                filterZero: isStacked,
+                                sortByValue: isStacked,
+                                titlePrefix: 'Jam',
+                            }),
                         },
                         colors: isStacked ? hourlyPalette : [chartBlue]
                     };
@@ -667,7 +734,14 @@
                             }
                         },
                         grid: { borderColor: chartTheme.grid },
-                        tooltip: { theme: chartTheme.tooltipTheme },
+                        tooltip: {
+                            theme: chartTheme.tooltipTheme,
+                            ...createCurrencyTooltip(tooltipLabels, {
+                                filterZero: isStacked,
+                                sortByValue: isStacked,
+                                titlePrefix: 'Jam',
+                            }),
+                        },
                         theme: { mode: chartTheme.dark ? 'dark' : 'light' },
                         colors: isStacked ? hourlyPalette : [chartBlue]
                     });
@@ -817,6 +891,7 @@
 
                 const amounts = rows.map(x => Number(x.amount || 0));
                 const labels = rows.map(x => simplifyOutletName(x.outlet_name));
+                const fullLabels = rows.map(x => x.outlet_name || 'Outlet');
                 const hasData = amounts.some(a => a > 0);
 
                 outletEmptyEl.classList.toggle('hidden', hasData);
@@ -892,10 +967,9 @@
                         },
                         tooltip: {
                             theme: chartTheme.tooltipTheme,
-                            x: { show: true },
-                            y: {
-                                formatter: (val) => idr.format(val)
-                            }
+                            ...createCurrencyTooltip(fullLabels, {
+                                titlePrefix: 'Outlet',
+                            }),
                         },
                         colors: [chartBlue]
                     };
@@ -925,12 +999,18 @@
                             }
                         },
                         grid: { borderColor: chartTheme.grid },
-                        tooltip: { theme: chartTheme.tooltipTheme },
+                        tooltip: {
+                            theme: chartTheme.tooltipTheme,
+                            ...createCurrencyTooltip(fullLabels, {
+                                titlePrefix: 'Outlet',
+                            }),
+                        },
                         theme: { mode: chartTheme.dark ? 'dark' : 'light' },
                         stroke: { colors: [chartBlue] },
                         colors: [chartBlue]
                     });
                     outletChart.updateSeries([{
+                        name: 'Omzet',
                         data: amounts
                     }]);
                 }
@@ -1033,7 +1113,7 @@
                     });
 
                     const series = Array.from(allOutletNames).map(name => ({
-                        name: simplifyOutletName(name),
+                        name: name,
                         data: data.hourly_stacked.map(h => {
                             const seg = h.segments ? h.segments.find(s => s.outlet_name === name) : null;
                             return seg ? Number(seg.amount || 0) : 0;
@@ -1042,7 +1122,7 @@
 
                     if (hasOthers) {
                         series.push({
-                            name: 'Others',
+                            name: 'Outlet Lainnya',
                             color: hourlyOthersColor,
                             data: data.hourly_stacked.map(h => Number(h.others?.amount || 0))
                         });
