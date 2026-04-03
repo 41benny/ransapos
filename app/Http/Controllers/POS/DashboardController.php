@@ -26,16 +26,11 @@ class DashboardController extends Controller
         $todaySalesTotalAmount = 0;
         $todaySalesAverageAmount = 0;
         if ($activeSession) {
-            $todaySalesQuery = Sale::query()
-                ->with([
-                    'items:id,sale_id,product_name',
-                    'payments.paymentMethod',
-                ])
+            $todaySalesBaseQuery = Sale::query()
                 ->where('cash_session_id', $activeSession->id)
-                ->where('status', 'completed')
-                ->orderByDesc('created_at');
+                ->where('status', 'completed');
 
-            $summary = (clone $todaySalesQuery)
+            $summary = (clone $todaySalesBaseQuery)
                 ->selectRaw('COUNT(*) as total_sales')
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_amount')
                 ->selectRaw('COALESCE(AVG(total_amount), 0) as average_amount')
@@ -45,7 +40,12 @@ class DashboardController extends Controller
             $todaySalesTotalAmount = (float) ($summary->total_amount ?? 0);
             $todaySalesAverageAmount = (float) ($summary->average_amount ?? 0);
 
-            $todaySales = $todaySalesQuery
+            $todaySales = (clone $todaySalesBaseQuery)
+                ->with([
+                    'items:id,sale_id,product_name',
+                    'payments.paymentMethod',
+                ])
+                ->orderByDesc('created_at')
                 ->paginate(20, ['*'], 'sales_page')
                 ->withQueryString();
         }
