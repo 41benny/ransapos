@@ -32,41 +32,43 @@ class SalesReportController extends Controller
         $viewMode = in_array($request->input('view_mode'), ['ringkas', 'detail'], true)
             ? $request->input('view_mode')
             : 'ringkas';
-        
-        // Build query
-        $query = Sale::with(['outlet', 'user', 'customer', 'payments.paymentMethod'])
-            ->where('status', 'completed')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
-        // Filter outlet
-        if (!empty($outletIds)) {
-            $query->whereIn('outlet_id', $outletIds);
-        }
+        $sales = collect();
+        $detailRows = collect();
 
-        // Filter kasir
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+        if ($viewMode === 'detail') {
+            $salesBaseQuery = $this->buildSalesTableQuery($request, $dateFrom, $dateTo, $outletIds);
+            $summary = $this->buildSalesSummaryFromTableQuery($salesBaseQuery);
+            $detailRows = $this->buildSalesDetailPaginator($request, $salesBaseQuery);
+        } else {
+            $query = Sale::with(['outlet', 'user', 'customer', 'payments.paymentMethod'])
+                ->where('status', 'completed')
+                ->whereBetween('sale_date', [$dateFrom, $dateTo]);
 
-        // Filter payment method (via payments table)
-        if ($request->filled('payment_method_id')) {
-            $query->whereHas('payments', function($q) use ($request) {
-                $q->where('payment_method_id', $request->payment_method_id);
-            });
-        }
+            if (!empty($outletIds)) {
+                $query->whereIn('outlet_id', $outletIds);
+            }
 
-        // Filter product_id (via sale relations)
-        if ($request->filled('product_id')) {
-            $query->whereHas('items', function($q) use ($request) {
-                $q->where('product_id', $request->product_id);
-            });
-        }
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
 
-        $sales = $query->orderBy('sale_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            if ($request->filled('payment_method_id')) {
+                $query->whereHas('payments', function($q) use ($request) {
+                    $q->where('payment_method_id', $request->payment_method_id);
+                });
+            }
 
-        if ($viewMode === 'ringkas') {
+            if ($request->filled('product_id')) {
+                $query->whereHas('items', function($q) use ($request) {
+                    $q->where('product_id', $request->product_id);
+                });
+            }
+
+            $sales = $query->orderBy('sale_date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
             if ($request->filled('filter_tanggal')) {
                 $sales = $sales->filter(fn($s) => stripos($s->created_at->format('d M Y, H:i'), $request->filter_tanggal) !== false);
             }
@@ -92,145 +94,24 @@ class SalesReportController extends Controller
                 $sales = $sales->filter(fn($s) => stripos((string)$s->total_amount, $request->filter_total) !== false);
             }
             $sales = $sales->values();
-        }
+            $summary = [
+                'total_transactions' => $sales->count(),
+                'total_before_rounding' => $sales->sum(fn ($sale) => (float) $sale->total_amount - (float) ($sale->rounding_amount ?? 0)),
+                'total_rounding' => $sales->sum('rounding_amount'),
+                'total_amount' => $sales->sum('total_amount'),
+                'avg_per_transaction' => $sales->count() > 0 ? $sales->avg('total_amount') : 0,
+                'total_cash' => 0,
+                'total_non_cash' => 0,
+            ];
 
-        // Calculate summary
-        $summary = [
-            'total_transactions' => $sales->count(),
-            'total_before_rounding' => $sales->sum(fn ($sale) => (float) $sale->total_amount - (float) ($sale->rounding_amount ?? 0)),
-            'total_rounding' => $sales->sum('rounding_amount'),
-            'total_amount' => $sales->sum('total_amount'),
-            'avg_per_transaction' => $sales->count() > 0 ? $sales->avg('total_amount') : 0,
-            'total_cash' => 0,
-            'total_non_cash' => 0,
-        ];
-
-        // Hitung cash vs non-cash (berbasis code PAYMENT CASH)
-        foreach ($sales as $sale) {
-            foreach ($sale->payments as $payment) {
-                $isCash = $payment->paymentMethod?->code === 'CASH' || $payment->payment_method_id == 1;
-                $summary['total_cash'] += $isCash ? $payment->amount : 0;
-                $summary['total_non_cash'] += $isCash ? 0 : $payment->amount;
-            }
-        }
-
-        $detailRows = collect();
-        if ($viewMode === 'detail') {
-            $paymentAggSub = DB::table('payments')
-                ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-                ->select('payments.sale_id')
-                ->selectRaw('COALESCE(SUM(payments.amount), 0) as paid_amount')
-                ->selectRaw("GROUP_CONCAT(DISTINCT payment_methods.name ORDER BY payment_methods.name SEPARATOR ', ') as payment_methods")
-                ->groupBy('payments.sale_id');
-
-            $detailQuery = DB::table('sale_items')
-                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
-                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-                ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
-                    $join->on('sales.id', '=', 'pay_agg.sale_id');
-                })
-                ->where('sales.status', 'completed')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
-
-            if (!empty($outletIds)) {
-                $detailQuery->whereIn('sales.outlet_id', $outletIds);
+            foreach ($sales as $sale) {
+                foreach ($sale->payments as $payment) {
+                    $isCash = $payment->paymentMethod?->code === 'CASH' || $payment->payment_method_id == 1;
+                    $summary['total_cash'] += $isCash ? $payment->amount : 0;
+                    $summary['total_non_cash'] += $isCash ? 0 : $payment->amount;
+                }
             }
 
-            if ($request->filled('user_id')) {
-                $detailQuery->where('sales.user_id', $request->user_id);
-            }
-
-            if ($request->filled('payment_method_id')) {
-                $paymentMethodId = $request->payment_method_id;
-                $detailQuery->whereExists(function ($subQuery) use ($paymentMethodId) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('payments as payment_filter')
-                        ->whereColumn('payment_filter.sale_id', 'sales.id')
-                        ->where('payment_filter.payment_method_id', $paymentMethodId);
-                });
-            }
-
-            if ($request->filled('product_id')) {
-                $detailQuery->where('sale_items.product_id', $request->product_id);
-            }
-
-            $detailRows = $detailQuery
-                ->select(
-                    'sales.invoice_number as transaction_number',
-                    'sales.sale_date',
-                    'outlets.name as outlet_name',
-                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer_name"),
-                    'sale_items.product_name',
-                    'sale_items.quantity as qty',
-                    'sale_items.unit_price as price',
-                    DB::raw('COALESCE(sale_items.discount_amount, 0) as item_discount'),
-                    'sale_items.subtotal as item_subtotal',
-                    'sale_items.subtotal as item_total',
-                    'sales.tax_amount',
-                    'sales.service_charge_amount',
-                    'sales.rounding_amount',
-                    'sales.total_amount',
-                    'sales.sales_type as metode_penjualan',
-                    DB::raw("COALESCE(pay_agg.payment_methods, '-') as payment_methods")
-                )
-                ->selectRaw(
-                    "CASE
-                        WHEN COALESCE(pay_agg.paid_amount, 0) >= sales.total_amount AND sales.total_amount > 0 THEN 'Lunas'
-                        WHEN COALESCE(pay_agg.paid_amount, 0) > 0 THEN 'Parsial'
-                        ELSE 'Belum Bayar'
-                    END as payment_status"
-                )
-                ->orderByDesc('sales.sale_date')
-                ->orderByDesc('sales.created_at')
-                ->orderBy('sale_items.id')
-                ->get();
-
-            if ($request->filled('filter_transaksi')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->transaction_number ?? '', $request->filter_transaksi) !== false);
-            }
-            if ($request->filled('filter_tanggal')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos(\Carbon\Carbon::parse($r->sale_date)->format('d M Y'), $request->filter_tanggal) !== false);
-            }
-            if ($request->filled('filter_outlet')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->outlet_name ?? '', $request->filter_outlet) !== false);
-            }
-            if ($request->filled('filter_customer')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->customer_name ?? '', $request->filter_customer) !== false);
-            }
-            if ($request->filled('filter_produk')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->product_name ?? '', $request->filter_produk) !== false);
-            }
-            if ($request->filled('filter_qty')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->qty, $request->filter_qty) !== false);
-            }
-            if ($request->filled('filter_harga')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->price, $request->filter_harga) !== false);
-            }
-            if ($request->filled('filter_diskon')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->item_discount, $request->filter_diskon) !== false);
-            }
-            if ($request->filled('filter_subtotal')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos((string)$r->item_subtotal, $request->filter_subtotal) !== false);
-            }
-            if ($request->filled('filter_total')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos((string)($r->item_total ?? $r->item_subtotal), $request->filter_total) !== false);
-            }
-            if ($request->filled('filter_status')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->payment_status ?? '', $request->filter_status) !== false);
-            }
-            if ($request->filled('filter_metode_bayar')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->payment_methods ?? '', $request->filter_metode_bayar) !== false);
-            }
-            if ($request->filled('filter_metode_jual')) {
-                $detailRows = $detailRows->filter(fn($r) => stripos($r->metode_penjualan ?? '', $request->filter_metode_jual) !== false);
-            }
-            $detailRows = $detailRows->values();
-        }
-
-        if ($viewMode === 'detail') {
-            $detailRows = $this->paginateCollection($detailRows, $request, 100);
-        } else {
             $sales = $this->paginateCollection($sales, $request, 100);
         }
 
@@ -1068,6 +949,223 @@ class SalesReportController extends Controller
             ->exists();
 
         return $outletExists ? [$userOutletId] : [];
+    }
+
+    private function buildSalesTableQuery(Request $request, string $dateFrom, string $dateTo, array $outletIds)
+    {
+        $query = DB::table('sales')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletIds)) {
+            $query->whereIn('sales.outlet_id', $outletIds);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('sales.user_id', $request->user_id);
+        }
+
+        if ($request->filled('payment_method_id')) {
+            $paymentMethodId = $request->payment_method_id;
+            $query->whereExists(function ($subQuery) use ($paymentMethodId) {
+                $subQuery->select(DB::raw(1))
+                    ->from('payments as payment_filter')
+                    ->whereColumn('payment_filter.sale_id', 'sales.id')
+                    ->where('payment_filter.payment_method_id', $paymentMethodId);
+            });
+        }
+
+        if ($request->filled('product_id')) {
+            $query->whereExists(function ($subQuery) use ($request) {
+                $subQuery->select(DB::raw(1))
+                    ->from('sale_items as product_filter')
+                    ->whereColumn('product_filter.sale_id', 'sales.id')
+                    ->where('product_filter.product_id', $request->product_id);
+            });
+        }
+
+        return $query;
+    }
+
+    private function buildSalesSummaryFromTableQuery($salesBaseQuery): array
+    {
+        $totals = (clone $salesBaseQuery)
+            ->selectRaw('COUNT(*) as total_transactions')
+            ->selectRaw('COALESCE(SUM(sales.total_amount - COALESCE(sales.rounding_amount, 0)), 0) as total_before_rounding')
+            ->selectRaw('COALESCE(SUM(sales.rounding_amount), 0) as total_rounding')
+            ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
+            ->selectRaw('COALESCE(AVG(sales.total_amount), 0) as avg_per_transaction')
+            ->first();
+
+        $paymentTotals = DB::table('payments')
+            ->joinSub(
+                (clone $salesBaseQuery)->select('sales.id'),
+                'filtered_sales',
+                function ($join) {
+                    $join->on('payments.sale_id', '=', 'filtered_sales.id');
+                }
+            )
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR payments.payment_method_id = 1 THEN payments.amount ELSE 0 END), 0) as total_cash")
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR payments.payment_method_id = 1 THEN 0 ELSE payments.amount END), 0) as total_non_cash")
+            ->first();
+
+        return [
+            'total_transactions' => (int) ($totals->total_transactions ?? 0),
+            'total_before_rounding' => (float) ($totals->total_before_rounding ?? 0),
+            'total_rounding' => (float) ($totals->total_rounding ?? 0),
+            'total_amount' => (float) ($totals->total_amount ?? 0),
+            'avg_per_transaction' => (float) ($totals->avg_per_transaction ?? 0),
+            'total_cash' => (float) ($paymentTotals->total_cash ?? 0),
+            'total_non_cash' => (float) ($paymentTotals->total_non_cash ?? 0),
+        ];
+    }
+
+    private function buildSalesDetailPaginator(Request $request, $salesBaseQuery): LengthAwarePaginator
+    {
+        $paymentAggSub = DB::table('payments')
+            ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->select('payments.sale_id')
+            ->selectRaw('COALESCE(SUM(payments.amount), 0) as paid_amount')
+            ->selectRaw("GROUP_CONCAT(DISTINCT payment_methods.name ORDER BY payment_methods.name SEPARATOR ', ') as payment_methods")
+            ->groupBy('payments.sale_id');
+
+        $filteredSalesSub = (clone $salesBaseQuery)->select(
+            'sales.id',
+            'sales.invoice_number',
+            'sales.sale_date',
+            'sales.outlet_id',
+            'sales.customer_id',
+            'sales.customer_name',
+            'sales.tax_amount',
+            'sales.service_charge_amount',
+            'sales.rounding_amount',
+            'sales.total_amount',
+            'sales.sales_type',
+            'sales.created_at'
+        );
+
+        $detailQuery = DB::table('sale_items')
+            ->joinSub($filteredSalesSub, 'filtered_sales', function ($join) {
+                $join->on('sale_items.sale_id', '=', 'filtered_sales.id');
+            })
+            ->join('outlets', 'filtered_sales.outlet_id', '=', 'outlets.id')
+            ->leftJoin('customers', 'filtered_sales.customer_id', '=', 'customers.id')
+            ->leftJoinSub($paymentAggSub, 'pay_agg', function ($join) {
+                $join->on('filtered_sales.id', '=', 'pay_agg.sale_id');
+            })
+            ->select(
+                'filtered_sales.invoice_number as transaction_number',
+                'filtered_sales.sale_date',
+                'outlets.name as outlet_name',
+                DB::raw("COALESCE(NULLIF(TRIM(filtered_sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer_name"),
+                'sale_items.product_name',
+                'sale_items.quantity as qty',
+                'sale_items.unit_price as price',
+                DB::raw('COALESCE(sale_items.discount_amount, 0) as item_discount'),
+                'sale_items.subtotal as item_subtotal',
+                'sale_items.subtotal as item_total',
+                'filtered_sales.tax_amount',
+                'filtered_sales.service_charge_amount',
+                'filtered_sales.rounding_amount',
+                'filtered_sales.total_amount',
+                'filtered_sales.sales_type as metode_penjualan',
+                DB::raw("COALESCE(pay_agg.payment_methods, '-') as payment_methods")
+            )
+            ->selectRaw(
+                "CASE
+                    WHEN COALESCE(pay_agg.paid_amount, 0) >= filtered_sales.total_amount AND filtered_sales.total_amount > 0 THEN 'Lunas'
+                    WHEN COALESCE(pay_agg.paid_amount, 0) > 0 THEN 'Parsial'
+                    ELSE 'Belum Bayar'
+                END as payment_status"
+            );
+
+        if ($request->filled('product_id')) {
+            $detailQuery->where('sale_items.product_id', $request->product_id);
+        }
+
+        $this->applySalesDetailFilters($detailQuery, $request);
+
+        return $detailQuery
+            ->orderByDesc('filtered_sales.sale_date')
+            ->orderByDesc('filtered_sales.created_at')
+            ->orderBy('sale_items.id')
+            ->paginate(100)
+            ->withQueryString();
+    }
+
+    private function applySalesDetailFilters($detailQuery, Request $request): void
+    {
+        if ($request->filled('filter_transaksi')) {
+            $detailQuery->where('filtered_sales.invoice_number', 'like', $this->likeValue($request->input('filter_transaksi')));
+        }
+
+        if ($request->filled('filter_tanggal')) {
+            $like = $this->likeValue($request->input('filter_tanggal'));
+            $detailQuery->where(function ($query) use ($like) {
+                $query->whereRaw("CAST(filtered_sales.sale_date AS CHAR) LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(filtered_sales.sale_date, '%d %b %Y') LIKE ?", [$like]);
+            });
+        }
+
+        if ($request->filled('filter_outlet')) {
+            $detailQuery->where('outlets.name', 'like', $this->likeValue($request->input('filter_outlet')));
+        }
+
+        if ($request->filled('filter_customer')) {
+            $detailQuery->whereRaw(
+                "COALESCE(NULLIF(TRIM(filtered_sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') LIKE ?",
+                [$this->likeValue($request->input('filter_customer'))]
+            );
+        }
+
+        if ($request->filled('filter_produk')) {
+            $detailQuery->where('sale_items.product_name', 'like', $this->likeValue($request->input('filter_produk')));
+        }
+
+        if ($request->filled('filter_qty')) {
+            $detailQuery->whereRaw("CAST(sale_items.quantity AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_qty'))]);
+        }
+
+        if ($request->filled('filter_harga')) {
+            $detailQuery->whereRaw("CAST(sale_items.unit_price AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_harga'))]);
+        }
+
+        if ($request->filled('filter_diskon')) {
+            $detailQuery->whereRaw("CAST(COALESCE(sale_items.discount_amount, 0) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_diskon'))]);
+        }
+
+        if ($request->filled('filter_subtotal')) {
+            $detailQuery->whereRaw("CAST(sale_items.subtotal AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_subtotal'))]);
+        }
+
+        if ($request->filled('filter_total')) {
+            $detailQuery->whereRaw("CAST(sale_items.subtotal AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_total'))]);
+        }
+
+        if ($request->filled('filter_status')) {
+            $detailQuery->whereRaw(
+                "CASE
+                    WHEN COALESCE(pay_agg.paid_amount, 0) >= filtered_sales.total_amount AND filtered_sales.total_amount > 0 THEN 'Lunas'
+                    WHEN COALESCE(pay_agg.paid_amount, 0) > 0 THEN 'Parsial'
+                    ELSE 'Belum Bayar'
+                END LIKE ?",
+                [$this->likeValue($request->input('filter_status'))]
+            );
+        }
+
+        if ($request->filled('filter_metode_bayar')) {
+            $detailQuery->whereRaw("COALESCE(pay_agg.payment_methods, '-') LIKE ?", [$this->likeValue($request->input('filter_metode_bayar'))]);
+        }
+
+        if ($request->filled('filter_metode_jual')) {
+            $detailQuery->where('filtered_sales.sales_type', 'like', $this->likeValue($request->input('filter_metode_jual')));
+        }
+    }
+
+    private function likeValue(?string $keyword): string
+    {
+        return '%' . trim((string) $keyword) . '%';
     }
 
     private function paginateCollection($items, Request $request, int $perPage = 100): LengthAwarePaginator
