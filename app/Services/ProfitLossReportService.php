@@ -107,6 +107,23 @@ class ProfitLossReportService
             $totalExpenses += $amount;
         }
 
+        $groupOrderMap = [
+            'BIAYA OPERASIONAL' => 10,
+            'BIAYA ADMINISTRASI' => 20,
+            'LAINNYA' => 90,
+        ];
+
+        uasort($expensesByGroup, function (array $left, array $right) use ($groupOrderMap) {
+            $leftOrder = $groupOrderMap[$left['group_name']] ?? 50;
+            $rightOrder = $groupOrderMap[$right['group_name']] ?? 50;
+
+            if ($leftOrder === $rightOrder) {
+                return strcmp($left['group_name'], $right['group_name']);
+            }
+
+            return $leftOrder <=> $rightOrder;
+        });
+
         // 5. LABA BERSIH (Net Profit)
         $netProfit = $grossProfit - $totalExpenses;
 
@@ -179,4 +196,3 @@ class ProfitLossReportService
         ];
     }
 }
-

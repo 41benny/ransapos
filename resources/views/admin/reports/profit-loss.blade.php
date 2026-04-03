@@ -187,11 +187,37 @@
                                     </td>
                                 </tr>
 
+                                {{-- GROSS PROFIT --}}
+                                <tr class="bg-emerald-50/70 border-y border-emerald-100">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                                <i class="fas fa-chart-line text-[10px]"></i>
+                                            </span>
+                                            <span class="text-sm font-black uppercase tracking-wider text-emerald-700">Laba Kotor</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Summary</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="text-sm font-black text-emerald-700">
+                                            Rp {{ number_format($report['gross_profit'], 0, ',', '.') }}
+                                        </span>
+                                    </td>
+                                </tr>
+
                                 {{-- EXPENSES BY GROUP --}}
                                 @foreach($report['expenses_by_group'] as $group)
                                     @php
                                         $accountCount = count($group['accounts']);
                                         $groupKey = 'expense-group-' . $loop->index;
+                                        $groupTitle = $accountCount === 1
+                                            ? ($group['accounts'][0]['name'] ?? $group['group_name'])
+                                            : $group['group_name'];
+                                        $groupMeta = $accountCount === 1
+                                            ? 'Grup ' . $group['group_name'] . ' - 1 akun'
+                                            : 'Total grup - ' . $accountCount . ' akun';
                                     @endphp
 
                                     <tr class="bg-slate-50/70 border-t border-slate-100">
@@ -205,10 +231,10 @@
                                                     <i class="fas fa-chevron-down text-[10px]"></i>
                                                 </span>
                                                 <span class="inline-flex items-center rounded-full bg-slate-200/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                                    {{ $group['group_name'] }}
+                                                    {{ $groupTitle }}
                                                 </span>
                                                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                    Total grup - {{ $accountCount }} akun
+                                                    {{ $groupMeta }}
                                                 </span>
                                             </button>
                                         </td>
