@@ -2435,12 +2435,9 @@
                         <tbody class="divide-y divide-slate-100">
                             @forelse($rows as $row)
                                 <tr>
-                                    <td class="px-4 py-3 align-top">
-                                        <a href="{{ route('admin.reports.catalog.sale-print', ['sale' => $row->sale_id]) }}"
-                                            target="_blank" rel="noopener"
-                                            class="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline">
-                                            {{ $row->invoice_number }}
-                                        </a>
+                                    <td class="px-4 py-3 align-top font-medium text-indigo-600">
+                                        <a href="#" class="font-mono text-xs hover:text-indigo-800 hover:underline transition-colors cursor-pointer"
+                                            data-sale-detail-id="{{ $row->sale_id }}">{{ $row->invoice_number }}</a>
                                         <div class="mt-1 text-[10px] text-slate-400">Update: {{ \Carbon\Carbon::parse($row->cancelled_at)->format('d/m/Y H:i') }}</div>
                                     </td>
                                     <td class="px-4 py-3 align-top text-slate-700">{{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}</td>
@@ -2474,6 +2471,278 @@
                     </table>
                 </div>
             </div>
+
+            {{-- Modal Detail Penjualan --}}
+            <div id="saleDetailModal" class="fixed inset-0 z-[9999] hidden">
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" id="saleDetailOverlay"></div>
+                <div class="fixed inset-0 flex items-center justify-center p-4">
+                    <div class="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-300" id="saleDetailContent">
+                        <div id="saleDetailLoading" class="flex flex-col items-center justify-center py-20">
+                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
+                            <span class="mt-4 text-sm text-slate-500">Memuat detail transaksi...</span>
+                        </div>
+
+                        <div id="saleDetailBody" class="hidden">
+                            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 rounded-t-2xl">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-800" id="sdm-invoice">-</h3>
+                                    <div class="flex items-center gap-3 mt-1">
+                                        <span class="text-xs text-slate-400" id="sdm-date">-</span>
+                                        <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600" id="sdm-salestype">-</span>
+                                        <span class="rounded px-2 py-0.5 text-[10px] font-medium" id="sdm-status">-</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="saleDetailPrint" class="flex h-8 items-center gap-2 px-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all text-[11px] font-medium shadow-sm hover:shadow-indigo-100">
+                                        <i class="fas fa-print"></i>
+                                        <span>Print Bill</span>
+                                    </button>
+                                    <button type="button" id="saleDetailClose" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-6 py-4">
+                                <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                    <div class="text-[10px] font-medium uppercase tracking-widest text-slate-400">Outlet</div>
+                                    <div class="mt-1 text-sm font-medium text-slate-800" id="sdm-outlet">-</div>
+                                </div>
+                                <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                    <div class="text-[10px] font-medium uppercase tracking-widest text-slate-400">Kasir</div>
+                                    <div class="mt-1 text-sm font-medium text-slate-800" id="sdm-cashier">-</div>
+                                </div>
+                                <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                    <div class="text-[10px] font-medium uppercase tracking-widest text-slate-400">Pelanggan</div>
+                                    <div class="mt-1 text-sm font-medium text-slate-800" id="sdm-customer">-</div>
+                                </div>
+                                <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                    <div class="text-[10px] font-medium uppercase tracking-widest text-slate-400">Promo / Voucher</div>
+                                    <div class="mt-1 text-sm font-medium text-slate-800" id="sdm-promo">-</div>
+                                </div>
+                            </div>
+
+                            <div class="px-6 pb-3">
+                                <h4 class="text-xs font-medium uppercase tracking-widest text-slate-400 mb-3">Detail Item</h4>
+                                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead class="bg-slate-50 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                                            <tr>
+                                                <th class="px-4 py-2.5">Produk</th>
+                                                <th class="px-4 py-2.5 text-right">Qty</th>
+                                                <th class="px-4 py-2.5 text-right">Harga</th>
+                                                <th class="px-4 py-2.5 text-right">Diskon</th>
+                                                <th class="px-4 py-2.5 text-right">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100" id="sdm-items"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pb-4">
+                                <div>
+                                    <h4 class="text-xs font-medium uppercase tracking-widest text-slate-400 mb-3">Pembayaran</h4>
+                                    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100" id="sdm-payments"></div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-medium uppercase tracking-widest text-slate-400 mb-3">Ringkasan</h4>
+                                    <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 space-y-2">
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Nilai Jual (Gross)</span>
+                                            <span class="font-medium text-slate-800" id="sdm-gross">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Diskon Item</span>
+                                            <span class="font-medium text-rose-500" id="sdm-item-disc">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Diskon Header</span>
+                                            <span class="font-medium text-rose-500" id="sdm-header-disc">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-slate-200 pt-2">
+                                            <span class="text-slate-500">Subtotal</span>
+                                            <span class="font-medium text-slate-800" id="sdm-subtotal">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Pajak</span>
+                                            <span class="font-medium text-slate-800" id="sdm-tax">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Service Charge</span>
+                                            <span class="font-medium text-slate-800" id="sdm-sc">-</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-slate-500">Pembulatan</span>
+                                            <span class="font-medium text-slate-800" id="sdm-rounding">-</span>
+                                        </div>
+                                        <div class="flex justify-between border-t border-slate-200 pt-2">
+                                            <span class="text-sm font-semibold uppercase tracking-wider text-slate-800">Total</span>
+                                            <span class="text-lg font-bold text-indigo-600" id="sdm-total">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="sdm-notes-section" class="hidden px-6 pb-6">
+                                <div class="rounded-xl bg-amber-50 border border-amber-200 p-3">
+                                    <div class="text-[10px] font-medium uppercase tracking-widest text-amber-600 mb-1">Catatan</div>
+                                    <div class="text-sm text-amber-800" id="sdm-notes">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @push('scripts')
+            <script>
+            (function() {
+                const modal = document.getElementById('saleDetailModal');
+                const overlay = document.getElementById('saleDetailOverlay');
+                const closeBtn = document.getElementById('saleDetailClose');
+                const printBtn = document.getElementById('saleDetailPrint');
+                const loadingEl = document.getElementById('saleDetailLoading');
+                const bodyEl = document.getElementById('saleDetailBody');
+
+                let currentSaleId = null;
+
+                function fmt(n) {
+                    return 'Rp ' + Number(n || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                }
+
+                function openModal(saleId) {
+                    currentSaleId = saleId;
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    loadingEl.classList.remove('hidden');
+                    bodyEl.classList.add('hidden');
+
+                    const url = '{{ url("/admin/reports/catalog/sale") }}/' + saleId;
+                    fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+                        .then(data => {
+                            document.getElementById('sdm-invoice').textContent = data.invoice_number;
+                            document.getElementById('sdm-date').textContent = data.sale_date;
+                            document.getElementById('sdm-salestype').textContent = data.sales_type_label;
+
+                            const statusEl = document.getElementById('sdm-status');
+                            statusEl.textContent = data.status === 'completed' ? 'Selesai' : data.status;
+                            statusEl.className = 'rounded px-2 py-0.5 text-[10px] font-medium ' +
+                                (data.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700');
+
+                            document.getElementById('sdm-outlet').textContent = data.outlet_name;
+                            document.getElementById('sdm-cashier').textContent = data.cashier_name;
+                            document.getElementById('sdm-customer').textContent = data.customer_name;
+
+                            let promoText = '-';
+                            if (data.promotion_name) promoText = data.promotion_name;
+                            else if (data.voucher_name) promoText = data.voucher_name;
+                            else if (data.voucher_code) promoText = data.voucher_code;
+                            document.getElementById('sdm-promo').textContent = promoText;
+
+                            const itemsBody = document.getElementById('sdm-items');
+                            itemsBody.innerHTML = '';
+                            (data.items || []).forEach(function(item) {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML =
+                                    '<td class="px-4 py-2.5">' +
+                                        '<div class="font-medium text-slate-800">' + (item.product_name || '-') + '</div>' +
+                                        (item.product_sku ? '<div class="text-[10px] text-slate-400">' + item.product_sku + '</div>' : '') +
+                                        (item.notes ? '<div class="text-[10px] text-amber-600 mt-0.5"><i class="fas fa-sticky-note mr-1"></i>' + item.notes + '</div>' : '') +
+                                    '</td>' +
+                                    '<td class="px-4 py-2.5 text-right text-slate-700">' + Number(item.quantity).toLocaleString('id-ID') + '</td>' +
+                                    '<td class="px-4 py-2.5 text-right text-slate-700">' + fmt(item.original_price) + '</td>' +
+                                    '<td class="px-4 py-2.5 text-right text-rose-500">' + (item.discount_amount > 0 ? fmt(item.discount_amount) : '-') + '</td>' +
+                                    '<td class="px-4 py-2.5 text-right font-medium text-slate-800">' + fmt(item.subtotal) + '</td>';
+                                itemsBody.appendChild(tr);
+                            });
+
+                            const paymentsEl = document.getElementById('sdm-payments');
+                            paymentsEl.innerHTML = '';
+                            (data.payments || []).forEach(function(p) {
+                                const div = document.createElement('div');
+                                div.className = 'flex items-center justify-between px-4 py-3';
+                                div.innerHTML =
+                                    '<div>' +
+                                        '<div class="text-sm font-medium text-slate-800">' + p.method + '</div>' +
+                                        (p.reference_number ? '<div class="text-[10px] text-slate-400">' + p.reference_number + '</div>' : '') +
+                                    '</div>' +
+                                    '<span class="text-sm font-medium text-slate-800">' + fmt(p.amount) + '</span>';
+                                paymentsEl.appendChild(div);
+                            });
+
+                            if (!data.payments || data.payments.length === 0) {
+                                paymentsEl.innerHTML = '<div class="px-4 py-3 text-center text-sm text-slate-400 italic">Tidak ada data pembayaran</div>';
+                            }
+
+                            const setSummaryRow = (id, val) => {
+                                const el = document.getElementById(id);
+                                if (!el) return;
+                                el.textContent = fmt(val);
+                                if (['sdm-total', 'sdm-subtotal', 'sdm-gross'].includes(id)) {
+                                    el.parentElement.classList.remove('hidden');
+                                } else {
+                                    el.parentElement.classList.toggle('hidden', Number(val) === 0);
+                                }
+                            };
+
+                            setSummaryRow('sdm-gross', data.gross_value);
+                            setSummaryRow('sdm-item-disc', data.item_level_discount);
+                            setSummaryRow('sdm-header-disc', data.header_discount);
+                            setSummaryRow('sdm-subtotal', data.subtotal);
+                            setSummaryRow('sdm-tax', data.tax_amount);
+                            setSummaryRow('sdm-sc', data.service_charge_amount);
+                            setSummaryRow('sdm-rounding', data.rounding_amount);
+                            setSummaryRow('sdm-total', data.total_amount);
+
+                            const notesSection = document.getElementById('sdm-notes-section');
+                            if (data.notes && data.notes.trim() !== '') {
+                                document.getElementById('sdm-notes').textContent = data.notes;
+                                notesSection.classList.remove('hidden');
+                            } else {
+                                notesSection.classList.add('hidden');
+                            }
+
+                            loadingEl.classList.add('hidden');
+                            bodyEl.classList.remove('hidden');
+                        })
+                        .catch(function() {
+                            loadingEl.innerHTML = '<div class="text-center py-20"><i class="fas fa-exclamation-circle text-3xl text-rose-400 mb-3"></i><div class="text-sm text-slate-500">Gagal memuat data transaksi</div></div>';
+                        });
+                }
+
+                function closeModal() {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    currentSaleId = null;
+                }
+
+                if (printBtn) {
+                    printBtn.addEventListener('click', function() {
+                        if (!currentSaleId) return;
+                        const url = '{{ url("/admin/reports/catalog/sale") }}/' + currentSaleId + '/print?autoprint=1';
+                        window.open(url, 'ReceiptPrint', 'width=400,height=600,scrollbars=yes');
+                    });
+                }
+
+                document.addEventListener('click', function(e) {
+                    const link = e.target.closest('[data-sale-detail-id]');
+                    if (link) {
+                        e.preventDefault();
+                        openModal(link.dataset.saleDetailId);
+                    }
+                });
+
+                if (overlay) overlay.addEventListener('click', closeModal);
+                if (closeBtn) closeBtn.addEventListener('click', closeModal);
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+                });
+            })();
+            </script>
+            @endpush
         @elseif($viewType === 'sales-vs-hpp')
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
