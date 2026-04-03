@@ -188,7 +188,7 @@
                                 </tr>
 
                                 {{-- GROSS PROFIT --}}
-                                <tr class="bg-emerald-50/70 border-y border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800/80">
+                                <tr class="pl-summary-row bg-emerald-50/70 border-y border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800/80">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
                                             <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/70 dark:text-emerald-300">
@@ -220,7 +220,7 @@
                                             : 'Total grup - ' . $accountCount . ' akun';
                                     @endphp
 
-                                    <tr class="bg-slate-50/70 border-t border-slate-100 dark:bg-slate-800/80 dark:border-slate-700">
+                                    <tr class="pl-group-row bg-slate-50/70 border-t border-slate-100 dark:bg-slate-800/80 dark:border-slate-700">
                                         <td class="px-6 py-4" colspan="2">
                                             <button type="button"
                                                 class="flex w-full items-center gap-3 text-left"
@@ -277,7 +277,7 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="bg-indigo-50/50 dark:bg-slate-800/90 dark:border-t dark:border-slate-700">
+                                <tr class="pl-net-row bg-indigo-50/50 dark:bg-slate-800/90 dark:border-t dark:border-slate-700">
                                     <td class="px-6 py-6" colspan="2">
                                         <span class="text-sm font-black text-indigo-700 uppercase tracking-widest dark:text-indigo-300">Laba / Rugi Bersih</span>
                                     </td>
@@ -438,6 +438,52 @@
     @endpush
 
     <style>
+        .dark .ui-admin-body .pl-group-row {
+            background-color: #1f2937 !important;
+            border-color: #334155 !important;
+        }
+
+        .dark .ui-admin-body .pl-summary-row {
+            background-color: rgba(6, 78, 59, 0.32) !important;
+            border-color: rgba(16, 185, 129, 0.35) !important;
+        }
+
+        .dark .ui-admin-body .pl-net-row {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        .dark .ui-admin-body .pl-group-row [data-expense-chevron] {
+            background-color: #0f172a !important;
+            color: #cbd5e1 !important;
+            box-shadow: none !important;
+        }
+
+        .dark .ui-admin-body .pl-group-row .bg-slate-200\/70 {
+            background-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        .dark .ui-admin-body .pl-group-row .text-slate-700,
+        .dark .ui-admin-body .pl-group-row .text-slate-600 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark .ui-admin-body .pl-group-row .text-slate-400,
+        .dark .ui-admin-body .pl-group-row .text-slate-500 {
+            color: #94a3b8 !important;
+        }
+
+        .dark .ui-admin-body [data-expense-detail] .bg-slate-100 {
+            background-color: #1e293b !important;
+            color: #cbd5e1 !important;
+        }
+
+        .dark .ui-admin-body [data-expense-detail] .text-slate-600,
+        .dark .ui-admin-body [data-expense-detail] .text-slate-700 {
+            color: #e2e8f0 !important;
+        }
+
         @media print {
             .no-print {
                 display: none !important;
