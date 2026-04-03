@@ -22,12 +22,40 @@ class DashboardController extends Controller
             ->first();
 
         $todaySales = null;
+        $todaySalesCount = 0;
+        $todaySalesTotalAmount = 0;
+        $todaySalesAverageAmount = 0;
         if ($activeSession) {
-            $todaySales = Sale::where('cash_session_id', $activeSession->id)
+            $todaySalesQuery = Sale::query()
+                ->with([
+                    'items:id,sale_id,product_name',
+                    'payments.paymentMethod',
+                ])
+                ->where('cash_session_id', $activeSession->id)
                 ->where('status', 'completed')
-                ->get();
+                ->orderByDesc('created_at');
+
+            $summary = (clone $todaySalesQuery)
+                ->selectRaw('COUNT(*) as total_sales')
+                ->selectRaw('COALESCE(SUM(total_amount), 0) as total_amount')
+                ->selectRaw('COALESCE(AVG(total_amount), 0) as average_amount')
+                ->first();
+
+            $todaySalesCount = (int) ($summary->total_sales ?? 0);
+            $todaySalesTotalAmount = (float) ($summary->total_amount ?? 0);
+            $todaySalesAverageAmount = (float) ($summary->average_amount ?? 0);
+
+            $todaySales = $todaySalesQuery
+                ->paginate(20, ['*'], 'sales_page')
+                ->withQueryString();
         }
 
-        return view('pos.dashboard', compact('activeSession', 'todaySales'));
+        return view('pos.dashboard', compact(
+            'activeSession',
+            'todaySales',
+            'todaySalesCount',
+            'todaySalesTotalAmount',
+            'todaySalesAverageAmount'
+        ));
     }
 }

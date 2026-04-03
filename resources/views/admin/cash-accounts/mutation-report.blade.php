@@ -67,7 +67,16 @@
         <!-- Transactions -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-900">Rincian Mutasi</h2>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Rincian Mutasi</h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        @if($transactions->total() > 0)
+                            Menampilkan {{ $transactions->firstItem() }}-{{ $transactions->lastItem() }} dari {{ $transactions->total() }} transaksi
+                        @else
+                            Tidak ada data
+                        @endif
+                    </p>
+                </div>
                 <button onclick="window.print()"
                     class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg flex items-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,6 +148,11 @@
                         </tfoot>
                     </table>
                 </div>
+                @if($transactions->hasPages())
+                    <div class="px-6 py-4 border-t border-gray-200 bg-white">
+                        {{ $transactions->onEachSide(1)->links() }}
+                    </div>
+                @endif
             @else
                 <div class="text-center py-12">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +162,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada transaksi</h3>
                     <p class="mt-1 text-sm text-gray-500">Tidak ada transaksi dalam periode yang dipilih.</p>
                 </div>
-            @endif>
+            @endif
         </div>
     </div>
 

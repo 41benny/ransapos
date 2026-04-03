@@ -15,15 +15,22 @@ class ExpenseCategoryController extends Controller
      */
     public function index()
     {
-        $categories = ExpenseCategory::with(['parent', 'coaAccount'])
+        $parentCategories = ExpenseCategory::query()
+            ->with([
+                'coaAccount',
+                'children' => function ($query) {
+                    $query->with('coaAccount')
+                        ->orderBy('order')
+                        ->orderBy('name');
+                },
+            ])
+            ->whereNull('parent_id')
             ->orderBy('order')
             ->orderBy('name')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
-        // Group by parent
-        $parentCategories = $categories->whereNull('parent_id');
-
-        return view('admin.expense-categories.index', compact('categories', 'parentCategories'));
+        return view('admin.expense-categories.index', compact('parentCategories'));
     }
 
     /**

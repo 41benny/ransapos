@@ -56,10 +56,19 @@
     {{-- Data Section --}}
     <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
         <div class="p-4 border-b border-slate-100 bg-white flex justify-between items-center">
-            <h3 class="text-sm font-semibold text-slate-800">Ringkasan Hutang All Supplier</h3>
+            <div>
+                <h3 class="text-sm font-semibold text-slate-800">Ringkasan Hutang All Supplier</h3>
+                <p class="text-[11px] text-slate-500 mt-1">
+                    @if($suppliers->total() > 0)
+                        Menampilkan {{ $suppliers->firstItem() }}-{{ $suppliers->lastItem() }} dari {{ $suppliers->total() }} supplier
+                    @else
+                        Tidak ada data
+                    @endif
+                </p>
+            </div>
             <div class="text-right">
                 <span class="text-xs text-slate-500 uppercase tracking-wider">Total Hutang Berjalan:</span>
-                <span class="ml-2 text-lg font-bold text-rose-600">Rp {{ number_format($suppliers->sum('remaining_debt'), 0, ',', '.') }}</span>
+                <span class="ml-2 text-lg font-bold text-rose-600">Rp {{ number_format($totalRemainingDebt, 0, ',', '.') }}</span>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -106,6 +115,11 @@
                 </tbody>
             </table>
         </div>
+        @if($suppliers->hasPages())
+            <div class="px-5 py-4 border-t border-slate-100 bg-white">
+                {{ $suppliers->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

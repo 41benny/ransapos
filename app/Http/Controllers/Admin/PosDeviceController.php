@@ -21,7 +21,8 @@ class PosDeviceController extends Controller
         $devices = PosDevice::query()
             ->with(['outlet', 'creator'])
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
         $deviceEnforced = Setting::getBool('pos_device_enforce', config('pos.device_enforce', false));
         $deviceTypes = self::DEVICE_TYPES;
 

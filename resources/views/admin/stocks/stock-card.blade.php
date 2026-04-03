@@ -55,10 +55,6 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-1">
-                        @php
-                            $latestUnitCost = (float) ($mutations->last()->unit_cost ?? $product->purchase_price ?? 0);
-                            $estimatedInventoryValue = (float) ($currentStock->quantity ?? 0) * $latestUnitCost;
-                        @endphp
                         <span class="text-[9px] font-normal uppercase tracking-widest text-slate-400">Nilai Persediaan
                             (HPP)</span>
                         <span class="text-lg font-normal text-slate-800 tracking-tight">Rp
@@ -119,7 +115,13 @@
                     <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Log Mutasi
                         Produk</h3>
                 </div>
-                <p class="text-[9px] font-normal text-slate-400 italic">Menampilkan {{ $mutations->count() }} transaksi</p>
+                <p class="text-[9px] font-normal text-slate-400 italic">
+                    @if($mutations->total() > 0)
+                        Menampilkan {{ $mutations->firstItem() }}-{{ $mutations->lastItem() }} dari {{ $mutations->total() }} transaksi
+                    @else
+                        Tidak ada transaksi
+                    @endif
+                </p>
             </div>
             <div class="overflow-x-auto">
                 <table class="ui-table min-w-full divide-y divide-slate-200">
@@ -242,15 +244,15 @@
                     </tbody>
                 </table>
             </div>
+            @if($mutations->hasPages())
+                <div class="px-5 py-4 border-t border-slate-100 bg-white">
+                    {{ $mutations->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
 
         {{-- Footer Summary Cards --}}
-        @if($mutations->count() > 0)
-            @php
-                $totalIn = $mutations->where('quantity', '>', 0)->sum('quantity');
-                $totalOut = abs($mutations->where('quantity', '<', 0)->sum('quantity'));
-                $netChange = $totalIn - $totalOut;
-            @endphp
+        @if($mutations->total() > 0)
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <div class="ui-card bg-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
                     <p class="text-[10px] font-normal uppercase tracking-[0.2em] text-emerald-500 mb-2">Total Stok Masuk (+)</p>

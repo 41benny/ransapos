@@ -110,7 +110,7 @@
                 </h2>
                 <div class="flex gap-2">
                     <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px] font-semibold uppercase tracking-wide">
-                        {{ $todaySales ? $todaySales->count() : 0 }} Transaksi
+                        {{ $todaySalesCount }} Transaksi
                     </span>
                 </div>
             </div>
@@ -123,12 +123,12 @@
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <p class="text-gray-500 text-[10px] mb-0.5">Total Penjualan</p>
                             <p class="text-lg font-bold text-gray-900">Rp
-                                {{ number_format($todaySales->sum('total_amount'), 0, ',', '.') }}</p>
+                                {{ number_format($todaySalesTotalAmount, 0, ',', '.') }}</p>
                         </div>
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <p class="text-gray-500 text-[10px] mb-0.5">Rata-rata</p>
                             <p class="text-lg font-bold text-gray-900">Rp
-                                {{ number_format($todaySales->avg('total_amount'), 0, ',', '.') }}</p>
+                                {{ number_format($todaySalesAverageAmount, 0, ',', '.') }}</p>
                         </div>
                     </div>
 
@@ -171,6 +171,11 @@
                             </tbody>
                         </table>
                     </div>
+                    @if($todaySales->hasPages())
+                        <div class="mt-4">
+                            {{ $todaySales->onEachSide(1)->links() }}
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Floating Action Button for easy access when list is long --}}

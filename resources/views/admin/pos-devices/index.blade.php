@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 <div class="p-6">
                     <div class="alert alert-error">
                         <i class="fas fa-exclamation-circle text-lg"></i>
@@ -114,6 +114,16 @@
             </div>
 
             <div class="p-6">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h4 class="text-sm font-semibold text-gray-900">Daftar Perangkat</h4>
+                    <p class="text-xs text-gray-500">
+                        @if($devices->total() > 0)
+                            Menampilkan {{ $devices->firstItem() }}-{{ $devices->lastItem() }} dari {{ $devices->total() }} perangkat
+                        @else
+                            Tidak ada data
+                        @endif
+                    </p>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="ui-table min-w-full text-sm text-left">
                         <thead class="text-xs uppercase text-gray-500 border-b">
@@ -189,6 +199,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($devices->hasPages())
+                    <div class="mt-4 border-t border-gray-100 pt-4">
+                        {{ $devices->onEachSide(1)->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

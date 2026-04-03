@@ -109,7 +109,16 @@
             <!-- Accounts List -->
             <div class="ui-card t6-card shadow overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Daftar Akun Kas & Bank</h2>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h2 class="text-lg font-semibold text-gray-900">Daftar Akun Kas & Bank</h2>
+                        <p class="text-xs text-gray-500">
+                            @if($accounts->total() > 0)
+                                Menampilkan {{ $accounts->firstItem() }}-{{ $accounts->lastItem() }} dari {{ $accounts->total() }} akun
+                            @else
+                                Tidak ada data
+                            @endif
+                        </p>
+                    </div>
                 </div>
 
                 @if($accounts->count() > 0)
@@ -233,6 +242,11 @@
                             </tbody>
                         </table>
                     </div>
+                    @if($accounts->hasPages())
+                        <div class="px-6 py-4 border-t border-gray-200 bg-white">
+                            {{ $accounts->onEachSide(1)->links() }}
+                        </div>
+                    @endif
                 @else
                     <div class="text-center py-12">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

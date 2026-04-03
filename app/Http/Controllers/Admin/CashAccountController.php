@@ -34,6 +34,7 @@ class CashAccountController extends Controller
     public function index()
     {
         $summary = $this->cashAccountService->getAccountsSummary();
+        $summary['accounts']->withQueryString();
 
         return view('admin.cash-accounts.index', [
             'accounts' => $summary['accounts'],
@@ -747,12 +748,17 @@ class CashAccountController extends Controller
     /**
      * Show mutation report for an account
      */
-    public function mutationReport(Request $request, CashAccount $cashAccount)
+    public function mutationReport(Request $request, CashAccount $cashAccount, $cashAccountId = null)
     {
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
+        $resolvedCashAccountId = $cashAccount->getKey()
+            ?? $cashAccountId
+            ?? $request->route('cashAccount')
+            ?? $request->route('cash_account');
 
-        $report = $this->cashAccountService->getMutationReport($cashAccount->id, $dateFrom, $dateTo);
+        $report = $this->cashAccountService->getMutationReport((int) $resolvedCashAccountId, $dateFrom, $dateTo);
+        $report['transactions']->withQueryString();
 
         return view('admin.cash-accounts.mutation-report', $report);
     }

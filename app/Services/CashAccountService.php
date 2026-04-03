@@ -791,7 +791,13 @@ class CashAccountService
     /**
      * Get laporan mutasi kas per akun
      */
-    public function getMutationReport(int $cashAccountId, ?string $dateFrom = null, ?string $dateTo = null)
+    public function getMutationReport(
+        int $cashAccountId,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+        int $perPage = 100,
+        string $pageName = 'mutation_page'
+    )
     {
         $account = CashAccount::with(['creator'])->findOrFail($cashAccountId);
 
@@ -817,34 +823,24 @@ class CashAccountService
 
         $beginningBalance = $account->opening_balance + $priorIn - $priorOut;
 
-        // Get transactions dalam periode
-        $runningBalance = $beginningBalance;
-
-        $transactions = CashTransaction::where('cash_account_id', $cashAccountId)
+        $transactionsQuery = CashTransaction::query()
+            ->with(['coaAccount'])
+            ->where('cash_account_id', $cashAccountId)
             ->whereBetween('transaction_date', [$dateFrom, $dateTo])
             ->orderBy('transaction_date', 'asc')
             ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->get()
-            ->map(function (CashTransaction $transaction) use (&$runningBalance) {
-                $transaction->balance_before = $runningBalance;
+            ->orderBy('id', 'asc');
 
-                if ($transaction->type === 'in') {
-                    $runningBalance += (float) $transaction->amount;
-                } else {
-                    $runningBalance -= (float) $transaction->amount;
-                }
+        $summary = (clone $transactionsQuery)
+            ->selectRaw("COALESCE(SUM(CASE WHEN type = 'in' THEN amount ELSE 0 END), 0) as total_in")
+            ->selectRaw("COALESCE(SUM(CASE WHEN type = 'out' THEN amount ELSE 0 END), 0) as total_out")
+            ->first();
 
-                $transaction->balance_after = $runningBalance;
+        $transactions = $transactionsQuery->paginate($perPage, ['*'], $pageName);
 
-                return $transaction;
-            });
-
-        // Calculate summary
-        $totalIn = $transactions->where('type', 'in')->sum('amount');
-        $totalOut = $transactions->where('type', 'out')->sum('amount');
-
-        $endingBalance = $runningBalance;
+        $totalIn = (float) ($summary->total_in ?? 0);
+        $totalOut = (float) ($summary->total_out ?? 0);
+        $endingBalance = $beginningBalance + $totalIn - $totalOut;
 
         return [
             'account' => $account,
@@ -861,14 +857,17 @@ class CashAccountService
     /**
      * Get ringkasan semua akun
      */
-    public function getAccountsSummary()
+    public function getAccountsSummary(int $perPage = 20, string $pageName = 'accounts_page')
     {
-        $accounts = CashAccount::with(['creator'])
+        $accounts = CashAccount::query()
+            ->with(['creator'])
             ->withCount('transactions')
-            ->get();
+            ->orderBy('type')
+            ->orderBy('name')
+            ->paginate($perPage, ['*'], $pageName);
 
-        $totalCash = $accounts->where('type', 'cash')->sum('current_balance');
-        $totalBank = $accounts->where('type', 'bank')->sum('current_balance');
+        $totalCash = (float) CashAccount::query()->where('type', 'cash')->sum('current_balance');
+        $totalBank = (float) CashAccount::query()->where('type', 'bank')->sum('current_balance');
         $totalBalance = $totalCash + $totalBank;
 
         return [

@@ -20,13 +20,16 @@ class PermissionController extends Controller
         $roles = Role::query()
             ->withCount('permissions')
             ->orderBy('name')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
         $totalPermissions = Permission::query()->count();
+        $totalRoles = Role::query()->count();
 
         return view('admin.permissions.index', [
             'roles' => $roles,
             'totalPermissions' => $totalPermissions,
+            'totalRoles' => $totalRoles,
         ]);
     }
 

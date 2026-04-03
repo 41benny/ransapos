@@ -8,6 +8,7 @@ use App\Models\Purchase;
 use App\Models\CashTransaction;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DebtReportController extends Controller
 {
@@ -17,142 +18,134 @@ class DebtReportController extends Controller
     public function index(Request $request)
     {
         $statusFilter = $request->input('status', 'unpaid'); // unpaid, all
-        
-        $query = Supplier::query()->with(['purchases' => function($q) {
-            $q->where('status', 'received')
-              ->withSum('cashTransactions as total_paid', 'amount');
-        }]);
-
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
-        }
-
-        $suppliers = $query->get()->map(function ($supplier) {
-            $totalDebt = 0;
-            $totalPaid = 0;
-            
-            foreach ($supplier->purchases as $purchase) {
-                $totalDebt += $purchase->total_amount;
-                $totalPaid += $purchase->total_paid ?? 0;
-            }
-            
-            $supplier->total_debt = $totalDebt;
-            $supplier->total_paid = $totalPaid;
-            $supplier->remaining_debt = max(0, $totalDebt - $totalPaid);
-            
-            return $supplier;
-        });
+        $query = $this->buildSupplierDebtSummaryQuery($request);
 
         if ($statusFilter === 'unpaid') {
-            $suppliers = $suppliers->filter(function ($supplier) {
-                return $supplier->remaining_debt > 0;
-            })->values();
+            $query->whereRaw($this->remainingDebtExpression('debt_summary.total_debt', 'debt_summary.total_paid') . ' > 0');
         }
 
-        // Pagination if needed, but collection pagination can be tricky, 
-        // we'll just pass the full collection or manually paginate.
-        // For simplicity with collections, let's just pass the collection 
-        // as data size per supplier is relatively small.
-        
-        return view('admin.reports.debts.index', compact('suppliers', 'statusFilter'));
+        $totalRemainingDebt = (float) DB::query()
+            ->fromSub((clone $query), 'supplier_rows')
+            ->sum('remaining_debt');
+
+        $suppliers = $query
+            ->orderByDesc('remaining_debt')
+            ->orderBy('suppliers.name')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('admin.reports.debts.index', compact('suppliers', 'statusFilter', 'totalRemainingDebt'));
     }
 
     /**
      * Display the debt mutation (Buku Hutang) for a specific supplier.
      */
-    public function show(Request $request, Supplier $supplier)
+    public function show(Request $request, Supplier $supplier, $supplierId = null)
     {
+        $resolvedSupplier = $supplier->getKey()
+            ? $supplier
+            : Supplier::query()->findOrFail(
+                (int) ($supplierId ?? $request->route('supplier'))
+            );
+
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
-        // Ambil semua PO received
-        $purchasesQuery = $supplier->purchases()->where('status', 'received');
-        $allPurchases = clone $purchasesQuery;
-        
-        $purchases = $purchasesQuery->whereBetween('purchase_date', [$startDate, $endDate])->get();
-        $purchaseIds = $allPurchases->pluck('id');
+        $purchasesBaseQuery = Purchase::query()
+            ->where('supplier_id', $resolvedSupplier->id)
+            ->where('status', 'received');
 
-        // Ambil semua transaksi kas (pembayaran PO)
-        $payments = CashTransaction::where('reference_type', 'purchase')
-            ->whereIn('reference_id', $purchaseIds)
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->with(['cashAccount', 'creator'])
-            ->get();
+        $paymentsBaseQuery = CashTransaction::query()
+            ->join('purchases', 'cash_transactions.reference_id', '=', 'purchases.id')
+            ->where('cash_transactions.reference_type', 'purchase')
+            ->where('purchases.supplier_id', $resolvedSupplier->id)
+            ->where('purchases.status', 'received');
 
         // Hitung saldo awal (Sebelum start date)
-        $pastPurchasesDebt = $supplier->purchases()
-            ->where('status', 'received')
+        $pastPurchasesDebt = (float) (clone $purchasesBaseQuery)
             ->where('purchase_date', '<', $startDate)
             ->sum('total_amount');
-            
-        $pastPaymentsSum = CashTransaction::where('reference_type', 'purchase')
-            ->whereIn('reference_id', $purchaseIds)
+
+        $pastPaymentsSum = (float) (clone $paymentsBaseQuery)
             ->where('transaction_date', '<', $startDate)
-            ->sum('amount');
-            
+            ->sum('cash_transactions.amount');
+
         $openingBalance = $pastPurchasesDebt - $pastPaymentsSum;
 
-        // Gabungkan mutasi
-        $mutations = collect();
+        $purchaseMutations = (clone $purchasesBaseQuery)
+            ->whereBetween('purchase_date', [$startDate, $endDate])
+            ->selectRaw('purchase_date as row_date')
+            ->selectRaw('1 as sort_priority')
+            ->selectRaw('purchases.id as row_id')
+            ->selectRaw("'purchase' as row_kind")
+            ->selectRaw('purchase_number as reference')
+            ->selectRaw('NULL as description')
+            ->selectRaw('0 as debit')
+            ->selectRaw('total_amount as credit');
 
-        foreach ($purchases as $purchase) {
-            $mutations->push([
-                'date' => Carbon::parse($purchase->purchase_date)->startOfDay(),
-                'type' => 'Penambahan Hutang',
-                'description' => "Pembelian PO #{$purchase->purchase_number}",
-                'reference' => $purchase->purchase_number,
-                'debit' => 0, // Hutang berkurang
-                'credit' => $purchase->total_amount, // Hutang bertambah
-                'is_purchase' => true,
-                'model' => $purchase
-            ]);
-        }
+        $paymentMutations = (clone $paymentsBaseQuery)
+            ->whereBetween('cash_transactions.transaction_date', [$startDate, $endDate])
+            ->selectRaw('cash_transactions.transaction_date as row_date')
+            ->selectRaw('2 as sort_priority')
+            ->selectRaw('cash_transactions.id as row_id')
+            ->selectRaw("'payment' as row_kind")
+            ->selectRaw('cash_transactions.transaction_number as reference')
+            ->selectRaw('cash_transactions.description as description')
+            ->selectRaw('cash_transactions.amount as debit')
+            ->selectRaw('0 as credit');
 
-        foreach ($payments as $payment) {
-            $mutations->push([
-                'date' => Carbon::parse($payment->transaction_date)->startOfDay(),
-                'type' => 'Pelunasan Hutang',
-                'description' => $payment->description ?: "Pembayaran Pembelian",
-                'reference' => $payment->transaction_number,
-                'debit' => $payment->amount, // Hutang berkurang (Kas Keluar)
-                'credit' => 0,
-                'is_payment' => true,
-                'model' => $payment
-            ]);
-        }
+        $mutationsBaseQuery = DB::query()
+            ->fromSub($purchaseMutations->unionAll($paymentMutations), 'mutations')
+            ->select('mutations.*')
+            ->selectRaw(
+                '? + SUM(credit - debit) OVER (ORDER BY row_date asc, sort_priority asc, row_id asc ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as balance',
+                [$openingBalance]
+            );
 
-        // Sort by date ascending
-        $mutations = $mutations->sortBy(function ($item) {
-            return $item['date']->timestamp;
-        })->values();
+        $mutations = DB::query()
+            ->fromSub($mutationsBaseQuery, 'ledger')
+            ->orderBy('row_date', 'asc')
+            ->orderBy('sort_priority', 'asc')
+            ->orderBy('row_id', 'asc')
+            ->paginate(100)
+            ->withQueryString();
 
-        // Hitung running balance
-        $currentBalance = $openingBalance;
-        $totalDebit = 0;
-        $totalCredit = 0;
-        
-        $mutations = $mutations->map(function ($mutation) use (&$currentBalance, &$totalDebit, &$totalCredit) {
-            $currentBalance += $mutation['credit']; // Hutang bertambah
-            $currentBalance -= $mutation['debit']; // Hutang berkurang
-            
-            $totalDebit += $mutation['debit'];
-            $totalCredit += $mutation['credit'];
-            
-            $mutation['balance'] = $currentBalance;
-            return $mutation;
-        });
+        $mutations->setCollection(
+            $mutations->getCollection()->map(function ($mutation) {
+                $isPurchase = $mutation->row_kind === 'purchase';
+
+                return [
+                    'date' => Carbon::parse($mutation->row_date)->startOfDay(),
+                    'type' => $isPurchase ? 'Penambahan Hutang' : 'Pelunasan Hutang',
+                    'description' => $isPurchase
+                        ? "Pembelian PO #{$mutation->reference}"
+                        : ($mutation->description ?: 'Pembayaran Pembelian'),
+                    'reference' => $mutation->reference,
+                    'debit' => (float) $mutation->debit,
+                    'credit' => (float) $mutation->credit,
+                    'balance' => (float) $mutation->balance,
+                    'is_purchase' => $isPurchase,
+                    'is_payment' => ! $isPurchase,
+                ];
+            })
+        );
+
+        $totalCredit = (float) (clone $purchasesBaseQuery)
+            ->whereBetween('purchase_date', [$startDate, $endDate])
+            ->sum('total_amount');
+
+        $totalDebit = (float) (clone $paymentsBaseQuery)
+            ->whereBetween('cash_transactions.transaction_date', [$startDate, $endDate])
+            ->sum('cash_transactions.amount');
+
+        $currentBalance = $openingBalance + $totalCredit - $totalDebit;
 
         // Summary all time
-        $allTimeDebt = $supplier->purchases()->where('status', 'received')->sum('total_amount');
-        $allTimePaid = CashTransaction::where('reference_type', 'purchase')
-            ->whereIn('reference_id', $purchaseIds)
-            ->sum('amount');
+        $allTimeDebt = (float) (clone $purchasesBaseQuery)->sum('total_amount');
+        $allTimePaid = (float) (clone $paymentsBaseQuery)->sum('cash_transactions.amount');
         $endingBalanceAllTime = max(0, $allTimeDebt - $allTimePaid);
 
         return view('admin.reports.debts.show', compact(
-            'supplier', 
             'mutations', 
             'openingBalance', 
             'currentBalance',
@@ -163,6 +156,55 @@ class DebtReportController extends Controller
             'allTimeDebt',
             'allTimePaid',
             'endingBalanceAllTime'
-        ));
+        ))->with('supplier', $resolvedSupplier);
+    }
+
+    private function buildSupplierDebtSummaryQuery(Request $request)
+    {
+        $paymentSummary = CashTransaction::query()
+            ->where('reference_type', 'purchase')
+            ->selectRaw('reference_id as purchase_id')
+            ->selectRaw('COALESCE(SUM(amount), 0) as total_paid')
+            ->groupBy('reference_id');
+
+        $purchaseSummary = Purchase::query()
+            ->where('status', 'received')
+            ->leftJoinSub($paymentSummary, 'payment_summary', function ($join) {
+                $join->on('payment_summary.purchase_id', '=', 'purchases.id');
+            })
+            ->selectRaw('purchases.supplier_id')
+            ->selectRaw('COALESCE(SUM(purchases.total_amount), 0) as total_debt')
+            ->selectRaw('COALESCE(SUM(COALESCE(payment_summary.total_paid, 0)), 0) as total_paid')
+            ->groupBy('purchases.supplier_id');
+
+        $query = Supplier::query()
+            ->leftJoinSub($purchaseSummary, 'debt_summary', function ($join) {
+                $join->on('debt_summary.supplier_id', '=', 'suppliers.id');
+            })
+            ->select('suppliers.*')
+            ->selectRaw('COALESCE(debt_summary.total_debt, 0) as total_debt')
+            ->selectRaw('COALESCE(debt_summary.total_paid, 0) as total_paid')
+            ->selectRaw($this->remainingDebtExpression('debt_summary.total_debt', 'debt_summary.total_paid') . ' as remaining_debt');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('suppliers.name', 'like', "%{$search}%")
+                    ->orWhere('suppliers.code', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
+    }
+
+    private function remainingDebtExpression(string $debtColumn, string $paidColumn): string
+    {
+        $baseExpression = "COALESCE({$debtColumn}, 0) - COALESCE({$paidColumn}, 0)";
+
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return "MAX({$baseExpression}, 0)";
+        }
+
+        return "GREATEST({$baseExpression}, 0)";
     }
 }

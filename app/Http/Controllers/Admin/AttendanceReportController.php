@@ -124,21 +124,28 @@ class AttendanceReportController extends Controller
 
     private function buildReportData(Request $request): array
     {
-        [$query, $dateFrom, $dateTo] = $this->buildFilteredAttendanceQuery($request);
+        [$detailQuery, $dateFrom, $dateTo] = $this->buildFilteredAttendanceQuery($request);
+        [$statsQuery] = $this->buildFilteredAttendanceQuery($request, false);
 
-        $attendances = (clone $query)
+        $attendances = (clone $detailQuery)
             ->orderBy('clock_in', 'desc')
-            ->get();
+            ->paginate(100, ['*'], 'attendance_page')
+            ->withQueryString();
 
-        $totalPresent = $attendances->count();
-        $totalLate = $attendances->where('status', 'late')->count();
+        $summary = (clone $statsQuery)
+            ->selectRaw('COUNT(*) as total_present')
+            ->selectRaw("COALESCE(SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END), 0) as total_late")
+            ->first();
+
+        $totalPresent = (int) ($summary->total_present ?? 0);
+        $totalLate = (int) ($summary->total_late ?? 0);
 
         $activeEmployeeQuery = User::where('is_active', true)->whereNotNull('outlet_id');
         if ($request->filled('outlet_id')) {
             $activeEmployeeQuery->where('outlet_id', (int) $request->integer('outlet_id'));
         }
         $activeEmployeeCount = (int) $activeEmployeeQuery->count();
-        $presentEmployeeCount = (int) $attendances->pluck('user_id')->unique()->count();
+        $presentEmployeeCount = (int) (clone $statsQuery)->distinct()->count('user_id');
         $totalNotPresent = max($activeEmployeeCount - $presentEmployeeCount, 0);
 
         $anomalies = $this->detectAnomalies(
@@ -148,46 +155,64 @@ class AttendanceReportController extends Controller
         );
         $anomalyCount = count($anomalies);
 
-        $outletStats = $attendances
-            ->groupBy('outlet_id')
-            ->map(function ($rows) {
-                $first = $rows->first();
-                $employeeCount = $rows->pluck('user_id')->unique()->count();
-                $lateCount = $rows->where('status', 'late')->count();
-                $total = $rows->count();
+        $outletStats = (clone $statsQuery)
+            ->leftJoin('outlets', 'attendances.outlet_id', '=', 'outlets.id')
+            ->selectRaw('attendances.outlet_id')
+            ->selectRaw('outlets.name as outlet_name')
+            ->selectRaw('COUNT(*) as total_records')
+            ->selectRaw('COUNT(DISTINCT attendances.user_id) as unique_employees')
+            ->selectRaw("COALESCE(SUM(CASE WHEN attendances.status = 'late' THEN 1 ELSE 0 END), 0) as late_count")
+            ->groupBy('attendances.outlet_id', 'outlets.name')
+            ->orderByDesc('total_records')
+            ->paginate(20, ['*'], 'outlets_page')
+            ->withQueryString();
+
+        $outletStats->setCollection(
+            $outletStats->getCollection()->map(function ($row) {
+                $totalRecords = (int) ($row->total_records ?? 0);
+                $lateCount = (int) ($row->late_count ?? 0);
 
                 return [
-                    'outlet_name' => $first?->outlet?->name ?? '-',
-                    'total_records' => $total,
-                    'unique_employees' => $employeeCount,
+                    'outlet_name' => $row->outlet_name ?? '-',
+                    'total_records' => $totalRecords,
+                    'unique_employees' => (int) ($row->unique_employees ?? 0),
                     'late_count' => $lateCount,
-                    'on_time_rate' => $total > 0 ? round((($total - $lateCount) / $total) * 100, 1) : 0,
+                    'on_time_rate' => $totalRecords > 0 ? round((($totalRecords - $lateCount) / $totalRecords) * 100, 1) : 0,
                 ];
             })
-            ->sortByDesc('total_records')
-            ->values();
+        );
 
-        $employeeStats = $attendances
-            ->groupBy('user_id')
-            ->map(function ($rows) {
-                $first = $rows->first();
-                $lateCount = $rows->where('status', 'late')->count();
-                $clockedOutRows = $rows->filter(fn ($row) => $row->isClockOut());
-                $avgDuration = $clockedOutRows->count() > 0
-                    ? round($clockedOutRows->map(fn ($row) => (int) $row->getDuration())->avg(), 0)
-                    : null;
+        $employeeStats = (clone $statsQuery)
+            ->leftJoin('users', 'attendances.user_id', '=', 'users.id')
+            ->leftJoin('outlets', 'attendances.outlet_id', '=', 'outlets.id')
+            ->selectRaw('attendances.user_id')
+            ->selectRaw('users.name as employee_name')
+            ->selectRaw('outlets.name as outlet_name')
+            ->selectRaw('COUNT(*) as total_records')
+            ->selectRaw("COALESCE(SUM(CASE WHEN attendances.status = 'late' THEN 1 ELSE 0 END), 0) as late_count")
+            ->selectRaw("COALESCE(SUM(CASE WHEN attendances.clock_out IS NOT NULL THEN 1 ELSE 0 END), 0) as clocked_out_count")
+            ->selectRaw($this->averageAttendanceDurationExpression() . ' as avg_duration_minutes')
+            ->groupBy('attendances.user_id', 'users.name', 'outlets.name')
+            ->orderByDesc('total_records')
+            ->paginate(20, ['*'], 'employees_page')
+            ->withQueryString();
+
+        $employeeStats->setCollection(
+            $employeeStats->getCollection()->map(function ($row) {
+                $totalRecords = (int) ($row->total_records ?? 0);
+                $lateCount = (int) ($row->late_count ?? 0);
+                $clockedOutCount = (int) ($row->clocked_out_count ?? 0);
 
                 return [
-                    'employee_name' => $first?->user?->name ?? '-',
-                    'outlet_name' => $first?->outlet?->name ?? '-',
-                    'total_records' => $rows->count(),
+                    'employee_name' => $row->employee_name ?? '-',
+                    'outlet_name' => $row->outlet_name ?? '-',
+                    'total_records' => $totalRecords,
                     'late_count' => $lateCount,
-                    'on_time_rate' => $rows->count() > 0 ? round((($rows->count() - $lateCount) / $rows->count()) * 100, 1) : 0,
-                    'avg_duration_minutes' => $avgDuration,
+                    'on_time_rate' => $totalRecords > 0 ? round((($totalRecords - $lateCount) / $totalRecords) * 100, 1) : 0,
+                    'avg_duration_minutes' => $clockedOutCount > 0 ? (int) round((float) ($row->avg_duration_minutes ?? 0)) : null,
                 ];
             })
-            ->sortByDesc('total_records')
-            ->values();
+        );
 
         return [
             'period' => $request->input('period', 'today'),
@@ -209,7 +234,7 @@ class AttendanceReportController extends Controller
         ];
     }
 
-    private function buildFilteredAttendanceQuery(Request $request): array
+    private function buildFilteredAttendanceQuery(Request $request, bool $withRelations = true): array
     {
         $period = $request->input('period', 'today');
         $dateFrom = today();
@@ -226,12 +251,24 @@ class AttendanceReportController extends Controller
             $dateTo = Carbon::parse($request->input('date_to', now()->toDateString()))->endOfDay();
         }
 
-        $query = Attendance::with(['user', 'loggedInUser', 'outlet'])
+        $query = Attendance::query()
+            ->when($withRelations, fn ($q) => $q->with(['user', 'loggedInUser', 'outlet']))
             ->whereBetween('clock_in', [$dateFrom->copy()->startOfDay(), $dateTo->copy()->endOfDay()])
             ->when($request->filled('outlet_id'), fn ($q) => $q->where('outlet_id', (int) $request->integer('outlet_id')))
             ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', (int) $request->integer('user_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')));
 
         return [$query, $dateFrom instanceof Carbon ? $dateFrom->copy() : Carbon::parse($dateFrom), $dateTo instanceof Carbon ? $dateTo->copy() : Carbon::parse($dateTo)];
+    }
+
+    private function averageAttendanceDurationExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return "AVG(CASE WHEN attendances.clock_out IS NOT NULL THEN (julianday(attendances.clock_out) - julianday(attendances.clock_in)) * 24 * 60 END)";
+        }
+
+        return "AVG(CASE WHEN attendances.clock_out IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, attendances.clock_in, attendances.clock_out) END)";
     }
 }

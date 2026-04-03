@@ -127,9 +127,18 @@
         @endif
 
         <div class="bg-white rounded-xl border border-orange-100">
-            <div class="p-5 border-b border-orange-100">
-                <h3 class="text-lg font-semibold text-gray-900">Tabel Rekap Detail Absensi</h3>
-                <p class="text-sm text-gray-500">Periode {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
+            <div class="p-5 border-b border-orange-100 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Tabel Rekap Detail Absensi</h3>
+                    <p class="text-sm text-gray-500">Periode {{ \Carbon\Carbon::parse($dateFrom)->format('d M Y') }} - {{ \Carbon\Carbon::parse($dateTo)->format('d M Y') }}</p>
+                </div>
+                <div class="text-xs text-gray-500">
+                    @if($attendances->total() > 0)
+                        Menampilkan {{ $attendances->firstItem() }}-{{ $attendances->lastItem() }} dari {{ $attendances->total() }} baris
+                    @else
+                        Tidak ada data
+                    @endif
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -172,12 +181,24 @@
                     </tbody>
                 </table>
             </div>
+            @if($attendances->hasPages())
+                <div class="px-5 py-4 border-t border-orange-100">
+                    {{ $attendances->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl border border-orange-100">
-                <div class="p-5 border-b border-orange-100">
+                <div class="p-5 border-b border-orange-100 flex flex-wrap items-center justify-between gap-3">
                     <h3 class="text-lg font-semibold text-gray-900">Rekap Per Outlet</h3>
+                    <div class="text-xs text-gray-500">
+                        @if($outletStats->total() > 0)
+                            Menampilkan {{ $outletStats->firstItem() }}-{{ $outletStats->lastItem() }} dari {{ $outletStats->total() }} outlet
+                        @else
+                            Tidak ada data
+                        @endif
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -207,11 +228,23 @@
                         </tbody>
                     </table>
                 </div>
+                @if($outletStats->hasPages())
+                    <div class="px-5 py-4 border-t border-orange-100">
+                        {{ $outletStats->onEachSide(1)->links() }}
+                    </div>
+                @endif
             </div>
 
             <div class="bg-white rounded-xl border border-orange-100">
-                <div class="p-5 border-b border-orange-100">
+                <div class="p-5 border-b border-orange-100 flex flex-wrap items-center justify-between gap-3">
                     <h3 class="text-lg font-semibold text-gray-900">Rekap Per Karyawan</h3>
+                    <div class="text-xs text-gray-500">
+                        @if($employeeStats->total() > 0)
+                            Menampilkan {{ $employeeStats->firstItem() }}-{{ $employeeStats->lastItem() }} dari {{ $employeeStats->total() }} karyawan
+                        @else
+                            Tidak ada data
+                        @endif
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -243,6 +276,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($employeeStats->hasPages())
+                    <div class="px-5 py-4 border-t border-orange-100">
+                        {{ $employeeStats->onEachSide(1)->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

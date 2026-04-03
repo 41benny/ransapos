@@ -30,6 +30,16 @@
 
     <!-- Categories Table -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-gray-900">Daftar Kategori Biaya</h2>
+            <p class="text-xs text-gray-500">
+                @if($parentCategories->total() > 0)
+                    Menampilkan {{ $parentCategories->firstItem() }}-{{ $parentCategories->lastItem() }} dari {{ $parentCategories->total() }} kategori induk
+                @else
+                    Tidak ada data
+                @endif
+            </p>
+        </div>
         <table class="ui-table min-w-full divide-y divide-gray-200">
             <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                 <tr>
@@ -143,6 +153,11 @@
                 @endforelse
             </tbody>
         </table>
+        @if($parentCategories->hasPages())
+            <div class="px-6 py-4 border-t border-gray-200 bg-white">
+                {{ $parentCategories->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

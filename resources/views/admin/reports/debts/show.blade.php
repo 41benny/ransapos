@@ -76,8 +76,17 @@
 
     {{-- Data Section --}}
     <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
-        <div class="p-4 border-b border-slate-100 bg-white">
-            <h3 class="text-sm font-semibold text-slate-800">Mutasi Buku Hutang / History (Berdasarkan Periode)</h3>
+        <div class="p-4 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-800">Mutasi Buku Hutang / History (Berdasarkan Periode)</h3>
+                <p class="text-[11px] text-slate-500 mt-1">
+                    @if($mutations->total() > 0)
+                        Menampilkan {{ $mutations->firstItem() }}-{{ $mutations->lastItem() }} dari {{ $mutations->total() }} mutasi
+                    @else
+                        Tidak ada data
+                    @endif
+                </p>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table class="ui-table min-w-full divide-y divide-slate-200">
@@ -149,6 +158,11 @@
                 </tbody>
             </table>
         </div>
+        @if($mutations->hasPages())
+            <div class="px-5 py-4 border-t border-slate-100 bg-white no-print">
+                {{ $mutations->onEachSide(1)->links() }}
+            </div>
+        @endif
     </div>
     
     <div class="mt-4 text-xs text-slate-400 italic text-center no-print">

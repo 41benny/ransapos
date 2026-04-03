@@ -23,7 +23,7 @@
             <div class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <p class="text-[10px] font-normal text-slate-500 uppercase tracking-widest">Jabatan Terdaftar</p>
                 <div class="flex items-baseline gap-2 mt-2">
-                    <p class="text-2xl font-normal text-slate-900">{{ $roles->count() }}</p>
+                    <p class="text-2xl font-normal text-slate-900">{{ $totalRoles }}</p>
                     <p class="text-[10px] font-normal text-slate-400">Role</p>
                 </div>
             </div>
@@ -51,6 +51,13 @@
                         <h3 class="text-[13px] font-normal text-slate-900 leading-none">Matriks Role</h3>
                         <p class="text-[10px] font-normal text-slate-500 mt-1 uppercase tracking-widest">Khusus role `superadmin` memiliki akses penuh otomatis</p>
                     </div>
+                    <p class="text-[10px] font-normal text-slate-500 uppercase tracking-widest">
+                        @if($roles->total() > 0)
+                            Menampilkan {{ $roles->firstItem() }}-{{ $roles->lastItem() }} dari {{ $roles->total() }} role
+                        @else
+                            Tidak ada data
+                        @endif
+                    </p>
                 </div>
             </div>
 
@@ -110,6 +117,11 @@
                     </tbody>
                 </table>
             </div>
+            @if($roles->hasPages())
+                <div class="px-6 py-4 border-t border-slate-100 bg-white">
+                    {{ $roles->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection

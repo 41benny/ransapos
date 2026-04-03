@@ -304,65 +304,74 @@ class StockController extends Controller
             'end_date' => 'nullable|date',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::with('category')->findOrFail($request->product_id);
         $outlet = Outlet::findOrFail($request->outlet_id);
 
-        $query = StockMutation::where('product_id', $request->product_id)
+        $query = StockMutation::query()
+            ->where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id);
 
         if ($request->filled('start_date')) {
-            $query->where('mutation_date', '>=', $request->start_date);
+            $query->whereDate('mutation_date', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
-            $query->where('mutation_date', '<=', $request->end_date);
+            $query->whereDate('mutation_date', '<=', $request->end_date);
         }
 
-        $mutations = $query->orderBy('mutation_date', 'asc')
+        $summary = (clone $query)
+            ->selectRaw('COUNT(*) as total_rows')
+            ->selectRaw('COALESCE(SUM(CASE WHEN quantity > 0 THEN quantity ELSE 0 END), 0) as total_in')
+            ->selectRaw('COALESCE(SUM(CASE WHEN quantity < 0 THEN ABS(quantity) ELSE 0 END), 0) as total_out')
+            ->first();
+
+        $latestMutation = (clone $query)
+            ->orderBy('mutation_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $mutations = (clone $query)
+            ->orderBy('mutation_date', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
-            ->get();
+            ->paginate(100)
+            ->withQueryString();
 
         $currentStock = Stock::where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id)
             ->first();
 
-        $openingStock = 0.0;
-        if ($request->filled('start_date')) {
-            $lastMutationBefore = StockMutation::query()
-                ->where('product_id', $request->product_id)
-                ->where('outlet_id', $request->outlet_id)
-                ->whereDate('mutation_date', '<', $request->start_date)
-                ->orderBy('mutation_date', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->first();
+        $mutations->setCollection(
+            $mutations->getCollection()->map(function (StockMutation $mutation) {
+                $stockAfter = round((float) ($mutation->stock_after ?? 0), 2);
+                $stockBefore = $mutation->stock_before !== null
+                    ? round((float) $mutation->stock_before, 2)
+                    : round($stockAfter - (float) $mutation->quantity, 2);
 
-            if ($lastMutationBefore) {
-                $openingStock = (float) $lastMutationBefore->stock_after;
-            } else {
-                $netMutationFromStart = (float) StockMutation::query()
-                    ->where('product_id', $request->product_id)
-                    ->where('outlet_id', $request->outlet_id)
-                    ->whereDate('mutation_date', '>=', $request->start_date)
-                    ->sum('quantity');
+                $mutation->display_stock_before = $stockBefore;
+                $mutation->display_stock_after = $stockAfter;
 
-                $openingStock = round((float) ($currentStock->quantity ?? 0) - $netMutationFromStart, 2);
-            }
-        } elseif ($mutations->isNotEmpty()) {
-            $netMutationInRange = (float) $mutations->sum('quantity');
-            $openingStock = round((float) ($currentStock->quantity ?? 0) - $netMutationInRange, 2);
-        }
+                return $mutation;
+            })
+        );
 
-        $runningStock = $openingStock;
-        $mutations = $mutations->map(function (StockMutation $mutation) use (&$runningStock) {
-            $mutation->display_stock_before = round($runningStock, 2);
-            $runningStock = round($runningStock + (float) $mutation->quantity, 2);
-            $mutation->display_stock_after = round($runningStock, 2);
+        $latestUnitCost = (float) ($latestMutation->unit_cost ?? $product->purchase_price ?? 0);
+        $estimatedInventoryValue = round((float) ($currentStock->quantity ?? 0) * $latestUnitCost, 2);
+        $totalIn = (float) ($summary->total_in ?? 0);
+        $totalOut = (float) ($summary->total_out ?? 0);
+        $netChange = $totalIn - $totalOut;
 
-            return $mutation;
-        });
-
-        return view('admin.stocks.stock-card', compact('product', 'outlet', 'mutations', 'currentStock'));
+        return view('admin.stocks.stock-card', compact(
+            'product',
+            'outlet',
+            'mutations',
+            'currentStock',
+            'latestUnitCost',
+            'estimatedInventoryValue',
+            'totalIn',
+            'totalOut',
+            'netChange'
+        ));
     }
 
     /**
