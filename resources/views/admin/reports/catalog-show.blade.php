@@ -2436,7 +2436,11 @@
                             @forelse($rows as $row)
                                 <tr>
                                     <td class="px-4 py-3 align-top">
-                                        <div class="font-mono text-xs text-slate-700">{{ $row->invoice_number }}</div>
+                                        <a href="{{ route('admin.reports.catalog.sale-print', ['sale' => $row->sale_id]) }}"
+                                            target="_blank" rel="noopener"
+                                            class="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline">
+                                            {{ $row->invoice_number }}
+                                        </a>
                                         <div class="mt-1 text-[10px] text-slate-400">Update: {{ \Carbon\Carbon::parse($row->cancelled_at)->format('d/m/Y H:i') }}</div>
                                     </td>
                                     <td class="px-4 py-3 align-top text-slate-700">{{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}</td>
