@@ -202,7 +202,7 @@
                                                     <td rowspan="{{ $rowCount }}" class="px-6 py-4 text-gray-600 align-top">
                                                         @foreach($sale->payments as $payment)
                                                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-xs mb-1">
-                                                                {{ $payment->paymentMethod->name ?? '-' }}
+                                                                {{ $payment->paymentMethod?->name ?? '-' }}
                                                             </span>
                                                         @endforeach
                                                     </td>
@@ -251,7 +251,7 @@
                                             <td class="px-6 py-4 text-gray-600">
                                                 @foreach($sale->payments as $payment)
                                                     <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-xs mb-1">
-                                                        {{ $payment->paymentMethod->name ?? '-' }}
+                                                        {{ $payment->paymentMethod?->name ?? '-' }}
                                                     </span>
                                                 @endforeach
                                             </td>

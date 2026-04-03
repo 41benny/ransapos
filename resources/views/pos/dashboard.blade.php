@@ -161,7 +161,7 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-2 text-gray-600">
-                                            {{ $sale->payments->first()->paymentMethod->name ?? '-' }}
+                                            {{ $sale->payments->first()?->paymentMethod?->name ?? '-' }}
                                         </td>
                                         <td class="px-4 py-2 font-bold text-gray-900 text-right">
                                             Rp {{ number_format($sale->total_amount, 0, ',', '.') }}

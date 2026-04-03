@@ -111,7 +111,7 @@
     <div class="payment">
         @foreach($sale->payments as $payment)
         <div class="flex-between">
-            <span>{{ $payment->paymentMethod->name }}</span>
+            <span>{{ $payment->paymentMethod?->name ?? '-' }}</span>
             <span>{{ number_format($payment->amount, 0, ',', '.') }}</span>
         </div>
         @endforeach

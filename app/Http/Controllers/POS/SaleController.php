@@ -320,16 +320,20 @@ class SaleController extends Controller
     /**
      * Cetak struk belanja
      */
-    public function print(Sale $sale)
+    public function print(Sale $sale, $saleId = null)
     {
+        $resolvedSale = $sale->getKey()
+            ? $sale
+            : Sale::query()->findOrFail((int) ($saleId ?? request()->route('sale')));
+
         // Pastikan user punya akses ke outlet ini (kecuali admin/superadmin).
-        if (!auth()->user()->hasRole(['admin', 'superadmin']) && $sale->outlet_id !== auth()->user()->outlet_id) {
+        if (!auth()->user()->hasRole(['admin', 'superadmin']) && $resolvedSale->outlet_id !== auth()->user()->outlet_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        $sale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
+        $resolvedSale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
 
-        return view('pos.sales.print', compact('sale'));
+        return view('pos.sales.print', ['sale' => $resolvedSale]);
     }
 
     /**
