@@ -917,18 +917,60 @@ class CatalogReportController extends Controller
                 return false;
             };
 
-            $salesQuery = \App\Models\Sale::query()
-                ->with(['items.product', 'outlet', 'user', 'customer', 'promotion:id,name,code', 'voucher:id,name,code'])
+            $saleItemMetricsSub = DB::table('sale_items')
+                ->selectRaw('sale_items.sale_id')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal + sale_items.discount_amount), 0) as gross_value')
+                ->selectRaw('COALESCE(SUM(sale_items.discount_amount), 0) as item_discount_amount')
+                ->groupBy('sale_items.sale_id');
+
+            $salesQuery = DB::table('sales')
+                ->leftJoinSub($saleItemMetricsSub, 'sale_item_metrics', function ($join) {
+                    $join->on('sale_item_metrics.sale_id', '=', 'sales.id');
+                })
+                ->leftJoin('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+                ->leftJoin('promotions', 'sales.promotion_id', '=', 'promotions.id')
+                ->leftJoin('vouchers', 'sales.voucher_id', '=', 'vouchers.id')
                 ->where('status', 'completed')
-                ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+                ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                ->where(function ($query) {
+                    $query
+                        ->whereRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) + COALESCE(sales.discount_amount, 0) > 0');
+
+                    foreach (SpecialPromotion::blockedRuntimeSalesTypes() as $salesType) {
+                        $query->orWhere('sales.sales_type', $salesType);
+                    }
+                });
 
             if (!empty($outletId)) {
                 $salesQuery->where('outlet_id', $outletId);
             }
 
-            $allSales = $salesQuery->orderByDesc('sale_date')->orderByDesc('created_at')->get();
-
-            $processedData = $allSales->map(fn($sale) => $this->buildSalesDiscountRow($sale));
+            $processedData = $salesQuery
+                ->select(
+                    'sales.id',
+                    'sales.invoice_number',
+                    'sales.sale_date',
+                    'sales.sales_type',
+                    'sales.discount_type',
+                    'sales.discount_amount',
+                    'sales.total_amount',
+                    'sales.customer_name',
+                    'sales.notes',
+                    'outlets.name as outlet_name',
+                    'customers.name as customer_relation_name',
+                    'promotions.name as promotion_name',
+                    'promotions.code as promotion_code',
+                    'vouchers.name as voucher_name',
+                    'vouchers.code as voucher_table_code',
+                    'sales.voucher_code'
+                )
+                ->selectRaw('COALESCE(sale_item_metrics.gross_value, sales.subtotal + sales.discount_amount, sales.subtotal, 0) as gross_value')
+                ->selectRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) as item_discount_amount')
+                ->orderByDesc('sales.sale_date')
+                ->orderByDesc('sales.created_at')
+                ->get()
+                ->map(fn($sale) => $this->buildSalesDiscountRowFromRecord($sale));
 
             $filteredData = $processedData->filter(function ($row) use ($filterType, $specialFilterType) {
                 if ($filterType !== 'all') {
@@ -1903,6 +1945,57 @@ class CatalogReportController extends Controller
             'data_status_label' => $isDiscountAnomaly ? 'Anomali' : 'Valid',
             'notes' => $sale->notes,
             'items_count' => $sale->items->count(),
+        ];
+    }
+
+    private function buildSalesDiscountRowFromRecord(object $sale): array
+    {
+        $itemLevelDiscount = max(0, (float) ($sale->item_discount_amount ?? 0));
+        $effectiveDiscount = $itemLevelDiscount + (float) ($sale->discount_amount ?? 0);
+
+        $isDiscountAnomaly = SpecialPromotion::isSpecialSalesType($sale->sales_type ?? null)
+            && blank($sale->promotion_name ?? null)
+            && blank($sale->voucher_name ?? null)
+            && $effectiveDiscount <= 0.0001;
+
+        $discountMeta = $this->resolveDiscountTypeMeta(
+            promotionName: $sale->promotion_name ?? null,
+            voucherName: $sale->voucher_name ?? null,
+            voucherCode: ($sale->voucher_code ?? null) ?: ($sale->voucher_table_code ?? null),
+            salesType: $sale->sales_type ?? null,
+            discountType: $sale->discount_type ?? null,
+            totalDiscount: $effectiveDiscount,
+            isDiscountAnomaly: $isDiscountAnomaly,
+        );
+
+        $specialDiscountType = SpecialPromotion::classify(
+            $sale->promotion_code ?? null,
+            $sale->promotion_name ?? null,
+            $sale->sales_type ?? null
+        );
+
+        return [
+            'id' => $sale->id,
+            'invoice_number' => $sale->invoice_number,
+            'sale_date' => $this->resolveDisplayDate($sale->sale_date ?? null),
+            'outlet_name' => $this->resolveDisplayText($sale->outlet_name ?? null),
+            'sales_type' => $sale->sales_type ?? 'regular',
+            'sales_type_label' => $this->formatSalesTypeLabel($sale->sales_type ?? null),
+            'special_discount_type' => $specialDiscountType,
+            'discount_type' => $sale->discount_type ?? 'none',
+            'discount_source_key' => $discountMeta['key'],
+            'discount_source_kind' => $discountMeta['kind'] ?? 'none',
+            'discount_type_label' => $discountMeta['label'],
+            'discount_source_label' => $discountMeta['label'],
+            'customer_name' => $this->resolveDisplayText(($sale->customer_name ?? null) ?: ($sale->customer_relation_name ?? null), 'Walk-in'),
+            'gross_value' => (float) ($sale->gross_value ?? 0),
+            'net_sales' => (float) ($sale->total_amount ?? 0),
+            'effective_discount' => $effectiveDiscount,
+            'total_discount' => $effectiveDiscount,
+            'is_discount_anomaly' => $isDiscountAnomaly,
+            'data_status_label' => $isDiscountAnomaly ? 'Anomali' : 'Valid',
+            'notes' => $sale->notes ?? null,
+            'items_count' => null,
         ];
     }
 

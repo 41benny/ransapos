@@ -68,4 +68,45 @@ class CatalogReportControllerTest extends TestCase
         $this->assertSame(12000.0, $row['gross_value']);
         $this->assertSame(2000.0, $row['effective_discount']);
     }
+
+    public function test_build_sales_discount_row_from_record_uses_lightweight_query_payload(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $record = (object) [
+            'id' => 7,
+            'invoice_number' => 'INV-RINGKAS-7',
+            'sale_date' => '2026-04-03',
+            'outlet_name' => null,
+            'sales_type' => 'compliment',
+            'discount_type' => 'none',
+            'discount_amount' => 0,
+            'item_discount_amount' => 0,
+            'total_amount' => 0,
+            'gross_value' => 35000,
+            'promotion_name' => null,
+            'promotion_code' => null,
+            'voucher_name' => null,
+            'voucher_table_code' => null,
+            'voucher_code' => null,
+            'customer_name' => '',
+            'customer_relation_name' => null,
+            'notes' => null,
+        ];
+
+        $method = new \ReflectionMethod($controller, 'buildSalesDiscountRowFromRecord');
+        $method->setAccessible(true);
+
+        $row = $method->invoke($controller, $record);
+
+        $this->assertSame('2026-04-03', $row['sale_date']);
+        $this->assertSame('-', $row['outlet_name']);
+        $this->assertSame('Walk-in', $row['customer_name']);
+        $this->assertTrue($row['is_discount_anomaly']);
+        $this->assertSame('Compliment (Anomali)', $row['discount_source_label']);
+        $this->assertSame(35000.0, $row['gross_value']);
+    }
 }
