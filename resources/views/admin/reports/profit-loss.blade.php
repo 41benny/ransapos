@@ -188,20 +188,20 @@
                                 </tr>
 
                                 {{-- GROSS PROFIT --}}
-                                <tr class="bg-emerald-50/70 border-y border-emerald-100">
+                                <tr class="bg-emerald-50/70 border-y border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800/80">
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/70 dark:text-emerald-300">
                                                 <i class="fas fa-chart-line text-[10px]"></i>
                                             </span>
-                                            <span class="text-sm font-black uppercase tracking-wider text-emerald-700">Laba Kotor</span>
+                                            <span class="text-sm font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Laba Kotor</span>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Summary</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 dark:text-emerald-300">Summary</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <span class="text-sm font-black text-emerald-700">
+                                        <span class="text-sm font-black text-emerald-700 dark:text-emerald-300">
                                             Rp {{ number_format($report['gross_profit'], 0, ',', '.') }}
                                         </span>
                                     </td>
@@ -220,55 +220,55 @@
                                             : 'Total grup - ' . $accountCount . ' akun';
                                     @endphp
 
-                                    <tr class="bg-slate-50/70 border-t border-slate-100">
+                                    <tr class="bg-slate-50/70 border-t border-slate-100 dark:bg-slate-800/80 dark:border-slate-700">
                                         <td class="px-6 py-4" colspan="2">
                                             <button type="button"
                                                 class="flex w-full items-center gap-3 text-left"
                                                 data-expense-toggle="{{ $groupKey }}"
                                                 aria-expanded="true">
-                                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-transform duration-200"
+                                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-transform duration-200 dark:bg-slate-900 dark:text-slate-300 dark:shadow-none"
                                                     data-expense-chevron>
                                                     <i class="fas fa-chevron-down text-[10px]"></i>
                                                 </span>
-                                                <span class="inline-flex items-center rounded-full bg-slate-200/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                                <span class="inline-flex items-center rounded-full bg-slate-200/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:bg-slate-700 dark:text-slate-200">
                                                     {{ $groupTitle }}
                                                 </span>
-                                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-400">
                                                     {{ $groupMeta }}
                                                 </span>
                                             </button>
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_type' => 'expense', 'coa_group' => $group['group_name']]) }}" target="_blank"
-                                                class="text-sm font-black text-slate-700 hover:text-indigo-600 transition-colors">
+                                                class="text-sm font-black text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-100 dark:hover:text-indigo-300">
                                                 Rp {{ number_format($group['total'], 0, ',', '.') }}
                                             </a>
                                         </td>
                                     </tr>
 
                                     @foreach($group['accounts'] as $account)
-                                        <tr class="group hover:bg-slate-50 transition-colors"
+                                        <tr class="group hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/70"
                                             data-expense-detail="{{ $groupKey }}">
                                             <td class="px-10 py-3">
                                                 <div class="flex items-center gap-3">
-                                                    <span class="h-2 w-2 rounded-full bg-slate-300"></span>
+                                                    <span class="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-500"></span>
 
                                                     <div class="flex flex-col gap-1">
-                                                        <span class="text-sm text-slate-600">
+                                                        <span class="text-sm text-slate-600 dark:text-slate-200">
                                                             {{ $account['name'] }}
                                                         </span>
-                                                        <span class="inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                                                        <span class="inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                                                             Akun detail
                                                         </span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="px-6 py-3 text-center">
-                                                <span class="text-[10px] font-medium text-slate-400 tracking-widest">{{ $account['code'] }}</span>
+                                                <span class="text-[10px] font-medium text-slate-400 tracking-widest dark:text-slate-400">{{ $account['code'] }}</span>
                                             </td>
                                             <td class="px-6 py-3 text-right">
                                                 <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_account_id' => $account['id']]) }}" target="_blank"
-                                                    class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors">
+                                                    class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-200 dark:hover:text-indigo-300">
                                                     Rp {{ number_format($account['amount'], 0, ',', '.') }}
                                                 </a>
                                             </td>
@@ -277,12 +277,12 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="bg-indigo-50/50">
+                                <tr class="bg-indigo-50/50 dark:bg-slate-800/90 dark:border-t dark:border-slate-700">
                                     <td class="px-6 py-6" colspan="2">
-                                        <span class="text-sm font-black text-indigo-700 uppercase tracking-widest">Laba / Rugi Bersih</span>
+                                        <span class="text-sm font-black text-indigo-700 uppercase tracking-widest dark:text-indigo-300">Laba / Rugi Bersih</span>
                                     </td>
                                     <td class="px-6 py-6 text-right">
-                                        <span class="text-lg font-black text-indigo-700">Rp {{ number_format($report['net_profit'], 0, ',', '.') }}</span>
+                                        <span class="text-lg font-black text-indigo-700 dark:text-indigo-300">Rp {{ number_format($report['net_profit'], 0, ',', '.') }}</span>
                                     </td>
                                 </tr>
                             </tfoot>
