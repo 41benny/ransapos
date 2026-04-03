@@ -331,13 +331,13 @@ class CatalogReportController extends Controller
         return response()->json([
             'id' => $sale->id,
             'invoice_number' => $sale->invoice_number,
-            'sale_date' => $sale->sale_date->format('Y-m-d'),
+            'sale_date' => $this->resolveSaleDateLabel($sale),
             'status' => $sale->status,
             'sales_type' => $sale->sales_type ?? 'regular',
             'sales_type_label' => $this->formatSalesTypeLabel($sale->sales_type),
-            'outlet_name' => $sale->outlet->name ?? '-',
-            'cashier_name' => $sale->user->name ?? '-',
-            'customer_name' => $sale->resolved_customer_name,
+            'outlet_name' => $this->resolveDisplayText(data_get($sale, 'outlet.name')),
+            'cashier_name' => $this->resolveDisplayText(data_get($sale, 'user.name')),
+            'customer_name' => $this->resolveDisplayText($sale->resolved_customer_name, 'Walk-in'),
             'promotion_name' => $sale->promotion->name ?? null,
             'voucher_name' => $sale->voucher->name ?? null,
             'voucher_code' => $sale->voucher_code ?? $sale->voucher?->code,
@@ -1880,8 +1880,8 @@ class CatalogReportController extends Controller
         return [
             'id' => $sale->id,
             'invoice_number' => $sale->invoice_number,
-            'sale_date' => $sale->sale_date->format('Y-m-d'),
-            'outlet_name' => $sale->outlet->name ?? '-',
+            'sale_date' => $this->resolveSaleDateLabel($sale),
+            'outlet_name' => $this->resolveDisplayText(data_get($sale, 'outlet.name')),
             'sales_type' => $sale->sales_type ?? 'regular',
             'sales_type_label' => $this->formatSalesTypeLabel($sale->sales_type),
             'special_discount_type' => SpecialPromotion::classify(
@@ -1894,7 +1894,7 @@ class CatalogReportController extends Controller
             'discount_source_kind' => $discountMeta['kind'] ?? 'none',
             'discount_type_label' => $discountMeta['label'],
             'discount_source_label' => $discountMeta['label'],
-            'customer_name' => $sale->resolved_customer_name,
+            'customer_name' => $this->resolveDisplayText($sale->resolved_customer_name, 'Walk-in'),
             'gross_value' => $grossValue,
             'net_sales' => (float) $sale->total_amount,
             'effective_discount' => $effectiveDiscount,
@@ -1986,6 +1986,31 @@ class CatalogReportController extends Controller
                 ? ['key' => 'discount-type:item-level', 'label' => 'Diskon Item', 'kind' => 'item_level']
                 : ['key' => 'discount-type:none', 'label' => 'Tanpa Diskon', 'kind' => 'none'],
         };
+    }
+
+    private function resolveSaleDateLabel(\App\Models\Sale $sale): string
+    {
+        try {
+            return $this->resolveDisplayDate($sale->sale_date);
+        } catch (\Throwable) {
+            return $this->resolveDisplayDate($sale->getRawOriginal('sale_date'));
+        }
+    }
+
+    private function resolveDisplayDate(mixed $value, string $fallback = '-'): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        return $this->resolveDisplayText($value, $fallback);
+    }
+
+    private function resolveDisplayText(mixed $value, string $fallback = '-'): string
+    {
+        $text = trim((string) $value);
+
+        return $text !== '' ? $text : $fallback;
     }
 
     private function stockAdjustmentReport(
