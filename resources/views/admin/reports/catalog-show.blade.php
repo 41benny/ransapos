@@ -2352,6 +2352,124 @@
                     @endif
                 </div>
             </div>
+        @elseif($viewType === 'cancelled-sales')
+            @php
+                $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+                $fmtQty = fn($value) => number_format((float) $value, 2, ',', '.');
+                $statusBreakdown = collect($summary['status_breakdown'] ?? []);
+            @endphp
+            <div class="space-y-5">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Invoice</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ number_format($summary['total_transactions'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Nilai Invoice</div>
+                        <div class="mt-2 text-2xl font-normal text-rose-700">{{ $money($summary['total_amount'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Item</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ $fmtQty($summary['total_items'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Rata-rata / Invoice</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ $money($summary['avg_amount'] ?? 0) }}</div>
+                        <div class="mt-1 text-xs text-slate-500">{{ number_format($summary['outlet_count'] ?? 0) }} outlet</div>
+                    </div>
+                </div>
+
+                @if($statusBreakdown->isNotEmpty() || !empty($meta['notes']))
+                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        @if($statusBreakdown->isNotEmpty())
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1">
+                                <h3 class="text-sm font-normal uppercase tracking-wide text-slate-500">Status Breakdown</h3>
+                                <div class="mt-4 space-y-3">
+                                    @foreach($statusBreakdown as $label => $stat)
+                                        <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                            <div>
+                                                <div class="text-sm font-normal text-slate-800">{{ $label }}</div>
+                                                <div class="text-xs text-slate-500">{{ number_format($stat['total_transactions'] ?? 0) }} invoice</div>
+                                            </div>
+                                            <div class="text-sm font-normal text-rose-700">{{ $money($stat['total_amount'] ?? 0) }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(!empty($meta['notes']))
+                            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm {{ $statusBreakdown->isNotEmpty() ? 'lg:col-span-2' : 'lg:col-span-3' }}">
+                                <h3 class="text-sm font-normal uppercase tracking-wide text-slate-500">Catatan Data</h3>
+                                <ul class="mt-4 space-y-2 text-sm text-slate-600">
+                                    @foreach($meta['notes'] as $note)
+                                        <li class="flex gap-3">
+                                            <span class="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                                            <span>{{ $note }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">No Transaksi</th>
+                                <th class="px-4 py-3">Tanggal</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Outlet</th>
+                                <th class="px-4 py-3">Kasir</th>
+                                <th class="px-4 py-3">Pelanggan</th>
+                                <th class="px-4 py-3">Metode</th>
+                                <th class="px-4 py-3 text-right">Item</th>
+                                <th class="px-4 py-3 text-right">Gross</th>
+                                <th class="px-4 py-3 text-right">Nilai Invoice</th>
+                                <th class="px-4 py-3">Pembayaran</th>
+                                <th class="px-4 py-3">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td class="px-4 py-3 align-top">
+                                        <div class="font-mono text-xs text-slate-700">{{ $row->invoice_number }}</div>
+                                        <div class="mt-1 text-[10px] text-slate-400">Update: {{ \Carbon\Carbon::parse($row->cancelled_at)->format('d/m/Y H:i') }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 align-top text-slate-700">{{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}</td>
+                                    <td class="px-4 py-3 align-top">
+                                        <span class="rounded-full {{ strtolower($row->status_label) === 'void' ? 'border border-amber-200 bg-amber-50 text-amber-700' : 'border border-rose-200 bg-rose-50 text-rose-700' }} px-2.5 py-1 text-[10px] font-normal uppercase tracking-wide">
+                                            {{ $row->status_label }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 align-top text-slate-700">{{ $row->outlet_name }}</td>
+                                    <td class="px-4 py-3 align-top text-slate-700">{{ $row->cashier_name }}</td>
+                                    <td class="px-4 py-3 align-top font-normal text-slate-800">{{ $row->customer_name }}</td>
+                                    <td class="px-4 py-3 align-top text-slate-700">{{ $row->sales_type_label }}</td>
+                                    <td class="px-4 py-3 align-top text-right text-slate-700">
+                                        <div>{{ $fmtQty($row->item_qty) }}</div>
+                                        <div class="text-[10px] text-slate-400">{{ number_format($row->line_count) }} baris</div>
+                                    </td>
+                                    <td class="px-4 py-3 align-top text-right text-slate-700">{{ $money($row->gross_amount) }}</td>
+                                    <td class="px-4 py-3 align-top text-right font-normal text-rose-700">{{ $money($row->total_amount) }}</td>
+                                    <td class="px-4 py-3 align-top">
+                                        <div class="text-slate-700">{{ $row->payment_methods }}</div>
+                                        <div class="mt-1 text-[10px] text-slate-400">Terbayar {{ $money($row->paid_amount) }}</div>
+                                    </td>
+                                    <td class="px-4 py-3 align-top text-slate-600">{{ filled($row->notes) ? $row->notes : '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="12" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan dibatalkan untuk filter yang dipilih.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @elseif($viewType === 'sales-vs-hpp')
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">

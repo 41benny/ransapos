@@ -124,7 +124,7 @@ class CatalogReportController extends Controller
             'sales-by-payment-method' => ['title' => 'Penjualan per Metode Pembayaran', 'implemented' => true],
             'sales-by-category' => ['title' => 'Penjualan per Kategori Produk', 'implemented' => false],
             'sales-by-hour' => ['title' => 'Penjualan per Jam', 'implemented' => false],
-            'cancelled-sales' => ['title' => 'Penjualan yang Dibatalkan', 'implemented' => false],
+            'cancelled-sales' => ['title' => 'Penjualan yang Dibatalkan', 'implemented' => true],
             'sales-stock-out' => ['title' => 'Stok Keluar dari Penjualan', 'implemented' => false],
             'sales-modifier' => ['title' => 'Penjualan Modifier', 'implemented' => false],
             'sales-vs-hpp' => ['title' => 'Penjualan Vs HPP', 'implemented' => true],
@@ -673,6 +673,102 @@ class CatalogReportController extends Controller
                 'payment_rows' => $paymentRows,
                 'sales_type_rows' => $salesTypeRows,
                 'product_rows' => $productRows,
+            ];
+        }
+
+        if ($slug === 'cancelled-sales') {
+            $viewType = 'cancelled-sales';
+
+            $cancelledStatuses = ['cancelled', 'void'];
+
+            $saleItemAggSub = DB::table('sale_items')
+                ->select('sale_items.sale_id')
+                ->selectRaw('COUNT(*) as line_count')
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as item_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal + sale_items.discount_amount), 0) as gross_amount')
+                ->groupBy('sale_items.sale_id');
+
+            $paymentAggSub = DB::table('payments')
+                ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+                ->select('payments.sale_id')
+                ->selectRaw('COALESCE(SUM(payments.amount), 0) as paid_amount')
+                ->selectRaw("GROUP_CONCAT(DISTINCT payment_methods.name ORDER BY payment_methods.name SEPARATOR ', ') as payment_methods")
+                ->groupBy('payments.sale_id');
+
+            $cancelledBaseQuery = DB::table('sales')
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->join('users', 'sales.user_id', '=', 'users.id')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+                ->leftJoinSub($saleItemAggSub, 'sale_item_agg', function ($join) {
+                    $join->on('sales.id', '=', 'sale_item_agg.sale_id');
+                })
+                ->leftJoinSub($paymentAggSub, 'payment_agg', function ($join) {
+                    $join->on('sales.id', '=', 'payment_agg.sale_id');
+                })
+                ->whereIn('sales.status', $cancelledStatuses)
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $cancelledBaseQuery->where('sales.outlet_id', $outletId);
+            }
+
+            $rows = (clone $cancelledBaseQuery)
+                ->select(
+                    'sales.id as sale_id',
+                    'sales.invoice_number',
+                    'sales.sale_date',
+                    'sales.outlet_id',
+                    'outlets.name as outlet_name',
+                    'users.name as cashier_name',
+                    'sales.sales_type',
+                    'sales.notes',
+                    'sales.status',
+                    'sales.updated_at as cancelled_at',
+                    'sales.total_amount',
+                    DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer_name"),
+                    DB::raw('COALESCE(sale_item_agg.line_count, 0) as line_count'),
+                    DB::raw('COALESCE(sale_item_agg.item_qty, 0) as item_qty'),
+                    DB::raw('COALESCE(sale_item_agg.gross_amount, sales.subtotal + sales.discount_amount, sales.subtotal, 0) as gross_amount'),
+                    DB::raw("COALESCE(payment_agg.payment_methods, '-') as payment_methods"),
+                    DB::raw('COALESCE(payment_agg.paid_amount, 0) as paid_amount')
+                )
+                ->orderByDesc('sales.sale_date')
+                ->orderByDesc('sales.updated_at')
+                ->orderByDesc('sales.id')
+                ->get()
+                ->map(function ($row) {
+                    $row->status_label = strtoupper((string) $row->status) === 'VOID'
+                        ? 'Void'
+                        : 'Cancelled';
+                    $row->sales_type_label = filled($row->sales_type)
+                        ? ucwords(str_replace(['_', '-'], ' ', (string) $row->sales_type))
+                        : 'Regular';
+
+                    return $row;
+                });
+
+            $statusBreakdown = $rows
+                ->groupBy(fn($row) => (string) $row->status_label)
+                ->map(fn($group) => [
+                    'total_transactions' => $group->count(),
+                    'total_amount' => (float) $group->sum('total_amount'),
+                ])
+                ->all();
+
+            $summary = [
+                'total_transactions' => $rows->count(),
+                'total_amount' => (float) $rows->sum('total_amount'),
+                'total_items' => (float) $rows->sum('item_qty'),
+                'avg_amount' => $rows->count() > 0 ? (float) $rows->avg('total_amount') : 0,
+                'outlet_count' => $rows->pluck('outlet_id')->filter()->unique()->count(),
+                'status_breakdown' => $statusBreakdown,
+            ];
+
+            $meta = [
+                'notes' => [
+                    'Report ini mengambil transaksi dengan status cancelled dan kompatibel juga untuk data legacy berstatus void jika ada.',
+                    'Karena tabel sales tidak menyimpan kolom cancelled_at terpisah, kolom waktu batal memakai updated_at sebagai jejak perubahan terakhir transaksi.',
+                ],
             ];
         }
 
@@ -1328,6 +1424,26 @@ class CatalogReportController extends Controller
                 'avg_transaction' => (float) ($summary['avg_transaction'] ?? 0),
                 'discount_anomaly_transactions' => (int) ($summary['discount_anomaly_transactions'] ?? 0),
             ]]];
+        }
+
+        if ($viewType === 'cancelled-sales') {
+            return [[
+                ['key' => 'invoice_number', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'status_label', 'label' => 'Status', 'type' => 'text'],
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'cashier_name', 'label' => 'Kasir', 'type' => 'text'],
+                ['key' => 'customer_name', 'label' => 'Pelanggan', 'type' => 'text'],
+                ['key' => 'sales_type_label', 'label' => 'Metode Penjualan', 'type' => 'text'],
+                ['key' => 'line_count', 'label' => 'Jumlah Baris', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'item_qty', 'label' => 'Jumlah Item', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'gross_amount', 'label' => 'Gross', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'total_amount', 'label' => 'Nilai Invoice', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'paid_amount', 'label' => 'Sudah Dibayar', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'payment_methods', 'label' => 'Metode Pembayaran', 'type' => 'text'],
+                ['key' => 'cancelled_at', 'label' => 'Waktu Update', 'type' => 'text'],
+                ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($viewType === 'sales-discount') {
