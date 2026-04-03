@@ -931,8 +931,8 @@ class CatalogReportController extends Controller
                 ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->leftJoin('promotions', 'sales.promotion_id', '=', 'promotions.id')
                 ->leftJoin('vouchers', 'sales.voucher_id', '=', 'vouchers.id')
-                ->where('status', 'completed')
-                ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                 ->where(function ($query) {
                     $query
                         ->whereRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) + COALESCE(sales.discount_amount, 0) > 0');
@@ -943,71 +943,82 @@ class CatalogReportController extends Controller
                 });
 
             if (!empty($outletId)) {
-                $salesQuery->where('outlet_id', $outletId);
+                $salesQuery->where('sales.outlet_id', $outletId);
             }
 
-            $processedData = $salesQuery
-                ->select(
-                    'sales.id',
-                    'sales.invoice_number',
-                    'sales.sale_date',
-                    'sales.sales_type',
-                    'sales.discount_type',
-                    'sales.discount_amount',
-                    'sales.total_amount',
-                    'sales.customer_name',
-                    'sales.notes',
-                    'outlets.name as outlet_name',
-                    'customers.name as customer_relation_name',
-                    'promotions.name as promotion_name',
-                    'promotions.code as promotion_code',
-                    'vouchers.name as voucher_name',
-                    'vouchers.code as voucher_table_code',
-                    'sales.voucher_code'
-                )
+            $salesQuery->select(
+                'sales.id',
+                'sales.invoice_number',
+                'sales.sale_date',
+                'sales.sales_type',
+                'sales.discount_type',
+                'sales.discount_amount',
+                'sales.total_amount',
+                'sales.customer_name',
+                'sales.notes',
+                'outlets.name as outlet_name',
+                'customers.name as customer_relation_name',
+                'promotions.name as promotion_name',
+                'promotions.code as promotion_code',
+                'vouchers.name as voucher_name',
+                'vouchers.code as voucher_table_code',
+                'sales.voucher_code'
+            )
                 ->selectRaw('COALESCE(sale_item_metrics.gross_value, sales.subtotal + sales.discount_amount, sales.subtotal, 0) as gross_value')
                 ->selectRaw('COALESCE(sale_item_metrics.item_discount_amount, 0) as item_discount_amount')
                 ->orderByDesc('sales.sale_date')
-                ->orderByDesc('sales.created_at')
-                ->get()
-                ->map(fn($sale) => $this->buildSalesDiscountRowFromRecord($sale));
-
-            $filteredData = $processedData->filter(function ($row) use ($filterType, $specialFilterType) {
-                if ($filterType !== 'all') {
-                    return $row['sales_type'] === $filterType
-                        || ($specialFilterType !== null && ($row['special_discount_type'] ?? null) === $specialFilterType);
-                }
-
-                return $row['effective_discount'] > 0 || $row['is_discount_anomaly'];
-            });
+                ->orderByDesc('sales.created_at');
 
             if ($viewMode === 'summary') {
-                $rows = $filteredData->groupBy(function ($row) {
-                    return implode('|', [
+                $groupedRows = [];
+
+                foreach ($salesQuery->lazy() as $sale) {
+                    $row = $this->buildSalesDiscountRowFromRecord($sale);
+
+                    if ($filterType !== 'all') {
+                        $matchesFilter = $row['sales_type'] === $filterType
+                            || ($specialFilterType !== null && ($row['special_discount_type'] ?? null) === $specialFilterType);
+
+                        if (!$matchesFilter) {
+                            continue;
+                        }
+                    } elseif (($row['effective_discount'] ?? 0) <= 0 && empty($row['is_discount_anomaly'])) {
+                        continue;
+                    }
+
+                    $groupKey = implode('|', [
                         $row['discount_source_key'] ?? 'none',
                         $row['sales_type'] ?? 'regular',
                         !empty($row['is_discount_anomaly']) ? 'anomaly' : 'valid',
                     ]);
-                })->map(function ($group) {
-                    $first = $group->first();
 
-                    return [
-                        'discount_source_key' => $first['discount_source_key'] ?? 'none',
-                        'discount_source_kind' => $first['discount_source_kind'] ?? 'none',
-                        'discount_type' => $first['discount_type'] ?? 'none',
-                        'discount_type_label' => $first['discount_type_label'] ?? 'None',
-                        'discount_source_label' => $first['discount_source_label'] ?? 'None',
-                        'sales_type' => $first['sales_type'] ?? 'regular',
-                        'sales_type_label' => $first['sales_type_label'] ?? 'Regular',
-                        'is_discount_anomaly' => !empty($first['is_discount_anomaly']),
-                        'data_status_label' => $first['data_status_label'] ?? 'Valid',
-                        'transaction_count' => $group->count(),
-                        'gross_value' => $group->sum('gross_value'),
-                        'net_sales' => $group->sum('net_sales'),
-                        'effective_discount' => $group->sum('effective_discount'),
-                        'total_discount' => $group->sum('effective_discount'),
-                    ];
-                })->values();
+                    if (!isset($groupedRows[$groupKey])) {
+                        $groupedRows[$groupKey] = [
+                            'discount_source_key' => $row['discount_source_key'] ?? 'none',
+                            'discount_source_kind' => $row['discount_source_kind'] ?? 'none',
+                            'discount_type' => $row['discount_type'] ?? 'none',
+                            'discount_type_label' => $row['discount_type_label'] ?? 'None',
+                            'discount_source_label' => $row['discount_source_label'] ?? 'None',
+                            'sales_type' => $row['sales_type'] ?? 'regular',
+                            'sales_type_label' => $row['sales_type_label'] ?? 'Regular',
+                            'is_discount_anomaly' => !empty($row['is_discount_anomaly']),
+                            'data_status_label' => $row['data_status_label'] ?? 'Valid',
+                            'transaction_count' => 0,
+                            'gross_value' => 0.0,
+                            'net_sales' => 0.0,
+                            'effective_discount' => 0.0,
+                            'total_discount' => 0.0,
+                        ];
+                    }
+
+                    $groupedRows[$groupKey]['transaction_count']++;
+                    $groupedRows[$groupKey]['gross_value'] += (float) ($row['gross_value'] ?? 0);
+                    $groupedRows[$groupKey]['net_sales'] += (float) ($row['net_sales'] ?? 0);
+                    $groupedRows[$groupKey]['effective_discount'] += (float) ($row['effective_discount'] ?? 0);
+                    $groupedRows[$groupKey]['total_discount'] += (float) ($row['effective_discount'] ?? 0);
+                }
+
+                $rows = collect(array_values($groupedRows));
 
                 if ($request->filled('filter_tipe_diskon')) {
                     $rows = $rows->filter(fn($row) => $matchesText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon')));
@@ -1033,7 +1044,18 @@ class CatalogReportController extends Controller
 
                 $rows = $rows->values();
             } else {
-                $rows = $filteredData->values();
+                $rows = $salesQuery
+                    ->get()
+                    ->map(fn($sale) => $this->buildSalesDiscountRowFromRecord($sale))
+                    ->filter(function ($row) use ($filterType, $specialFilterType) {
+                        if ($filterType !== 'all') {
+                            return $row['sales_type'] === $filterType
+                                || ($specialFilterType !== null && ($row['special_discount_type'] ?? null) === $specialFilterType);
+                        }
+
+                        return $row['effective_discount'] > 0 || $row['is_discount_anomaly'];
+                    })
+                    ->values();
 
                 if ($request->filled('filter_tipe_diskon')) {
                     $rows = $rows->filter(fn($row) => $matchesText($row['discount_source_label'] ?? '', $request->input('filter_tipe_diskon')));
