@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
@@ -193,6 +194,44 @@ class CatalogReportControllerTest extends TestCase
         $this->assertSame(110000.0, $transformed->total_amount);
         $this->assertSame(40000.0, $transformed->gross_profit);
         $this->assertSame(36.36, $transformed->margin_percent);
+    }
+
+    public function test_resolve_catalog_outlet_ids_accepts_multi_select_for_sales_vs_hpp(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $method = new \ReflectionMethod($controller, 'resolveCatalogOutletIds');
+        $method->setAccessible(true);
+
+        $resolved = $method->invoke(
+            $controller,
+            new Request(['outlet_ids' => ['2', '99', '3', '2']]),
+            new Collection([1, 2, 3]),
+        );
+
+        $this->assertSame([2, 3], $resolved);
+    }
+
+    public function test_resolve_catalog_outlet_ids_falls_back_to_legacy_single_outlet_id(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $method = new \ReflectionMethod($controller, 'resolveCatalogOutletIds');
+        $method->setAccessible(true);
+
+        $resolved = $method->invoke(
+            $controller,
+            new Request(['outlet_id' => '3']),
+            new Collection([1, 2, 3]),
+        );
+
+        $this->assertSame([3], $resolved);
     }
 
     public function test_passes_purchase_by_product_filters_matches_product_text_and_numeric_columns(): void

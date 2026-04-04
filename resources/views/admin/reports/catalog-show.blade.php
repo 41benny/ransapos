@@ -24,10 +24,12 @@
             @php
                 $isStockMovement = $viewType === 'stock-movement';
                 $isStockAdjustment = $viewType === 'stock-adjustment';
+                $isSalesVsHpp = $viewType === 'sales-vs-hpp';
                 $usesProductFilter = $isStockMovement || $isStockAdjustment;
                 $outletColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-3' : 'md:col-span-3');
                 $productColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
                 $actionColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-2' : 'md:col-span-5');
+                $selectedOutletIds = collect($selectedOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
                 $selectedProductOption = collect($products ?? collect())->firstWhere('id', $selectedProductId ?? null);
                 $selectedProductLabel = $selectedProductOption
                     ? $selectedProductOption->name . (!empty($selectedProductOption->sku) ? ' - ' . $selectedProductOption->sku : '')
@@ -56,19 +58,51 @@
                 <div class="{{ $outletColClass }}">
                     <label
                         class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet</label>
-                    <div class="relative">
-                        <select name="outlet_id"
-                            class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
-                            <option value="">Semua Outlet</option>
-                            @foreach($outlets as $outlet)
-                                <option value="{{ $outlet->id }}" @selected((string) $outletId === (string) $outlet->id)>
-                                    {{ $outlet->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <i
-                            class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                    </div>
+                    @if($isSalesVsHpp)
+                        <div class="relative" id="catalogSalesVsHppOutletFilterWrap">
+                            <button type="button" id="catalogSalesVsHppOutletDropdownBtn"
+                                class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-normal text-slate-700 transition-all outline-none focus:ring-2 focus:ring-indigo-500/20">
+                                <span id="catalogSalesVsHppOutletDropdownLabel" class="truncate">Semua Outlet</span>
+                                <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                            </button>
+                            <div id="catalogSalesVsHppOutletDropdownMenu"
+                                class="hidden absolute top-full left-0 z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                                <label class="mb-2 flex cursor-pointer items-center gap-3 border-b border-slate-100 px-2 py-2 text-[13px] font-bold text-slate-700">
+                                    <input type="checkbox" id="catalogSalesVsHppOutletAllCheckbox"
+                                        class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
+                                    <span>Pilih Semua</span>
+                                </label>
+                                <div class="custom-scrollbar space-y-1 pr-1" style="max-height: 12rem; overflow-y: auto;">
+                                    @foreach($outlets as $outlet)
+                                        <label class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13px] text-slate-600 transition-colors hover:bg-slate-50">
+                                            <input type="checkbox"
+                                                name="outlet_ids[]"
+                                                value="{{ $outlet->id }}"
+                                                {{ count($selectedOutletIds) === 0 || in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
+                                                class="catalog-sales-vs-hpp-outlet-checkbox h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            <span class="truncate font-medium">{{ $outlet->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <p class="ml-2 mt-2 text-[10px] font-medium text-slate-400">Kosong = semua outlet aktif</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="relative">
+                            <select name="outlet_id"
+                                class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                                <option value="">Semua Outlet</option>
+                                @foreach($outlets as $outlet)
+                                    <option value="{{ $outlet->id }}" @selected((string) $outletId === (string) $outlet->id)>
+                                        {{ $outlet->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+                        </div>
+                    @endif
                 </div>
                 @if($usesProductFilter)
                     <div class="{{ $productColClass }}">
@@ -142,7 +176,9 @@
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
             ];
-            if (!empty($outletId)) {
+            if (!empty($selectedOutletIds ?? [])) {
+                $auditBase['outlet_ids'] = $selectedOutletIds;
+            } elseif (!empty($outletId)) {
                 $auditBase['outlet_id'] = $outletId;
             }
         @endphp
@@ -3337,6 +3373,56 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            (function () {
+                const wrap = document.getElementById('catalogSalesVsHppOutletFilterWrap');
+                const button = document.getElementById('catalogSalesVsHppOutletDropdownBtn');
+                const label = document.getElementById('catalogSalesVsHppOutletDropdownLabel');
+                const menu = document.getElementById('catalogSalesVsHppOutletDropdownMenu');
+                const allCheckbox = document.getElementById('catalogSalesVsHppOutletAllCheckbox');
+                const itemCheckboxes = Array.from(document.querySelectorAll('.catalog-sales-vs-hpp-outlet-checkbox'));
+
+                if (!wrap || !button || !label || !menu || !allCheckbox) {
+                    return;
+                }
+
+                const updateLabel = () => {
+                    const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
+
+                    if (checkedItems.length === itemCheckboxes.length || checkedItems.length === 0) {
+                        allCheckbox.checked = checkedItems.length !== 0;
+                        label.textContent = 'Semua Outlet';
+                    } else if (checkedItems.length === 1) {
+                        allCheckbox.checked = false;
+                        label.textContent = checkedItems[0].parentElement.textContent.trim();
+                    } else {
+                        allCheckbox.checked = false;
+                        label.textContent = `${checkedItems.length} Outlet`;
+                    }
+                };
+
+                button.addEventListener('click', () => menu.classList.toggle('hidden'));
+
+                document.addEventListener('click', (event) => {
+                    if (!wrap.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+
+                allCheckbox.addEventListener('change', () => {
+                    itemCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = allCheckbox.checked;
+                    });
+
+                    updateLabel();
+                });
+
+                itemCheckboxes.forEach((checkbox) => {
+                    checkbox.addEventListener('change', updateLabel);
+                });
+
+                updateLabel();
+            })();
+
             const productInput = document.querySelector('[data-report-product-input]');
             const productIdInput = document.querySelector('[data-report-product-id]');
             const optionNodes = document.querySelectorAll('#report-product-options option');

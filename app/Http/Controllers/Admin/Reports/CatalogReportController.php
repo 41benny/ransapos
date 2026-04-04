@@ -449,6 +449,9 @@ class CatalogReportController extends Controller
         $outletId = $request->input('outlet_id');
         $selectedUserId = $request->input('user_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
+        $selectedOutletIds = $slug === 'sales-vs-hpp'
+            ? $this->resolveCatalogOutletIds($request, $outlets->pluck('id'))
+            : [];
         $selectedProductId = $request->input('product_id');
         $products = collect();
         $users = collect();
@@ -787,7 +790,9 @@ class CatalogReportController extends Controller
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
-            if (!empty($outletId)) {
+            if (!empty($selectedOutletIds)) {
+                $salesBaseQuery->whereIn('sales.outlet_id', $selectedOutletIds);
+            } elseif (!empty($outletId)) {
                 $salesBaseQuery->where('sales.outlet_id', $outletId);
             }
 
@@ -1663,6 +1668,7 @@ class CatalogReportController extends Controller
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'outletId' => $outletId,
+            'selectedOutletIds' => $selectedOutletIds,
             'selectedProductId' => $selectedProductId,
             'selectedUserId' => $selectedUserId,
             'outlets' => $outlets,
@@ -3010,5 +3016,35 @@ class CatalogReportController extends Controller
             ->orderBy('cash_accounts.type')
             ->orderBy('cash_accounts.name')
             ->get();
+    }
+
+    private function resolveCatalogOutletIds(Request $request, Collection $availableOutletIds): array
+    {
+        $allowedOutletIds = $availableOutletIds
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($request->has('outlet_ids')) {
+            return collect($request->input('outlet_ids', []))
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->map(fn ($id) => is_numeric($id) ? (int) $id : null)
+                ->filter(fn ($id) => is_int($id) && in_array($id, $allowedOutletIds, true))
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if ($request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
+            $outletId = (int) $request->input('outlet_id');
+
+            return in_array($outletId, $allowedOutletIds, true)
+                ? [$outletId]
+                : [];
+        }
+
+        return [];
     }
 }
