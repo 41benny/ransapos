@@ -115,6 +115,8 @@ class StockController extends Controller
             // It's safer to join sales to get invoice number and sort by it or just fetch them later since sale_id = reference_id.
             $query->leftJoin('sales', 'stock_mutations.reference_id', '=', 'sales.id')
                   ->select('stock_mutations.*', 'sales.invoice_number');
+
+            $this->applyUsageMutationTableFilters($query, $request);
                   
         } else {
             // Tab "all" (Default History)
@@ -160,15 +162,19 @@ class StockController extends Controller
             // Search by product name
             if ($request->filled('search')) {
                 $query->whereHas('product', function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->search . '%');
+                    $q->where('name', 'like', '%' . $request->search . '%')
+                        ->orWhere('sku', 'like', '%' . $request->search . '%');
                 });
             }
+
+            $this->applyAllMutationTableFilters($query, $request);
         }
 
         $mutations = $query->orderBy('mutation_date', 'desc')
             ->orderBy('stock_mutations.created_at', 'desc')
             ->orderBy('stock_mutations.id', 'desc')
-            ->paginate(50);
+            ->paginate(50)
+            ->withQueryString();
 
         // Load data for filters
         $outlets = Outlet::where('is_active', true)->get();
@@ -176,6 +182,112 @@ class StockController extends Controller
         $products = Product::orderBy('name')->get();
 
         return view('admin.stocks.mutations', compact('mutations', 'outlets', 'products', 'tab'));
+    }
+
+    private function applyUsageMutationTableFilters($query, Request $request): void
+    {
+        if ($request->filled('filter_invoice')) {
+            $query->where('sales.invoice_number', 'like', $this->likeValue($request->input('filter_invoice')));
+        }
+
+        if ($request->filled('filter_tanggal')) {
+            $like = $this->likeValue($request->input('filter_tanggal'));
+            $query->where(function ($subQuery) use ($like) {
+                $subQuery->whereRaw("CAST(stock_mutations.mutation_date AS CHAR) LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(stock_mutations.mutation_date, '%d %b %Y') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(stock_mutations.created_at, '%H:%i') LIKE ?", [$like]);
+            });
+        }
+
+        if ($request->filled('filter_outlet')) {
+            $query->whereHas('outlet', function ($subQuery) use ($request) {
+                $subQuery->where('name', 'like', $this->likeValue($request->input('filter_outlet')));
+            });
+        }
+
+        if ($request->filled('filter_menu')) {
+            $query->where('stock_mutations.notes', 'like', $this->likeValue($request->input('filter_menu')));
+        }
+
+        if ($request->filled('filter_qty')) {
+            $query->whereRaw("CAST(ABS(stock_mutations.quantity) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_qty'))]);
+        }
+
+        if ($request->filled('filter_hpp_unit')) {
+            $query->whereRaw("CAST(COALESCE(stock_mutations.unit_cost, 0) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_hpp_unit'))]);
+        }
+
+        if ($request->filled('filter_hpp_nominal')) {
+            $query->whereRaw("CAST(ABS(COALESCE(stock_mutations.total_cost, 0)) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_hpp_nominal'))]);
+        }
+
+        if ($request->filled('filter_kasir')) {
+            $query->whereHas('creator', function ($subQuery) use ($request) {
+                $subQuery->where('name', 'like', $this->likeValue($request->input('filter_kasir')));
+            });
+        }
+    }
+
+    private function applyAllMutationTableFilters($query, Request $request): void
+    {
+        if ($request->filled('filter_tanggal')) {
+            $like = $this->likeValue($request->input('filter_tanggal'));
+            $query->where(function ($subQuery) use ($like) {
+                $subQuery->whereRaw("CAST(stock_mutations.mutation_date AS CHAR) LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(stock_mutations.mutation_date, '%d %b %Y') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(stock_mutations.created_at, '%H:%i') LIKE ?", [$like]);
+            });
+        }
+
+        if ($request->filled('filter_produk')) {
+            $query->whereHas('product', function ($subQuery) use ($request) {
+                $subQuery->where('name', 'like', $this->likeValue($request->input('filter_produk')))
+                    ->orWhere('sku', 'like', $this->likeValue($request->input('filter_produk')));
+            });
+        }
+
+        if ($request->filled('filter_outlet')) {
+            $query->whereHas('outlet', function ($subQuery) use ($request) {
+                $subQuery->where('name', 'like', $this->likeValue($request->input('filter_outlet')));
+            });
+        }
+
+        if ($request->filled('filter_tipe')) {
+            $query->where('stock_mutations.mutation_type', 'like', $this->likeValue($request->input('filter_tipe')));
+        }
+
+        if ($request->filled('filter_qty')) {
+            $query->whereRaw("CAST(stock_mutations.quantity AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_qty'))]);
+        }
+
+        if ($request->filled('filter_stok_akhir')) {
+            $query->whereRaw("CAST(stock_mutations.stock_after AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_stok_akhir'))]);
+        }
+
+        if ($request->filled('filter_hpp_unit')) {
+            $query->whereRaw("CAST(COALESCE(stock_mutations.unit_cost, 0) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_hpp_unit'))]);
+        }
+
+        if ($request->filled('filter_hpp_nominal')) {
+            $query->whereRaw("CAST(ABS(COALESCE(stock_mutations.total_cost, 0)) AS CHAR) LIKE ?", [$this->likeValue($request->input('filter_hpp_nominal'))]);
+        }
+
+        if ($request->filled('filter_referensi')) {
+            $like = $this->likeValue($request->input('filter_referensi'));
+            $query->where(function ($subQuery) use ($request, $like) {
+                $subQuery->where('stock_mutations.reference_type', 'like', $like)
+                    ->orWhereRaw("CAST(stock_mutations.reference_id AS CHAR) LIKE ?", [$like])
+                    ->orWhere('stock_mutations.notes', 'like', $like)
+                    ->orWhereHas('creator', function ($creatorQuery) use ($request) {
+                        $creatorQuery->where('name', 'like', $this->likeValue($request->input('filter_referensi')));
+                    });
+            });
+        }
+    }
+
+    private function likeValue(?string $value): string
+    {
+        return '%' . trim((string) $value) . '%';
     }
 
     /**

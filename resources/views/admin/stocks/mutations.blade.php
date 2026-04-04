@@ -188,7 +188,7 @@
         @endif
 
         {{-- Mutations Table --}}
-        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8" data-stock-mutation-table>
             <div class="overflow-x-auto">
                 <table class="ui-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
@@ -214,6 +214,40 @@
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Referensi & Catatan</th>
                             @endif
                         </tr>
+                        @if($tab === 'usage')
+                            <tr class="bg-white border-b border-slate-100 no-print">
+                                <td class="px-1 py-1 relative">
+                                    <button type="button" id="clearMutationTableFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                        <i class="fas fa-times text-[10px]"></i>
+                                    </button>
+                                    <input type="text" data-name="filter_invoice" name="filter_invoice" value="{{ request('filter_invoice') }}" placeholder="Cari..." class="ui-input filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                </td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_tanggal" name="filter_tanggal" value="{{ request('filter_tanggal') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" name="filter_outlet" value="{{ request('filter_outlet') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_menu" name="filter_menu" value="{{ request('filter_menu') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_qty" name="filter_qty" value="{{ request('filter_qty') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_hpp_unit" name="filter_hpp_unit" value="{{ request('filter_hpp_unit') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_hpp_nominal" name="filter_hpp_nominal" value="{{ request('filter_hpp_nominal') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_kasir" name="filter_kasir" value="{{ request('filter_kasir') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                            </tr>
+                        @else
+                            <tr class="bg-white border-b border-slate-100 no-print">
+                                <td class="px-1 py-1 relative">
+                                    <button type="button" id="clearMutationTableFilters" title="Reset filter tabel" class="absolute left-1 top-1 h-6 w-6 inline-flex items-center justify-center rounded bg-slate-50 text-slate-400 hover:text-rose-500 transition-all z-10">
+                                        <i class="fas fa-times text-[10px]"></i>
+                                    </button>
+                                    <input type="text" data-name="filter_tanggal" name="filter_tanggal" value="{{ request('filter_tanggal') }}" placeholder="Cari..." class="ui-input filter-input w-full pl-7 pr-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500">
+                                </td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_produk" name="filter_produk" value="{{ request('filter_produk') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_outlet" name="filter_outlet" value="{{ request('filter_outlet') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_tipe" name="filter_tipe" value="{{ request('filter_tipe') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-center"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_qty" name="filter_qty" value="{{ request('filter_qty') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_stok_akhir" name="filter_stok_akhir" value="{{ request('filter_stok_akhir') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_hpp_unit" name="filter_hpp_unit" value="{{ request('filter_hpp_unit') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_hpp_nominal" name="filter_hpp_nominal" value="{{ request('filter_hpp_nominal') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_referensi" name="filter_referensi" value="{{ request('filter_referensi') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
+                            </tr>
+                        @endif
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse($mutations as $mutation)
@@ -459,6 +493,52 @@
                         direction: "asc"
                     },
                     placeholder: '-- Pilih Bahan Baku --'
+                });
+            }
+
+            const tableFilterWrap = document.querySelector('[data-stock-mutation-table]');
+            if (!tableFilterWrap) {
+                return;
+            }
+
+            const filterInputs = tableFilterWrap.querySelectorAll('.filter-input');
+            const clearBtn = document.getElementById('clearMutationTableFilters');
+
+            const updateFilter = (name, value) => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('page');
+
+                if (value.trim()) {
+                    url.searchParams.set(name, value.trim());
+                } else {
+                    url.searchParams.delete(name);
+                }
+
+                window.location.href = url.toString();
+            };
+
+            let timer;
+            filterInputs.forEach((input) => {
+                input.addEventListener('input', (event) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => updateFilter(input.dataset.name, event.target.value), 500);
+                });
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('page');
+
+                    const keysToDelete = [];
+                    url.searchParams.forEach((value, key) => {
+                        if (key.startsWith('filter_')) {
+                            keysToDelete.push(key);
+                        }
+                    });
+
+                    keysToDelete.forEach((key) => url.searchParams.delete(key));
+                    window.location.href = url.toString();
                 });
             }
         });
