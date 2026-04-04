@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Support\Repairs\RepairPurchaseHppByQuantityAction;
+use App\Support\Repairs\RepairSaleItemCogsFromStockAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\Product;
@@ -202,3 +203,25 @@ Artisan::command('repair:purchase-hpp-by-qty
         return self::FAILURE;
     }
 })->purpose('Dry-run/apply koreksi HPP purchase yang salah qty lalu sinkronkan mutasi stok turunannya');
+
+Artisan::command('repair:sale-item-cogs-from-stock
+    {--apply : Terapkan perubahan ke database}
+    {--outlet-id=6 : Outlet ID target}
+    {--date-from=2026-03-27 : Tanggal awal sale}
+    {--date-to=2026-04-04 : Tanggal akhir sale}', function (RepairSaleItemCogsFromStockAction $action) {
+    try {
+        $result = $action->execute([
+            'outlet_id' => $this->option('outlet-id'),
+            'date_from' => (string) $this->option('date-from'),
+            'date_to' => (string) $this->option('date-to'),
+        ], (bool) $this->option('apply'));
+
+        $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return self::SUCCESS;
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+})->purpose('Dry-run/apply sinkronisasi sale_items.cogs dari mutasi stok penjualan');
