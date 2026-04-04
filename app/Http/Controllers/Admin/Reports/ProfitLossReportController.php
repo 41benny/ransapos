@@ -7,6 +7,7 @@ use App\Services\ProfitLossReportService;
 use App\Models\Outlet;
 use App\Support\ReportExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ProfitLossReportController extends Controller
 {
@@ -22,24 +23,23 @@ class ProfitLossReportController extends Controller
         // Default date range: bulan ini
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
-        $outletId = $request->input('outlet_id');
+        $outlets = Outlet::active()->orderBy('name')->get();
+        $outletIds = $this->resolveOutletIds($request, $outlets);
 
         // Generate report
-        $report = $this->reportService->generate($dateFrom, $dateTo, $outletId);
+        $report = $this->reportService->generate($dateFrom, $dateTo, $outletIds);
 
-        // Load outlets untuk filter
-        $outlets = Outlet::active()->get();
-
-        return view('admin.reports.profit-loss', compact('report', 'outlets', 'dateFrom', 'dateTo', 'outletId'));
+        return view('admin.reports.profit-loss', compact('report', 'outlets', 'dateFrom', 'dateTo', 'outletIds'));
     }
 
     public function export(Request $request)
     {
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
-        $outletId = $request->input('outlet_id');
+        $outlets = Outlet::active()->pluck('id');
+        $outletIds = $this->resolveOutletIds($request, $outlets);
 
-        $report = $this->reportService->generate($dateFrom, $dateTo, $outletId);
+        $report = $this->reportService->generate($dateFrom, $dateTo, $outletIds);
 
         $rows = [
             ['metric' => 'Total Pendapatan', 'amount' => (float) ($report['total_revenue'] ?? 0)],
@@ -63,5 +63,43 @@ class ProfitLossReportController extends Controller
         }
 
         return ReportExport::xlsx($filename, 'Laba Rugi', $columns, $rows);
+    }
+
+    private function resolveOutletIds(Request $request, Collection $availableOutletIds): array
+    {
+        $allowedOutletIds = $availableOutletIds
+            ->map(fn ($id) => (int) (is_object($id) ? $id->id : $id))
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($request->has('outlet_ids')) {
+            $requestedOutletIds = collect($request->input('outlet_ids', []))
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->map(fn ($id) => is_numeric($id) ? (int) $id : null)
+                ->filter(fn ($id) => is_int($id) && $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+
+            if (empty($requestedOutletIds)) {
+                return $allowedOutletIds;
+            }
+
+            $resolvedOutletIds = array_values(array_intersect($requestedOutletIds, $allowedOutletIds));
+
+            return !empty($resolvedOutletIds) ? $resolvedOutletIds : $allowedOutletIds;
+        }
+
+        if ($request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
+            $outletId = (int) $request->input('outlet_id');
+
+            return in_array($outletId, $allowedOutletIds, true)
+                ? [$outletId]
+                : $allowedOutletIds;
+        }
+
+        return $allowedOutletIds;
     }
 }

@@ -5,6 +5,24 @@
 @section('page-subtitle', 'Reports & Analytics')
 
 @section('content')
+    @php
+        $selectedOutletIds = collect($outletIds ?? $report['outlet_ids'] ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
+        $singleOutletId = count($selectedOutletIds) === 1 ? $selectedOutletIds[0] : null;
+
+        $salesReportParams = ['date_from' => $dateFrom, 'date_to' => $dateTo];
+        if (!empty($selectedOutletIds)) {
+            $salesReportParams['outlet_ids'] = $selectedOutletIds;
+        }
+
+        $stockMutationParams = [
+            'start_date' => $dateFrom,
+            'end_date' => $dateTo,
+            'reference_scope' => 'sales_cogs',
+        ];
+        if (!is_null($singleOutletId)) {
+            $stockMutationParams['outlet_id'] = $singleOutletId;
+        }
+    @endphp
     <div class="w-full py-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {{-- Header Section --}}
         <div class="flex flex-col gap-6 mb-8 no-print">
@@ -39,15 +57,35 @@
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
                         <i class="fas fa-store text-[10px]"></i> Outlet
                     </span>
-                    <select name="outlet_id" onchange="this.form.submit()"
-                        class="text-xs font-bold text-slate-700 bg-transparent outline-none border-none p-0 focus:ring-0 cursor-pointer appearance-none min-w-[120px]">
-                        <option value="">All Outlets</option>
-                        @foreach($outlets as $outlet)
-                            <option value="{{ $outlet->id }}" {{ $outletId == $outlet->id ? 'selected' : '' }}>
-                                {{ $outlet->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="relative min-w-[220px]" id="profitLossOutletFilterWrap">
+                        <button type="button" id="profitLossOutletDropdownBtn"
+                            class="flex min-w-[220px] items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-bold text-slate-700 shadow-sm transition-all hover:bg-white focus:ring-2 focus:ring-indigo-500">
+                            <span id="profitLossOutletDropdownLabel" class="truncate">Semua Outlet</span>
+                            <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                        </button>
+                        <div id="profitLossOutletDropdownMenu"
+                            class="hidden absolute top-full left-0 z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                            <label class="mb-2 flex cursor-pointer items-center gap-3 border-b border-slate-100 px-2 py-2 text-[13px] font-bold text-slate-700">
+                                <input type="checkbox" id="profitLossOutletAllCheckbox"
+                                    class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
+                                <span>Pilih Semua</span>
+                            </label>
+                            <div class="custom-scrollbar space-y-1 pr-1" style="max-height: 12rem; overflow-y: auto;">
+                                @foreach($outlets as $outlet)
+                                    <label class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13px] text-slate-600 transition-colors hover:bg-slate-50">
+                                        <input type="checkbox"
+                                            name="outlet_ids[]"
+                                            value="{{ $outlet->id }}"
+                                            {{ count($selectedOutletIds) === 0 || in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
+                                            class="profit-loss-outlet-checkbox h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span class="truncate font-medium">{{ $outlet->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <p class="ml-2 mt-2 text-[10px] font-medium text-slate-400">Kosong = semua outlet aktif</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-2 px-1">
@@ -68,7 +106,7 @@
         {{-- Summary KPI Row --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Total Pendapatan -->
-            <a href="{{ route('admin.reports.sales.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId]) }}" target="_blank"
+            <a href="{{ route('admin.reports.sales.index', $salesReportParams) }}" target="_blank"
                 class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Pendapatan</span>
                 <h3 class="text-2xl font-black text-slate-800 mt-2 tracking-tight flex items-center gap-2">
@@ -81,7 +119,7 @@
             </a>
 
             <!-- COGS -->
-            <a href="{{ route('admin.stocks.mutations', ['start_date' => $dateFrom, 'end_date' => $dateTo, 'outlet_id' => $outletId, 'reference_scope' => 'sales_cogs']) }}" target="_blank"
+            <a href="{{ route('admin.stocks.mutations', $stockMutationParams) }}" target="_blank"
                 class="ui-card bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden group border-l-4 border-l-rose-500 hover:border-indigo-500 transition-all active:scale-95 cursor-pointer">
                 <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">COGS (HPP)</span>
                 <h3 class="text-2xl font-black text-rose-500 mt-2 tracking-tight flex items-center gap-2">
@@ -161,7 +199,7 @@
                                         <span class="text-[10px] font-bold text-slate-400 tracking-widest">4-0000</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('admin.reports.sales.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId]) }}" target="_blank"
+                                        <a href="{{ route('admin.reports.sales.index', $salesReportParams) }}" target="_blank"
                                             class="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors">
                                             Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}
                                         </a>
@@ -180,7 +218,7 @@
                                         <span class="text-[10px] font-bold text-slate-400 tracking-widest">5-0000</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('admin.stocks.mutations', ['start_date' => $dateFrom, 'end_date' => $dateTo, 'outlet_id' => $outletId, 'reference_scope' => 'sales_cogs']) }}" target="_blank"
+                                        <a href="{{ route('admin.stocks.mutations', $stockMutationParams) }}" target="_blank"
                                             class="text-sm font-bold text-rose-500 hover:text-indigo-600 transition-colors">
                                             Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}
                                         </a>
@@ -239,7 +277,13 @@
                                             </button>
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_type' => 'expense', 'coa_group' => $group['group_name']]) }}" target="_blank"
+                                            <a href="{{ route('admin.cash-transactions.index', array_merge([
+                                                'date_from' => $dateFrom,
+                                                'date_to' => $dateTo,
+                                                'type' => 'out',
+                                                'coa_type' => 'expense',
+                                                'coa_group' => $group['group_name'],
+                                            ], !is_null($singleOutletId) ? ['outlet_id' => $singleOutletId] : [])) }}" target="_blank"
                                                 class="text-sm font-black text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-100 dark:hover:text-indigo-300">
                                                 Rp {{ number_format($group['total'], 0, ',', '.') }}
                                             </a>
@@ -267,7 +311,12 @@
                                                 <span class="text-[10px] font-medium text-slate-400 tracking-widest dark:text-slate-400">{{ $account['code'] }}</span>
                                             </td>
                                             <td class="px-6 py-3 text-right">
-                                                <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_id' => $outletId, 'type' => 'out', 'coa_account_id' => $account['id']]) }}" target="_blank"
+                                                <a href="{{ route('admin.cash-transactions.index', array_merge([
+                                                    'date_from' => $dateFrom,
+                                                    'date_to' => $dateTo,
+                                                    'type' => 'out',
+                                                    'coa_account_id' => $account['id'],
+                                                ], !is_null($singleOutletId) ? ['outlet_id' => $singleOutletId] : [])) }}" target="_blank"
                                                     class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-200 dark:hover:text-indigo-300">
                                                     Rp {{ number_format($account['amount'], 0, ',', '.') }}
                                                 </a>
@@ -317,6 +366,54 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            (function() {
+                const wrap = document.getElementById('profitLossOutletFilterWrap');
+                const btn = document.getElementById('profitLossOutletDropdownBtn');
+                const label = document.getElementById('profitLossOutletDropdownLabel');
+                const menu = document.getElementById('profitLossOutletDropdownMenu');
+                const allCheckbox = document.getElementById('profitLossOutletAllCheckbox');
+                const itemCheckboxes = Array.from(document.querySelectorAll('.profit-loss-outlet-checkbox'));
+
+                if (!wrap || !btn || !label || !menu || !allCheckbox) return;
+
+                const updateLabel = () => {
+                    const checkedItems = itemCheckboxes.filter((checkbox) => checkbox.checked);
+
+                    if (checkedItems.length === itemCheckboxes.length || checkedItems.length === 0) {
+                        allCheckbox.checked = checkedItems.length !== 0;
+                        label.textContent = 'Semua Outlet';
+                    } else if (checkedItems.length === 1) {
+                        allCheckbox.checked = false;
+                        label.textContent = checkedItems[0].parentElement.textContent.trim();
+                    } else {
+                        allCheckbox.checked = false;
+                        label.textContent = `${checkedItems.length} Outlet`;
+                    }
+                };
+
+                btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+
+                document.addEventListener('click', (event) => {
+                    if (!wrap.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+
+                allCheckbox.addEventListener('change', () => {
+                    itemCheckboxes.forEach((checkbox) => {
+                        checkbox.checked = allCheckbox.checked;
+                    });
+
+                    updateLabel();
+                });
+
+                itemCheckboxes.forEach((checkbox) => {
+                    checkbox.addEventListener('change', updateLabel);
+                });
+
+                updateLabel();
+            })();
+
             document.querySelectorAll('[data-expense-toggle]').forEach((toggle) => {
                 toggle.addEventListener('click', function() {
                     const groupKey = this.dataset.expenseToggle;

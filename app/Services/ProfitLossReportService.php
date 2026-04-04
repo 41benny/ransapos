@@ -14,18 +14,20 @@ class ProfitLossReportService
      * 
      * @param string $dateFrom
      * @param string $dateTo
-     * @param int|null $outletId
+     * @param array<int>|int|null $outletIds
      * @return array
      */
-    public function generate(string $dateFrom, string $dateTo, ?int $outletId = null): array
+    public function generate(string $dateFrom, string $dateTo, array|int|null $outletIds = null): array
     {
+        $outletIds = $this->normalizeOutletIds($outletIds);
+
         // 1. PENDAPATAN (Revenue from Sales)
         $revenueQuery = Sale::query()
             ->where('status', 'completed')
             ->whereBetween('sale_date', [$dateFrom, $dateTo]);
         
-        if ($outletId) {
-            $revenueQuery->where('outlet_id', $outletId);
+        if (!empty($outletIds)) {
+            $revenueQuery->whereIn('outlet_id', $outletIds);
         }
         
         $totalRevenue = $revenueQuery->sum('total_amount');
@@ -36,8 +38,8 @@ class ProfitLossReportService
             ->whereIn('reference_type', ['sale', 'sale_cancellation'])
             ->whereBetween('mutation_date', [$dateFrom, $dateTo]);
         
-        if ($outletId) {
-            $cogsQuery->where('outlet_id', $outletId);
+        if (!empty($outletIds)) {
+            $cogsQuery->whereIn('outlet_id', $outletIds);
         }
         
         $totalCogs = (float) $cogsQuery
@@ -58,8 +60,8 @@ class ProfitLossReportService
             ->where('coa_accounts.group', '!=', 'HPP')
             ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
 
-        if ($outletId) {
-            $expenseQuery->where('cash_accounts.outlet_id', $outletId);
+        if (!empty($outletIds)) {
+            $expenseQuery->whereIn('cash_accounts.outlet_id', $outletIds);
         }
         
         $expensesByAccount = $expenseQuery
@@ -138,8 +140,8 @@ class ProfitLossReportService
                 ->where('status', 'completed')
                 ->whereBetween('sale_date', [$start, $end]);
             
-            if ($outletId) {
-                $trendQuery->where('outlet_id', $outletId);
+            if (!empty($outletIds)) {
+                $trendQuery->whereIn('outlet_id', $outletIds);
             }
             
             $trends[] = [
@@ -152,7 +154,8 @@ class ProfitLossReportService
         return [
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
-            'outlet_id' => $outletId,
+            'outlet_ids' => $outletIds,
+            'outlet_id' => count($outletIds) === 1 ? $outletIds[0] : null,
             
             // Revenue
             'total_revenue' => $totalRevenue,
@@ -194,5 +197,28 @@ class ProfitLossReportService
             'net_profit' => $report['net_profit'],
             'profit_margin' => $report['net_profit_margin'],
         ];
+    }
+
+    /**
+     * @param array<int>|int|null $outletIds
+     * @return array<int>
+     */
+    private function normalizeOutletIds(array|int|null $outletIds): array
+    {
+        if (is_int($outletIds)) {
+            return $outletIds > 0 ? [$outletIds] : [];
+        }
+
+        if (!is_array($outletIds)) {
+            return [];
+        }
+
+        return collect($outletIds)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => is_numeric($id) ? (int) $id : null)
+            ->filter(fn ($id) => is_int($id) && $id > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 }
