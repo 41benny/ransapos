@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Support\Repairs\RepairPurchaseHppByQuantityAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\Product;
@@ -171,3 +172,33 @@ Artisan::command('balances:recalculate {--cash : Hitung ulang saldo kas/bank saj
 
     return self::SUCCESS;
 })->purpose('Hitung ulang saldo historis kas/bank dan mutasi stok');
+
+Artisan::command('repair:purchase-hpp-by-qty 
+    {--apply : Terapkan perubahan ke database}
+    {--purchase-ids=112,113 : ID purchase target, pisahkan dengan koma}
+    {--product-id=156 : Product ID target}
+    {--outlet-id=6 : Outlet ID target}
+    {--unit-price=16.3 : Harga per unit yang benar}', function (RepairPurchaseHppByQuantityAction $action) {
+    $purchaseIds = collect(explode(',', (string) $this->option('purchase-ids')))
+        ->map(fn (string $value) => (int) trim($value))
+        ->filter(fn (int $value) => $value > 0)
+        ->values()
+        ->all();
+
+    try {
+        $result = $action->execute([
+            'purchase_ids' => $purchaseIds,
+            'product_id' => (int) $this->option('product-id'),
+            'outlet_id' => (int) $this->option('outlet-id'),
+            'target_unit_price' => (float) $this->option('unit-price'),
+        ], (bool) $this->option('apply'));
+
+        $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return self::SUCCESS;
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+})->purpose('Dry-run/apply koreksi HPP purchase yang salah qty lalu sinkronkan mutasi stok turunannya');
