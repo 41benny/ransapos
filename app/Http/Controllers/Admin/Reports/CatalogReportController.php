@@ -835,6 +835,8 @@ class CatalogReportController extends Controller
                 ->orderByDesc('sales.id')
                 ->orderByDesc('sale_items.id');
 
+            $this->applySalesVsHppTableFilters($rowsQuery, $request);
+
             if ($format === 'xlsx') {
                 return $this->downloadSalesVsHppXlsx(
                     rowsQuery: $rowsQuery,
@@ -1694,6 +1696,72 @@ class CatalogReportController extends Controller
                 'I' => '#,##0.00',
             ],
         ))->download($filename, ExcelWriter::XLSX);
+    }
+
+    private function applySalesVsHppTableFilters($rowsQuery, Request $request): void
+    {
+        $lineTotalExpr = $this->salesVsHppLineTotalSql();
+        $grossProfitExpr = '(' . $lineTotalExpr . ' - COALESCE(sale_items.cogs, 0))';
+        $marginExpr = "CASE WHEN {$lineTotalExpr} > 0 THEN ROUND(({$grossProfitExpr} / {$lineTotalExpr}) * 100, 2) ELSE 0 END";
+
+        if ($request->filled('filter_transaksi')) {
+            $rowsQuery->where('sales.invoice_number', 'like', $this->reportLikeValue($request->input('filter_transaksi')));
+        }
+
+        if ($request->filled('filter_tanggal')) {
+            $like = $this->reportLikeValue($request->input('filter_tanggal'));
+            $rowsQuery->where(function ($query) use ($like) {
+                $query->whereRaw("CAST(sales.sale_date AS CHAR) LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(sales.sale_date, '%d/%m/%Y') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT(sales.sale_date, '%d %b %Y') LIKE ?", [$like]);
+            });
+        }
+
+        if ($request->filled('filter_outlet')) {
+            $rowsQuery->where('outlets.name', 'like', $this->reportLikeValue($request->input('filter_outlet')));
+        }
+
+        if ($request->filled('filter_product')) {
+            $like = $this->reportLikeValue($request->input('filter_product'));
+            $rowsQuery->where(function ($query) use ($like) {
+                $query->where('sale_items.product_name', 'like', $like)
+                    ->orWhere('sale_items.product_sku', 'like', $like);
+            });
+        }
+
+        if ($request->filled('filter_qty')) {
+            $rowsQuery->whereRaw("CAST(sale_items.quantity AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_qty'))]);
+        }
+
+        if ($request->filled('filter_amount')) {
+            $rowsQuery->whereRaw("CAST({$lineTotalExpr} AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_amount'))]);
+        }
+
+        if ($request->filled('filter_hpp')) {
+            $rowsQuery->whereRaw("CAST(COALESCE(sale_items.cogs, 0) AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_hpp'))]);
+        }
+
+        if ($request->filled('filter_laba_kotor')) {
+            $rowsQuery->whereRaw("CAST({$grossProfitExpr} AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_laba_kotor'))]);
+        }
+
+        if ($request->filled('filter_margin')) {
+            $rowsQuery->whereRaw("CAST({$marginExpr} AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_margin'))]);
+        }
+    }
+
+    private function salesVsHppLineTotalSql(): string
+    {
+        return "CASE
+            WHEN sales.subtotal > 0 THEN ROUND((sale_items.subtotal / sales.subtotal) * sales.total_amount, 2)
+            WHEN COALESCE(sale_item_counts.sale_item_count, 0) > 0 THEN ROUND(sales.total_amount / sale_item_counts.sale_item_count, 2)
+            ELSE sale_items.subtotal
+        END";
+    }
+
+    private function reportLikeValue(?string $value): string
+    {
+        return '%' . trim((string) $value) . '%';
     }
 
     private function generateSalesVsHppExportRows($rowsQuery): Generator

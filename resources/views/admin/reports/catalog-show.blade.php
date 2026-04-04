@@ -3300,6 +3300,40 @@
                                 <th class="px-4 py-3 text-right">Laba Kotor</th>
                                 <th class="px-4 py-3 text-right">Margin</th>
                             </tr>
+                            <tr class="border-t border-slate-100 bg-white normal-case tracking-normal text-slate-500">
+                                <td class="px-1 py-1">
+                                    <div class="relative">
+                                        <button type="button" data-report-table-clear-filters title="Reset filter tabel" class="absolute left-1 top-1 h-8 w-8 inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-600 hover:bg-rose-50 hover:text-rose-500 transition-all">
+                                            <i class="fas fa-times text-[12px]"></i>
+                                        </button>
+                                        <input type="text" data-name="filter_transaksi" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full pl-10 pr-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                    </div>
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_tanggal" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_outlet" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_product" data-report-table-filter-input placeholder="Cari produk / SKU..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_qty" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_amount" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_hpp" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_laba_kotor" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-name="filter_margin" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                                </td>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($rows as $row)
@@ -3484,6 +3518,9 @@
                     'filter_qty',
                     'filter_avg',
                     'filter_amount',
+                    'filter_hpp',
+                    'filter_laba_kotor',
+                    'filter_margin',
                 ];
                 const params = new URLSearchParams(window.location.search);
 
@@ -3497,6 +3534,7 @@
 
                 function updateTableFilter(name, value) {
                     const url = new URL(window.location.href);
+                    url.searchParams.delete('page');
 
                     if (value.trim()) {
                         url.searchParams.set(name, value.trim());
@@ -3519,6 +3557,7 @@
                 if (clearTableFiltersButton) {
                     clearTableFiltersButton.addEventListener('click', function () {
                         const url = new URL(window.location.href);
+                        url.searchParams.delete('page');
 
                         tableFilterParamNames.forEach(function (paramName) {
                             url.searchParams.delete(paramName);
