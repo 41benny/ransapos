@@ -783,22 +783,33 @@ class CatalogReportController extends Controller
             $format = $request->input('format');
             $isExporting = in_array($format, ['xlsx', 'pdf'], true);
 
-            $salesItemBase = DB::table('sale_items')
-                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+            $salesBaseQuery = DB::table('sales')
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
             if (!empty($outletId)) {
-                $salesItemBase->where('sales.outlet_id', $outletId);
+                $salesBaseQuery->where('sales.outlet_id', $outletId);
             }
 
-            $totals = (clone $salesItemBase)
+            $saleItemCountSub = DB::table('sale_items')
+                ->select('sale_items.sale_id')
+                ->selectRaw('COUNT(*) as sale_item_count')
+                ->groupBy('sale_items.sale_id');
+
+            $salesItemBase = (clone $salesBaseQuery)
+                ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+                ->leftJoinSub($saleItemCountSub, 'sale_item_counts', function ($join) {
+                    $join->on('sale_item_counts.sale_id', '=', 'sales.id');
+                });
+
+            $itemTotals = (clone $salesItemBase)
                 ->selectRaw('COUNT(DISTINCT sale_items.product_name) as total_items')
                 ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
-                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_sales')
                 ->selectRaw('COALESCE(SUM(sale_items.cogs), 0) as total_hpp')
                 ->first();
+
+            $totalSales = (float) (clone $salesBaseQuery)->sum('sales.total_amount');
 
             $rowsQuery = (clone $salesItemBase)
                 ->select(
@@ -809,11 +820,12 @@ class CatalogReportController extends Controller
                     'outlets.name as outlet_name',
                     'sale_items.product_name',
                     'sale_items.quantity as qty',
-                    'sale_items.subtotal as total_amount',
+                    'sale_items.subtotal as item_subtotal',
+                    'sales.subtotal as sale_subtotal',
+                    'sales.total_amount as sale_total_amount',
+                    'sale_item_counts.sale_item_count',
                     'sale_items.cogs as hpp_amount'
                 )
-                ->selectRaw('COALESCE(sale_items.subtotal - sale_items.cogs, 0) as gross_profit')
-                ->selectRaw("CASE WHEN COALESCE(sale_items.subtotal, 0) > 0 THEN ROUND(((sale_items.subtotal - sale_items.cogs) / sale_items.subtotal) * 100, 2) ELSE 0 END as margin_percent")
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.id')
                 ->orderByDesc('sale_items.id');
@@ -826,16 +838,15 @@ class CatalogReportController extends Controller
             }
 
             $rows = $isExporting
-                ? $rowsQuery->get()
-                : $rowsQuery->paginate(250)->withQueryString();
+                ? $this->transformSalesVsHppRows($rowsQuery->get())
+                : $this->transformSalesVsHppPaginator($rowsQuery->paginate(250)->withQueryString());
 
-            $totalSales = (float) ($totals->total_sales ?? 0);
-            $totalHpp = (float) ($totals->total_hpp ?? 0);
+            $totalHpp = (float) ($itemTotals->total_hpp ?? 0);
             $totalGrossProfit = $totalSales - $totalHpp;
 
             $summary = [
-                'total_items' => (int) ($totals->total_items ?? 0),
-                'total_qty' => (float) ($totals->total_qty ?? 0),
+                'total_items' => (int) ($itemTotals->total_items ?? 0),
+                'total_qty' => (float) ($itemTotals->total_qty ?? 0),
                 'total_sales' => $totalSales,
                 'total_hpp' => $totalHpp,
                 'total_gross_profit' => $totalGrossProfit,
@@ -1682,6 +1693,8 @@ class CatalogReportController extends Controller
     private function generateSalesVsHppExportRows($rowsQuery): Generator
     {
         foreach ((clone $rowsQuery)->lazy(1000) as $row) {
+            $row = $this->transformSalesVsHppRow($row);
+
             yield [
                 $row->transaction_number,
                 $row->sale_date,
@@ -1694,6 +1707,56 @@ class CatalogReportController extends Controller
                 (float) ($row->margin_percent ?? 0),
             ];
         }
+    }
+
+    private function transformSalesVsHppPaginator(LengthAwarePaginator $paginator): LengthAwarePaginator
+    {
+        $paginator->setCollection($this->transformSalesVsHppRows($paginator->getCollection()));
+
+        return $paginator;
+    }
+
+    private function transformSalesVsHppRows(Collection $rows): Collection
+    {
+        return $rows->map(fn ($row) => $this->transformSalesVsHppRow($row));
+    }
+
+    private function transformSalesVsHppRow(object $row): object
+    {
+        $totalAmount = $this->allocateSalesVsHppLineTotal(
+            itemSubtotal: (float) ($row->item_subtotal ?? $row->total_amount ?? 0),
+            saleSubtotal: (float) ($row->sale_subtotal ?? 0),
+            saleTotalAmount: (float) ($row->sale_total_amount ?? $row->total_amount ?? 0),
+            saleItemCount: (int) ($row->sale_item_count ?? 0),
+        );
+
+        $hppAmount = (float) ($row->hpp_amount ?? 0);
+        $grossProfit = $totalAmount - $hppAmount;
+
+        $row->total_amount = $totalAmount;
+        $row->gross_profit = $grossProfit;
+        $row->margin_percent = $totalAmount > 0
+            ? round(($grossProfit / $totalAmount) * 100, 2)
+            : 0.0;
+
+        return $row;
+    }
+
+    private function allocateSalesVsHppLineTotal(
+        float $itemSubtotal,
+        float $saleSubtotal,
+        float $saleTotalAmount,
+        int $saleItemCount
+    ): float {
+        if ($saleSubtotal > 0) {
+            return $itemSubtotal + (($saleTotalAmount - $saleSubtotal) * ($itemSubtotal / $saleSubtotal));
+        }
+
+        if ($saleItemCount > 0) {
+            return $saleTotalAmount / $saleItemCount;
+        }
+
+        return 0.0;
     }
 
     private function downloadSalesDiscountXlsx(

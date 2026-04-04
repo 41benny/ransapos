@@ -149,6 +149,52 @@ class CatalogReportControllerTest extends TestCase
         $this->assertSame(15000, $exportRows[0]['gross_profit']);
     }
 
+    public function test_allocate_sales_vs_hpp_line_total_prorates_invoice_adjustment_into_item_total(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $method = new \ReflectionMethod($controller, 'allocateSalesVsHppLineTotal');
+        $method->setAccessible(true);
+
+        $allocated = $method->invoke(
+            $controller,
+            100000.0,
+            200000.0,
+            220000.0,
+            2,
+        );
+
+        $this->assertSame(110000.0, $allocated);
+    }
+
+    public function test_transform_sales_vs_hpp_row_updates_total_gross_profit_and_margin(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $row = (object) [
+            'item_subtotal' => 100000.0,
+            'sale_subtotal' => 200000.0,
+            'sale_total_amount' => 220000.0,
+            'sale_item_count' => 2,
+            'hpp_amount' => 70000.0,
+        ];
+
+        $method = new \ReflectionMethod($controller, 'transformSalesVsHppRow');
+        $method->setAccessible(true);
+
+        $transformed = $method->invoke($controller, $row);
+
+        $this->assertSame(110000.0, $transformed->total_amount);
+        $this->assertSame(40000.0, $transformed->gross_profit);
+        $this->assertSame(36.36, $transformed->margin_percent);
+    }
+
     public function test_passes_purchase_by_product_filters_matches_product_text_and_numeric_columns(): void
     {
         $controller = new CatalogReportController(
