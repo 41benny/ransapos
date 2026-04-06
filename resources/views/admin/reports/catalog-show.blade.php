@@ -601,6 +601,7 @@
                                     <th class="px-4 py-3 text-right">Total Qty Dikirim</th>
                                     <th class="px-4 py-3 text-right">Total Qty Diterima</th>
                                     <th class="px-4 py-3 text-right">Selisih</th>
+                                    <th class="px-4 py-3 text-right">Total Nilai (Rp)</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -611,10 +612,11 @@
                                         <td class="px-4 py-3 text-right text-indigo-600">{{ number_format($row->total_qty, 2, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right text-emerald-600">{{ number_format($row->total_received_qty, 2, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right text-rose-600">{{ number_format($row->total_qty - $row->total_received_qty, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-indigo-600">Rp {{ number_format($row->total_nominal ?? 0, 2, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
+                                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -633,6 +635,7 @@
                                     <th class="px-4 py-3">Produk</th>
                                     <th class="px-4 py-3 text-right">Qty Dikirim</th>
                                     <th class="px-4 py-3 text-right">Qty Diterima</th>
+                                    <th class="px-4 py-3 text-right">Nilai (Rp)</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -657,10 +660,11 @@
                                         </td>
                                         <td class="px-4 py-3 text-right font-medium text-indigo-600">{{ number_format($row->quantity, 2, ',', '.') }}</td>
                                         <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ number_format($row->received_quantity ?? 0, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-slate-800">Rp {{ number_format($row->nominal_value ?? 0, 2, ',', '.') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
+                                        <td colspan="9" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
                                     </tr>
                                 @endforelse
                             </tbody>

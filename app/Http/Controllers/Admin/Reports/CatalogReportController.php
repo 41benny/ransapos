@@ -935,10 +935,17 @@ class CatalogReportController extends Controller
                 
                 $itemAgg = (clone $query)
                     ->join('stock_transfer_items', 'stock_transfers.id', '=', 'stock_transfer_items.stock_transfer_id')
+                    ->leftJoin('stock_mutations', function ($join) {
+                        $join->on('stock_transfers.id', '=', 'stock_mutations.reference_id')
+                            ->where('stock_mutations.reference_type', '=', 'stock_transfer')
+                            ->where('stock_mutations.mutation_type', '=', 'transfer_out')
+                            ->on('stock_transfer_items.product_id', '=', 'stock_mutations.product_id');
+                    })
                     ->select(
                         'stock_transfers.transfer_date',
                         DB::raw('SUM(stock_transfer_items.quantity) as total_qty'),
-                        DB::raw('SUM(stock_transfer_items.received_quantity) as total_received_qty')
+                        DB::raw('SUM(stock_transfer_items.received_quantity) as total_received_qty'),
+                        DB::raw('SUM(COALESCE(ABS(stock_mutations.total_cost), ABS(stock_mutations.quantity) * COALESCE(stock_mutations.unit_cost, 0), 0)) as total_nominal')
                     )
                     ->groupBy('stock_transfers.transfer_date')
                     ->get()
@@ -948,6 +955,7 @@ class CatalogReportController extends Controller
                     $item = $itemAgg->get($row->transfer_date);
                     $row->total_qty = $item ? (float) $item->total_qty : 0;
                     $row->total_received_qty = $item ? (float) $item->total_received_qty : 0;
+                    $row->total_nominal = $item ? (float) $item->total_nominal : 0;
                     return $row;
                 });
 
@@ -956,10 +964,17 @@ class CatalogReportController extends Controller
                     'total_transfers' => (int) $rows->sum('total_transfers'),
                     'total_qty' => (float) $rows->sum('total_qty'),
                     'total_received_qty' => (float) $rows->sum('total_received_qty'),
+                    'total_nominal' => (float) $rows->sum('total_nominal'),
                 ];
             } else {
                 $query->join('stock_transfer_items', 'stock_transfers.id', '=', 'stock_transfer_items.stock_transfer_id')
                     ->join('products', 'stock_transfer_items.product_id', '=', 'products.id')
+                    ->leftJoin('stock_mutations', function ($join) {
+                        $join->on('stock_transfers.id', '=', 'stock_mutations.reference_id')
+                            ->where('stock_mutations.reference_type', '=', 'stock_transfer')
+                            ->where('stock_mutations.mutation_type', '=', 'transfer_out')
+                            ->on('stock_transfer_items.product_id', '=', 'stock_mutations.product_id');
+                    })
                     ->select(
                         'stock_transfers.id',
                         'stock_transfers.transfer_number',
@@ -971,7 +986,8 @@ class CatalogReportController extends Controller
                         'products.sku as product_sku',
                         'stock_transfer_items.quantity',
                         'stock_transfer_items.received_quantity',
-                        'stock_transfers.notes'
+                        'stock_transfers.notes',
+                        DB::raw('COALESCE(ABS(stock_mutations.total_cost), ABS(stock_mutations.quantity) * COALESCE(stock_mutations.unit_cost, 0), 0) as nominal_value')
                     )
                     ->orderByDesc('stock_transfers.transfer_date')
                     ->orderByDesc('stock_transfers.id');
@@ -982,6 +998,7 @@ class CatalogReportController extends Controller
                     'total_transfers' => $rows->pluck('transfer_number')->unique()->count(),
                     'total_qty' => (float) $rows->sum('quantity'),
                     'total_received_qty' => (float) $rows->sum('received_quantity'),
+                    'total_nominal' => (float) $rows->sum('nominal_value'),
                 ];
             }
         }
@@ -2349,6 +2366,7 @@ class CatalogReportController extends Controller
                     ['key' => 'total_transfers', 'label' => 'Total Mutasi', 'type' => 'number', 'decimals' => 0],
                     ['key' => 'total_qty', 'label' => 'Total Qty Dikirim', 'type' => 'number', 'decimals' => 2],
                     ['key' => 'total_received_qty', 'label' => 'Total Qty Diterima', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'total_nominal', 'label' => 'Total Nilai (Rp)', 'type' => 'number', 'decimals' => 2],
                 ], $rowsCollection->map(fn($row) => (array) $row)->all()];
             }
             return [[
@@ -2360,6 +2378,7 @@ class CatalogReportController extends Controller
                 ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
                 ['key' => 'quantity', 'label' => 'Qty Dikirim', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'received_quantity', 'label' => 'Qty Diterima', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'nominal_value', 'label' => 'HPP (Nilai Rp)', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
