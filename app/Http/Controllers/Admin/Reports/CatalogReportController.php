@@ -83,6 +83,7 @@ class CatalogReportController extends Controller
                 'label' => 'Produk',
                 'items' => [
                     'stock-movement',
+                    'stock-transfer',
                     'stock-adjustments',
                     'top-products',
                     'low-selling-products',
@@ -149,6 +150,7 @@ class CatalogReportController extends Controller
             'purchase-by-category' => ['title' => 'Pembelian per Kategori', 'implemented' => true],
             'purchase-unpaid' => ['title' => 'Pembelian Belum Lunas', 'implemented' => true],
             'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => true],
+            'stock-transfer' => ['title' => 'Mutasi Persediaan Antar Outlet', 'implemented' => true],
             'stock-adjustments' => ['title' => 'Riwayat Adjustment Stok', 'implemented' => true],
             'top-products' => ['title' => 'Produk Terlaris', 'implemented' => false],
             'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
@@ -210,6 +212,7 @@ class CatalogReportController extends Controller
 
             // Produk
             'stock-movement' => 'stocks.view',
+            'stock-transfer' => 'stocks.view',
             'stock-adjustments' => 'stocks.view',
             'top-products' => 'stocks.view',
             'low-selling-products' => 'stocks.view',
@@ -901,6 +904,86 @@ class CatalogReportController extends Controller
                     'Satu aksi bulk adjustment dapat menghasilkan beberapa baris jika user menyesuaikan lebih dari satu produk sekaligus.',
                 ],
             ];
+        }
+
+        if ($slug === 'stock-transfer') {
+            $viewType = 'stock-transfer';
+            $viewMode = $request->input('view_mode', 'summary');
+
+            $query = DB::table('stock_transfers')
+                ->join('outlets as from_outlet', 'stock_transfers.from_outlet_id', '=', 'from_outlet.id')
+                ->join('outlets as to_outlet', 'stock_transfers.to_outlet_id', '=', 'to_outlet.id')
+                ->whereBetween('stock_transfers.transfer_date', [$dateFrom, $dateTo])
+                ->whereIn('stock_transfers.status', ['in_transit', 'received']);
+
+            if (!empty($outletId)) {
+                $query->where(function ($q) use ($outletId) {
+                    $q->where('stock_transfers.from_outlet_id', $outletId)
+                      ->orWhere('stock_transfers.to_outlet_id', $outletId);
+                });
+            }
+
+            if ($viewMode === 'summary') {
+                $rows = (clone $query)
+                    ->select(
+                        'stock_transfers.transfer_date',
+                        DB::raw('COUNT(stock_transfers.id) as total_transfers')
+                    )
+                    ->groupBy('stock_transfers.transfer_date')
+                    ->orderByDesc('stock_transfers.transfer_date')
+                    ->get();
+                
+                $itemAgg = (clone $query)
+                    ->join('stock_transfer_items', 'stock_transfers.id', '=', 'stock_transfer_items.stock_transfer_id')
+                    ->select(
+                        'stock_transfers.transfer_date',
+                        DB::raw('SUM(stock_transfer_items.quantity) as total_qty'),
+                        DB::raw('SUM(stock_transfer_items.received_quantity) as total_received_qty')
+                    )
+                    ->groupBy('stock_transfers.transfer_date')
+                    ->get()
+                    ->keyBy('transfer_date');
+                    
+                $rows->transform(function ($row) use ($itemAgg) {
+                    $item = $itemAgg->get($row->transfer_date);
+                    $row->total_qty = $item ? (float) $item->total_qty : 0;
+                    $row->total_received_qty = $item ? (float) $item->total_received_qty : 0;
+                    return $row;
+                });
+
+                $summary = [
+                    'view_mode' => 'summary',
+                    'total_transfers' => (int) $rows->sum('total_transfers'),
+                    'total_qty' => (float) $rows->sum('total_qty'),
+                    'total_received_qty' => (float) $rows->sum('total_received_qty'),
+                ];
+            } else {
+                $query->join('stock_transfer_items', 'stock_transfers.id', '=', 'stock_transfer_items.stock_transfer_id')
+                    ->join('products', 'stock_transfer_items.product_id', '=', 'products.id')
+                    ->select(
+                        'stock_transfers.id',
+                        'stock_transfers.transfer_number',
+                        'stock_transfers.transfer_date',
+                        'stock_transfers.status',
+                        'from_outlet.name as from_outlet_name',
+                        'to_outlet.name as to_outlet_name',
+                        'products.name as product_name',
+                        'products.sku as product_sku',
+                        'stock_transfer_items.quantity',
+                        'stock_transfer_items.received_quantity',
+                        'stock_transfers.notes'
+                    )
+                    ->orderByDesc('stock_transfers.transfer_date')
+                    ->orderByDesc('stock_transfers.id');
+                    
+                $rows = $query->get();
+                $summary = [
+                    'view_mode' => 'detail',
+                    'total_transfers' => $rows->pluck('transfer_number')->unique()->count(),
+                    'total_qty' => (float) $rows->sum('quantity'),
+                    'total_received_qty' => (float) $rows->sum('received_quantity'),
+                ];
+            }
         }
 
         if ($slug === 'inventory-value') {
@@ -2257,6 +2340,28 @@ class CatalogReportController extends Controller
                 $arr['is_balanced'] = !empty($arr['is_balanced']) ? 'YES' : 'NO';
                 return $arr;
             })->all()];
+        }
+
+        if ($viewType === 'stock-transfer') {
+            if (($summary['view_mode'] ?? 'summary') === 'summary') {
+                return [[
+                    ['key' => 'transfer_date', 'label' => 'Tanggal', 'type' => 'text'],
+                    ['key' => 'total_transfers', 'label' => 'Total Mutasi', 'type' => 'number', 'decimals' => 0],
+                    ['key' => 'total_qty', 'label' => 'Total Qty Dikirim', 'type' => 'number', 'decimals' => 2],
+                    ['key' => 'total_received_qty', 'label' => 'Total Qty Diterima', 'type' => 'number', 'decimals' => 2],
+                ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+            }
+            return [[
+                ['key' => 'transfer_number', 'label' => 'No Transaksi', 'type' => 'text'],
+                ['key' => 'transfer_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'status', 'label' => 'Status', 'type' => 'text'],
+                ['key' => 'from_outlet_name', 'label' => 'Dari Outlet', 'type' => 'text'],
+                ['key' => 'to_outlet_name', 'label' => 'Ke Outlet', 'type' => 'text'],
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'quantity', 'label' => 'Qty Dikirim', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'received_quantity', 'label' => 'Qty Diterima', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($viewType === 'purchase-summary') {

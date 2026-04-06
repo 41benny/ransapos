@@ -551,6 +551,124 @@
                 </script>
             @endpush
 
+        @elseif($viewType === 'stock-transfer')
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-normal text-slate-800">Mutasi Persediaan Antar Outlet</h3>
+                    <div class="flex rounded-lg bg-slate-100 p-1">
+                        <a href="{{ request()->fullUrlWithQuery(['view_mode' => 'summary']) }}"
+                            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all {{ ($summary['view_mode'] ?? 'summary') === 'summary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            Ringkas
+                        </a>
+                        <a href="{{ request()->fullUrlWithQuery(['view_mode' => 'detail']) }}"
+                            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all {{ ($summary['view_mode'] ?? 'summary') === 'detail' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700' }}">
+                            Detil
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Cards --}}
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-4 mb-6">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Mutasi</div>
+                        <div class="mt-1 text-2xl font-normal text-slate-900">
+                            {{ number_format($summary['total_transfers'] ?? 0) }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Qty Dikirim</div>
+                        <div class="mt-1 text-2xl font-normal text-indigo-600">
+                            {{ number_format($summary['total_qty'] ?? 0, 2, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-slate-400">Total Qty Diterima</div>
+                        <div class="mt-1 text-2xl font-normal text-emerald-600">
+                            {{ number_format($summary['total_received_qty'] ?? 0, 2, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-widest text-rose-600">Selisih Qty</div>
+                        <div class="mt-1 text-2xl font-normal text-rose-700">
+                            {{ number_format(($summary['total_qty'] ?? 0) - ($summary['total_received_qty'] ?? 0), 2, ',', '.') }}</div>
+                    </div>
+                </div>
+
+                @if(($summary['view_mode'] ?? 'summary') === 'summary')
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3 text-right">Total Mutasi</th>
+                                    <th class="px-4 py-3 text-right">Total Qty Dikirim</th>
+                                    <th class="px-4 py-3 text-right">Total Qty Diterima</th>
+                                    <th class="px-4 py-3 text-right">Selisih</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3 font-medium text-slate-800">{{ \Carbon\Carbon::parse($row->transfer_date)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_transfers) }}</td>
+                                        <td class="px-4 py-3 text-right text-indigo-600">{{ number_format($row->total_qty, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right text-emerald-600">{{ number_format($row->total_received_qty, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right text-rose-600">{{ number_format($row->total_qty - $row->total_received_qty, 2, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="px-4 py-3">No Mutasi</th>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3">Dari Outlet</th>
+                                    <th class="px-4 py-3">Ke Outlet</th>
+                                    <th class="px-4 py-3">Produk</th>
+                                    <th class="px-4 py-3 text-right">Qty Dikirim</th>
+                                    <th class="px-4 py-3 text-right">Qty Diterima</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($rows as $row)
+                                    <tr>
+                                        <td class="px-4 py-3">
+                                            <a href="{{ route('admin.stock-transfers.show', $row->id) }}" target="_blank" class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                                                {{ $row->transfer_number }}
+                                            </a>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-600">{{ \Carbon\Carbon::parse($row->transfer_date)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <span class="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider {{ $row->status === 'received' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                {{ $row->status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row->from_outlet_name }}</td>
+                                        <td class="px-4 py-3 text-slate-600">{{ $row->to_outlet_name }}</td>
+                                        <td class="px-4 py-3 text-slate-600">
+                                            <div class="font-medium text-slate-700">{{ $row->product_name }}</div>
+                                            <div class="text-[10px] text-slate-400">{{ $row->product_sku }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-medium text-indigo-600">{{ number_format($row->quantity, 2, ',', '.') }}</td>
+                                        <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ number_format($row->received_quantity ?? 0, 2, ',', '.') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">Tidak ada data mutasi persediaan</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
         @elseif($viewType === 'sales-discount')
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-6">
