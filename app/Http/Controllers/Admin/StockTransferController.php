@@ -9,6 +9,7 @@ use App\Models\Outlet;
 use App\Models\Product;
 use App\Services\CostService;
 use App\Services\StockTransferService;
+use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -29,58 +30,101 @@ class StockTransferController extends Controller
      */
     public function index(Request $request)
     {
-        $query = StockTransfer::with(['fromOutlet', 'toOutlet', 'creator', 'items']);
-
-        // Filter by from outlet
-        if ($request->filled('from_outlet_id')) {
-            $query->where('from_outlet_id', $request->from_outlet_id);
-        }
-
-        // Filter by to outlet
-        if ($request->filled('to_outlet_id')) {
-            $query->where('to_outlet_id', $request->to_outlet_id);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by date range
-        if ($request->filled('start_date')) {
-            $query->where('transfer_date', '>=', $request->start_date);
-        }
-        if ($request->filled('end_date')) {
-            $query->where('transfer_date', '<=', $request->end_date);
-        }
-
-        // Search by transfer number
-        if ($request->filled('search')) {
-            $query->where('transfer_number', 'like', '%' . $request->search . '%');
-        }
+        $query = $this->buildFilteredTransfersQuery($request);
 
         $transfers = $query->orderBy('transfer_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        $transferNominals = collect();
-        $transferIds = $transfers->getCollection()->pluck('id')->filter()->values();
-        if ($transferIds->isNotEmpty()) {
-            $transferNominals = StockMutation::query()
-                ->select(
-                    'reference_id',
-                    DB::raw('SUM(COALESCE(total_cost, ABS(quantity) * COALESCE(unit_cost, 0))) as nominal_hpp')
-                )
-                ->where('reference_type', 'stock_transfer')
-                ->where('mutation_type', 'transfer_out')
-                ->whereIn('reference_id', $transferIds)
-                ->groupBy('reference_id')
-                ->pluck('nominal_hpp', 'reference_id');
-        }
+        $transferNominals = $this->getTransferNominals($transfers->getCollection()->pluck('id'));
 
         $outlets = Outlet::where('is_active', true)->get();
 
         return view('admin.stock-transfers.index', compact('transfers', 'outlets', 'transferNominals'));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $transfers = $this->buildFilteredTransfersQuery($request)
+            ->orderBy('transfer_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $transferNominals = $this->getTransferNominals($transfers->pluck('id'));
+
+        $columns = [
+            ['key' => 'transfer_number', 'label' => 'No. Transfer'],
+            ['key' => 'transfer_date', 'label' => 'Tanggal'],
+            ['key' => 'from_outlet', 'label' => 'Asal'],
+            ['key' => 'to_outlet', 'label' => 'Tujuan'],
+            ['key' => 'item_count', 'label' => 'Jumlah Item', 'type' => 'number'],
+            ['key' => 'nominal_hpp', 'label' => 'Nilai Kirim HPP', 'type' => 'number'],
+            ['key' => 'status', 'label' => 'Status'],
+            ['key' => 'author', 'label' => 'Author'],
+            ['key' => 'notes', 'label' => 'Catatan'],
+        ];
+
+        $rows = $transfers->map(function (StockTransfer $transfer) use ($transferNominals) {
+            return [
+                'transfer_number' => $transfer->transfer_number,
+                'transfer_date' => optional($transfer->transfer_date)->format('Y-m-d'),
+                'from_outlet' => $transfer->fromOutlet->name ?? '-',
+                'to_outlet' => $transfer->toOutlet->name ?? '-',
+                'item_count' => $transfer->items->count(),
+                'nominal_hpp' => (float) ($transferNominals[$transfer->id] ?? 0),
+                'status' => strtoupper((string) $transfer->status),
+                'author' => $transfer->creator->name ?? '-',
+                'notes' => $transfer->notes ?? '',
+            ];
+        });
+
+        ReportExport::xlsx(
+            'stock_transfers_' . now()->format('Ymd_His') . '.xlsx',
+            'Stock Transfers',
+            $columns,
+            $rows
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $transfers = $this->buildFilteredTransfersQuery($request)
+            ->orderBy('transfer_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $transferNominals = $this->getTransferNominals($transfers->pluck('id'));
+
+        $columns = [
+            ['key' => 'transfer_number', 'label' => 'No. Transfer'],
+            ['key' => 'transfer_date', 'label' => 'Tanggal'],
+            ['key' => 'from_outlet', 'label' => 'Asal'],
+            ['key' => 'to_outlet', 'label' => 'Tujuan'],
+            ['key' => 'item_count', 'label' => 'Item', 'type' => 'number'],
+            ['key' => 'nominal_hpp', 'label' => 'Nilai HPP', 'type' => 'number'],
+            ['key' => 'status', 'label' => 'Status'],
+            ['key' => 'author', 'label' => 'Author'],
+        ];
+
+        $rows = $transfers->map(function (StockTransfer $transfer) use ($transferNominals) {
+            return [
+                'transfer_number' => $transfer->transfer_number,
+                'transfer_date' => optional($transfer->transfer_date)->format('Y-m-d'),
+                'from_outlet' => $transfer->fromOutlet->name ?? '-',
+                'to_outlet' => $transfer->toOutlet->name ?? '-',
+                'item_count' => $transfer->items->count(),
+                'nominal_hpp' => (float) ($transferNominals[$transfer->id] ?? 0),
+                'status' => strtoupper((string) $transfer->status),
+                'author' => $transfer->creator->name ?? '-',
+            ];
+        });
+
+        ReportExport::pdf(
+            'stock_transfers_' . now()->format('Ymd_His') . '.pdf',
+            'Laporan Transfer Stok',
+            $columns,
+            $rows
+        );
     }
 
     /**
@@ -481,4 +525,54 @@ class StockTransferController extends Controller
         return $summary;
     }
 
+    private function buildFilteredTransfersQuery(Request $request)
+    {
+        $query = StockTransfer::with(['fromOutlet', 'toOutlet', 'creator', 'items']);
+
+        if ($request->filled('from_outlet_id')) {
+            $query->where('from_outlet_id', $request->from_outlet_id);
+        }
+
+        if ($request->filled('to_outlet_id')) {
+            $query->where('to_outlet_id', $request->to_outlet_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->where('transfer_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->where('transfer_date', '<=', $request->end_date);
+        }
+
+        if ($request->filled('search')) {
+            $query->where('transfer_number', 'like', '%' . $request->search . '%');
+        }
+
+        return $query;
+    }
+
+    private function getTransferNominals($transferIds)
+    {
+        $transferIds = collect($transferIds)->filter()->values();
+
+        if ($transferIds->isEmpty()) {
+            return collect();
+        }
+
+        return StockMutation::query()
+            ->select(
+                'reference_id',
+                DB::raw('SUM(COALESCE(total_cost, ABS(quantity) * COALESCE(unit_cost, 0))) as nominal_hpp')
+            )
+            ->where('reference_type', 'stock_transfer')
+            ->where('mutation_type', 'transfer_out')
+            ->whereIn('reference_id', $transferIds)
+            ->groupBy('reference_id')
+            ->pluck('nominal_hpp', 'reference_id');
+    }
 }

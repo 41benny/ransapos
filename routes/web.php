@@ -285,6 +285,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::get('stock-transfers/available-stock', [\App\Http\Controllers\Admin\StockTransferController::class, 'getAvailableStock'])
         ->name('stock-transfers.available-stock')
         ->middleware('permission:stock-transfers.create|stock-transfers.view');
+    Route::get('stock-transfers/export-excel', [\App\Http\Controllers\Admin\StockTransferController::class, 'exportExcel'])
+        ->name('stock-transfers.export-excel')
+        ->middleware('permission:stock-transfers.view');
+    Route::get('stock-transfers/export-pdf', [\App\Http\Controllers\Admin\StockTransferController::class, 'exportPdf'])
+        ->name('stock-transfers.export-pdf')
+        ->middleware('permission:stock-transfers.view');
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
         ->only(['create', 'store'])
         ->middleware('permission:stock-transfers.create');

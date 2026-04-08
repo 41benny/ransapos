@@ -31,7 +31,13 @@
         </div>
         <div class="p-5">
             <form method="GET" action="{{ route('admin.stock-transfers.index') }}">
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Cari No. Transfer</label>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="TRF-..."
+                            class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                    </div>
+
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari Outlet</label>
                         <select name="from_outlet_id" class="ui-input w-full px-3 py-1.5 text-[11.5px] font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
@@ -95,6 +101,25 @@
 
     {{-- Transfers Table --}}
     <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-exchange-alt text-indigo-500 text-[10px]"></i>
+                <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Daftar Transfer Stok</h3>
+            </div>
+            <div class="flex items-center gap-2 no-print">
+                <a href="{{ route('admin.stock-transfers.export-excel', request()->query()) }}"
+                    class="ui-btn inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
+                    <i class="fas fa-file-excel text-[10px]"></i>
+                    <span>Export Excel</span>
+                </a>
+                <a href="{{ route('admin.stock-transfers.export-pdf', request()->query()) }}"
+                    class="ui-btn inline-flex items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-rose-700 active:scale-95">
+                    <i class="fas fa-file-pdf text-[10px]"></i>
+                    <span>Export PDF</span>
+                </a>
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="ui-table min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-10">
