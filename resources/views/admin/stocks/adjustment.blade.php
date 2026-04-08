@@ -138,16 +138,23 @@
                     </table>
                 </div>
 
-                <div class="relative rounded-b-2xl p-6 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
-                            <i class="fas fa-lightbulb text-[10px]"></i>
+                <div class="sticky bottom-0 z-20 rounded-b-2xl p-6 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/85 border-t border-slate-100 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-1">
+                        <div class="flex items-center gap-2">
+                            <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
+                                <i class="fas fa-lightbulb text-[10px]"></i>
+                            </div>
+                            <p class="text-xs text-slate-400 italic">Pilih outlet
+                                terlebih dahulu, lalu masukkan nama atau SKU produk.</p>
                         </div>
-                        <p class="text-xs text-slate-400 italic">Pilih outlet
-                            terlebih dahulu, lalu masukkan nama atau SKU produk.</p>
+                        <button type="button" id="add-row-bottom"
+                            class="ui-btn ui-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                            <i class="fas fa-plus text-[10px]"></i>
+                            <span>Tambah Baris Lagi</span>
+                        </button>
                     </div>
                     <button type="submit"
-                        class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
+                        class="ui-btn ui-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
                         <i class="fas fa-save text-[10px]"></i>
                         <span>Simpan Data Penyesuaian</span>
                     </button>
@@ -163,6 +170,7 @@
             const outletSelect = document.getElementById('outlet_id');
             const rowsEl = document.getElementById('rows');
             const addBtn = document.getElementById('add-row');
+            const addBtnBottom = document.getElementById('add-row-bottom');
             const clearBtn = document.getElementById('clear-rows');
             const form = document.getElementById('bulkAdjustmentForm');
 
@@ -365,18 +373,37 @@
                 return tr;
             }
 
-            addBtn.addEventListener('click', function () {
+            function appendRow({ focusInput = false, scrollIntoView = false } = {}) {
                 rowsEl.appendChild(createRow());
                 renumber();
-                // Focus newly added input
-                rowsEl.lastElementChild.querySelector('[data-product-input]').focus();
+                const newRow = rowsEl.lastElementChild;
+                const newInput = newRow?.querySelector('[data-product-input]');
+
+                if (scrollIntoView && newRow) {
+                    requestAnimationFrame(() => {
+                        newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                }
+
+                if (focusInput && newInput) {
+                    requestAnimationFrame(() => {
+                        newInput.focus();
+                    });
+                }
+            }
+
+            addBtn.addEventListener('click', function () {
+                appendRow({ focusInput: true, scrollIntoView: true });
+            });
+
+            addBtnBottom.addEventListener('click', function () {
+                appendRow({ focusInput: true, scrollIntoView: true });
             });
 
             clearBtn.addEventListener('click', function () {
                 if (confirm('Apakah Anda yakin ingin menghapus semua baris data?')) {
                     rowsEl.innerHTML = '';
-                    rowsEl.appendChild(createRow());
-                    renumber();
+                    appendRow();
                 }
             });
 
@@ -427,8 +454,7 @@
             });
 
             // init with 1 row
-            rowsEl.appendChild(createRow());
-            renumber();
+            appendRow();
         });
     </script>
 @endpush
