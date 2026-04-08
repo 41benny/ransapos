@@ -118,8 +118,13 @@
                 </div>
             </div>
 
-            <div class="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end items-center">
-                <div class="flex items-center gap-3">
+            <div class="sticky bottom-0 z-20 p-6 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/85 border-t border-slate-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+                <button type="button" id="addItemBtnBottom"
+                    class="ui-btn ui-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-[11px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                    <i class="fas fa-plus text-[10px]"></i>
+                    <span>TAMBAH PRODUK LAGI</span>
+                </button>
+                <div class="flex items-center justify-end gap-3">
                     <a href="{{ route('admin.stock-transfers.index') }}" class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest">Batalkan</a>
                     <button type="submit"
                         class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-3 text-xs font-normal text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95">
@@ -139,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let itemIndex = 0;
     const itemsContainer = document.getElementById('itemsContainer');
     const addItemBtn = document.getElementById('addItemBtn');
+    const addItemBtnBottom = document.getElementById('addItemBtnBottom');
     const fromOutletSelect = document.getElementById('from_outlet_id');
     const availableStockBaseUrl = @json(route('admin.stock-transfers.available-stock'));
     const products = @json($productsPayload);
@@ -152,9 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         addItem();
     }
 
-    addItemBtn.addEventListener('click', addItem);
+    addItemBtn.addEventListener('click', () => addItem(null, { focusSearch: true, scrollIntoView: true }));
+    addItemBtnBottom.addEventListener('click', () => addItem(null, { focusSearch: true, scrollIntoView: true }));
 
-    function addItem(prefill = null) {
+    function addItem(prefill = null, options = {}) {
+        const { focusSearch = false, scrollIntoView = false } = options;
         const itemHtml = `
             <div class="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md item-row animate-in zoom-in-95 duration-200" data-index="${itemIndex}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
@@ -261,6 +269,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const notesInput = newRow.querySelector(`input[name="items[${itemIndex}][notes]"]`);
                 notesInput.value = prefill.notes;
             }
+        }
+
+        if (scrollIntoView) {
+            requestAnimationFrame(() => {
+                newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }
+
+        if (focusSearch) {
+            requestAnimationFrame(() => {
+                productSearch.focus();
+            });
         }
 
         itemIndex++;
