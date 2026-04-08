@@ -452,7 +452,7 @@ class CatalogReportController extends Controller
         $outletId = $request->input('outlet_id');
         $selectedUserId = $request->input('user_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
-        $selectedOutletIds = $slug === 'sales-vs-hpp'
+        $selectedOutletIds = in_array($slug, ['sales-vs-hpp', 'stock-transfer'], true)
             ? $this->resolveCatalogOutletIds($request, $outlets->pluck('id'))
             : [];
         $selectedProductId = $request->input('product_id');
@@ -916,7 +916,12 @@ class CatalogReportController extends Controller
                 ->whereBetween('stock_transfers.transfer_date', [$dateFrom, $dateTo])
                 ->whereIn('stock_transfers.status', ['in_transit', 'received']);
 
-            if (!empty($outletId)) {
+            if (!empty($selectedOutletIds)) {
+                $query->where(function ($q) use ($selectedOutletIds) {
+                    $q->whereIn('stock_transfers.from_outlet_id', $selectedOutletIds)
+                      ->orWhereIn('stock_transfers.to_outlet_id', $selectedOutletIds);
+                });
+            } elseif (!empty($outletId)) {
                 $query->where(function ($q) use ($outletId) {
                     $q->where('stock_transfers.from_outlet_id', $outletId)
                       ->orWhere('stock_transfers.to_outlet_id', $outletId);

@@ -25,6 +25,7 @@
                 $isStockMovement = $viewType === 'stock-movement';
                 $isStockAdjustment = $viewType === 'stock-adjustment';
                 $isSalesVsHpp = $viewType === 'sales-vs-hpp';
+                $usesOutletChecklist = in_array($viewType, ['sales-vs-hpp', 'stock-transfer'], true);
                 $usesProductFilter = $isStockMovement || $isStockAdjustment;
                 $outletColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-3' : 'md:col-span-3');
                 $productColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
@@ -58,7 +59,7 @@
                 <div class="{{ $outletColClass }}">
                     <label
                         class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet</label>
-                    @if($isSalesVsHpp)
+                    @if($usesOutletChecklist)
                         <div class="relative" id="catalogSalesVsHppOutletFilterWrap">
                             <button type="button" id="catalogSalesVsHppOutletDropdownBtn"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-normal text-slate-700 transition-all outline-none focus:ring-2 focus:ring-indigo-500/20">
