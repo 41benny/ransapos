@@ -25,12 +25,15 @@
                 $isStockMovement = $viewType === 'stock-movement';
                 $isStockAdjustment = $viewType === 'stock-adjustment';
                 $isSalesVsHpp = $viewType === 'sales-vs-hpp';
-                $usesOutletChecklist = in_array($viewType, ['sales-vs-hpp', 'stock-transfer'], true);
+                $isStockTransfer = $viewType === 'stock-transfer';
+                $usesOutletChecklist = $isSalesVsHpp;
                 $usesProductFilter = $isStockMovement || $isStockAdjustment;
-                $outletColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-3' : 'md:col-span-3');
+                $outletColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
                 $productColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
-                $actionColClass = $isStockAdjustment ? 'md:col-span-2' : ($usesProductFilter ? 'md:col-span-2' : 'md:col-span-5');
+                $actionColClass = ($isStockAdjustment || $usesProductFilter || $isStockTransfer) ? 'md:col-span-2' : 'md:col-span-5';
                 $selectedOutletIds = collect($selectedOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
+                $selectedFromOutletIds = collect($selectedFromOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
+                $selectedToOutletIds = collect($selectedToOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
                 $selectedProductOption = collect($products ?? collect())->firstWhere('id', $selectedProductId ?? null);
                 $selectedProductLabel = $selectedProductOption
                     ? $selectedProductOption->name . (!empty($selectedProductOption->sku) ? ' - ' . $selectedProductOption->sku : '')
@@ -58,18 +61,18 @@
                 </div>
                 <div class="{{ $outletColClass }}">
                     <label
-                        class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet</label>
+                        class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">{{ $isStockTransfer ? 'Outlet Asal' : 'Outlet' }}</label>
                     @if($usesOutletChecklist)
-                        <div class="relative" id="catalogSalesVsHppOutletFilterWrap">
-                            <button type="button" id="catalogSalesVsHppOutletDropdownBtn"
+                        <div class="relative" data-outlet-checklist>
+                            <button type="button" data-outlet-checklist-button
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-normal text-slate-700 transition-all outline-none focus:ring-2 focus:ring-indigo-500/20">
-                                <span id="catalogSalesVsHppOutletDropdownLabel" class="truncate">Semua Outlet</span>
+                                <span data-outlet-checklist-label class="truncate">Semua Outlet</span>
                                 <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
                             </button>
-                            <div id="catalogSalesVsHppOutletDropdownMenu"
+                            <div data-outlet-checklist-menu
                                 class="hidden absolute top-full left-0 z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
                                 <label class="mb-2 flex cursor-pointer items-center gap-3 border-b border-slate-100 px-2 py-2 text-[13px] font-bold text-slate-700">
-                                    <input type="checkbox" id="catalogSalesVsHppOutletAllCheckbox"
+                                    <input type="checkbox" data-outlet-checklist-all
                                         class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                         {{ count($selectedOutletIds) === 0 ? 'checked' : '' }}>
                                     <span>Pilih Semua</span>
@@ -81,7 +84,8 @@
                                                 name="outlet_ids[]"
                                                 value="{{ $outlet->id }}"
                                                 {{ count($selectedOutletIds) === 0 || in_array((int) $outlet->id, $selectedOutletIds, true) ? 'checked' : '' }}
-                                                class="catalog-sales-vs-hpp-outlet-checkbox h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                                class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                data-outlet-checklist-item>
                                             <span class="truncate font-medium">{{ $outlet->name }}</span>
                                         </label>
                                     @endforeach
@@ -105,6 +109,41 @@
                         </div>
                     @endif
                 </div>
+                @if($isStockTransfer)
+                    <div class="{{ $outletColClass }}">
+                        <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Outlet Tujuan</label>
+                        <div class="relative" data-outlet-checklist>
+                            <button type="button" data-outlet-checklist-button
+                                class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-normal text-slate-700 transition-all outline-none focus:ring-2 focus:ring-indigo-500/20">
+                                <span data-outlet-checklist-label class="truncate">Semua Outlet</span>
+                                <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+                            </button>
+                            <div data-outlet-checklist-menu
+                                class="hidden absolute top-full left-0 z-50 mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                                <label class="mb-2 flex cursor-pointer items-center gap-3 border-b border-slate-100 px-2 py-2 text-[13px] font-bold text-slate-700">
+                                    <input type="checkbox" data-outlet-checklist-all
+                                        class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        {{ count($selectedToOutletIds) === 0 ? 'checked' : '' }}>
+                                    <span>Pilih Semua</span>
+                                </label>
+                                <div class="custom-scrollbar space-y-1 pr-1" style="max-height: 12rem; overflow-y: auto;">
+                                    @foreach($outlets as $outlet)
+                                        <label class="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13px] text-slate-600 transition-colors hover:bg-slate-50">
+                                            <input type="checkbox"
+                                                name="to_outlet_ids[]"
+                                                value="{{ $outlet->id }}"
+                                                {{ count($selectedToOutletIds) === 0 || in_array((int) $outlet->id, $selectedToOutletIds, true) ? 'checked' : '' }}
+                                                class="h-5 w-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                data-outlet-checklist-item>
+                                            <span class="truncate font-medium">{{ $outlet->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <p class="ml-2 mt-2 text-[10px] font-medium text-slate-400">Kosong = semua outlet aktif</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 @if($usesProductFilter)
                     <div class="{{ $productColClass }}">
                         <label
@@ -3530,15 +3569,14 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            (function () {
-                const wrap = document.getElementById('catalogSalesVsHppOutletFilterWrap');
-                const button = document.getElementById('catalogSalesVsHppOutletDropdownBtn');
-                const label = document.getElementById('catalogSalesVsHppOutletDropdownLabel');
-                const menu = document.getElementById('catalogSalesVsHppOutletDropdownMenu');
-                const allCheckbox = document.getElementById('catalogSalesVsHppOutletAllCheckbox');
-                const itemCheckboxes = Array.from(document.querySelectorAll('.catalog-sales-vs-hpp-outlet-checkbox'));
+            document.querySelectorAll('[data-outlet-checklist]').forEach(function (wrap) {
+                const button = wrap.querySelector('[data-outlet-checklist-button]');
+                const label = wrap.querySelector('[data-outlet-checklist-label]');
+                const menu = wrap.querySelector('[data-outlet-checklist-menu]');
+                const allCheckbox = wrap.querySelector('[data-outlet-checklist-all]');
+                const itemCheckboxes = Array.from(wrap.querySelectorAll('[data-outlet-checklist-item]'));
 
-                if (!wrap || !button || !label || !menu || !allCheckbox) {
+                if (!button || !label || !menu || !allCheckbox) {
                     return;
                 }
 
@@ -3578,7 +3616,7 @@
                 });
 
                 updateLabel();
-            })();
+            });
 
             const productInput = document.querySelector('[data-report-product-input]');
             const productIdInput = document.querySelector('[data-report-product-id]');

@@ -452,8 +452,14 @@ class CatalogReportController extends Controller
         $outletId = $request->input('outlet_id');
         $selectedUserId = $request->input('user_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
-        $selectedOutletIds = in_array($slug, ['sales-vs-hpp', 'stock-transfer'], true)
+        $selectedOutletIds = $slug === 'sales-vs-hpp'
             ? $this->resolveCatalogOutletIds($request, $outlets->pluck('id'))
+            : [];
+        $selectedFromOutletIds = $slug === 'stock-transfer'
+            ? $this->resolveCatalogOutletIds($request, $outlets->pluck('id'), 'from_outlet_ids', 'from_outlet_id')
+            : [];
+        $selectedToOutletIds = $slug === 'stock-transfer'
+            ? $this->resolveCatalogOutletIds($request, $outlets->pluck('id'), 'to_outlet_ids', 'to_outlet_id')
             : [];
         $selectedProductId = $request->input('product_id');
         $products = collect();
@@ -916,16 +922,14 @@ class CatalogReportController extends Controller
                 ->whereBetween('stock_transfers.transfer_date', [$dateFrom, $dateTo])
                 ->whereIn('stock_transfers.status', ['in_transit', 'received']);
 
-            if (!empty($selectedOutletIds)) {
-                $query->where(function ($q) use ($selectedOutletIds) {
-                    $q->whereIn('stock_transfers.from_outlet_id', $selectedOutletIds)
-                      ->orWhereIn('stock_transfers.to_outlet_id', $selectedOutletIds);
-                });
+            if (!empty($selectedFromOutletIds)) {
+                $query->whereIn('stock_transfers.from_outlet_id', $selectedFromOutletIds);
             } elseif (!empty($outletId)) {
-                $query->where(function ($q) use ($outletId) {
-                    $q->where('stock_transfers.from_outlet_id', $outletId)
-                      ->orWhere('stock_transfers.to_outlet_id', $outletId);
-                });
+                $query->where('stock_transfers.from_outlet_id', $outletId);
+            }
+
+            if (!empty($selectedToOutletIds)) {
+                $query->whereIn('stock_transfers.to_outlet_id', $selectedToOutletIds);
             }
 
             if ($viewMode === 'summary') {
@@ -1776,6 +1780,8 @@ class CatalogReportController extends Controller
             'dateTo' => $dateTo,
             'outletId' => $outletId,
             'selectedOutletIds' => $selectedOutletIds,
+            'selectedFromOutletIds' => $selectedFromOutletIds,
+            'selectedToOutletIds' => $selectedToOutletIds,
             'selectedProductId' => $selectedProductId,
             'selectedUserId' => $selectedUserId,
             'outlets' => $outlets,
@@ -3215,7 +3221,12 @@ class CatalogReportController extends Controller
             ->get();
     }
 
-    private function resolveCatalogOutletIds(Request $request, Collection $availableOutletIds): array
+    private function resolveCatalogOutletIds(
+        Request $request,
+        Collection $availableOutletIds,
+        string $arrayKey = 'outlet_ids',
+        string $singleKey = 'outlet_id'
+    ): array
     {
         $allowedOutletIds = $availableOutletIds
             ->map(fn ($id) => (int) $id)
@@ -3224,8 +3235,8 @@ class CatalogReportController extends Controller
             ->values()
             ->all();
 
-        if ($request->has('outlet_ids')) {
-            return collect($request->input('outlet_ids', []))
+        if ($request->has($arrayKey)) {
+            return collect($request->input($arrayKey, []))
                 ->filter(fn ($id) => $id !== null && $id !== '')
                 ->map(fn ($id) => is_numeric($id) ? (int) $id : null)
                 ->filter(fn ($id) => is_int($id) && in_array($id, $allowedOutletIds, true))
@@ -3234,8 +3245,8 @@ class CatalogReportController extends Controller
                 ->all();
         }
 
-        if ($request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
-            $outletId = (int) $request->input('outlet_id');
+        if ($request->filled($singleKey) && is_numeric($request->input($singleKey))) {
+            $outletId = (int) $request->input($singleKey);
 
             return in_array($outletId, $allowedOutletIds, true)
                 ? [$outletId]
