@@ -138,7 +138,7 @@
                     </table>
                 </div>
 
-                <div class="sticky bottom-0 z-20 rounded-b-2xl p-6 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/85 border-t border-slate-100 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+                <div class="rounded-b-2xl p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:flex-1">
                         <div class="flex items-center gap-2">
                             <div class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-500">
