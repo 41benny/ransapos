@@ -445,62 +445,113 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-[720px] w-full border-separate border-spacing-0">
+                <table class="min-w-[960px] w-full border-separate border-spacing-0">
                     <thead>
                         <tr class="bg-slate-50/80 dark:bg-slate-800/75">
-                            <th class="sticky left-0 z-10 border-b border-slate-200 bg-slate-50/95 px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:border-slate-700 dark:bg-slate-800/95 dark:text-slate-300">
-                                Metrik
+                            <th class="sticky left-0 z-10 w-[140px] min-w-[140px] border-b border-slate-200 bg-slate-50/95 px-4 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:border-slate-700 dark:bg-slate-800/95 dark:text-slate-300">
+                                Outlet Name
                             </th>
-                            @foreach(($outletComparison['outlets'] ?? []) as $outletRow)
-                                @php
-                                    $tone = $columnToneClasses[$loop->index % count($columnToneClasses)];
-                                    $isHighestProfit = !is_null($highestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $highestProfitOutletId;
-                                    $isLowestProfit = !is_null($lowestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $lowestProfitOutletId;
-                                @endphp
-                                <th class="border-b px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest {{ $tone['header'] }}">
-                                    <div class="flex flex-col items-end gap-1">
-                                        <span>{{ $shortOutletName($outletRow['name'] ?? null) }}</span>
-                                        @if($isHighestProfit)
-                                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black tracking-[0.14em] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">Laba Tertinggi</span>
-                                        @elseif($isLowestProfit)
-                                            <span class="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black tracking-[0.14em] text-rose-700 dark:bg-rose-900/50 dark:text-rose-200">Laba Terendah</span>
-                                        @endif
-                                    </div>
-                                </th>
-                            @endforeach
-                            <th class="border-b border-slate-200 bg-slate-100 px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                Total
+                            <th class="border-b border-slate-200 px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Revenue (Gross)
+                            </th>
+                            <th class="border-b border-slate-200 px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                COGS (HPP)
+                            </th>
+                            <th class="border-b border-slate-200 px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Gross Profit
+                            </th>
+                            <th class="border-b border-slate-200 px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Margin %
+                            </th>
+                            <th class="border-b border-slate-200 px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Status
                             </th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($comparisonMetrics as $metric)
+                        @php
+                            $averageOutletMargin = count($comparisonOutlets) > 0
+                                ? (float) collect($comparisonOutlets)->avg('gross_margin')
+                                : 0.0;
+                        @endphp
+                        @forelse(($outletComparison['outlets'] ?? []) as $outletRow)
+                            @php
+                                $tone = $columnToneClasses[$loop->index % count($columnToneClasses)];
+                                $isHighestProfit = !is_null($highestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $highestProfitOutletId;
+                                $isLowestProfit = !is_null($lowestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $lowestProfitOutletId;
+                                $marginValue = (float) ($outletRow['gross_margin'] ?? 0);
+                                $marginChipClass = $marginValue >= 50
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200'
+                                    : ($marginValue >= 30
+                                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-200'
+                                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-200');
+                                $statusText = $isHighestProfit
+                                    ? 'Top'
+                                    : ($isLowestProfit ? 'Low' : 'OK');
+                                $statusClass = $isHighestProfit
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200'
+                                    : ($isLowestProfit
+                                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-200'
+                                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200');
+                            @endphp
                             <tr class="group">
-                                <td class="sticky left-0 z-10 border-b border-slate-100 bg-white px-6 py-4 text-sm font-bold text-slate-800 group-hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:group-hover:bg-slate-800">
-                                    {{ $metric['label'] }}
+                                <td class="sticky left-0 z-10 w-[140px] min-w-[140px] border-b border-slate-100 bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[11px] font-black {{ $tone['header'] }}">
+                                            {{ $shortOutletName($outletRow['name'] ?? null) }}
+                                        </span>
+                                    </div>
                                 </td>
-                                @foreach(($outletComparison['outlets'] ?? []) as $outletRow)
-                                    @php
-                                        $tone = $columnToneClasses[$loop->index % count($columnToneClasses)];
-                                    @endphp
-                                    <td class="border-b border-slate-100 px-6 py-4 text-right text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-100 {{ $tone['cell'] }}">
-                                        @if($metric['type'] === 'percent')
-                                            {{ number_format((float) ($outletRow[$metric['key']] ?? 0), 1) }}%
-                                        @else
-                                            Rp {{ number_format((float) ($outletRow[$metric['key']] ?? 0), 0, ',', '.') }}
-                                        @endif
-                                    </td>
-                                @endforeach
-                                <td class="border-b border-slate-100 bg-slate-50 px-6 py-4 text-right text-sm font-black text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-                                    @if($metric['type'] === 'percent')
-                                        {{ number_format((float) (($outletComparison['totals'][$metric['key']] ?? 0)), 1) }}%
-                                    @else
-                                        Rp {{ number_format((float) (($outletComparison['totals'][$metric['key']] ?? 0)), 0, ',', '.') }}
-                                    @endif
+                                <td class="border-b border-slate-100 px-6 py-4 text-right text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-100 {{ $tone['cell'] }}">
+                                    Rp {{ number_format((float) ($outletRow['revenue'] ?? 0), 0, ',', '.') }}
+                                </td>
+                                <td class="border-b border-slate-100 px-6 py-4 text-right text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-100 {{ $tone['cell'] }}">
+                                    Rp {{ number_format((float) ($outletRow['cogs'] ?? 0), 0, ',', '.') }}
+                                </td>
+                                <td class="border-b border-slate-100 px-6 py-4 text-right text-sm font-black text-slate-800 dark:border-slate-700 dark:text-slate-100 {{ $tone['cell'] }}">
+                                    Rp {{ number_format((float) ($outletRow['gross_profit'] ?? 0), 0, ',', '.') }}
+                                </td>
+                                <td class="border-b border-slate-100 px-6 py-4 text-center dark:border-slate-700 {{ $tone['cell'] }}">
+                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-black {{ $marginChipClass }}">
+                                        {{ number_format($marginValue, 1) }}%
+                                    </span>
+                                </td>
+                                <td class="border-b border-slate-100 px-6 py-4 text-center dark:border-slate-700 {{ $tone['cell'] }}">
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] {{ $statusClass }}">
+                                        {{ $statusText }}
+                                    </span>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center text-sm font-semibold text-slate-400 dark:text-slate-500">
+                                    Data outlet tidak tersedia untuk filter saat ini.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-50/80 dark:bg-slate-800/70">
+                            <td class="border-t border-slate-200 px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Summary (Aggregated)
+                            </td>
+                            <td class="border-t border-slate-200 px-6 py-4 text-right text-sm font-black text-slate-700 dark:border-slate-700 dark:text-slate-100">
+                                Rp {{ number_format((float) ($outletComparison['totals']['revenue'] ?? 0), 0, ',', '.') }}
+                            </td>
+                            <td class="border-t border-slate-200 px-6 py-4 text-right text-sm font-black text-slate-700 dark:border-slate-700 dark:text-slate-100">
+                                Rp {{ number_format((float) ($outletComparison['totals']['cogs'] ?? 0), 0, ',', '.') }}
+                            </td>
+                            <td class="border-t border-slate-200 px-6 py-4 text-right text-sm font-black text-slate-700 dark:border-slate-700 dark:text-slate-100">
+                                Rp {{ number_format((float) ($outletComparison['totals']['gross_profit'] ?? 0), 0, ',', '.') }}
+                            </td>
+                            <td class="border-t border-slate-200 px-6 py-4 text-center text-sm font-black text-indigo-600 dark:border-slate-700 dark:text-indigo-300">
+                                {{ number_format($averageOutletMargin, 1) }}%
+                            </td>
+                            <td class="border-t border-slate-200 px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:border-slate-700 dark:text-slate-300">
+                                Avg Margin
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
