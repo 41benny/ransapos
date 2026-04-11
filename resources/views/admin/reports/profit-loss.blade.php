@@ -6,8 +6,61 @@
 
 @section('content')
     @php
+        $activeView = $activeView ?? request('view', 'konsolidasi');
         $selectedOutletIds = collect($outletIds ?? $report['outlet_ids'] ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
         $singleOutletId = count($selectedOutletIds) === 1 ? $selectedOutletIds[0] : null;
+        $outletComparison = $report['outlet_comparison'] ?? ['outlets' => [], 'totals' => []];
+        $comparisonMetrics = [
+            ['key' => 'revenue', 'label' => 'Pendapatan', 'type' => 'currency'],
+            ['key' => 'cogs', 'label' => 'COGS / HPP', 'type' => 'currency'],
+            ['key' => 'gross_profit', 'label' => 'Laba Kotor', 'type' => 'currency'],
+            ['key' => 'gross_margin', 'label' => 'Gross Margin %', 'type' => 'percent'],
+        ];
+        $baseQuery = request()->except('view');
+        $comparisonOutlets = $outletComparison['outlets'] ?? [];
+        $shortOutletName = function (?string $name): string {
+            $clean = trim((string) $name);
+            if ($clean === '') {
+                return '-';
+            }
+
+            $clean = preg_replace('/\bmoresto\b/i', '', $clean) ?? $clean;
+            $clean = trim($clean);
+            if ($clean === '') {
+                $clean = trim((string) $name);
+            }
+
+            if (strtolower($clean) === 'ciplaz') {
+                return 'CPLZ';
+            }
+
+            if (strlen($clean) > 10 && str_contains($clean, ' ')) {
+                return collect(preg_split('/\s+/', $clean) ?: [])
+                    ->filter()
+                    ->map(fn (string $word) => strtoupper(substr($word, 0, 1)))
+                    ->implode('');
+            }
+
+            return strtoupper($clean);
+        };
+
+        $columnToneClasses = [
+            ['header' => 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/35 dark:text-emerald-200 dark:border-emerald-900/70', 'cell' => 'bg-emerald-50/45 dark:bg-emerald-950/22'],
+            ['header' => 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/35 dark:text-rose-200 dark:border-rose-900/70', 'cell' => 'bg-rose-50/45 dark:bg-rose-950/22'],
+            ['header' => 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/35 dark:text-amber-200 dark:border-amber-900/70', 'cell' => 'bg-amber-50/45 dark:bg-amber-950/22'],
+            ['header' => 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-950/35 dark:text-sky-200 dark:border-sky-900/70', 'cell' => 'bg-sky-50/45 dark:bg-sky-950/22'],
+            ['header' => 'bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-950/35 dark:text-violet-200 dark:border-violet-900/70', 'cell' => 'bg-violet-50/45 dark:bg-violet-950/22'],
+            ['header' => 'bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/35 dark:text-teal-200 dark:border-teal-900/70', 'cell' => 'bg-teal-50/45 dark:bg-teal-950/22'],
+        ];
+
+        $highestProfitOutletId = null;
+        $lowestProfitOutletId = null;
+        if (!empty($comparisonOutlets)) {
+            $highestProfitOutlet = collect($comparisonOutlets)->sortByDesc('gross_profit')->first();
+            $lowestProfitOutlet = collect($comparisonOutlets)->sortBy('gross_profit')->first();
+            $highestProfitOutletId = is_array($highestProfitOutlet) ? ($highestProfitOutlet['id'] ?? null) : null;
+            $lowestProfitOutletId = is_array($lowestProfitOutlet) ? ($lowestProfitOutlet['id'] ?? null) : null;
+        }
 
         $salesReportParams = ['date_from' => $dateFrom, 'date_to' => $dateTo];
         if (!empty($selectedOutletIds)) {
@@ -40,6 +93,7 @@
             
             <form method="GET" class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-fit">
                 <input type="hidden" name="tab" value="{{ request('tab', 'ikhtisar') }}">
+                <input type="hidden" name="view" value="{{ $activeView }}">
                 <div class="flex flex-col px-3 border-r border-slate-100">
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
                         <i class="far fa-calendar text-[10px]"></i> Rentang Tanggal
@@ -101,8 +155,22 @@
                     </a>
                 </div>
             </form>
+
+            <div class="inline-flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+                <a href="{{ route('admin.reports.profit-loss.index', array_merge($baseQuery, ['view' => 'konsolidasi'])) }}"
+                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all {{ $activeView === 'konsolidasi' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}">
+                    <i class="fas fa-layer-group text-[10px]"></i>
+                    <span>Konsolidasi</span>
+                </a>
+                <a href="{{ route('admin.reports.profit-loss.index', array_merge($baseQuery, ['view' => 'per-outlet'])) }}"
+                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition-all {{ $activeView === 'per-outlet' ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}">
+                    <i class="fas fa-store-alt text-[10px]"></i>
+                    <span>Per Outlet</span>
+                </a>
+            </div>
         </div>
 
+        @if($activeView === 'konsolidasi')
         {{-- Summary KPI Row --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Total Pendapatan -->
@@ -360,6 +428,101 @@
                 </div>
             </div>
         </div>
+        @else
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-700">
+            <div class="border-b border-slate-100 px-6 py-5 dark:border-slate-700">
+                <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-slate-100">Perbandingan Per Outlet</h3>
+                        <p class="mt-1 text-[11px] font-medium text-slate-400 dark:text-slate-400">
+                            Bandingkan omzet, HPP, laba kotor, dan gross margin antar outlet dalam satu tabel.
+                        </p>
+                    </div>
+                    <span class="inline-flex w-fit items-center rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-indigo-600 dark:bg-indigo-950/45 dark:text-indigo-200">
+                        {{ count($outletComparison['outlets'] ?? []) }} Outlet Ditampilkan
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-[720px] w-full border-separate border-spacing-0">
+                    <thead>
+                        <tr class="bg-slate-50/80 dark:bg-slate-800/75">
+                            <th class="sticky left-0 z-10 border-b border-slate-200 bg-slate-50/95 px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:border-slate-700 dark:bg-slate-800/95 dark:text-slate-300">
+                                Metrik
+                            </th>
+                            @foreach(($outletComparison['outlets'] ?? []) as $outletRow)
+                                @php
+                                    $tone = $columnToneClasses[$loop->index % count($columnToneClasses)];
+                                    $isHighestProfit = !is_null($highestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $highestProfitOutletId;
+                                    $isLowestProfit = !is_null($lowestProfitOutletId) && (int) ($outletRow['id'] ?? 0) === (int) $lowestProfitOutletId;
+                                @endphp
+                                <th class="border-b px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest {{ $tone['header'] }}">
+                                    <div class="flex flex-col items-end gap-1">
+                                        <span>{{ $shortOutletName($outletRow['name'] ?? null) }}</span>
+                                        @if($isHighestProfit)
+                                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black tracking-[0.14em] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">Laba Tertinggi</span>
+                                        @elseif($isLowestProfit)
+                                            <span class="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black tracking-[0.14em] text-rose-700 dark:bg-rose-900/50 dark:text-rose-200">Laba Terendah</span>
+                                        @endif
+                                    </div>
+                                </th>
+                            @endforeach
+                            <th class="border-b border-slate-200 bg-slate-100 px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                Total
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($comparisonMetrics as $metric)
+                            <tr class="group">
+                                <td class="sticky left-0 z-10 border-b border-slate-100 bg-white px-6 py-4 text-sm font-bold text-slate-800 group-hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:group-hover:bg-slate-800">
+                                    {{ $metric['label'] }}
+                                </td>
+                                @foreach(($outletComparison['outlets'] ?? []) as $outletRow)
+                                    @php
+                                        $tone = $columnToneClasses[$loop->index % count($columnToneClasses)];
+                                    @endphp
+                                    <td class="border-b border-slate-100 px-6 py-4 text-right text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-100 {{ $tone['cell'] }}">
+                                        @if($metric['type'] === 'percent')
+                                            {{ number_format((float) ($outletRow[$metric['key']] ?? 0), 1) }}%
+                                        @else
+                                            Rp {{ number_format((float) ($outletRow[$metric['key']] ?? 0), 0, ',', '.') }}
+                                        @endif
+                                    </td>
+                                @endforeach
+                                <td class="border-b border-slate-100 bg-slate-50 px-6 py-4 text-right text-sm font-black text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                                    @if($metric['type'] === 'percent')
+                                        {{ number_format((float) (($outletComparison['totals'][$metric['key']] ?? 0)), 1) }}%
+                                    @else
+                                        Rp {{ number_format((float) (($outletComparison['totals'][$metric['key']] ?? 0)), 0, ',', '.') }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 class="text-lg font-black text-slate-800">Chart Perbandingan Outlet</h3>
+            <p class="mt-1 text-[11px] font-medium text-slate-400">
+                Pendapatan dan HPP per outlet, dilengkapi gross margin ringkas.
+            </p>
+            <div id="outletComparisonChart" class="mt-4 h-80"></div>
+            <div id="outletComparisonChartEmpty" class="hidden text-center py-10">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Data outlet tidak tersedia</p>
+            </div>
+            <div id="outletComparisonMarginStrip" class="mt-6 hidden border-t border-slate-100 pt-5">
+                <div class="mb-3 flex items-center gap-2">
+                    <span class="inline-flex h-2.5 w-2.5 rounded-full bg-blue-600"></span>
+                    <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Gross Margin</span>
+                </div>
+                <div id="outletComparisonMarginItems" class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6"></div>
+            </div>
+        </div>
+        @endif
     </div>
 
     @push('scripts')
@@ -435,7 +598,9 @@
 
             // Expense Distribution Chart
             const expenseData = @json($report['expense_chart']);
-            if (expenseData.length > 0) {
+            const expenseDonut = document.querySelector("#expenseDonut");
+            const expenseEmpty = document.querySelector("#expenseEmpty");
+            if (expenseDonut && expenseEmpty && expenseData.length > 0) {
                 const donutOptions = {
                     series: expenseData.map(item => item.value),
                     chart: {
@@ -477,10 +642,10 @@
                     },
                     stroke: { width: 0 }
                 };
-                new ApexCharts(document.querySelector("#expenseDonut"), donutOptions).render();
-            } else {
-                document.querySelector("#expenseDonut").classList.add('hidden');
-                document.querySelector("#expenseEmpty").classList.remove('hidden');
+                new ApexCharts(expenseDonut, donutOptions).render();
+            } else if (expenseDonut && expenseEmpty) {
+                expenseDonut.classList.add('hidden');
+                expenseEmpty.classList.remove('hidden');
             }
 
             // Revenue Trend Chart
@@ -529,7 +694,165 @@
                     }
                 }
             };
-            new ApexCharts(document.querySelector("#revenueBarTrend"), barOptions).render();
+            const revenueBarTrend = document.querySelector("#revenueBarTrend");
+            if (revenueBarTrend) {
+                new ApexCharts(revenueBarTrend, barOptions).render();
+            }
+
+            // Outlet comparison charts (tab Per Outlet)
+            const outletComparisonData = @json($comparisonOutlets);
+            function simplifyOutletName(name) {
+                if (!name) return '';
+                let clean = name.replace(/moresto/gi, '').trim();
+                if (!clean) clean = String(name).trim();
+                if (clean.toLowerCase() === 'ciplaz') return 'Cplz';
+                if (clean.length > 10 && clean.includes(' ')) {
+                    return clean.split(/\s+/).map(w => w[0].toUpperCase()).join('');
+                }
+                return clean;
+            }
+
+            function formatRupiahCompact(value) {
+                const val = Number(value || 0);
+                const absVal = Math.abs(val);
+                if (absVal >= 1000000000) {
+                    return (val / 1000000000).toFixed(1).replace('.', ',') + ' M';
+                }
+                if (absVal >= 1000000) {
+                    return (val / 1000000).toFixed(0).replace('.', ',') + ' jt';
+                }
+                if (absVal >= 1000) {
+                    return (val / 1000).toFixed(0).replace('.', ',') + ' rb';
+                }
+                return String(Math.round(val));
+            }
+
+            function formatMarginCompact(value) {
+                const val = Number(value || 0);
+                return val.toFixed(1) + '%';
+            }
+
+            const outletFullNames = outletComparisonData.map(item => item.name || 'Outlet');
+            const outletNames = outletComparisonData.map(item => simplifyOutletName(item.name));
+            const outletCategoryKeys = outletComparisonData.map(function(_, index) {
+                return 'outlet_' + index;
+            });
+
+            const outletComparisonChartEl = document.querySelector("#outletComparisonChart");
+            const outletComparisonChartEmptyEl = document.querySelector("#outletComparisonChartEmpty");
+            const outletComparisonMarginStripEl = document.querySelector("#outletComparisonMarginStrip");
+            const outletComparisonMarginItemsEl = document.querySelector("#outletComparisonMarginItems");
+            if (outletComparisonChartEl && outletComparisonChartEmptyEl && outletComparisonData.length > 0) {
+                const outletComparisonOptions = {
+                    series: [
+                        { name: 'Pendapatan', data: outletComparisonData.map(item => Number(item.revenue || 0)) },
+                        { name: 'COGS / HPP', data: outletComparisonData.map(item => Number(item.cogs || 0)) }
+                    ],
+                    chart: {
+                        type: 'bar',
+                        height: 320,
+                        toolbar: { show: false },
+                        zoom: { enabled: false },
+                        fontFamily: 'Inter, sans-serif',
+                        background: 'transparent',
+                        stacked: false
+                    },
+                    colors: ['#16A34A', '#DC2626'],
+                    dataLabels: { enabled: false },
+                    legend: {
+                        show: true,
+                        position: 'top',
+                        horizontalAlign: 'center'
+                    },
+                    xaxis: {
+                        categories: outletCategoryKeys,
+                        labels: {
+                            formatter: function(value) {
+                                const index = outletCategoryKeys.indexOf(value);
+                                return index >= 0 ? (outletNames[index] || '') : value;
+                            },
+                            rotate: -45,
+                            hideOverlappingLabels: true,
+                            style: {
+                                colors: '#64748b',
+                                fontSize: '11px',
+                                fontWeight: 600
+                            }
+                        },
+                        axisBorder: { show: false },
+                        axisTicks: { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '52%',
+                            borderRadius: 6
+                        }
+                    },
+                    stroke: {
+                        show: true,
+                        width: 1,
+                        colors: ['transparent']
+                    },
+                    grid: {
+                        borderColor: '#e2e8f0',
+                        strokeDashArray: 0,
+                        padding: { left: 10, right: 10 }
+                    },
+                    yaxis: {
+                        labels: {
+                            formatter: function(val) {
+                                return formatRupiahCompact(val);
+                            },
+                            style: {
+                                colors: '#64748b',
+                                fontSize: '10px'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        shared: true,
+                        intersect: false,
+                        x: {
+                            formatter: function(_, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : -1;
+                                return index >= 0 ? (outletFullNames[index] || '') : '';
+                            }
+                        },
+                        y: {
+                            formatter: function(val, context) {
+                                return formatRupiahCompact(val);
+                            }
+                        }
+                    }
+                };
+
+                try {
+                    new ApexCharts(outletComparisonChartEl, outletComparisonOptions).render();
+                } catch (error) {
+                    console.error('Failed to render outlet comparison chart', error);
+                    outletComparisonChartEl.classList.add('hidden');
+                    outletComparisonChartEmptyEl.classList.remove('hidden');
+                }
+
+                if (outletComparisonMarginStripEl && outletComparisonMarginItemsEl) {
+                    outletComparisonMarginStripEl.classList.remove('hidden');
+                    outletComparisonMarginItemsEl.innerHTML = outletComparisonData.map(function(item) {
+                        return `
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">${simplifyOutletName(item.name)}</div>
+                                <div class="mt-1 text-lg font-black text-blue-600">${formatMarginCompact(item.gross_margin)}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else if (outletComparisonChartEl && outletComparisonChartEmptyEl) {
+                outletComparisonChartEl.classList.add('hidden');
+                outletComparisonChartEmptyEl.classList.remove('hidden');
+                if (outletComparisonMarginStripEl) {
+                    outletComparisonMarginStripEl.classList.add('hidden');
+                }
+            }
         });
     </script>
     @endpush

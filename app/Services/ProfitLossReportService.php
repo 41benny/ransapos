@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Outlet;
 use App\Models\Sale;
 use App\Models\StockMutation;
 use App\Models\CashTransaction;
@@ -150,6 +151,8 @@ class ProfitLossReportService
             ];
         }
 
+        $outletComparison = $this->buildOutletComparison($dateFrom, $dateTo, $outletIds, $totalRevenue, $totalCogs, $grossProfit);
+
         // Return report data
         return [
             'date_from' => $dateFrom,
@@ -181,6 +184,9 @@ class ProfitLossReportService
                 'label' => $g['group_name'],
                 'value' => $g['total']
             ])->values()->toArray(),
+
+            // Comparison
+            'outlet_comparison' => $outletComparison,
         ];
     }
 
@@ -220,5 +226,82 @@ class ProfitLossReportService
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * @param array<int> $outletIds
+     * @return array<string, mixed>
+     */
+    private function buildOutletComparison(
+        string $dateFrom,
+        string $dateTo,
+        array $outletIds,
+        float|int $totalRevenue,
+        float|int $totalCogs,
+        float|int $grossProfit,
+    ): array {
+        if (empty($outletIds)) {
+            return [
+                'outlets' => [],
+                'totals' => [
+                    'revenue' => (float) $totalRevenue,
+                    'cogs' => (float) $totalCogs,
+                    'gross_profit' => (float) $grossProfit,
+                    'gross_margin' => (float) ($totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0),
+                ],
+            ];
+        }
+
+        $outlets = Outlet::query()
+            ->whereIn('id', $outletIds)
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
+        $revenueByOutlet = Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereIn('outlet_id', $outletIds)
+            ->select('outlet_id', DB::raw('SUM(total_amount) as total_revenue'))
+            ->groupBy('outlet_id')
+            ->pluck('total_revenue', 'outlet_id');
+
+        $cogsByOutlet = StockMutation::query()
+            ->whereIn('reference_type', ['sale', 'sale_cancellation'])
+            ->whereBetween('mutation_date', [$dateFrom, $dateTo])
+            ->whereIn('outlet_id', $outletIds)
+            ->select(
+                'outlet_id',
+                DB::raw("SUM(CASE WHEN mutation_type = 'out' THEN total_cost ELSE -total_cost END) as total_cogs")
+            )
+            ->groupBy('outlet_id')
+            ->pluck('total_cogs', 'outlet_id');
+
+        $comparisonRows = collect($outletIds)
+            ->map(function (int $outletId) use ($outlets, $revenueByOutlet, $cogsByOutlet) {
+                $revenue = (float) ($revenueByOutlet[$outletId] ?? 0);
+                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0);
+                $grossProfit = $revenue - $cogs;
+
+                return [
+                    'id' => $outletId,
+                    'name' => $outlets[$outletId]->name ?? ('Outlet #' . $outletId),
+                    'revenue' => $revenue,
+                    'cogs' => $cogs,
+                    'gross_profit' => $grossProfit,
+                    'gross_margin' => $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0.0,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return [
+            'outlets' => $comparisonRows,
+            'totals' => [
+                'revenue' => (float) $totalRevenue,
+                'cogs' => (float) $totalCogs,
+                'gross_profit' => (float) $grossProfit,
+                'gross_margin' => (float) ($totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0),
+            ],
+        ];
     }
 }

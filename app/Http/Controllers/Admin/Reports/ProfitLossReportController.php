@@ -23,13 +23,18 @@ class ProfitLossReportController extends Controller
         // Default date range: bulan ini
         $dateFrom = $request->input('date_from', now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->input('date_to', now()->endOfMonth()->format('Y-m-d'));
+        $activeView = $request->input('view', 'konsolidasi');
+        if (!in_array($activeView, ['konsolidasi', 'per-outlet'], true)) {
+            $activeView = 'konsolidasi';
+        }
+
         $outlets = Outlet::active()->orderBy('name')->get();
         $outletIds = $this->resolveOutletIds($request, $outlets);
 
         // Generate report
         $report = $this->reportService->generate($dateFrom, $dateTo, $outletIds);
 
-        return view('admin.reports.profit-loss', compact('report', 'outlets', 'dateFrom', 'dateTo', 'outletIds'));
+        return view('admin.reports.profit-loss', compact('report', 'outlets', 'dateFrom', 'dateTo', 'outletIds', 'activeView'));
     }
 
     public function export(Request $request)
