@@ -315,6 +315,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::post('stock-transfers/{stockTransfer}/cancel', [\App\Http\Controllers\Admin\StockTransferController::class, 'cancel'])
         ->name('stock-transfers.cancel')
         ->middleware('permission:stock-transfers.cancel');
+    Route::patch('stock-transfers/{stockTransfer}/correct-date', [\App\Http\Controllers\Admin\StockTransferController::class, 'correctDate'])
+        ->name('stock-transfers.correct-date')
+        ->middleware('permission:stock-transfers.update');
     Route::get('stock-transfers/{stockTransfer}/print', [\App\Http\Controllers\Admin\StockTransferController::class, 'print'])
         ->name('stock-transfers.print')
         ->middleware('permission:stock-transfers.view');

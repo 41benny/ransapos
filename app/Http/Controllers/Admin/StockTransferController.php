@@ -372,6 +372,29 @@ class StockTransferController extends Controller
     }
 
     /**
+     * Koreksi tanggal transfer tanpa mengubah item/outlet.
+     */
+    public function correctDate(Request $request, StockTransfer $stockTransfer)
+    {
+        $request->validate([
+            'transfer_date' => 'required|date',
+        ]);
+
+        try {
+            $transfer = $this->transferService->correctTransferDate(
+                $stockTransfer,
+                (string) $request->transfer_date
+            );
+
+            return redirect()->route('admin.stock-transfers.show', $transfer->id)
+                ->with('success', 'Tanggal transfer berhasil dikoreksi.');
+        } catch (\Exception $e) {
+            return back()->withInput()
+                ->with('error', 'Gagal mengoreksi tanggal transfer: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Get available stock for AJAX
      */
     public function getAvailableStock(Request $request)

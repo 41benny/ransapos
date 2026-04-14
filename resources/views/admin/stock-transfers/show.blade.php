@@ -32,6 +32,13 @@
                     <span>Edit Draft</span>
                 </a>
             @endif
+            @if($stockTransfer->canCorrectDate() && auth()->user()?->hasPermission('stock-transfers.update'))
+                <button type="button" onclick="showCorrectDateModal()"
+                    class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-sky-700 active:scale-95">
+                    <i class="fas fa-calendar-alt text-[10px]"></i>
+                    <span>Koreksi Tanggal</span>
+                </button>
+            @endif
             <a href="{{ route('admin.stock-transfers.print', $stockTransfer->id) }}" target="_blank"
                 class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-normal text-white shadow-sm transition-all hover:bg-emerald-700 active:scale-95">
                 <i class="fas fa-print text-[10px]"></i>
@@ -356,6 +363,44 @@
     </div>
 </div>
 
+@if($stockTransfer->canCorrectDate() && auth()->user()?->hasPermission('stock-transfers.update'))
+<div id="correctDateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+    <div class="ui-card bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="h-10 w-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-lg shadow-inner">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-normal text-slate-800">Koreksi Tanggal Transfer</h3>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Perbarui tanggal transaksi tanpa mengubah item</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('admin.stock-transfers.correct-date', $stockTransfer->id) }}">
+            @csrf
+            @method('PATCH')
+            <div class="mb-4">
+                <label class="block text-[10px] font-normal text-slate-500 uppercase tracking-wider mb-2 ml-1">Tanggal Transfer <span class="text-rose-500">*</span></label>
+                <input type="date" name="transfer_date" required
+                    value="{{ old('transfer_date', optional($stockTransfer->transfer_date)->format('Y-m-d')) }}"
+                    class="ui-input w-full px-4 py-3 text-[11.5px] font-normal bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-sm">
+            </div>
+            <p class="mb-6 text-[10px] text-slate-500 leading-relaxed">
+                Koreksi ini hanya mengubah tanggal transfer. Item, outlet, status, dan nomor transfer tetap sama.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" onclick="hideCorrectDateModal()" class="ui-btn ui-btn-ghost flex-1 px-4 py-2.5 text-xs font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest border border-slate-100 rounded-xl hover:bg-slate-50">
+                    KEMBALI
+                </button>
+                <button type="submit" class="ui-btn ui-btn-primary flex-1 bg-sky-600 text-white px-4 py-2.5 rounded-xl hover:bg-sky-700 shadow-lg shadow-sky-200 transition-all font-normal text-xs active:scale-95 uppercase tracking-widest">
+                    SIMPAN TANGGAL
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
 {{-- Cancel Modal --}}
 <div id="cancelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-in fade-in duration-300">
     <div class="ui-card bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200 border border-slate-200">
@@ -408,6 +453,26 @@ function handleSendSubmit(formElement) {
     return true;
 }
 
+function showCorrectDateModal() {
+    const modal = document.getElementById('correctDateModal');
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function hideCorrectDateModal() {
+    const modal = document.getElementById('correctDateModal');
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
 function showCancelModal() {
     const modal = document.getElementById('cancelModal');
     modal.classList.remove('hidden');
@@ -422,7 +487,11 @@ function hideCancelModal() {
 
 // Close on click outside
 window.onclick = function(event) {
+    const correctDateModal = document.getElementById('correctDateModal');
     const modal = document.getElementById('cancelModal');
+    if (correctDateModal && event.target == correctDateModal) {
+        hideCorrectDateModal();
+    }
     if (event.target == modal) {
         hideCancelModal();
     }

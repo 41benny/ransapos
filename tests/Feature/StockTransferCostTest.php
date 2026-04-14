@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use App\Models\ProductCategory;
 use App\Models\Product;
 use App\Models\ProductCost;
@@ -227,6 +228,141 @@ class StockTransferCostTest extends TestCase
             ->firstOrFail();
 
         $this->assertEquals(13.0, (float) $stock->quantity);
+    }
+
+    /** @test */
+    public function correcting_received_transfer_date_updates_header_and_only_sender_transfer_out_mutation()
+    {
+        Carbon::setTestNow('2026-04-14 15:02:00');
+
+        $product = $this->createProduct('Tepung', 12000);
+
+        ProductCost::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'avg_cost' => 12000,
+            'last_calculated_at' => now(),
+        ]);
+
+        Stock::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'quantity' => 10,
+            'last_mutation_at' => now(),
+        ]);
+
+        $transfer = $this->transferService->createTransfer([
+            'from_outlet_id' => $this->outletA->id,
+            'to_outlet_id' => $this->outletB->id,
+            'transfer_date' => '2026-04-14',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 3],
+            ],
+        ]);
+
+        $sent = $this->transferService->sendTransfer($transfer->fresh());
+        $items = $sent->fresh()->items->mapWithKeys(fn ($item) => [$item->id => $item->quantity])->all();
+        $this->transferService->receiveTransfer($sent->fresh(), $items);
+
+        $this->transferService->correctTransferDate($transfer->fresh(), '2026-04-04');
+
+        $updatedTransfer = $transfer->fresh();
+        $transferOut = StockMutation::query()
+            ->where('reference_type', 'stock_transfer')
+            ->where('reference_id', $transfer->id)
+            ->where('mutation_type', 'transfer_out')
+            ->firstOrFail();
+        $transferIn = StockMutation::query()
+            ->where('reference_type', 'stock_transfer')
+            ->where('reference_id', $transfer->id)
+            ->where('mutation_type', 'transfer_in')
+            ->firstOrFail();
+
+        $this->assertSame('2026-04-04', $updatedTransfer->transfer_date->toDateString());
+        $this->assertSame('2026-04-04', $transferOut->mutation_date->toDateString());
+        $this->assertSame('2026-04-14', $transferIn->mutation_date->toDateString());
+
+        Carbon::setTestNow();
+    }
+
+    /** @test */
+    public function correcting_transfer_date_recalculates_sender_running_balance_when_date_moves_earlier()
+    {
+        $product = $this->createProduct('Sirup', 10000);
+
+        ProductCost::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'avg_cost' => 10000,
+            'last_calculated_at' => now(),
+        ]);
+
+        Stock::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'quantity' => 20,
+            'last_mutation_at' => now(),
+        ]);
+
+        StockMutation::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'mutation_type' => 'adjustment',
+            'quantity' => 20,
+            'unit_cost' => 10000,
+            'total_cost' => 200000,
+            'stock_before' => 0,
+            'stock_after' => 20,
+            'reference_type' => 'stock_opname',
+            'reference_id' => null,
+            'mutation_date' => '2026-03-10',
+            'notes' => 'Saldo awal',
+            'created_by' => $this->user->id,
+        ]);
+
+        $transfer = $this->transferService->createTransfer([
+            'from_outlet_id' => $this->outletA->id,
+            'to_outlet_id' => $this->outletB->id,
+            'transfer_date' => '2026-03-14',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 5],
+            ],
+        ]);
+        $this->transferService->sendTransfer($transfer->fresh());
+
+        app(\App\Services\StockService::class)->addPurchaseStock(
+            productId: $product->id,
+            outletId: $this->outletA->id,
+            quantity: 2,
+            purchaseId: 501,
+            userId: $this->user->id,
+            unitPrice: 10000,
+            mutationDate: '2026-03-13'
+        );
+
+        $this->transferService->correctTransferDate($transfer->fresh(), '2026-03-12');
+
+        $rows = StockMutation::query()
+            ->where('product_id', $product->id)
+            ->where('outlet_id', $this->outletA->id)
+            ->orderBy('mutation_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $this->assertCount(3, $rows);
+        $this->assertSame('2026-03-12', $rows[1]->mutation_date->toDateString());
+        $this->assertSame(20.0, (float) $rows[1]->stock_before);
+        $this->assertSame(15.0, (float) $rows[1]->stock_after);
+        $this->assertSame(15.0, (float) $rows[2]->stock_before);
+        $this->assertSame(17.0, (float) $rows[2]->stock_after);
+
+        $stock = Stock::query()
+            ->where('product_id', $product->id)
+            ->where('outlet_id', $this->outletA->id)
+            ->firstOrFail();
+
+        $this->assertSame(17.0, (float) $stock->quantity);
     }
 
     private function createProduct(string $name, float $purchasePrice): Product

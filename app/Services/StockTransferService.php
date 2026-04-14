@@ -7,6 +7,7 @@ use App\Models\StockTransferItem;
 use App\Models\Stock;
 use App\Models\StockMutation;
 use App\Services\CostService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -149,6 +150,69 @@ class StockTransferService
                     'notes' => $itemData['notes'],
                 ]);
             });
+
+            DB::commit();
+
+            return $transfer->fresh()->load('items.product');
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Koreksi tanggal transfer tanpa membuka edit penuh.
+     */
+    public function correctTransferDate(StockTransfer $transfer, string $transferDate): StockTransfer
+    {
+        if (!$transfer->canCorrectDate()) {
+            throw new Exception('Transfer yang dibatalkan tidak bisa dikoreksi tanggalnya.');
+        }
+
+        $newTransferDate = Carbon::parse($transferDate)->toDateString();
+        $oldTransferDate = $transfer->transfer_date?->toDateString();
+
+        if ($oldTransferDate === $newTransferDate) {
+            return $transfer->fresh()->load('items.product');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $transfer->loadMissing('items');
+
+            $transfer->update([
+                'transfer_date' => $newTransferDate,
+            ]);
+
+            if (!$transfer->isPending()) {
+                StockMutation::query()
+                    ->where('reference_type', 'stock_transfer')
+                    ->where('reference_id', $transfer->id)
+                    ->where('mutation_type', 'transfer_out')
+                    ->where('outlet_id', $transfer->from_outlet_id)
+                    ->update([
+                        'mutation_date' => $newTransferDate,
+                    ]);
+
+                $recalculateFromDate = collect([$oldTransferDate, $newTransferDate])
+                    ->filter()
+                    ->sort()
+                    ->first() ?? $newTransferDate;
+
+                $stockService = app(StockService::class);
+
+                $transfer->items
+                    ->pluck('product_id')
+                    ->unique()
+                    ->each(function ($productId) use ($stockService, $transfer, $recalculateFromDate) {
+                        $stockService->recalculateMutationBalances(
+                            (int) $productId,
+                            (int) $transfer->from_outlet_id,
+                            (string) $recalculateFromDate
+                        );
+                    });
+            }
 
             DB::commit();
 

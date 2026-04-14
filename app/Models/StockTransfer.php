@@ -125,4 +125,9 @@ class StockTransfer extends Model
     {
         return in_array($this->status, ['pending', 'in_transit']);
     }
+
+    public function canCorrectDate(): bool
+    {
+        return !$this->isCancelled();
+    }
 }
