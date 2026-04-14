@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use App\Models\ProductCategory;
 use App\Models\Product;
 use App\Models\ProductCost;
+use App\Models\CashSession;
 use App\Models\Outlet;
 use App\Models\Stock;
 use App\Models\StockMutation;
@@ -363,6 +364,89 @@ class StockTransferCostTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame(17.0, (float) $stock->quantity);
+    }
+
+    /** @test */
+    public function correcting_transfer_date_is_blocked_when_completed_sales_already_exist_after_affected_date()
+    {
+        $product = $this->createProduct('Minyak', 10000);
+
+        ProductCost::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'avg_cost' => 10000,
+            'last_calculated_at' => now(),
+        ]);
+
+        Stock::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'quantity' => 10,
+            'last_mutation_at' => now(),
+        ]);
+
+        $transfer = $this->transferService->createTransfer([
+            'from_outlet_id' => $this->outletA->id,
+            'to_outlet_id' => $this->outletB->id,
+            'transfer_date' => '2026-04-14',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 2],
+            ],
+        ]);
+        $this->transferService->sendTransfer($transfer->fresh());
+
+        $cashSession = CashSession::create([
+            'session_number' => 'CS-TEST-001',
+            'outlet_id' => $this->outletA->id,
+            'user_id' => $this->user->id,
+            'opening_balance' => 0,
+            'expected_balance' => 0,
+            'difference' => 0,
+            'total_sales' => 0,
+            'total_cash' => 0,
+            'total_non_cash' => 0,
+            'opened_at' => now(),
+            'status' => 'open',
+        ]);
+
+        $sale = \App\Models\Sale::create([
+            'invoice_number' => 'INV-001260414-0001',
+            'outlet_id' => $this->outletA->id,
+            'cash_session_id' => $cashSession->id,
+            'user_id' => $this->user->id,
+            'sale_date' => '2026-04-15',
+            'sales_type' => 'regular',
+            'subtotal' => 10000,
+            'discount_type' => 'none',
+            'discount_value' => 0,
+            'discount_amount' => 0,
+            'service_charge_amount' => 0,
+            'rounding_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 10000,
+            'status' => 'completed',
+        ]);
+
+        StockMutation::create([
+            'product_id' => $product->id,
+            'outlet_id' => $this->outletA->id,
+            'mutation_type' => 'out',
+            'quantity' => -1,
+            'unit_cost' => 10000,
+            'total_cost' => 10000,
+            'stock_before' => 8,
+            'stock_after' => 7,
+            'reference_type' => 'sale',
+            'reference_id' => $sale->id,
+            'mutation_date' => '2026-04-15',
+            'notes' => 'Penjualan: Minyak',
+            'created_by' => $this->user->id,
+        ]);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('sudah ada penjualan');
+
+        $this->transferService->correctTransferDate($transfer->fresh(), '2026-04-04');
     }
 
     private function createProduct(string $name, float $purchasePrice): Product

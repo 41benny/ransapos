@@ -181,6 +181,14 @@ class StockTransferService
         try {
             $transfer->loadMissing('items');
 
+            if (!$transfer->isPending()) {
+                $this->ensureDateCorrectionWillNotAffectSales(
+                    $transfer,
+                    $oldTransferDate,
+                    $newTransferDate
+                );
+            }
+
             $transfer->update([
                 'transfer_date' => $newTransferDate,
             ]);
@@ -220,6 +228,47 @@ class StockTransferService
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
+        }
+    }
+
+    protected function ensureDateCorrectionWillNotAffectSales(
+        StockTransfer $transfer,
+        ?string $oldTransferDate,
+        string $newTransferDate
+    ): void {
+        $productIds = $transfer->items
+            ->pluck('product_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($productIds->isEmpty()) {
+            return;
+        }
+
+        $affectedFromDate = collect([$oldTransferDate, $newTransferDate])
+            ->filter()
+            ->sort()
+            ->first() ?? $newTransferDate;
+
+        $affectedSaleExists = StockMutation::query()
+            ->where('reference_type', 'sale')
+            ->where('mutation_type', 'out')
+            ->where('outlet_id', $transfer->from_outlet_id)
+            ->whereIn('product_id', $productIds)
+            ->whereDate('mutation_date', '>=', $affectedFromDate)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('sales')
+                    ->whereColumn('sales.id', 'stock_mutations.reference_id')
+                    ->where('sales.status', 'completed');
+            })
+            ->exists();
+
+        if ($affectedSaleExists) {
+            throw new Exception(
+                'Tanggal transfer tidak bisa dikoreksi karena sudah ada penjualan yang berpotensi mengganggu HPP setelah tanggal tersebut.'
+            );
         }
     }
 
