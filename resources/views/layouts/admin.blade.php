@@ -1034,11 +1034,15 @@
             </header>
 
             <!-- Content -->
-            <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-20 scrollbar-hide">
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-hide">
                 <div class="animate-in fade-in duration-500">
                     @yield('content')
                 </div>
             </main>
+
+            @include('partials.footer', [
+                'footerClass' => 'border-t border-slate-200 bg-white/80 px-4 md:px-6 py-2 text-[11px] text-slate-500 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400'
+            ])
         </div>
     </div>
 

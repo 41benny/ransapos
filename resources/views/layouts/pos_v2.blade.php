@@ -109,6 +109,9 @@
             });
         })();
     </script>
+    @include('partials.footer', [
+        'footerClass' => 'border-t border-gray-200 bg-white/95 px-4 py-2 text-[11px] text-gray-500'
+    ])
     @stack('scripts')
 </body>
 

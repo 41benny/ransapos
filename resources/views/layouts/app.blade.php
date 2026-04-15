@@ -40,6 +40,8 @@
             <main class="flex-1 main-gradient p-6">
                 @yield('content')
             </main>
+
+            @include('partials.footer')
         </div>
     </div>
 
