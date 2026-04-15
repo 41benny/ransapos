@@ -127,10 +127,6 @@
         @yield('content')
     </main>
 
-    @include('partials.footer', [
-        'footerClass' => 'border-t border-gray-200 bg-white px-4 py-2 text-[11px] text-gray-500'
-    ])
-
 </body>
 
 </html>
