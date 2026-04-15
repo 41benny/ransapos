@@ -50,11 +50,21 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="sku" class="block text-sm font-medium text-gray-700 mb-2">
-                                        SKU <span class="text-red-500">*</span>
+                                        SKU
                                     </label>
-                                    <input type="text" name="sku" id="sku" value="{{ old('sku', $product->sku) }}"
-                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sku') border-red-500 @enderror"
-                                        placeholder="Contoh: MENU-001" required>
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" name="sku" id="sku" value="{{ old('sku', $product->sku) }}"
+                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('sku') border-red-500 @enderror"
+                                            placeholder="Kosongkan jika ingin dibuat ulang otomatis">
+                                        <button
+                                            type="button"
+                                            id="generateSkuButton"
+                                            class="shrink-0 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition"
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">Kalau dikosongkan, sistem akan bantu buat SKU unik baru saat simpan.</p>
                                     @error('sku')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -439,6 +449,10 @@
             const allOutletsCheckbox = document.getElementById('is_available_all_outlets');
             const outletWrap = document.getElementById('outlet-selector-wrap');
             const outletSelect = document.getElementById('pos_outlet_ids');
+            const productForm = document.querySelector('form[action="{{ route('admin.products.update', $product) }}"]');
+            const skuInput = document.getElementById('sku');
+            const nameInput = document.getElementById('name');
+            const generateSkuButton = document.getElementById('generateSkuButton');
 
 
             // ============================================
@@ -494,6 +508,54 @@
             if (allOutletsCheckbox) {
                 toggleOutletSelector();
                 allOutletsCheckbox.addEventListener('change', toggleOutletSelector);
+            }
+
+            async function generateSku() {
+                if (!skuInput || !generateSkuButton) {
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    name: nameInput ? nameInput.value : '',
+                    bundle_mode: '0',
+                    ignore_product_id: '{{ $product->id }}',
+                });
+
+                generateSkuButton.disabled = true;
+
+                try {
+                    const response = await fetch(`{{ route('admin.products.generate-sku') }}?${params.toString()}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                    });
+                    const data = await response.json();
+
+                    if (response.ok && data.sku) {
+                        skuInput.value = data.sku;
+                    }
+                } catch (error) {
+                    console.error('Failed to generate SKU', error);
+                } finally {
+                    generateSkuButton.disabled = false;
+                }
+            }
+
+            if (generateSkuButton) {
+                generateSkuButton.addEventListener('click', generateSku);
+            }
+
+            if (productForm) {
+                productForm.addEventListener('submit', async function (event) {
+                    if (!skuInput || skuInput.value.trim() !== '') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    await generateSku();
+                    productForm.submit();
+                });
             }
 
 

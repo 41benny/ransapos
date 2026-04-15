@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\ProductSkuGenerator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -23,7 +24,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sku' => 'required|string|max:50|unique:products,sku',
+            'sku' => 'nullable|string|max:50|unique:products,sku',
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:product_categories,id',
             'product_type' => 'required|in:raw_material,finished_good,service',
@@ -97,6 +98,22 @@ class StoreProductRequest extends FormRequest
                 $validator->errors()->add('pos_user_ids', 'Pilih minimal 1 pengguna POS jika produk tidak tersedia untuk semua pengguna.');
             }
         });
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $sku = trim((string) $this->input('sku', ''));
+
+        if ($sku !== '') {
+            return;
+        }
+
+        $this->merge([
+            'sku' => ProductSkuGenerator::generate(
+                $this->input('name'),
+                $this->boolean('bundle_mode')
+            ),
+        ]);
     }
 
     private function normalizeIdList(mixed $value): array

@@ -12,6 +12,7 @@ use App\Models\ProductCategory;
 use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Support\ProductSkuGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -138,6 +139,23 @@ class ProductController extends Controller
     public function createBundle()
     {
         return $this->buildCreateView('bundle');
+    }
+
+    public function generateSku(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'bundle_mode' => 'nullable|boolean',
+            'ignore_product_id' => 'nullable|integer|exists:products,id',
+        ]);
+
+        return response()->json([
+            'sku' => ProductSkuGenerator::generate(
+                $validated['name'] ?? null,
+                (bool) ($validated['bundle_mode'] ?? false),
+                isset($validated['ignore_product_id']) ? (int) $validated['ignore_product_id'] : null
+            ),
+        ]);
     }
 
     /**

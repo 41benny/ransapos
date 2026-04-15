@@ -83,10 +83,17 @@
 
                             <div>
                                 <label for="sku" class="form-label">
-                                    SKU <span class="text-red-500">*</span>
+                                    SKU
                                 </label>
-                                <input type="text" name="sku" id="sku" value="{{ old('sku') }}" class="form-input"
-                                    placeholder="Contoh: BUNDLE-001" required>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" name="sku" id="sku" value="{{ old('sku') }}" class="form-input"
+                                        placeholder="Kosongkan jika ingin dibuat otomatis">
+                                    <button type="button" id="generateSkuButton"
+                                        class="shrink-0 px-3 py-2 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                                        Generate
+                                    </button>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Bisa dikosongkan. Sistem akan buat SKU bundle unik otomatis saat simpan.</p>
                                 @error('sku')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
@@ -610,6 +617,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const componentMetaById = @json($componentMetaById);
+            const bundleForm = document.getElementById('bundleForm');
+            const skuInput = document.getElementById('sku');
+            const nameInput = document.getElementById('name');
+            const generateSkuButton = document.getElementById('generateSkuButton');
 
             const tabs = document.querySelectorAll('.bundle-tab-btn');
             const panels = document.querySelectorAll('.bundle-tab-panel');
@@ -786,6 +797,41 @@
             const componentBody = document.getElementById('bundle-components-body');
             const addRowBtn = document.getElementById('add-component-row');
             const purchasePriceInput = document.getElementById('purchase_price');
+
+            async function generateSku() {
+                if (!skuInput || !generateSkuButton) {
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    name: nameInput ? nameInput.value : '',
+                    bundle_mode: '1',
+                });
+
+                generateSkuButton.disabled = true;
+
+                try {
+                    const response = await fetch(`{{ route('admin.products.generate-sku') }}?${params.toString()}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                    });
+                    const data = await response.json();
+
+                    if (response.ok && data.sku) {
+                        skuInput.value = data.sku;
+                    }
+                } catch (error) {
+                    console.error('Failed to generate SKU', error);
+                } finally {
+                    generateSkuButton.disabled = false;
+                }
+            }
+
+            if (generateSkuButton) {
+                generateSkuButton.addEventListener('click', generateSku);
+            }
             const componentsTotalCostLabel = document.getElementById('components-total-cost');
             let componentIndex = componentBody.querySelectorAll('.component-row').length;
 
@@ -1201,6 +1247,18 @@
                     return;
                 }
             });
+
+            if (bundleForm) {
+                bundleForm.addEventListener('submit', async function (event) {
+                    if (!skuInput || skuInput.value.trim() !== '') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    await generateSku();
+                    bundleForm.submit();
+                });
+            }
         });
     </script>
 @endpush

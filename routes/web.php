@@ -43,6 +43,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::post('products/import', [ProductController::class, 'import'])
         ->name('products.import')
         ->middleware('permission:products.import');
+    Route::get('products/generate-sku', [ProductController::class, 'generateSku'])
+        ->name('products.generate-sku');
     Route::get('products/create-bundle', [ProductController::class, 'createBundle'])
         ->name('products.create-bundle')
         ->middleware('permission:products.create');
