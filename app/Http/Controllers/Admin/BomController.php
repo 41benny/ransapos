@@ -369,34 +369,53 @@ class BomController extends Controller
             ->when($sourceType !== self::SOURCE_TYPE_ALL, function($q) use ($sourceType) {
                 return $q->where('source_type', $sourceType);
             })
+            ->orderBy('id')
             ->get();
 
         $columns = [
-            ['key' => 'id', 'label' => 'ID'],
-            ['key' => 'product_name', 'label' => 'Produk'],
+            ['key' => 'no', 'label' => 'No'],
+            ['key' => 'product_name', 'label' => 'Produk Utama'],
             ['key' => 'sku', 'label' => 'SKU'],
-            ['key' => 'bom_name', 'label' => 'Nama BOM'],
-            ['key' => 'components', 'label' => 'Bahan / Komponen'],
+            ['key' => 'component_name', 'label' => 'Nama Bahan'],
+            ['key' => 'component_sku', 'label' => 'SKU Bahan'],
+            ['key' => 'quantity', 'label' => 'Jumlah', 'type' => 'number', 'decimals' => 4],
+            ['key' => 'uom', 'label' => 'Satuan'],
             ['key' => 'status', 'label' => 'Status'],
         ];
 
-        $rows = $boms->flatMap(function ($bom) {
-            $details = $bom->details;
-            $compStrings = $details->map(function($d) {
-                return ($d->component->name ?? '-') . ': ' . (float)$d->quantity . ' ' . ($d->uom ?? '');
-            });
+        $rows = collect();
+        $no = 0;
+        foreach ($boms as $bom) {
+            $no++;
+            $isFirst = true;
+            foreach ($bom->details as $detail) {
+                $rows->push([
+                    'no' => $isFirst ? $no : '',
+                    'product_name' => $isFirst ? ($bom->product->name ?? '-') : '',
+                    'sku' => $isFirst ? ($bom->product->sku ?? '-') : '',
+                    'component_name' => $detail->component->name ?? '-',
+                    'component_sku' => $detail->component->sku ?? '-',
+                    'quantity' => (float) $detail->quantity,
+                    'uom' => $detail->uom ?? '-',
+                    'status' => $isFirst ? ($bom->is_active ? 'Aktif' : 'Non-Aktif') : '',
+                ]);
+                $isFirst = false;
+            }
+            if ($bom->details->isEmpty()) {
+                $rows->push([
+                    'no' => $no,
+                    'product_name' => $bom->product->name ?? '-',
+                    'sku' => $bom->product->sku ?? '-',
+                    'component_name' => '(tidak ada komponen)',
+                    'component_sku' => '-',
+                    'quantity' => 0,
+                    'uom' => '-',
+                    'status' => $bom->is_active ? 'Aktif' : 'Non-Aktif',
+                ]);
+            }
+        }
 
-            return [[
-                'id' => $bom->id,
-                'product_name' => $bom->product->name ?? '-',
-                'sku' => $bom->product->sku ?? '-',
-                'bom_name' => $bom->name ?? '-',
-                'components' => $compStrings->implode("\n"),
-                'status' => $bom->is_active ? 'Aktif' : 'Non-Aktif',
-            ]];
-        });
-
-        ReportExport::xlsx('boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.xlsx', 'BOMs ' . ucfirst($sourceType), $columns, $rows);
+        ReportExport::xlsx('boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.xlsx', 'Resep ' . ucfirst($sourceType), $columns, $rows);
     }
 
     public function exportPdf(Request $request)
@@ -407,30 +426,91 @@ class BomController extends Controller
             ->when($sourceType !== self::SOURCE_TYPE_ALL, function($q) use ($sourceType) {
                 return $q->where('source_type', $sourceType);
             })
+            ->orderBy('id')
             ->get();
 
-        $columns = [
-            ['key' => 'id', 'label' => 'ID'],
-            ['key' => 'product_name', 'label' => 'Produk'],
-            ['key' => 'sku', 'label' => 'SKU'],
-            ['key' => 'components', 'label' => 'Bahan / Komponen'],
-            ['key' => 'status', 'label' => 'Status'],
-        ];
+        $sourceLabels = ['production' => 'Produksi', 'bundle' => 'Bundle', 'all' => 'Semua'];
+        $title = 'Daftar Resep Produk — ' . ($sourceLabels[$sourceType] ?? ucfirst($sourceType));
+        $generatedAt = now()->format('d M Y H:i');
 
-        $rows = $boms->map(function ($bom) {
-            $compStrings = $bom->details->map(function($d) {
-                return ($d->component->name ?? '-') . ' (' . (float)$d->quantity . ' ' . ($d->uom ?? '') . ')';
-            });
+        $html = '<!doctype html><html><head><meta charset="utf-8"><style>';
+        $html .= 'body{font-family:DejaVu Sans,sans-serif;font-size:11px;color:#111827;margin:20px;}';
+        $html .= 'h1{font-size:16px;margin:0 0 2px;}';
+        $html .= '.meta{font-size:9px;color:#6b7280;margin-bottom:14px;}';
+        $html .= '.bom-card{border:1px solid #d1d5db;margin-bottom:12px;page-break-inside:avoid;}';
+        $html .= '.bom-header{background:#f3f4f6;padding:6px 10px;border-bottom:1px solid #d1d5db;}';
+        $html .= '.bom-header .product{font-weight:bold;font-size:12px;}';
+        $html .= '.bom-header .sku{font-size:9px;color:#6b7280;}';
+        $html .= '.bom-header .badge{font-size:8px;padding:1px 6px;border-radius:3px;float:right;margin-top:2px;}';
+        $html .= '.badge-aktif{background:#d1fae5;color:#065f46;}';
+        $html .= '.badge-nonaktif{background:#fee2e2;color:#991b1b;}';
+        $html .= 'table{width:100%;border-collapse:collapse;}';
+        $html .= 'th{background:#f9fafb;text-align:left;padding:4px 8px;border-bottom:1px solid #e5e7eb;font-size:9px;text-transform:uppercase;color:#6b7280;}';
+        $html .= 'td{padding:4px 8px;border-bottom:1px solid #f3f4f6;font-size:10px;}';
+        $html .= 'td.qty{text-align:right;font-weight:bold;}';
+        $html .= '.empty{color:#9ca3af;font-style:italic;padding:8px 10px;font-size:10px;}';
+        $html .= '</style></head><body>';
+        $html .= '<h1>' . e($title) . '</h1>';
+        $html .= '<div class="meta">Dicetak: ' . $generatedAt . ' &bull; Total: ' . $boms->count() . ' resep</div>';
 
-            return [
-                'id' => $bom->id,
-                'product_name' => $bom->product->name ?? '-',
-                'sku' => $bom->product->sku ?? '-',
-                'components' => $compStrings->implode(", "),
-                'status' => $bom->is_active ? 'Aktif' : 'Non-Aktif',
-            ];
-        });
+        $no = 0;
+        foreach ($boms as $bom) {
+            $no++;
+            $badgeClass = $bom->is_active ? 'badge-aktif' : 'badge-nonaktif';
+            $badgeText = $bom->is_active ? 'Aktif' : 'Non-Aktif';
+            $productName = e($bom->product->name ?? '-');
+            $productSku = e($bom->product->sku ?? '-');
+            $bomName = $bom->name ? ' — ' . e($bom->name) : '';
 
-        ReportExport::pdf('boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.pdf', 'Daftar Resep Produk (' . ucfirst($sourceType) . ')', $columns, $rows);
+            $html .= '<div class="bom-card">';
+            $html .= '<div class="bom-header">';
+            $html .= '<span class="badge ' . $badgeClass . '">' . $badgeText . '</span>';
+            $html .= '<span class="product">' . $no . '. ' . $productName . $bomName . '</span><br>';
+            $html .= '<span class="sku">SKU: ' . $productSku . '</span>';
+            $html .= '</div>';
+
+            if ($bom->details->isNotEmpty()) {
+                $html .= '<table><thead><tr><th>Nama Bahan</th><th>SKU Bahan</th><th style="text-align:right">Jumlah</th><th>Satuan</th></tr></thead><tbody>';
+                foreach ($bom->details as $detail) {
+                    $html .= '<tr>';
+                    $html .= '<td>' . e($detail->component->name ?? '-') . '</td>';
+                    $html .= '<td>' . e($detail->component->sku ?? '-') . '</td>';
+                    $html .= '<td class="qty">' . number_format((float) $detail->quantity, 4, ',', '.') . '</td>';
+                    $html .= '<td>' . e($detail->uom ?? '-') . '</td>';
+                    $html .= '</tr>';
+                }
+                $html .= '</tbody></table>';
+            } else {
+                $html .= '<div class="empty">Tidak ada komponen terdaftar.</div>';
+            }
+
+            $html .= '</div>';
+        }
+
+        if ($boms->isEmpty()) {
+            $html .= '<div class="empty">Tidak ada resep produk.</div>';
+        }
+
+        $html .= '</body></html>';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', false);
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'pdf_') . '.pdf';
+        file_put_contents($tempFile, $dompdf->output());
+
+        // Send using raw headers
+        while (ob_get_level()) { ob_end_clean(); }
+        $filename = 'boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($tempFile));
+        readfile($tempFile);
+        @unlink($tempFile);
+        exit;
     }
 }
