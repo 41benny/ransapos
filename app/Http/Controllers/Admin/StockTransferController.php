@@ -189,7 +189,7 @@ class StockTransferController extends Controller
             'items.min' => 'Minimal harus ada 1 produk.',
         ]);
 
-        $this->ensureRawMaterialProductIds($request->input('items', []));
+        $this->ensureManualStockSelectableProductIds($request->input('items', []));
 
         try {
             $transfer = $this->transferService->createTransfer($request->all());
@@ -222,7 +222,7 @@ class StockTransferController extends Controller
             'items.min' => 'Minimal harus ada 1 produk.',
         ]);
 
-        $this->ensureRawMaterialProductIds($request->input('items', []));
+        $this->ensureManualStockSelectableProductIds($request->input('items', []));
 
         try {
             $transfer = $this->transferService->updateTransfer($stockTransfer, $request->all());
@@ -410,12 +410,12 @@ class StockTransferController extends Controller
         ]);
 
         $product = Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->find($request->product_id);
 
         if (!$product) {
             throw ValidationException::withMessages([
-                'product_id' => 'Produk yang dipilih harus berupa bahan baku.',
+                'product_id' => 'Produk yang dipilih harus berupa bahan baku atau Air Mineral SKU 122.',
             ]);
         }
 
@@ -505,7 +505,7 @@ class StockTransferController extends Controller
     private function buildProductsPayload()
     {
         return Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'product_type'])
@@ -524,7 +524,7 @@ class StockTransferController extends Controller
     /**
      * @param array<int, array<string, mixed>> $items
      */
-    private function ensureRawMaterialProductIds(array $items): void
+    private function ensureManualStockSelectableProductIds(array $items): void
     {
         $productIds = collect($items)
             ->pluck('product_id')
@@ -538,13 +538,13 @@ class StockTransferController extends Controller
         }
 
         $matchedCount = Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->whereIn('id', $productIds)
             ->count();
 
         if ($matchedCount !== $productIds->count()) {
             throw ValidationException::withMessages([
-                'items' => 'Produk yang dipilih harus bahan baku.',
+                'items' => 'Produk yang dipilih harus bahan baku atau Air Mineral SKU 122.',
             ]);
         }
     }

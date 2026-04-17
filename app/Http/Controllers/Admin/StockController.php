@@ -298,7 +298,7 @@ class StockController extends Controller
     {
         $outlets = Outlet::where('is_active', true)->get();
         $products = Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
@@ -330,12 +330,12 @@ class StockController extends Controller
         ]);
 
         $product = Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->find($request->product_id);
 
         if (!$product) {
             throw ValidationException::withMessages([
-                'product_id' => 'Produk yang dipilih harus berupa bahan baku.',
+                'product_id' => 'Produk yang dipilih harus berupa bahan baku atau Air Mineral SKU 122.',
             ]);
         }
 
@@ -366,7 +366,7 @@ class StockController extends Controller
                 'items.*.new_quantity' => 'required|numeric|min:0',
             ]);
 
-            $this->ensureRawMaterialProductIds(collect($data['items'])->pluck('product_id')->all());
+            $this->ensureManualStockSelectableProductIds(collect($data['items'])->pluck('product_id')->all());
 
             try {
                 DB::beginTransaction();
@@ -400,7 +400,7 @@ class StockController extends Controller
             'notes' => 'required|string|max:500',
         ]);
 
-        $this->ensureRawMaterialProductIds([$request->product_id]);
+        $this->ensureManualStockSelectableProductIds([$request->product_id]);
 
         try {
             $this->stockService->adjustStock(
@@ -513,7 +513,7 @@ class StockController extends Controller
     /**
      * @param array<int, mixed> $productIds
      */
-    private function ensureRawMaterialProductIds(array $productIds): void
+    private function ensureManualStockSelectableProductIds(array $productIds): void
     {
         $ids = collect($productIds)
             ->filter(fn ($id) => is_numeric($id))
@@ -526,13 +526,13 @@ class StockController extends Controller
         }
 
         $matchedCount = Product::query()
-            ->rawMaterials()
+            ->manualStockSelectable()
             ->whereIn('id', $ids)
             ->count();
 
         if ($matchedCount !== $ids->count()) {
             throw ValidationException::withMessages([
-                'items' => 'Produk yang dipilih harus bahan baku.',
+                'items' => 'Produk yang dipilih harus bahan baku atau Air Mineral SKU 122.',
             ]);
         }
     }

@@ -13,6 +13,8 @@ class Product extends Model
 {
     use HasFactory;
 
+    public const MANUAL_STOCK_SPECIAL_SKUS = ['122'];
+
     protected $fillable = [
         'sku',
         'name',
@@ -137,6 +139,20 @@ class Product extends Model
         }
 
         return $this->product_type === 'raw_material';
+    }
+
+    public function scopeManualStockSelectable(Builder $query): Builder
+    {
+        return $query->where(function (Builder $subQuery) {
+            $subQuery->rawMaterials()
+                ->orWhereIn('sku', self::MANUAL_STOCK_SPECIAL_SKUS);
+        });
+    }
+
+    public function isManualStockSelectable(): bool
+    {
+        return $this->isRawMaterial()
+            || in_array((string) $this->sku, self::MANUAL_STOCK_SPECIAL_SKUS, true);
     }
 
     /**
