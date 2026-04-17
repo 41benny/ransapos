@@ -348,6 +348,7 @@ class BomController extends Controller
         }
         
         return redirect($returnTo)->with('success', 'Resep berhasil dihapus');
+    }
 
     public function exportExcel(Request $request)
     {

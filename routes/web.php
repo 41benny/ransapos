@@ -246,7 +246,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->only(['destroy'])
         ->middleware('permission:coa-accounts.delete');
 
-    // Bill of Materials (BOM)
+    // Bill of Materials (BOM) - Export (must be before resource routes)
+    Route::get('boms/export-excel', [\App\Http\Controllers\Admin\BomController::class, 'exportExcel'])
+        ->name('boms.export-excel')
+        ->middleware('permission:boms.view');
+    Route::get('boms/export-pdf', [\App\Http\Controllers\Admin\BomController::class, 'exportPdf'])
+        ->name('boms.export-pdf')
+        ->middleware('permission:boms.view');
+
+    // Bill of Materials (BOM) - Resource
     Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
         ->only(['create', 'store'])
         ->middleware('permission:boms.create');
@@ -259,14 +267,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::resource('boms', \App\Http\Controllers\Admin\BomController::class)
         ->only(['destroy'])
         ->middleware('permission:boms.delete');
-
-    // BOM Export
-    Route::get('boms/export-excel', [\App\Http\Controllers\Admin\BomController::class, 'exportExcel'])
-        ->name('boms.export-excel')
-        ->middleware('permission:boms.view');
-    Route::get('boms/export-pdf', [\App\Http\Controllers\Admin\BomController::class, 'exportPdf'])
-        ->name('boms.export-pdf')
-        ->middleware('permission:boms.view');
 
     // Inventory & Stock Management
     Route::get('/stocks', [\App\Http\Controllers\Admin\StockController::class, 'index'])
