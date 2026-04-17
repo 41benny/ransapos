@@ -15,7 +15,7 @@
         <div>
             <h1 class="text-2xl font-normal text-slate-800 tracking-tight">{{ $isEditMode ? 'Edit Draft Transfer' : 'Buat Transfer Baru' }}</h1>
             <p class="text-xs font-normal text-slate-500 mt-0.5">
-                {{ $isEditMode ? 'Perbarui data transfer sebelum proses kirim dilakukan' : 'Lakukan pemindahan stok produk antar outlet dengan aman' }}
+                {{ $isEditMode ? 'Perbarui data transfer bahan baku sebelum proses kirim dilakukan' : 'Lakukan pemindahan stok bahan baku antar outlet dengan aman' }}
             </p>
         </div>
         <div class="flex items-center gap-3 no-print">
@@ -103,12 +103,12 @@
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-shopping-basket text-indigo-500 text-[10px]"></i>
-                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Item Produk yang Di-transfer</h3>
+                    <h3 class="text-[10px] font-normal text-slate-400 uppercase tracking-widest leading-none">Item Bahan Baku yang Di-transfer</h3>
                 </div>
                 <button type="button" id="addItemBtn"
                     class="ui-btn ui-btn-primary inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-plus"></i>
-                    <span>TAMBAH PRODUK</span>
+                    <span>TAMBAH BAHAN</span>
                 </button>
             </div>
 
@@ -122,7 +122,7 @@
                 <button type="button" id="addItemBtnBottom"
                     class="ui-btn ui-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-[11px] font-normal text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
                     <i class="fas fa-plus text-[10px]"></i>
-                    <span>TAMBAH PRODUK LAGI</span>
+                    <span>TAMBAH BAHAN LAGI</span>
                 </button>
                 <div class="flex items-center justify-end gap-3">
                     <a href="{{ route('admin.stock-transfers.index') }}" class="text-[11px] font-normal text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest">Batalkan</a>
@@ -167,17 +167,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="group relative bg-white border border-slate-200 rounded-2xl p-4 shadow-sm transition-all hover:shadow-md item-row animate-in zoom-in-95 duration-200" data-index="${itemIndex}">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
                     <div class="md:col-span-5">
-                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Produk / Bahan</label>
+                        <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Pilih Bahan Baku</label>
                         <div class="relative">
                             <input type="text"
                                    class="product-search ui-input w-full px-4 py-2 text-[11px] font-normal bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                                   placeholder="Ketik nama produk, bahan, atau SKU..."
+                                   placeholder="Ketik nama bahan baku atau SKU..."
                                    autocomplete="off"
                                    required>
                             <input type="hidden" name="items[${itemIndex}][product_id]" class="product-id-input" required>
                             <div class="product-suggestions absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-auto hidden"></div>
                         </div>
-                        <p class="product-meta mt-1 ml-1 text-[9px] text-slate-400">Ketik minimal 1 huruf untuk mencari produk atau bahan.</p>
+                        <p class="product-meta mt-1 ml-1 text-[9px] text-slate-400">Ketik minimal 1 huruf untuk mencari bahan baku.</p>
                     </div>
                     <div class="md:col-span-2">
                         <label class="text-[9px] font-normal text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Tersedia</label>
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Event listener for autocomplete input
         productSearch.addEventListener('input', function() {
             productIdInput.value = '';
-            productMeta.textContent = 'Pilih dari daftar saran agar produk terset.';
+            productMeta.textContent = 'Pilih dari daftar saran agar bahan baku terset.';
             renderSuggestions(newRow, productSearch.value);
             checkAvailableStock(newRow);
         });
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .slice(0, 15);
 
         if (filtered.length === 0) {
-            suggestionsWrap.innerHTML = '<div class="px-3 py-2 text-[10px] text-slate-400">Tidak ada produk/bahan yang cocok</div>';
+            suggestionsWrap.innerHTML = '<div class="px-3 py-2 text-[10px] text-slate-400">Tidak ada bahan baku yang cocok</div>';
             suggestionsWrap.classList.remove('hidden');
             return;
         }
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const items = document.querySelectorAll('.item-row');
         if (items.length === 0) {
             e.preventDefault();
-            alert('Minimal harus ada 1 produk untuk melakukan transfer!');
+            alert('Minimal harus ada 1 bahan baku untuk melakukan transfer!');
             return false;
         }
 
@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const productSearch = row.querySelector('.product-search');
             if (!productId) {
                 e.preventDefault();
-                alert('Pilih produk/bahan dari daftar autocomplete terlebih dahulu.');
+                alert('Pilih bahan baku dari daftar autocomplete terlebih dahulu.');
                 if (productSearch) {
                     productSearch.focus();
                 }

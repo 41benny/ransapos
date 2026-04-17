@@ -10,6 +10,7 @@ use App\Models\Outlet;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class StockController extends Controller
 {
@@ -296,7 +297,9 @@ class StockController extends Controller
     public function adjustment()
     {
         $outlets = Outlet::where('is_active', true)->get();
-        $products = Product::where('is_active', true)
+        $products = Product::query()
+            ->rawMaterials()
+            ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
 
@@ -326,11 +329,19 @@ class StockController extends Controller
             'outlet_id' => 'required|exists:outlets,id',
         ]);
 
+        $product = Product::query()
+            ->rawMaterials()
+            ->find($request->product_id);
+
+        if (!$product) {
+            throw ValidationException::withMessages([
+                'product_id' => 'Produk yang dipilih harus berupa bahan baku.',
+            ]);
+        }
+
         $stock = Stock::where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id)
             ->first();
-
-        $product = Product::find($request->product_id);
 
         return response()->json([
             'success' => true,
@@ -354,6 +365,8 @@ class StockController extends Controller
                 'items.*.product_id' => 'required|exists:products,id',
                 'items.*.new_quantity' => 'required|numeric|min:0',
             ]);
+
+            $this->ensureRawMaterialProductIds(collect($data['items'])->pluck('product_id')->all());
 
             try {
                 DB::beginTransaction();
@@ -386,6 +399,8 @@ class StockController extends Controller
             'new_quantity' => 'required|numeric|min:0',
             'notes' => 'required|string|max:500',
         ]);
+
+        $this->ensureRawMaterialProductIds([$request->product_id]);
 
         try {
             $this->stockService->adjustStock(
@@ -493,5 +508,32 @@ class StockController extends Controller
     {
         // Will implement later with Laravel Excel or manual CSV
         return back()->with('info', 'Export feature coming soon!');
+    }
+
+    /**
+     * @param array<int, mixed> $productIds
+     */
+    private function ensureRawMaterialProductIds(array $productIds): void
+    {
+        $ids = collect($productIds)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $matchedCount = Product::query()
+            ->rawMaterials()
+            ->whereIn('id', $ids)
+            ->count();
+
+        if ($matchedCount !== $ids->count()) {
+            throw ValidationException::withMessages([
+                'items' => 'Produk yang dipilih harus bahan baku.',
+            ]);
+        }
     }
 }

@@ -13,6 +13,7 @@ use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class StockTransferController extends Controller
 {
@@ -188,6 +189,8 @@ class StockTransferController extends Controller
             'items.min' => 'Minimal harus ada 1 produk.',
         ]);
 
+        $this->ensureRawMaterialProductIds($request->input('items', []));
+
         try {
             $transfer = $this->transferService->createTransfer($request->all());
 
@@ -218,6 +221,8 @@ class StockTransferController extends Controller
             'items.required' => 'Minimal harus ada 1 produk.',
             'items.min' => 'Minimal harus ada 1 produk.',
         ]);
+
+        $this->ensureRawMaterialProductIds($request->input('items', []));
 
         try {
             $transfer = $this->transferService->updateTransfer($stockTransfer, $request->all());
@@ -404,11 +409,19 @@ class StockTransferController extends Controller
             'outlet_id' => 'required|exists:outlets,id',
         ]);
 
+        $product = Product::query()
+            ->rawMaterials()
+            ->find($request->product_id);
+
+        if (!$product) {
+            throw ValidationException::withMessages([
+                'product_id' => 'Produk yang dipilih harus berupa bahan baku.',
+            ]);
+        }
+
         $stock = \App\Models\Stock::where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id)
             ->first();
-
-        $product = Product::find($request->product_id);
 
         return response()->json([
             'success' => true,
@@ -491,7 +504,9 @@ class StockTransferController extends Controller
 
     private function buildProductsPayload()
     {
-        return Product::where('is_active', true)
+        return Product::query()
+            ->rawMaterials()
+            ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'unit', 'product_type'])
             ->map(function (Product $product) {
@@ -504,6 +519,34 @@ class StockTransferController extends Controller
                 ];
             })
             ->values();
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     */
+    private function ensureRawMaterialProductIds(array $items): void
+    {
+        $productIds = collect($items)
+            ->pluck('product_id')
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($productIds->isEmpty()) {
+            return;
+        }
+
+        $matchedCount = Product::query()
+            ->rawMaterials()
+            ->whereIn('id', $productIds)
+            ->count();
+
+        if ($matchedCount !== $productIds->count()) {
+            throw ValidationException::withMessages([
+                'items' => 'Produk yang dipilih harus bahan baku.',
+            ]);
+        }
     }
 
     private function buildDiscrepancySummary(StockTransfer $stockTransfer, $itemHppMap): array

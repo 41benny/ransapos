@@ -117,7 +117,7 @@
                                     No</th>
                                 <th
                                     class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-500 min-w-[300px]">
-                                    Produk</th>
+                                    Bahan Baku</th>
                                 <th
                                     class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-widest text-slate-500 w-32">
                                     Qty Sistem</th>
@@ -145,7 +145,7 @@
                                 <i class="fas fa-lightbulb text-[10px]"></i>
                             </div>
                             <p class="text-xs text-slate-400 italic">Pilih outlet
-                                terlebih dahulu, lalu masukkan nama atau SKU produk.</p>
+                                terlebih dahulu, lalu masukkan nama atau SKU bahan baku.</p>
                         </div>
                         <button type="button" id="add-row-bottom"
                             class="ui-btn ui-btn-primary inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
@@ -196,7 +196,7 @@
                 const mapped = idByLabel.get(input.value) || '';
                 hidden.value = mapped;
                 if (input.value && !mapped) {
-                    input.setCustomValidity('Pilih produk dari daftar yang tersedia.');
+                    input.setCustomValidity('Pilih bahan baku dari daftar yang tersedia.');
                 } else {
                     input.setCustomValidity('');
                 }
@@ -216,7 +216,7 @@
                         ? results.map(p =>
                             `<button type="button" class="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0" data-id="${p.id}">${escapeHtml(p.label)}</button>`
                         ).join('')
-                        : '<div class="px-4 py-3 text-xs text-slate-400 italic">Produk tidak ditemukan.</div>';
+                        : '<div class="px-4 py-3 text-xs text-slate-400 italic">Bahan baku tidak ditemukan.</div>';
                     panel.classList.remove('hidden');
                 }
 
@@ -288,7 +288,7 @@
                             <div class="relative" data-autocomplete-wrap>
                                 <input type="text"
                                     class="ui-input w-full h-10 px-4 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
-                                    placeholder="Cari nama atau SKU produk..." data-product-input required autocomplete="off">
+                                    placeholder="Cari nama atau SKU bahan baku..." data-product-input required autocomplete="off">
                                 <input type="hidden" data-product-id value="">
                                 <div class="absolute left-0 top-full z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl text-sm hidden py-1"
                                     data-panel></div>

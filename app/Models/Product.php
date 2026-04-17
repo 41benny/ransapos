@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
@@ -110,6 +111,32 @@ class Product extends Model
     public function costs(): HasMany
     {
         return $this->hasMany(ProductCost::class);
+    }
+
+    public function scopeRawMaterials(Builder $query): Builder
+    {
+        $rawCategoryId = ProductCategory::query()
+            ->where('name', config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku')))
+            ->value('id');
+
+        if ($rawCategoryId) {
+            return $query->where('category_id', $rawCategoryId);
+        }
+
+        return $query->where('product_type', 'raw_material');
+    }
+
+    public function isRawMaterial(): bool
+    {
+        $rawCategoryId = ProductCategory::query()
+            ->where('name', config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku')))
+            ->value('id');
+
+        if ($rawCategoryId) {
+            return (int) $this->category_id === (int) $rawCategoryId;
+        }
+
+        return $this->product_type === 'raw_material';
     }
 
     /**
