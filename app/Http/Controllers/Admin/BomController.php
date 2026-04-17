@@ -59,10 +59,21 @@ class BomController extends Controller
     public function index()
     {
         $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+        $search = trim((string) request()->query('search'));
 
         $bomsQuery = BomHeader::with(['product', 'details.component'])->withCount('details');
         if ($sourceType !== self::SOURCE_TYPE_ALL) {
             $bomsQuery->where('source_type', $sourceType);
+        }
+
+        if ($search !== '') {
+            $bomsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%")
+                         ->orWhere('sku', 'like', "%{$search}%");
+                  });
+            });
         }
 
         $boms = $bomsQuery
@@ -74,7 +85,7 @@ class BomController extends Controller
             return response()->json($boms);
         }
         
-        return view('admin.boms.index', compact('boms', 'sourceType'));
+        return view('admin.boms.index', compact('boms', 'sourceType', 'search'));
     }
 
     public function create()

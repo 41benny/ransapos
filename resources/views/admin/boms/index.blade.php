@@ -76,6 +76,27 @@
                     </div>
             </div>
 
+            <!-- Search Bar -->
+            <div class="px-6 py-3 border-b border-gray-100 bg-white">
+                <form method="GET" action="{{ route('admin.boms.index') }}" class="flex items-center gap-3">
+                    <input type="hidden" name="source_type" value="{{ $activeSourceType }}">
+                    <div class="relative flex-1 max-w-md">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" name="search" value="{{ $search ?? '' }}"
+                            class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            placeholder="Cari produk, SKU, atau nama BOM...">
+                    </div>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800 rounded-lg transition-colors">
+                        Cari
+                    </button>
+                    @if(!empty($search))
+                        <a href="{{ route('admin.boms.index', ['source_type' => $activeSourceType]) }}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-times mr-1"></i>Reset
+                        </a>
+                    @endif
+                </form>
+            </div>
+
             <!-- Table -->
             <div class="table-container border-x-0 border-b-0 rounded-none">
                 <table class="ui-table table-modern">
