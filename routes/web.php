@@ -260,6 +260,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->only(['destroy'])
         ->middleware('permission:boms.delete');
 
+    // BOM Export
+    Route::get('boms/export-excel', [\App\Http\Controllers\Admin\BomController::class, 'exportExcel'])
+        ->name('boms.export-excel')
+        ->middleware('permission:boms.view');
+    Route::get('boms/export-pdf', [\App\Http\Controllers\Admin\BomController::class, 'exportPdf'])
+        ->name('boms.export-pdf')
+        ->middleware('permission:boms.view');
+
     // Inventory & Stock Management
     Route::get('/stocks', [\App\Http\Controllers\Admin\StockController::class, 'index'])
         ->name('stocks.index')

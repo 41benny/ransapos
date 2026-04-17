@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use App\Support\ReportExport;
 
 class BomController extends Controller
 {
@@ -59,7 +60,7 @@ class BomController extends Controller
     {
         $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
 
-        $bomsQuery = BomHeader::with(['product'])->withCount('details');
+        $bomsQuery = BomHeader::with(['product', 'details.component'])->withCount('details');
         if ($sourceType !== self::SOURCE_TYPE_ALL) {
             $bomsQuery->where('source_type', $sourceType);
         }
@@ -347,5 +348,77 @@ class BomController extends Controller
         }
         
         return redirect($returnTo)->with('success', 'Resep berhasil dihapus');
+
+    public function exportExcel(Request $request)
+    {
+        $sourceType = $this->normalizeSourceType($request->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+        
+        $boms = BomHeader::with(['product', 'details.component'])
+            ->when($sourceType !== self::SOURCE_TYPE_ALL, function($q) use ($sourceType) {
+                return $q->where('source_type', $sourceType);
+            })
+            ->get();
+
+        $columns = [
+            ['key' => 'id', 'label' => 'ID'],
+            ['key' => 'product_name', 'label' => 'Produk'],
+            ['key' => 'sku', 'label' => 'SKU'],
+            ['key' => 'bom_name', 'label' => 'Nama BOM'],
+            ['key' => 'components', 'label' => 'Bahan / Komponen'],
+            ['key' => 'status', 'label' => 'Status'],
+        ];
+
+        $rows = $boms->flatMap(function ($bom) {
+            $details = $bom->details;
+            $compStrings = $details->map(function($d) {
+                return ($d->component->name ?? '-') . ': ' . (float)$d->quantity . ' ' . ($d->uom ?? '');
+            });
+
+            return [[
+                'id' => $bom->id,
+                'product_name' => $bom->product->name ?? '-',
+                'sku' => $bom->product->sku ?? '-',
+                'bom_name' => $bom->name ?? '-',
+                'components' => $compStrings->implode("\n"),
+                'status' => $bom->is_active ? 'Aktif' : 'Non-Aktif',
+            ]];
+        });
+
+        ReportExport::xlsx('boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.xlsx', 'BOMs ' . ucfirst($sourceType), $columns, $rows);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $sourceType = $this->normalizeSourceType($request->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
+        
+        $boms = BomHeader::with(['product', 'details.component'])
+            ->when($sourceType !== self::SOURCE_TYPE_ALL, function($q) use ($sourceType) {
+                return $q->where('source_type', $sourceType);
+            })
+            ->get();
+
+        $columns = [
+            ['key' => 'id', 'label' => 'ID'],
+            ['key' => 'product_name', 'label' => 'Produk'],
+            ['key' => 'sku', 'label' => 'SKU'],
+            ['key' => 'components', 'label' => 'Bahan / Komponen'],
+            ['key' => 'status', 'label' => 'Status'],
+        ];
+
+        $rows = $boms->map(function ($bom) {
+            $compStrings = $bom->details->map(function($d) {
+                return ($d->component->name ?? '-') . ' (' . (float)$d->quantity . ' ' . ($d->uom ?? '') . ')';
+            });
+
+            return [
+                'id' => $bom->id,
+                'product_name' => $bom->product->name ?? '-',
+                'sku' => $bom->product->sku ?? '-',
+                'components' => $compStrings->implode(", "),
+                'status' => $bom->is_active ? 'Aktif' : 'Non-Aktif',
+            ];
+        });
+
+        ReportExport::pdf('boms_' . $sourceType . '_' . now()->format('Ymd_His') . '.pdf', 'Daftar Resep Produk (' . ucfirst($sourceType) . ')', $columns, $rows);
     }
 }

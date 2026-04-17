@@ -57,12 +57,23 @@
                         </a>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('admin.boms.create', ['source_type' => 'production', 'return_to' => request()->fullUrl()]) }}" class="ui-btn ui-btn-primary btn btn-primary shadow-lg shadow-blue-500/20">
-                        <i class="fas fa-plus"></i>
-                        <span>Buat Resep Produksi</span>
-                    </a>
-                </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center bg-green-50 rounded-md p-1 border border-green-100">
+                            <a href="{{ route('admin.boms.export-excel', ['source_type' => $activeSourceType]) }}" class="px-3 py-1.5 text-xs font-bold text-green-700 hover:bg-green-100 rounded transition-colors flex items-center gap-1.5" title="Export Excel">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Excel</span>
+                            </a>
+                            <div class="w-px h-4 bg-green-200 mx-0.5"></div>
+                            <a href="{{ route('admin.boms.export-pdf', ['source_type' => $activeSourceType]) }}" class="px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 rounded transition-colors flex items-center gap-1.5" title="Export PDF">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </a>
+                        </div>
+                        <a href="{{ route('admin.boms.create', ['source_type' => 'production', 'return_to' => request()->fullUrl()]) }}" class="ui-btn ui-btn-primary btn btn-primary shadow-lg shadow-blue-500/20">
+                            <i class="fas fa-plus"></i>
+                            <span>Buat Resep</span>
+                        </a>
+                    </div>
             </div>
 
             <!-- Table -->
@@ -70,7 +81,7 @@
                 <table class="ui-table table-modern">
                     <thead>
                         <tr>
-                            <th class="pl-6 w-16">ID</th>
+                            <th class="pl-6 w-16" colspan="2">ID & Detail</th>
                             <th>Produk & SKU</th>
                             <th>Nama BOM (Varian)</th>
                             <th>Status</th>
@@ -83,6 +94,14 @@
                         @forelse($boms as $bom)
                             <tr class="hover:bg-blue-50/30 transition-colors duration-150">
                                 <td class="pl-6 font-mono text-gray-500 text-xs">#{{ $bom->id }}</td>
+                                <td class="pl-2">
+                                    <button type="button" 
+                                        class="ui-action-icon bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 w-8 h-8 flex items-center justify-center rounded"
+                                        title="Lihat Komponen"
+                                        onclick="toggleIngredients({{ $bom->id }})">
+                                        <i class="fas fa-chevron-down transform transition-transform duration-200" id="icon-{{ $bom->id }}"></i>
+                                    </button>
+                                </td>
                                 <td>
                                     <div class="flex items-center gap-3">
                                         <div
@@ -155,9 +174,42 @@
                                     </div>
                                 </td>
                             </tr>
+                            {{-- Collapsible Ingredient Row --}}
+                            <tr id="ingredients-{{ $bom->id }}" class="hidden bg-gray-50/50 border-b border-gray-100 no-hover">
+                                <td colspan="8" class="px-6 py-4">
+                                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                                        <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                                            <span class="text-xs font-bold uppercase tracking-wider text-gray-600">Daftar Komponen / Bahan</span>
+                                            <span class="text-xs text-gray-500">{{ $bom->details->count() }} item terdaftar</span>
+                                        </div>
+                                        <div class="p-0 overflow-x-auto">
+                                            <table class="w-full text-sm">
+                                                <thead class="bg-gray-100/50 text-gray-600">
+                                                    <tr>
+                                                        <th class="px-4 py-2 text-left font-semibold">Nama Bahan</th>
+                                                        <th class="px-4 py-2 text-left font-semibold">SKU</th>
+                                                        <th class="px-4 py-2 text-right font-semibold">Jumlah</th>
+                                                        <th class="px-4 py-2 text-left font-semibold">Satuan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-100">
+                                                    @foreach($bom->details as $detail)
+                                                        <tr>
+                                                            <td class="px-4 py-2 font-medium text-gray-800">{{ $detail->component->name ?? '-' }}</td>
+                                                            <td class="px-4 py-2 text-gray-500 font-mono text-xs">{{ $detail->component->sku ?? '-' }}</td>
+                                                            <td class="px-4 py-2 text-right font-bold text-blue-600">{{ (float) $detail->quantity }}</td>
+                                                            <td class="px-4 py-2 text-gray-600">{{ $detail->uom ?? '-' }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-12">
+                                <td colspan="8" class="text-center py-12">
                                     <div class="flex flex-col items-center justify-center">
                                         <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                                             <i class="fas fa-scroll text-3xl text-gray-300"></i>
@@ -184,3 +236,20 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleIngredients(id) {
+        const row = document.getElementById('ingredients-' + id);
+        const icon = document.getElementById('icon-' + id);
+        
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            row.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
+@endpush
