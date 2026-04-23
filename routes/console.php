@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Support\Repairs\RepairPurchaseHppByQuantityAction;
 use App\Support\Repairs\RepairSaleItemCogsFromStockAction;
+use App\Support\Repairs\RepairSaleItemCogsFromProductsAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\Product;
@@ -225,3 +226,29 @@ Artisan::command('repair:sale-item-cogs-from-stock
         return self::FAILURE;
     }
 })->purpose('Dry-run/apply sinkronisasi sale_items.cogs dari mutasi stok penjualan');
+
+Artisan::command('repair:sale-item-cogs-from-products
+    {--apply : Terapkan perubahan ke database}
+    {--outlet-id= : Outlet ID target, kosongkan untuk semua outlet}
+    {--date-from=2026-01-01 : Tanggal awal sale}
+    {--date-to=2026-12-31 : Tanggal akhir sale}
+    {--product-like=Frozen : Filter nama/SKU produk, contoh Frozen}
+    {--only-zero=1 : Hanya repair cogs yang kosong/nol}', function (RepairSaleItemCogsFromProductsAction $action) {
+    try {
+        $result = $action->execute([
+            'outlet_id' => $this->option('outlet-id'),
+            'date_from' => (string) $this->option('date-from'),
+            'date_to' => (string) $this->option('date-to'),
+            'product_like' => (string) $this->option('product-like'),
+            'only_zero' => $this->option('only-zero'),
+        ], (bool) $this->option('apply'));
+
+        $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return self::SUCCESS;
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+})->purpose('Dry-run/apply hitung ulang sale_items.cogs dari master produk dan BOM aktif');
