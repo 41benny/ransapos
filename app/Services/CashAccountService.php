@@ -367,8 +367,8 @@ class CashAccountService
             $data['balance_after'] = $account->current_balance - $data['amount'];
         }
 
-        // Validasi saldo tidak boleh negatif
-        if ($data['balance_after'] < 0) {
+        // Akun petty cash outlet boleh overdraw untuk menyesuaikan kondisi operasional di lapangan.
+        if ($data['balance_after'] < 0 && ! $account->allowsNegativeBalance()) {
             throw new Exception('Saldo tidak mencukupi. Saldo saat ini: ' . number_format($account->current_balance, 0, ',', '.'));
         }
 

@@ -104,6 +104,14 @@ class CashAccount extends Model
     }
 
     /**
+     * Helper: Cek apakah akun boleh memiliki saldo negatif.
+     */
+    public function allowsNegativeBalance(): bool
+    {
+        return $this->isPettyCash();
+    }
+
+    /**
      * Scope: Hanya akun aktif
      */
     public function scopeActive($query)

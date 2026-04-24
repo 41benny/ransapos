@@ -37,6 +37,9 @@
                     <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Akun Kas Otomatis</p>
                     <p class="text-sm font-semibold text-gray-900">{{ $pettyCashAccount->name ?? '-' }}</p>
                     <p class="text-xs text-gray-500 mt-1">{{ $pettyCashAccount->code ?? '-' }}</p>
+                    <p class="text-xs mt-2 font-medium {{ isset($pettyCashAccount) && (float) $pettyCashAccount->current_balance < 0 ? 'text-rose-700' : 'text-amber-700' }}">
+                        Saldo: Rp {{ number_format((float) ($pettyCashAccount->current_balance ?? 0), 0, ',', '.') }}
+                    </p>
                 </div>
                 <div class="rounded-xl border border-gray-200 bg-white p-4">
                     <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Akun Expense Otomatis</p>
@@ -107,7 +110,7 @@
                            required
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
                     <p class="mt-1 text-xs text-amber-700">
-                        Perubahan jumlah/tanggal akan menghitung ulang saldo petty cash.
+                        Perubahan jumlah/tanggal akan menghitung ulang saldo petty cash dan saldo minus tetap diizinkan.
                     </p>
                 </div>
 

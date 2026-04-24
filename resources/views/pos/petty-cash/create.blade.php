@@ -63,8 +63,11 @@
                     @if($pettyCashAccount)
                         <p class="text-sm font-semibold text-gray-900">{{ $pettyCashAccount->name }}</p>
                         <p class="text-xs text-gray-500 mt-1">{{ $pettyCashAccount->code }}</p>
-                        <p class="text-xs text-amber-700 mt-2 font-medium">
+                        <p class="text-xs mt-2 font-medium {{ (float) $pettyCashAccount->current_balance < 0 ? 'text-rose-700' : 'text-amber-700' }}">
                             Saldo: Rp {{ number_format($pettyCashAccount->current_balance, 0, ',', '.') }}
+                        </p>
+                        <p class="text-[11px] text-gray-500 mt-1">
+                            Pengeluaran tetap bisa disimpan meskipun saldo petty cash minus.
                         </p>
                     @else
                         <p class="text-sm font-semibold text-rose-700">Belum disetting</p>

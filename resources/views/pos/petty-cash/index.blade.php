@@ -35,6 +35,22 @@
                 </div>
             @endif
 
+            @if($pettyCashAccount)
+                <div class="rounded-xl border {{ (float) $pettyCashAccount->current_balance < 0 ? 'border-rose-200 bg-rose-50/70' : 'border-amber-200 bg-amber-50/60' }} px-4 py-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-gray-500">Saldo Saat Ini</p>
+                            <p class="text-base font-semibold {{ (float) $pettyCashAccount->current_balance < 0 ? 'text-rose-700' : 'text-gray-900' }}">
+                                Rp {{ number_format((float) $pettyCashAccount->current_balance, 0, ',', '.') }}
+                            </p>
+                        </div>
+                        <p class="text-xs {{ (float) $pettyCashAccount->current_balance < 0 ? 'text-rose-700' : 'text-amber-700' }}">
+                            Saldo petty cash boleh minus untuk mencatat kondisi aktual outlet.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             @if(!$pettyCashAccount)
                 <div class="rounded-lg border border-rose-200 bg-rose-50 text-rose-800 px-4 py-3 text-sm">
                     Akun petty cash outlet belum disetting. Hubungi admin agar kasir bisa input dan memantau petty cash.
@@ -75,7 +91,7 @@
                                     <td class="px-3 py-2 whitespace-nowrap text-right font-semibold text-rose-700">
                                         Rp {{ number_format((float) $transaction->amount, 0, ',', '.') }}
                                     </td>
-                                    <td class="px-3 py-2 whitespace-nowrap text-right text-gray-800">
+                                    <td class="px-3 py-2 whitespace-nowrap text-right {{ (float) $transaction->balance_after < 0 ? 'text-rose-700 font-semibold' : 'text-gray-800' }}">
                                         Rp {{ number_format((float) $transaction->balance_after, 0, ',', '.') }}
                                     </td>
                                     <td class="px-3 py-2 text-center">

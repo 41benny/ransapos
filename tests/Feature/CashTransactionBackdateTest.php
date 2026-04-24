@@ -162,4 +162,46 @@ class CashTransactionBackdateTest extends TestCase
 
         $this->assertSame(1050.0, (float) $this->cashAccount->current_balance);
     }
+
+    public function test_petty_cash_account_can_record_expense_even_if_balance_becomes_negative(): void
+    {
+        $this->cashAccount->update([
+            'usage_type' => 'petty_cash',
+            'opening_balance' => 100,
+            'current_balance' => 100,
+        ]);
+
+        $transaction = $this->cashAccountService->recordTransaction([
+            'cash_account_id' => $this->cashAccount->id,
+            'coa_account_id' => $this->expenseCoa->id,
+            'type' => 'out',
+            'transaction_date' => '2026-03-10',
+            'amount' => 250,
+            'description' => 'Belanja melebihi saldo kas kecil',
+            'reference_type' => 'petty_cash_pos',
+            'created_by' => $this->user->id,
+        ]);
+
+        $transaction->refresh();
+        $this->cashAccount->refresh();
+
+        $this->assertSame(100.0, (float) $transaction->balance_before);
+        $this->assertSame(-150.0, (float) $transaction->balance_after);
+        $this->assertSame(-150.0, (float) $this->cashAccount->current_balance);
+    }
+
+    public function test_non_petty_cash_account_still_rejects_negative_balance(): void
+    {
+        $this->expectExceptionMessage('Saldo tidak mencukupi');
+
+        $this->cashAccountService->recordTransaction([
+            'cash_account_id' => $this->cashAccount->id,
+            'coa_account_id' => $this->expenseCoa->id,
+            'type' => 'out',
+            'transaction_date' => '2026-03-10',
+            'amount' => 1500,
+            'description' => 'Belanja melebihi saldo akun biasa',
+            'created_by' => $this->user->id,
+        ]);
+    }
 }
