@@ -100,7 +100,15 @@ class CashAccount extends Model
      */
     public function isPettyCash(): bool
     {
-        return $this->usage_type === 'petty_cash';
+        if ($this->usage_type === 'petty_cash') {
+            return true;
+        }
+
+        $identifier = strtolower((string) $this->name . ' ' . (string) $this->code);
+        $normalizedIdentifier = preg_replace('/[^a-z0-9]+/', '', $identifier);
+
+        return str_contains($normalizedIdentifier, 'pettycash')
+            || str_contains($normalizedIdentifier, 'petycash');
     }
 
     /**

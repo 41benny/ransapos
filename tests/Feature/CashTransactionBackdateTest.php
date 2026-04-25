@@ -27,8 +27,8 @@ class CashTransactionBackdateTest extends TestCase
         $this->actingAs($this->user);
 
         $this->cashAccount = CashAccount::create([
-            'name' => 'Petty Cash Moka Test',
-            'code' => 'PCM-T',
+            'name' => 'Kas Operasional Test',
+            'code' => 'KAS-OPS-T',
             'type' => 'cash',
             'is_active' => true,
             'opening_balance' => 1000,
@@ -186,6 +186,33 @@ class CashTransactionBackdateTest extends TestCase
         $this->cashAccount->refresh();
 
         $this->assertSame(100.0, (float) $transaction->balance_before);
+        $this->assertSame(-150.0, (float) $transaction->balance_after);
+        $this->assertSame(-150.0, (float) $this->cashAccount->current_balance);
+    }
+
+    public function test_legacy_petty_cash_named_account_can_record_negative_balance(): void
+    {
+        $this->cashAccount->update([
+            'name' => 'PETTY CASH CK',
+            'code' => 'PCK',
+            'usage_type' => 'operational',
+            'opening_balance' => 100,
+            'current_balance' => 100,
+        ]);
+
+        $transaction = $this->cashAccountService->recordTransaction([
+            'cash_account_id' => $this->cashAccount->id,
+            'coa_account_id' => $this->expenseCoa->id,
+            'type' => 'out',
+            'transaction_date' => '2026-03-10',
+            'amount' => 250,
+            'description' => 'Belanja melebihi saldo petty cash legacy',
+            'created_by' => $this->user->id,
+        ]);
+
+        $transaction->refresh();
+        $this->cashAccount->refresh();
+
         $this->assertSame(-150.0, (float) $transaction->balance_after);
         $this->assertSame(-150.0, (float) $this->cashAccount->current_balance);
     }
