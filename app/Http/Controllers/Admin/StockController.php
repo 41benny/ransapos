@@ -58,7 +58,7 @@ class StockController extends Controller
         // Order by
         $query->orderBy('updated_at', 'desc');
 
-        $stocks = $query->paginate(20);
+        $stocks = $query->paginate(20)->withQueryString();
 
         // Load data for filters
         $outlets = Outlet::where('is_active', true)->get();
