@@ -433,10 +433,13 @@ class StockController extends Controller
 
         $product = Product::with('category')->findOrFail($request->product_id);
         $outlet = Outlet::findOrFail($request->outlet_id);
+        $fromStockMovementReport = $request->input('source') === 'stock_movement';
 
-        $query = StockMutation::query()
+        $baseQuery = StockMutation::query()
             ->where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id);
+
+        $query = clone $baseQuery;
 
         if ($request->filled('start_date')) {
             $query->whereDate('mutation_date', '>=', $request->start_date);
@@ -461,12 +464,19 @@ class StockController extends Controller
             ->orderBy('mutation_date', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc')
-            ->paginate(100)
+            ->paginate($fromStockMovementReport ? 1000 : 100)
             ->withQueryString();
 
         $currentStock = Stock::where('product_id', $request->product_id)
             ->where('outlet_id', $request->outlet_id)
             ->first();
+
+        $openingStockBeforeRange = null;
+        if ($fromStockMovementReport && $request->filled('start_date')) {
+            $openingStockBeforeRange = (float) (clone $baseQuery)
+                ->whereDate('mutation_date', '<', $request->start_date)
+                ->sum('quantity');
+        }
 
         $mutations->setCollection(
             $mutations->getCollection()->map(function (StockMutation $mutation) {
@@ -497,7 +507,9 @@ class StockController extends Controller
             'estimatedInventoryValue',
             'totalIn',
             'totalOut',
-            'netChange'
+            'netChange',
+            'fromStockMovementReport',
+            'openingStockBeforeRange'
         ));
     }
 

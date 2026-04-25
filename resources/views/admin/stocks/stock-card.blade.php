@@ -85,6 +85,9 @@
                 <form method="GET" action="{{ route('admin.stocks.card') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="hidden" name="outlet_id" value="{{ $outlet->id }}">
+                    @if(request('source'))
+                        <input type="hidden" name="source" value="{{ request('source') }}">
+                    @endif
                     @if(request('return_url'))
                         <input type="hidden" name="return_url" value="{{ request('return_url') }}">
                     @endif
@@ -110,6 +113,7 @@
                         <a href="{{ route('admin.stocks.card', array_filter([
                                 'product_id' => $product->id,
                                 'outlet_id' => $outlet->id,
+                                'source' => request('source'),
                                 'return_url' => request('return_url'),
                             ])) }}"
                             class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[40px] w-[40px] rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
@@ -163,6 +167,35 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
+                        @if(($fromStockMovementReport ?? false) && $openingStockBeforeRange !== null)
+                            <tr class="bg-indigo-50/60">
+                                <td class="px-5 py-3.5">
+                                    <div class="flex flex-col">
+                                        <span class="text-[11px] font-normal text-indigo-700 leading-tight">
+                                            Sebelum {{ \Carbon\Carbon::parse(request('start_date'))->format('d M Y') }}
+                                        </span>
+                                        <span class="text-[9px] font-normal text-indigo-500 mt-1 uppercase tracking-widest">Saldo awal</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5 text-center">
+                                    <span class="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-[8.5px] font-normal text-indigo-700 ring-1 ring-inset ring-indigo-200 uppercase tracking-widest">
+                                        Opening
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right"><span class="text-[11px] font-normal text-slate-300">-</span></td>
+                                <td class="px-5 py-3.5 text-right"><span class="text-[11px] font-normal text-slate-300">-</span></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="text-[11.5px] font-normal text-indigo-700 tracking-tight tabular-nums">
+                                        {{ number_format($openingStockBeforeRange, 2, ',', '.') }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right"><span class="text-[11px] font-normal text-slate-300">-</span></td>
+                                <td class="px-5 py-3.5 text-right"><span class="text-[11px] font-normal text-slate-300">-</span></td>
+                                <td class="px-5 py-3.5">
+                                    <span class="text-[10px] font-normal text-indigo-600">Saldo awal dari seluruh mutasi sebelum range sumber.</span>
+                                </td>
+                            </tr>
+                        @endif
                         @forelse($mutations as $mutation)
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-5 py-3.5">

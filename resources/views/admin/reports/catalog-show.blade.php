@@ -2401,6 +2401,7 @@
                                                 'outlet_id' => $row->outlet_id,
                                                 'start_date' => $dateFrom,
                                                 'end_date' => $dateTo,
+                                                'source' => 'stock_movement',
                                                 'return_url' => url()->full(),
                                             ]) }}"
                                             class="inline-flex justify-end rounded-md px-2 py-1 text-indigo-700 underline-offset-2 hover:bg-indigo-100 hover:text-indigo-900 hover:underline"
