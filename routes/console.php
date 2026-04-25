@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Support\Repairs\RepairPurchaseHppByQuantityAction;
 use App\Support\Repairs\RepairSaleItemCogsFromStockAction;
 use App\Support\Repairs\RepairSaleItemCogsFromProductsAction;
+use App\Support\Repairs\CleanupBundleStockRecordsAction;
+use App\Support\Repairs\CleanupBundleStockMutationsAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\Product;
@@ -252,3 +254,43 @@ Artisan::command('repair:sale-item-cogs-from-products
         return self::FAILURE;
     }
 })->purpose('Dry-run/apply hitung ulang sale_items.cogs dari master produk dan BOM aktif');
+
+Artisan::command('stocks:cleanup-bundle-records
+    {--apply : Hapus record stok bundle dari database}
+    {--outlet-id= : Outlet ID target, kosongkan untuk semua outlet}
+    {--product-like= : Filter nama/SKU produk bundle}', function (CleanupBundleStockRecordsAction $action) {
+    try {
+        $result = $action->execute([
+            'outlet_id' => $this->option('outlet-id'),
+            'product_like' => (string) $this->option('product-like'),
+        ], (bool) $this->option('apply'));
+
+        $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return self::SUCCESS;
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+})->purpose('Dry-run/apply hapus record stok yang terlanjur terbentuk untuk produk bundle/BOM');
+
+Artisan::command('stocks:cleanup-bundle-mutations
+    {--apply : Hapus mutasi stok bundle dari database}
+    {--outlet-id= : Outlet ID target, kosongkan untuk semua outlet}
+    {--product-like= : Filter nama/SKU produk bundle}', function (CleanupBundleStockMutationsAction $action) {
+    try {
+        $result = $action->execute([
+            'outlet_id' => $this->option('outlet-id'),
+            'product_like' => (string) $this->option('product-like'),
+        ], (bool) $this->option('apply'));
+
+        $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        return self::SUCCESS;
+    } catch (\Throwable $e) {
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+})->purpose('Dry-run/apply hapus mutasi historis yang terlanjur terbentuk untuk produk bundle/BOM');

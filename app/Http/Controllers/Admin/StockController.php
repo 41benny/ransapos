@@ -26,7 +26,10 @@ class StockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Stock::with(['product.category', 'outlet']);
+        $query = Stock::with(['product.category', 'outlet'])
+            ->whereHas('product', function ($q) {
+                $q->stockTracked();
+            });
 
         // Filter by outlet
         if ($request->filled('outlet_id')) {
@@ -66,13 +69,20 @@ class StockController extends Controller
 
         // Statistics
         $stats = [
-            'total_products' => Stock::distinct('product_id')->count(),
-            'total_value' => Stock::join('products', 'stocks.product_id', '=', 'products.id')
+            'total_products' => Stock::whereHas('product', function ($q) {
+                $q->stockTracked();
+            })->distinct('product_id')->count(),
+            'total_value' => Stock::whereHas('product', function ($q) {
+                $q->stockTracked();
+            })->join('products', 'stocks.product_id', '=', 'products.id')
                 ->sum(DB::raw('stocks.quantity * products.purchase_price')),
             'low_stock_count' => Stock::whereHas('product', function ($q) {
+                $q->stockTracked();
                 $q->whereColumn('stocks.quantity', '<', 'products.min_stock');
             })->count(),
-            'out_of_stock' => Stock::where('quantity', '<=', 0)->count(),
+            'out_of_stock' => Stock::whereHas('product', function ($q) {
+                $q->stockTracked();
+            })->where('quantity', '<=', 0)->count(),
         ];
 
         return view('admin.stocks.index', compact('stocks', 'outlets', 'categories', 'stats'));
@@ -85,7 +95,12 @@ class StockController extends Controller
     {
         $tab = $request->get('tab', 'all');
 
-        $query = StockMutation::with(['product', 'outlet', 'creator']);
+        $query = StockMutation::with(['product', 'outlet', 'creator'])
+            ->whereHas('product', function ($q) use ($tab) {
+                if ($tab !== 'usage') {
+                    $q->stockTracked();
+                }
+            });
 
         if ($tab === 'usage') {
             // For the new "Pemakaian Bahan Baku" tab
@@ -432,6 +447,12 @@ class StockController extends Controller
         ]);
 
         $product = Product::with('category')->findOrFail($request->product_id);
+        if (!$product->isStockTracked()) {
+            return redirect()
+                ->route('admin.stocks.index')
+                ->with('info', 'Produk bundle/BOM tidak memiliki stok langsung. Pantau stok dari bahan baku komponennya.');
+        }
+
         $outlet = Outlet::findOrFail($request->outlet_id);
         $fromStockMovementReport = $request->input('source') === 'stock_movement';
 

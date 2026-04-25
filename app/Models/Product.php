@@ -149,10 +149,20 @@ class Product extends Model
         });
     }
 
+    public function scopeStockTracked(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('bomHeader');
+    }
+
     public function isManualStockSelectable(): bool
     {
         return $this->isRawMaterial()
             || in_array((string) $this->sku, self::MANUAL_STOCK_SPECIAL_SKUS, true);
+    }
+
+    public function isStockTracked(): bool
+    {
+        return !$this->bomHeader()->exists();
     }
 
     /**
