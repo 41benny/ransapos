@@ -38,6 +38,7 @@
                 $selectedProductLabel = $selectedProductOption
                     ? $selectedProductOption->name . (!empty($selectedProductOption->sku) ? ' - ' . $selectedProductOption->sku : '')
                     : '';
+                $stockMovementFilterApplied = $stockMovementFilterApplied ?? true;
             @endphp
             <form method="GET" class="mt-8 grid grid-cols-1 items-end gap-4 md:grid-cols-12">
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
@@ -190,16 +191,27 @@
                         <i class="fas fa-sync-alt text-xs"></i>
                         TAMPILKAN
                     </button>
-                    <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'xlsx'])) }}"
-                        class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all shadow-sm"
-                        title="Export Excel">
-                        <i class="fas fa-file-excel"></i>
-                    </a>
-                    <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'pdf'])) }}"
-                        class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all shadow-sm"
-                        title="Export PDF">
-                        <i class="fas fa-file-pdf"></i>
-                    </a>
+                    @if($isStockMovement && !$stockMovementFilterApplied)
+                        <span class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-300 shadow-sm"
+                            title="Pilih range tanggal dulu">
+                            <i class="fas fa-file-excel"></i>
+                        </span>
+                        <span class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-300 shadow-sm"
+                            title="Pilih range tanggal dulu">
+                            <i class="fas fa-file-pdf"></i>
+                        </span>
+                    @else
+                        <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'xlsx'])) }}"
+                            class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all shadow-sm"
+                            title="Export Excel">
+                            <i class="fas fa-file-excel"></i>
+                        </a>
+                        <a href="{{ route('admin.reports.catalog.show', array_merge(['slug' => $slug], array_filter(request()->except('format')), ['format' => 'pdf'])) }}"
+                            class="inline-flex h-[38px] w-[38px] items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-100 transition-all shadow-sm"
+                            title="Export PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                    @endif
                     @if(!empty($report['existing_route']) && Route::has($report['existing_route']))
                         <a href="{{ route($report['existing_route'], array_filter(['tab' => request('tab')])) }}"
                             class="inline-flex h-[38px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-[10px] font-normal text-slate-400 hover:text-slate-600 transition-all hover:bg-slate-50"
@@ -2285,6 +2297,15 @@
                 ]);
             @endphp
             <div class="space-y-4">
+                @if(!$stockMovementFilterApplied)
+                    <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                            <i class="far fa-calendar-alt text-lg"></i>
+                        </div>
+                        <div class="mt-4 text-sm font-normal text-slate-700">Pilih range tanggal lalu klik TAMPILKAN.</div>
+                        <div class="mt-1 text-xs text-slate-500">Data pergerakan produk tidak dimuat otomatis agar halaman report tetap ringan.</div>
+                    </div>
+                @else
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-6">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Awal (Nominal)</div>
@@ -2492,6 +2513,7 @@
                             @endforeach
                         </ul>
                     </div>
+                @endif
                 @endif
             </div>
         @elseif($viewType === 'stock-adjustment')

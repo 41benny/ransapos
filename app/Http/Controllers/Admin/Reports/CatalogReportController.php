@@ -449,6 +449,8 @@ class CatalogReportController extends Controller
 
         $dateFrom = $request->input('date_from', $defaultDateFrom);
         $dateTo = $request->input('date_to', $defaultDateTo);
+        $stockMovementFilterApplied = $slug !== 'stock-movement'
+            || ($request->filled('date_from') && $request->filled('date_to'));
         $outletId = $request->input('outlet_id');
         $selectedUserId = $request->input('user_id');
         $outlets = Outlet::where('is_active', true)->orderBy('name')->get();
@@ -874,12 +876,23 @@ class CatalogReportController extends Controller
             $viewType = 'stock-movement';
             $selectedProductId = $request->filled('product_id') ? (int) $request->input('product_id') : null;
 
-            [$rows, $summary] = $this->stockMovementReport(
-                dateFrom: $dateFrom,
-                dateTo: $dateTo,
-                outletId: !empty($outletId) ? (int) $outletId : null,
-                productId: $selectedProductId,
-            );
+            if ($stockMovementFilterApplied) {
+                [$rows, $summary] = $this->stockMovementReport(
+                    dateFrom: $dateFrom,
+                    dateTo: $dateTo,
+                    outletId: !empty($outletId) ? (int) $outletId : null,
+                    productId: $selectedProductId,
+                );
+            } else {
+                $summary = [
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                    'outlet_id' => !empty($outletId) ? (int) $outletId : null,
+                    'product_id' => $selectedProductId,
+                    'selected_product_name' => null,
+                    'row_count' => 0,
+                ];
+            }
 
             $meta = [
                 'notes' => [
@@ -1791,6 +1804,7 @@ class CatalogReportController extends Controller
             'summary' => $summary,
             'meta' => $meta,
             'viewType' => $viewType,
+            'stockMovementFilterApplied' => $stockMovementFilterApplied,
         ]);
     }
 
