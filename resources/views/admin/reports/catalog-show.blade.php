@@ -2351,8 +2351,8 @@
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-[1500px] text-sm">
-                        <thead class="text-left text-xs uppercase tracking-wide text-slate-600">
+                    <table class="min-w-[1500px] text-[10px]">
+                        <thead class="text-left text-[9px] uppercase tracking-wide text-slate-600">
                             <tr>
                                 <th class="bg-slate-50 px-3 py-3">No</th>
                                 <th class="bg-slate-50 px-4 py-3">Produk</th>
@@ -2378,7 +2378,7 @@
                                     <td class="bg-white px-3 py-3 text-slate-500">{{ $loop->iteration }}</td>
                                     <td class="bg-white px-4 py-3">
                                         <div class="font-normal text-slate-800">{{ $row->product_name }}</div>
-                                        <div class="text-xs text-slate-500">
+                                        <div class="text-[9px] text-slate-500">
                                             {{ $row->product_sku ?: '-' }} | {{ strtoupper($row->product_unit ?? 'pcs') }}
                                         </div>
                                     </td>
@@ -2406,7 +2406,7 @@
                             @endforelse
                         </tbody>
                         @if(($summary['row_count'] ?? 0) > 0)
-                            <tfoot class="text-xs font-normal uppercase tracking-wide text-slate-600">
+                            <tfoot class="text-[9px] font-normal uppercase tracking-wide text-slate-600">
                                 <tr>
                                     <td colspan="3" class="bg-slate-50 px-4 py-3">Total</td>
                                     <td class="bg-blue-50 px-3 py-3 text-right">{{ $qty($summary['opening_qty'] ?? 0) }}</td>
