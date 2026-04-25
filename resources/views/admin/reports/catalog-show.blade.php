@@ -2306,55 +2306,26 @@
                         <div class="mt-1 text-xs text-slate-500">Data pergerakan produk tidak dimuat otomatis agar halaman report tetap ringan.</div>
                     </div>
                 @else
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-6">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Awal (Nominal)</div>
-                        <div class="mt-2 text-xl font-normal text-slate-900">
-                            {{ $nominal($summary['opening_value'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['opening_qty'] ?? 0) }}</div>
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Awal</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ $qty($summary['opening_qty'] ?? 0) }}</div>
+                        <div class="mt-1 text-xs text-slate-500">Qty sebelum periode</div>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Masuk</div>
-                        <div class="mt-2 text-xl font-normal text-emerald-700">
-                            {{ $nominal($summary['total_in_value'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['total_in_qty'] ?? 0) }}</div>
+                    <div class="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-emerald-600">Total Masuk</div>
+                        <div class="mt-2 text-2xl font-normal text-emerald-700">{{ $qty($summary['total_in_qty'] ?? 0) }}</div>
+                        <div class="mt-1 text-xs text-emerald-700/70">Pembelian, retur, transfer, adjustment</div>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Keluar</div>
-                        <div class="mt-2 text-xl font-normal text-rose-700">
-                            {{ $nominal($summary['total_out_value'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['total_out_qty'] ?? 0) }}</div>
+                    <div class="rounded-xl border border-rose-100 bg-rose-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-rose-600">Total Keluar</div>
+                        <div class="mt-2 text-2xl font-normal text-rose-700">{{ $qty($summary['total_out_qty'] ?? 0) }}</div>
+                        <div class="mt-1 text-xs text-rose-700/70">Penjualan, transfer, adjustment</div>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Penjualan Keluar (HPP)</div>
-                        <div class="mt-2 text-xl font-normal text-rose-700">
-                            {{ $nominal($summary['hpp_penjualan_kotor'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['sale_out_qty'] ?? 0) }}</div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Reversal Void</div>
-                        <div class="mt-2 text-xl font-normal text-amber-700">
-                            {{ $nominal($summary['hpp_reversal_void'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Ref: sale_cancellation</div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">HPP Penjualan Bersih</div>
-                        <div class="mt-2 text-xl font-normal text-rose-700">
-                            {{ $nominal($summary['hpp_penjualan_bersih'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Kotor - Reversal</div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Stok Akhir (Nominal)</div>
-                        <div class="mt-2 text-xl font-normal text-indigo-700">
-                            {{ $nominal($summary['closing_value'] ?? 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Qty: {{ $qty($summary['closing_qty'] ?? 0) }}</div>
+                    <div class="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-indigo-600">Stok Akhir</div>
+                        <div class="mt-2 text-2xl font-normal text-indigo-700">{{ $qty($summary['closing_qty'] ?? 0) }}</div>
+                        <div class="mt-1 text-xs text-indigo-700/70">Stok awal + masuk - keluar</div>
                     </div>
                 </div>
 
@@ -2369,11 +2340,6 @@
                         <i class="fas fa-list-ul text-xs"></i>
                         Audit Mutasi Stok
                     </a>
-                    <a class="ui-btn ui-btn-ghost inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:border-indigo-200 hover:text-indigo-700"
-                        href="{{ route('admin.reports.catalog.show', array_filter(array_merge(['slug' => 'sales-vs-hpp'], $auditBase))) }}">
-                        <i class="fas fa-balance-scale text-xs"></i>
-                        Audit Sales vs HPP
-                    </a>
                     @if(!empty($summary['selected_product_name']))
                         <span class="rounded-lg bg-indigo-50 px-3 py-1.5 text-indigo-700">
                             Produk: {{ $summary['selected_product_name'] }}
@@ -2385,135 +2351,83 @@
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-[3200px] text-sm">
-                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <table class="min-w-[1500px] text-sm">
+                        <thead class="text-left text-xs uppercase tracking-wide text-slate-600">
                             <tr>
-                                <th class="px-4 py-3">No</th>
-                                <th class="px-4 py-3">Produk</th>
-                                <th class="px-4 py-3">Outlet</th>
-                                <th class="px-4 py-3 text-right">Stok Awal Qty</th>
-                                <th class="px-4 py-3 text-right">Stok Awal Nominal</th>
-                                <th class="px-4 py-3 text-right">Pembelian In Qty</th>
-                                <th class="px-4 py-3 text-right">Pembelian In Nominal</th>
-                                <th class="px-4 py-3 text-right">Retur Jual In Qty</th>
-                                <th class="px-4 py-3 text-right">Retur Jual In Nominal</th>
-                                <th class="px-4 py-3 text-right">Mutasi In Qty</th>
-                                <th class="px-4 py-3 text-right">Mutasi In Nominal</th>
-                                <th class="px-4 py-3 text-right">Adjustment + Qty</th>
-                                <th class="px-4 py-3 text-right">Adjustment + Nominal</th>
-                                <th class="px-4 py-3 text-right">Penjualan Out Qty</th>
-                                <th class="px-4 py-3 text-right">Penjualan Out Nominal</th>
-                                <th class="px-4 py-3 text-right">Mutasi Out Qty</th>
-                                <th class="px-4 py-3 text-right">Mutasi Out Nominal</th>
-                                <th class="px-4 py-3 text-right">Adjustment - Qty</th>
-                                <th class="px-4 py-3 text-right">Adjustment - Nominal</th>
-                                <th class="px-4 py-3 text-right">Lainnya In Qty</th>
-                                <th class="px-4 py-3 text-right">Lainnya In Nominal</th>
-                                <th class="px-4 py-3 text-right">Lainnya Out Qty</th>
-                                <th class="px-4 py-3 text-right">Lainnya Out Nominal</th>
-                                <th class="px-4 py-3 text-right">Total In Qty</th>
-                                <th class="px-4 py-3 text-right">Total In Nominal</th>
-                                <th class="px-4 py-3 text-right">Total Out Qty</th>
-                                <th class="px-4 py-3 text-right">Total Out Nominal</th>
-                                <th class="px-4 py-3 text-right">Stok Akhir Qty</th>
-                                <th class="px-4 py-3 text-right">Stok Akhir Nominal</th>
-                                <th class="px-4 py-3 text-right">Avg Cost</th>
+                                <th class="bg-slate-50 px-3 py-3">No</th>
+                                <th class="bg-slate-50 px-4 py-3">Produk</th>
+                                <th class="bg-slate-50 px-4 py-3">Outlet</th>
+                                <th class="bg-blue-50 px-3 py-3 text-right">Awal</th>
+                                <th class="bg-emerald-50 px-3 py-3 text-right">Pembelian</th>
+                                <th class="bg-teal-50 px-3 py-3 text-right">Retur Jual</th>
+                                <th class="bg-cyan-50 px-3 py-3 text-right">Transfer In</th>
+                                <th class="bg-lime-50 px-3 py-3 text-right">Adjust +</th>
+                                <th class="bg-rose-50 px-3 py-3 text-right">Penjualan</th>
+                                <th class="bg-orange-50 px-3 py-3 text-right">Transfer Out</th>
+                                <th class="bg-amber-50 px-3 py-3 text-right">Adjust -</th>
+                                <th class="bg-violet-50 px-3 py-3 text-right">Lainnya In</th>
+                                <th class="bg-fuchsia-50 px-3 py-3 text-right">Lainnya Out</th>
+                                <th class="bg-green-50 px-3 py-3 text-right">Total In</th>
+                                <th class="bg-red-50 px-3 py-3 text-right">Total Out</th>
+                                <th class="bg-indigo-50 px-3 py-3 text-right">Akhir</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($rows as $row)
-                                <tr>
-                                    <td class="px-4 py-3 text-slate-500">{{ $loop->iteration }}</td>
-                                    <td class="px-4 py-3">
+                                <tr class="hover:bg-slate-50/70">
+                                    <td class="bg-white px-3 py-3 text-slate-500">{{ $loop->iteration }}</td>
+                                    <td class="bg-white px-4 py-3">
                                         <div class="font-normal text-slate-800">{{ $row->product_name }}</div>
                                         <div class="text-xs text-slate-500">
                                             {{ $row->product_sku ?: '-' }} | {{ strtoupper($row->product_unit ?? 'pcs') }}
                                         </div>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
-                                    <td class="px-4 py-3 text-right text-slate-700">{{ $qty($row->opening_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-slate-900">{{ $nominal($row->opening_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->purchase_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->purchase_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->sale_return_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->sale_return_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->transfer_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->transfer_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->adjustment_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->adjustment_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->sale_out_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->sale_out_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->transfer_out_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->transfer_out_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->adjustment_out_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->adjustment_out_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $qty($row->other_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-700">{{ $nominal($row->other_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $qty($row->other_out_qty) }}</td>
-                                    <td class="px-4 py-3 text-right text-rose-700">{{ $nominal($row->other_out_value) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-emerald-700">{{ $qty($row->total_in_qty) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-emerald-700">{{ $nominal($row->total_in_value) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-rose-700">{{ $qty($row->total_out_qty) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-rose-700">{{ $nominal($row->total_out_value) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-indigo-700">{{ $qty($row->closing_qty) }}</td>
-                                    <td class="px-4 py-3 text-right font-normal text-indigo-700">{{ $nominal($row->closing_value) }}</td>
-                                    <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->current_avg_cost, 4, ',', '.') }}</td>
+                                    <td class="bg-white px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
+                                    <td class="bg-blue-50/60 px-3 py-3 text-right text-slate-700">{{ $qty($row->opening_qty) }}</td>
+                                    <td class="bg-emerald-50/60 px-3 py-3 text-right text-emerald-700">{{ $qty($row->purchase_in_qty) }}</td>
+                                    <td class="bg-teal-50/60 px-3 py-3 text-right text-teal-700">{{ $qty($row->sale_return_in_qty) }}</td>
+                                    <td class="bg-cyan-50/60 px-3 py-3 text-right text-cyan-700">{{ $qty($row->transfer_in_qty) }}</td>
+                                    <td class="bg-lime-50/60 px-3 py-3 text-right text-lime-700">{{ $qty($row->adjustment_in_qty) }}</td>
+                                    <td class="bg-rose-50/60 px-3 py-3 text-right text-rose-700">{{ $qty($row->sale_out_qty) }}</td>
+                                    <td class="bg-orange-50/60 px-3 py-3 text-right text-orange-700">{{ $qty($row->transfer_out_qty) }}</td>
+                                    <td class="bg-amber-50/60 px-3 py-3 text-right text-amber-700">{{ $qty($row->adjustment_out_qty) }}</td>
+                                    <td class="bg-violet-50/60 px-3 py-3 text-right text-violet-700">{{ $qty($row->other_in_qty) }}</td>
+                                    <td class="bg-fuchsia-50/60 px-3 py-3 text-right text-fuchsia-700">{{ $qty($row->other_out_qty) }}</td>
+                                    <td class="bg-green-50/70 px-3 py-3 text-right font-normal text-green-700">{{ $qty($row->total_in_qty) }}</td>
+                                    <td class="bg-red-50/70 px-3 py-3 text-right font-normal text-red-700">{{ $qty($row->total_out_qty) }}</td>
+                                    <td class="bg-indigo-50/70 px-3 py-3 text-right font-normal text-indigo-700">{{ $qty($row->closing_qty) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="30" class="px-4 py-8 text-center text-slate-500">
+                                    <td colspan="16" class="px-4 py-8 text-center text-slate-500">
                                         Belum ada data pergerakan stok untuk filter yang dipilih.
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                         @if(($summary['row_count'] ?? 0) > 0)
-                            <tfoot class="bg-slate-50 text-xs font-normal uppercase tracking-wide text-slate-600">
+                            <tfoot class="text-xs font-normal uppercase tracking-wide text-slate-600">
                                 <tr>
-                                    <td colspan="3" class="px-4 py-3">Total</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['opening_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['opening_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['purchase_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['purchase_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['sale_return_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['sale_return_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['transfer_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['transfer_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['adjustment_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['adjustment_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['sale_out_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['sale_out_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['transfer_out_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['transfer_out_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['adjustment_out_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['adjustment_out_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['other_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['other_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['other_out_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['other_out_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['total_in_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['total_in_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['total_out_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['total_out_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $qty($summary['closing_qty'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">{{ $nominal($summary['closing_value'] ?? 0) }}</td>
-                                    <td class="px-4 py-3 text-right">-</td>
+                                    <td colspan="3" class="bg-slate-50 px-4 py-3">Total</td>
+                                    <td class="bg-blue-50 px-3 py-3 text-right">{{ $qty($summary['opening_qty'] ?? 0) }}</td>
+                                    <td class="bg-emerald-50 px-3 py-3 text-right">{{ $qty($summary['purchase_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-teal-50 px-3 py-3 text-right">{{ $qty($summary['sale_return_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-cyan-50 px-3 py-3 text-right">{{ $qty($summary['transfer_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-lime-50 px-3 py-3 text-right">{{ $qty($summary['adjustment_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-rose-50 px-3 py-3 text-right">{{ $qty($summary['sale_out_qty'] ?? 0) }}</td>
+                                    <td class="bg-orange-50 px-3 py-3 text-right">{{ $qty($summary['transfer_out_qty'] ?? 0) }}</td>
+                                    <td class="bg-amber-50 px-3 py-3 text-right">{{ $qty($summary['adjustment_out_qty'] ?? 0) }}</td>
+                                    <td class="bg-violet-50 px-3 py-3 text-right">{{ $qty($summary['other_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-fuchsia-50 px-3 py-3 text-right">{{ $qty($summary['other_out_qty'] ?? 0) }}</td>
+                                    <td class="bg-green-50 px-3 py-3 text-right">{{ $qty($summary['total_in_qty'] ?? 0) }}</td>
+                                    <td class="bg-red-50 px-3 py-3 text-right">{{ $qty($summary['total_out_qty'] ?? 0) }}</td>
+                                    <td class="bg-indigo-50 px-3 py-3 text-right">{{ $qty($summary['closing_qty'] ?? 0) }}</td>
                                 </tr>
                             </tfoot>
                         @endif
                     </table>
                 </div>
 
-                @if(!empty($meta['notes']))
-                    <div class="rounded-xl border border-slate-200 bg-white p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Catatan Valuasi</div>
-                        <ul class="mt-2 space-y-1 text-sm text-slate-700">
-                            @foreach($meta['notes'] as $note)
-                                <li>{{ $note }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
                 @endif
             </div>
         @elseif($viewType === 'stock-adjustment')
