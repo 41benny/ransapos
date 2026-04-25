@@ -5,6 +5,12 @@
 @section('page-subtitle', 'Laporan mutasi barang detail per item dan outlet')
 
 @section('content')
+    @php
+        $requestedReturnUrl = request('return_url');
+        $returnUrl = is_string($requestedReturnUrl) && str_starts_with($requestedReturnUrl, url('/'))
+            ? $requestedReturnUrl
+            : route('admin.stocks.index');
+    @endphp
     <div class="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
         {{-- Header Section --}}
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -13,10 +19,10 @@
                 <p class="text-xs font-normal text-slate-500 mt-0.5">Audit log mutasi barang detail per item dan outlet</p>
             </div>
             <div class="flex items-center gap-3 no-print">
-                <a href="{{ route('admin.stocks.index') }}"
+                <a href="{{ $returnUrl }}"
                     class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                     <i class="fas fa-arrow-left text-[10px]"></i>
-                    <span>Kembali ke Stok</span>
+                    <span>Kembali</span>
                 </a>
             </div>
         </div>
@@ -79,6 +85,9 @@
                 <form method="GET" action="{{ route('admin.stocks.card') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="hidden" name="outlet_id" value="{{ $outlet->id }}">
+                    @if(request('return_url'))
+                        <input type="hidden" name="return_url" value="{{ request('return_url') }}">
+                    @endif
 
                     <div class="flex flex-col gap-1.5">
                         <label class="text-[10px] font-normal text-slate-500 uppercase tracking-wider ml-1">Dari
@@ -98,7 +107,11 @@
                             <i class="fas fa-filter text-[10px]"></i>
                             <span>Saring Periode</span>
                         </button>
-                        <a href="{{ route('admin.stocks.card', ['product_id' => $product->id, 'outlet_id' => $outlet->id]) }}"
+                        <a href="{{ route('admin.stocks.card', array_filter([
+                                'product_id' => $product->id,
+                                'outlet_id' => $outlet->id,
+                                'return_url' => request('return_url'),
+                            ])) }}"
                             class="ui-btn ui-btn-ghost inline-flex items-center justify-center h-[40px] w-[40px] rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-95">
                             <i class="fas fa-redo text-[10px]"></i>
                         </a>

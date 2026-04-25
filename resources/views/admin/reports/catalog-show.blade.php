@@ -2395,7 +2395,19 @@
                                     <td class="bg-fuchsia-50/60 px-3 py-3 text-right text-fuchsia-700">{{ $qty($row->other_out_qty) }}</td>
                                     <td class="bg-green-50/70 px-3 py-3 text-right font-normal text-green-700">{{ $qty($row->total_in_qty) }}</td>
                                     <td class="bg-red-50/70 px-3 py-3 text-right font-normal text-red-700">{{ $qty($row->total_out_qty) }}</td>
-                                    <td class="bg-indigo-50/70 px-3 py-3 text-right font-normal text-indigo-700">{{ $qty($row->closing_qty) }}</td>
+                                    <td class="bg-indigo-50/70 px-3 py-3 text-right font-normal">
+                                        <a href="{{ route('admin.stocks.card', [
+                                                'product_id' => $row->product_id,
+                                                'outlet_id' => $row->outlet_id,
+                                                'start_date' => $dateFrom,
+                                                'end_date' => $dateTo,
+                                                'return_url' => url()->full(),
+                                            ]) }}"
+                                            class="inline-flex justify-end rounded-md px-2 py-1 text-indigo-700 underline-offset-2 hover:bg-indigo-100 hover:text-indigo-900 hover:underline"
+                                            title="Buka kartu stok">
+                                            {{ $qty($row->closing_qty) }}
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
