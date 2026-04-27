@@ -1777,7 +1777,9 @@ class CatalogReportController extends Controller
             $filename = sprintf('%s-%s-sd-%s.%s', $safeSlug, str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
 
             if ($format === 'pdf') {
-                return ReportExport::pdf($filename, $report['title'], $exportColumns, $exportRows);
+                $orientation = $slug === 'sales-by-payment-method' ? 'portrait' : 'landscape';
+
+                return ReportExport::pdf($filename, $report['title'], $exportColumns, $exportRows, $orientation);
             }
 
             return ReportExport::xlsx($filename, $report['title'], $exportColumns, $exportRows);

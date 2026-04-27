@@ -71,8 +71,10 @@ class ReportExport
      * @param array<int, array<string, mixed>> $columns
      * @param iterable<mixed> $rows
      */
-    public static function pdf(string $filename, string $title, array $columns, iterable $rows): void
+    public static function pdf(string $filename, string $title, array $columns, iterable $rows, string $orientation = 'landscape'): void
     {
+        $orientation = in_array($orientation, ['portrait', 'landscape'], true) ? $orientation : 'landscape';
+
         $htmlRows = '';
         foreach ($rows as $row) {
             $htmlRows .= '<tr>';
@@ -127,7 +129,7 @@ HTML;
         $options->set('isRemoteEnabled', false);
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->setPaper('A4', $orientation);
         $dompdf->render();
 
         // Save to temp file
