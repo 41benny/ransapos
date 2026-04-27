@@ -272,6 +272,7 @@
                     <table class="ui-table min-w-full divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50 text-left text-xs font-normal uppercase tracking-wide text-slate-500">
                             <tr>
+                                <th class="px-4 py-3">Outlet</th>
                                 <th class="px-4 py-3">Metode Pembayaran</th>
                                 <th class="px-4 py-3 text-right">Total Transaksi</th>
                                 <th class="px-4 py-3 text-right">Total Nilai</th>
@@ -280,6 +281,7 @@
                         <tbody class="divide-y divide-slate-100">
                             @forelse($rows as $row)
                                 <tr>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
                                     <td class="px-4 py-3 font-normal text-slate-800">{{ $row->payment_method_name }}</td>
                                     <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_transactions) }}
                                     </td>
@@ -289,7 +291,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="px-4 py-8 text-center text-slate-500">Belum ada data untuk filter yang
+                                    <td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada data untuk filter yang
                                         dipilih.</td>
                                 </tr>
                             @endforelse

@@ -490,6 +490,7 @@ class CatalogReportController extends Controller
             $query = DB::table('payments')
                 ->join('sales', 'payments.sale_id', '=', 'sales.id')
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+                ->leftJoin('outlets', 'sales.outlet_id', '=', 'outlets.id')
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
@@ -500,11 +501,13 @@ class CatalogReportController extends Controller
             $rows = $query
                 ->select(
                     'payment_methods.id',
+                    DB::raw('COALESCE(outlets.name, "Tanpa Outlet") as outlet_name'),
                     'payment_methods.name as payment_method_name',
                     DB::raw('COUNT(DISTINCT sales.id) as total_transactions'),
                     DB::raw('SUM(payments.amount) as total_amount')
                 )
-                ->groupBy('payment_methods.id', 'payment_methods.name')
+                ->groupBy('payment_methods.id', 'payment_methods.name', 'outlets.name')
+                ->orderBy('outlet_name')
                 ->orderByDesc('total_amount')
                 ->get();
 
@@ -2237,6 +2240,15 @@ class CatalogReportController extends Controller
                 'avg_transaction' => (float) ($summary['avg_transaction'] ?? 0),
                 'discount_anomaly_transactions' => (int) ($summary['discount_anomaly_transactions'] ?? 0),
             ]]];
+        }
+
+        if ($viewType === 'payment-method') {
+            return [[
+                ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
+                ['key' => 'payment_method_name', 'label' => 'Metode Pembayaran', 'type' => 'text'],
+                ['key' => 'total_transactions', 'label' => 'Total Transaksi', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_amount', 'label' => 'Total Nilai', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($viewType === 'cancelled-sales') {
