@@ -121,12 +121,12 @@ class ReportExport
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111827; }
-        h1 { font-size: 16px; margin: 0 0 6px; }
-        .meta { font-size: 10px; color: #6b7280; margin-bottom: 10px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #0f172a; }
+        h1 { font-size: 16px; margin: 0 0 6px; color: #0f172a; }
+        .meta { font-size: 10px; color: #1f2937; font-weight: 600; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #d1d5db; padding: 6px; }
-        th { background: #f3f4f6; text-align: left; }
+        th { background: #e5e7eb; color: #111827; font-weight: 700; text-align: left; }
     </style>
 </head>
 <body>
