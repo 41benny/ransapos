@@ -71,7 +71,14 @@ class ReportExport
      * @param array<int, array<string, mixed>> $columns
      * @param iterable<mixed> $rows
      */
-    public static function pdf(string $filename, string $title, array $columns, iterable $rows, string $orientation = 'landscape'): void
+    public static function pdf(
+        string $filename,
+        string $title,
+        array $columns,
+        iterable $rows,
+        string $orientation = 'landscape',
+        array $meta = []
+    ): void
     {
         $orientation = in_array($orientation, ['portrait', 'landscape'], true) ? $orientation : 'landscape';
 
@@ -99,6 +106,14 @@ class ReportExport
         $headers = implode('', array_map(fn ($column) => '<th>' . e((string) ($column['label'] ?? $column['key'])) . '</th>', $columns));
 
         $generatedAt = now()->format('Y-m-d H:i:s');
+        $metaRows = '';
+        foreach ($meta as $label => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $metaRows .= '<div>' . e((string) $label) . ': ' . e((string) $value) . '</div>';
+        }
 
         $html = <<<HTML
 <!doctype html>
@@ -116,7 +131,10 @@ class ReportExport
 </head>
 <body>
     <h1>{$title}</h1>
-    <div class="meta">Generated: {$generatedAt}</div>
+    <div class="meta">
+        {$metaRows}
+        <div>Generated: {$generatedAt}</div>
+    </div>
     <table>
         <thead><tr>{$headers}</tr></thead>
         <tbody>{$htmlRows}</tbody>
