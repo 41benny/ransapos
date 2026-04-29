@@ -30,3 +30,5 @@ read_xlsx_native.php
 /app/Console/Commands/AnalyzeExcel.php
 /read_xlsx_native.php
 /analyze_excel.php
+sql_frozen_dimsum.sql
+tambah produk.txt

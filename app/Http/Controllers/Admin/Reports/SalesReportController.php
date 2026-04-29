@@ -524,7 +524,15 @@ class SalesReportController extends Controller
         }
 
         if ($format === 'pdf') {
-            return ReportExport::pdf($filename, 'Laporan Penjualan', $columns, $rows);
+            $meta = [
+                'Periode Data' => $dateFrom . ' s/d ' . $dateTo,
+            ];
+
+            if (!empty($outletIds)) {
+                $meta['Outlet'] = Outlet::whereIn('id', $outletIds)->pluck('name')->implode(', ');
+            }
+
+            return ReportExport::pdf($filename, 'Laporan Penjualan', $columns, $rows, 'portrait', $meta);
         }
 
         return ReportExport::xlsx($filename, 'Laporan Penjualan', $columns, $rows);
@@ -654,7 +662,15 @@ class SalesReportController extends Controller
         $filename = sprintf('laporan-penjualan-produk-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
 
         if ($format === 'pdf') {
-            return ReportExport::pdf($filename, 'Laporan Penjualan per Produk', $columns, $rows);
+            $meta = [
+                'Periode Data' => $dateFrom . ' s/d ' . $dateTo,
+            ];
+
+            if (!empty($outletIds)) {
+                $meta['Outlet'] = Outlet::whereIn('id', $outletIds)->pluck('name')->implode(', ');
+            }
+
+            return ReportExport::pdf($filename, 'Laporan Penjualan per Produk', $columns, $rows, 'portrait', $meta);
         }
 
         return ReportExport::xlsx($filename, 'Penjualan per Produk', $columns, $rows);
@@ -809,33 +825,37 @@ class SalesReportController extends Controller
         $outletIds = $this->resolveOutletIds($request);
 
         $query = Sale::query()
-            ->where('status', 'completed')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+            ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
 
         if (!empty($outletIds) && count($outletIds) > 0) {
-            $query->whereIn('outlet_id', $outletIds);
+            $query->whereIn('sales.outlet_id', $outletIds);
         }
 
         if ($request->filled('sales_type')) {
-            $query->where('sales_type', $request->sales_type);
+            $query->where('sales.sales_type', $request->sales_type);
         }
 
         $dailySales = $query->select(
-                'sale_date',
-                DB::raw('SUM(total_amount - tax_amount - service_charge_amount + discount_amount - COALESCE(rounding_amount, 0)) as total_sales'),
-                DB::raw('SUM(discount_amount) as total_discount'),
-                DB::raw('SUM(service_charge_amount) as total_service_charge'),
-                DB::raw('SUM(tax_amount) as total_tax'),
-                DB::raw('SUM(rounding_amount) as total_adjustment'),
-                DB::raw('SUM(total_amount) as total_grand')
+                'sales.sale_date',
+                'outlets.name as outlet_name',
+                DB::raw('SUM(sales.total_amount - sales.tax_amount - sales.service_charge_amount + sales.discount_amount - COALESCE(sales.rounding_amount, 0)) as total_sales'),
+                DB::raw('SUM(sales.discount_amount) as total_discount'),
+                DB::raw('SUM(sales.service_charge_amount) as total_service_charge'),
+                DB::raw('SUM(sales.tax_amount) as total_tax'),
+                DB::raw('SUM(sales.rounding_amount) as total_adjustment'),
+                DB::raw('SUM(sales.total_amount) as total_grand')
             )
-            ->groupBy('sale_date')
-            ->orderBy('sale_date', 'asc')
+            ->groupBy('sales.sale_date', 'outlets.name')
+            ->orderBy('sales.sale_date', 'asc')
+            ->orderBy('outlets.name', 'asc')
             ->get();
 
         $rows = $dailySales->map(function ($item) {
             return [
                 'tanggal' => optional($item->sale_date)->format('d/m/Y'),
+                'outlet' => $item->outlet_name,
                 'total_sales' => (float) $item->total_sales,
                 'discount' => (float) $item->total_discount,
                 'service_charge' => (float) $item->total_service_charge,
@@ -847,6 +867,7 @@ class SalesReportController extends Controller
 
         $columns = [
             ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+            ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
             ['key' => 'total_sales', 'label' => 'Total Sales', 'type' => 'number', 'decimals' => 2],
             ['key' => 'discount', 'label' => 'Discount', 'type' => 'number', 'decimals' => 2],
             ['key' => 'service_charge', 'label' => 'Service Charge', 'type' => 'number', 'decimals' => 2],
@@ -859,7 +880,15 @@ class SalesReportController extends Controller
         $filename = sprintf('ringkasan-penjualan-harian-%s-sd-%s.%s', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo), $format);
 
         if ($format === 'pdf') {
-            return ReportExport::pdf($filename, 'Ringkasan Penjualan Harian', $columns, $rows);
+            $meta = [
+                'Periode Data' => $dateFrom . ' s/d ' . $dateTo,
+            ];
+
+            if (!empty($outletIds)) {
+                $meta['Outlet'] = Outlet::whereIn('id', $outletIds)->pluck('name')->implode(', ');
+            }
+
+            return ReportExport::pdf($filename, 'Ringkasan Penjualan Harian', $columns, $rows, 'portrait', $meta);
         }
 
         return ReportExport::xlsx($filename, 'Ringkasan Penjualan Harian', $columns, $rows);
