@@ -417,6 +417,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/sales/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportIndex'])
             ->name('sales.export')
             ->middleware('permission:reports.sales.export');
+        Route::get('/hpp-journal', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'hppJournalIndex'])
+            ->name('hpp-journal.index')
+            ->middleware('permission:reports.sales.export');
+        Route::get('/hpp-journal/export', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'exportHppJournal'])
+            ->name('hpp-journal.export')
+            ->middleware('permission:reports.sales.export');
 
         // Laporan Penjualan Harian
         Route::get('/sales-daily', [\App\Http\Controllers\Admin\Reports\SalesReportController::class, 'dailySummary'])->name('sales.daily')

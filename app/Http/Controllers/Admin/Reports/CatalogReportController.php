@@ -63,6 +63,7 @@ class CatalogReportController extends Controller
                     'sales-modifier',
                     'sales-vs-hpp',
                     'sales-discount',
+                    'hpp-journal-monthly',
                     'shift-sessions',
                     'sales-custom-item',
                     'promo',
@@ -137,6 +138,11 @@ class CatalogReportController extends Controller
             'sales-vs-hpp' => ['title' => 'Penjualan Vs HPP', 'implemented' => true],
             'waiter-performance' => ['title' => 'Kinerja Pelayan Berdasarkan Penjualan', 'implemented' => false],
             'sales-discount' => ['title' => 'Laporan Diskon Penjualan', 'implemented' => true],
+            'hpp-journal-monthly' => [
+                'title' => 'Export Jurnal Bulanan',
+                'implemented' => true,
+                'existing_route' => 'admin.reports.hpp-journal.index',
+            ],
             'shift-sessions' => ['title' => 'Sesi Shift POS', 'implemented' => true, 'existing_route' => 'admin.reports.shifts.index'],
             'sales-custom-item' => ['title' => 'Penjualan per Custom Item', 'implemented' => false],
             'receivables' => ['title' => 'Piutang', 'implemented' => false],
@@ -195,6 +201,7 @@ class CatalogReportController extends Controller
             'sales-vs-hpp' => 'reports.sales.view',
             'waiter-performance' => 'reports.sales.view',
             'sales-discount' => 'reports.sales.view',
+            'hpp-journal-monthly' => 'reports.sales.export',
             'shift-sessions' => 'reports.shift.view',
             'sales-custom-item' => 'reports.sales.view',
             'daily-outlet-summary' => 'reports.daily.view',
@@ -405,6 +412,14 @@ class CatalogReportController extends Controller
             return redirect()->route('admin.reports.sales.daily', array_filter([
                 'date_from' => $request->input('date_from'),
                 'date_to' => $request->input('date_to'),
+                'outlet_id' => $request->input('outlet_id'),
+                'tab' => $request->input('tab', 'penjualan'),
+            ]));
+        }
+
+        if ($slug === 'hpp-journal-monthly') {
+            return redirect()->route('admin.reports.hpp-journal.index', array_filter([
+                'month' => $request->input('month'),
                 'outlet_id' => $request->input('outlet_id'),
                 'tab' => $request->input('tab', 'penjualan'),
             ]));

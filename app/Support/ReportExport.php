@@ -38,12 +38,14 @@ class ReportExport
                 $type = $column['type'] ?? 'text';
                 $decimals = (int) ($column['decimals'] ?? 0);
 
-                if ($type === 'number' && is_numeric($value)) {
+                if ($value === null || $value === '') {
+                    $sheet->setCellValue($cell, null);
+                } elseif ($type === 'number' && is_numeric($value)) {
                     $numValue = (float) $value;
                     $sheet->setCellValue($cell, $numValue);
-                    $formatCode = $decimals > 0
+                    $formatCode = $column['format_code'] ?? ($decimals > 0
                         ? '#,##0.' . str_repeat('0', $decimals)
-                        : '#,##0';
+                        : '#,##0');
                     $sheet->getStyle($cell)->getNumberFormat()->setFormatCode($formatCode);
                 } else {
                     $sheet->setCellValueExplicit($cell, (string) ($value ?? ''), DataType::TYPE_STRING);

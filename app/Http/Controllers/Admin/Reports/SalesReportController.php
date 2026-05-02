@@ -7,11 +7,16 @@ use App\Models\Sale;
 use App\Models\Outlet;
 use App\Models\User;
 use App\Models\PaymentMethod;
+use App\Services\HppJournalExportService;
+use App\Services\InventoryMutationJournalExportService;
+use App\Services\PurchaseJournalExportService;
+use App\Services\SalesJournalExportService;
 use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
@@ -892,6 +897,76 @@ class SalesReportController extends Controller
         }
 
         return ReportExport::xlsx($filename, 'Ringkasan Penjualan Harian', $columns, $rows);
+    }
+
+    public function hppJournalIndex(Request $request)
+    {
+        $outlets = $this->resolveAccessibleOutlets();
+        $outletsByMapping = app(SalesJournalExportService::class)->partitionOutletsByMapping($outlets);
+        $selectedOutletIds = collect((array) $request->input('outlet_ids', []))
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        if (empty($selectedOutletIds) && $request->filled('outlet_id') && is_numeric($request->input('outlet_id'))) {
+            $selectedOutletIds = [(int) $request->input('outlet_id')];
+        }
+
+        $month = $request->input('month');
+        if (!is_string($month) || !preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $month = now()->format('Y-m');
+        }
+
+        return view('admin.reports.hpp-journal', [
+            'month' => $month,
+            'outlets' => $outletsByMapping['mapped'],
+            'unmappedOutlets' => $outletsByMapping['unmapped'],
+            'selectedOutletIds' => $selectedOutletIds,
+        ]);
+    }
+
+    public function exportHppJournal(Request $request)
+    {
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+            'outlet_id' => ['nullable', 'integer'],
+            'outlet_ids' => ['nullable', 'array'],
+            'outlet_ids.*' => ['integer'],
+        ]);
+
+        $month = (string) $validated['month'];
+        $outletIds = $this->resolveOutletIds($request);
+
+        try {
+            $salesRows = app(SalesJournalExportService::class)->buildMonthlyRows($month, $outletIds);
+            $hppRows = app(HppJournalExportService::class)->buildMonthlyRows($month, $outletIds);
+            $inventoryMutationRows = app(InventoryMutationJournalExportService::class)->buildMonthlyRows($month, $outletIds);
+            $purchaseRows = app(PurchaseJournalExportService::class)->buildMonthlyRows($month, $outletIds);
+            $rows = array_merge($salesRows, $hppRows, $inventoryMutationRows, $purchaseRows);
+        } catch (\InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'sales_journal' => [$exception->getMessage()],
+            ]);
+        }
+
+        $columns = [
+            ['key' => 'STATUS', 'label' => 'STATUS', 'type' => 'text'],
+            ['key' => 'NO_AKUN', 'label' => 'NO_AKUN', 'type' => 'number', 'format_code' => '0'],
+            ['key' => '_VOUCHER', 'label' => '_VOUCHER', 'type' => 'text'],
+            ['key' => 'J_TANGGAL', 'label' => 'J_TANGGAL', 'type' => 'text'],
+            ['key' => 'J_JUMLAH', 'label' => 'J_JUMLAH', 'type' => 'number', 'decimals' => 2, 'format_code' => '[$-421]#,##0.00'],
+            ['key' => 'D', 'label' => 'D', 'type' => 'number', 'decimals' => 2, 'format_code' => '[$-421]#,##0.00'],
+            ['key' => 'K', 'label' => 'K', 'type' => 'number', 'decimals' => 2, 'format_code' => '[$-421]#,##0.00'],
+            ['key' => 'J_MUTASI', 'label' => 'J_MUTASI', 'type' => 'text'],
+            ['key' => 'J_NAMA', 'label' => 'J_NAMA', 'type' => 'text'],
+            ['key' => 'J_KET1', 'label' => 'J_KET1', 'type' => 'text'],
+            ['key' => 'KET 2', 'label' => 'KET 2', 'type' => 'text'],
+        ];
+
+        $filename = sprintf('jurnal-bulanan-%s.xlsx', str_replace('-', '', $month));
+
+        return ReportExport::xlsx($filename, 'Jurnal Bulanan', $columns, $rows);
     }
 
     private function resolveOutletIds(Request $request): array
