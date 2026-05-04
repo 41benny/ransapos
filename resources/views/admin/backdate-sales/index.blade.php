@@ -25,8 +25,8 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div class="xl:col-span-2 ui-card bg-white rounded-xl border border-slate-200 shadow-sm">
+    <div class="grid grid-cols-1 2xl:grid-cols-3 gap-6">
+        <div class="2xl:col-span-2 ui-card bg-white rounded-xl border border-slate-200 shadow-sm">
             <div class="px-6 py-5 border-b border-slate-100">
                 <h2 class="text-base font-semibold text-slate-900">Form Manual</h2>
                 <p class="text-sm text-slate-500 mt-1">Batas tanggal mundur maksimal {{ $maxBackdateDays }} hari.</p>
@@ -144,8 +144,9 @@
 </div>
 
 <template id="item-row-template">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 item-row">
-        <div class="md:col-span-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 item-row">
+        <div class="lg:col-span-5">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Produk</label>
             <select name="items[__INDEX__][product_id]" class="ui-input product-select w-full rounded-lg border border-slate-300 px-3 py-2" required>
                 <option value="">Pilih Produk</option>
                 @foreach($products as $product)
@@ -153,20 +154,24 @@
                 @endforeach
             </select>
         </div>
-        <div class="md:col-span-2">
+        <div class="lg:col-span-1">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Qty</label>
             <input type="number" name="items[__INDEX__][quantity]" min="0.01" step="0.01" value="1" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Qty" required>
         </div>
-        <div class="md:col-span-2">
+        <div class="lg:col-span-2">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Harga</label>
             <input type="number" name="items[__INDEX__][unit_price]" min="0" step="0.01" class="ui-input price-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Harga" required>
         </div>
-        <div class="md:col-span-2">
+        <div class="lg:col-span-2">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Diskon</label>
             <input type="number" name="items[__INDEX__][discount_amount]" min="0" step="0.01" value="0" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Diskon">
         </div>
-        <div class="md:col-span-1">
+        <div class="lg:col-span-1">
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Catatan</label>
             <input name="items[__INDEX__][notes]" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Catatan">
         </div>
-        <div class="md:col-span-1 flex justify-end">
-            <button type="button" class="remove-row rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">Hapus</button>
+        <div class="lg:col-span-1 flex items-end justify-end">
+            <button type="button" class="remove-row w-full rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">Hapus</button>
         </div>
     </div>
 </template>
