@@ -152,6 +152,7 @@ class PermissionController extends Controller
             'expense-categories' => 'Kategori Biaya',
             'expenses' => 'Expense',
             'promo-vouchers' => 'Promo & Voucher',
+            'sales' => 'Penjualan',
             'reports' => 'Reports',
             'cash-sessions' => 'Cash Session',
             'pos-dashboard' => 'Akses POS Kasir',

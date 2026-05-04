@@ -10,6 +10,8 @@ class CashSession extends Model
 {
     protected $fillable = [
         'session_number',
+        'session_type',
+        'business_date',
         'outlet_id',
         'user_id',
         'opened_pos_device_id',
@@ -37,6 +39,7 @@ class CashSession extends Model
         'total_sales' => 'decimal:2',
         'total_cash' => 'decimal:2',
         'total_non_cash' => 'decimal:2',
+        'business_date' => 'date',
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
     ];

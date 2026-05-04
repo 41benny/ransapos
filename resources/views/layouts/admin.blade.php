@@ -779,6 +779,13 @@
                                 'match' => 'admin.reports.*',
                                 'permission' => 'reports.view',
                             ],
+                            [
+                                'label' => 'Backdate Sales',
+                                'icon' => 'fas fa-file-circle-plus',
+                                'route' => 'admin.backdate-sales.index',
+                                'match' => 'admin.backdate-sales.*',
+                                'permission' => 'sales.backdate.create',
+                            ],
                         ];
 
                         $mainNav = collect($mainNav)

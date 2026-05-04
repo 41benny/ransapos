@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PosDeviceController as AdminPosDeviceController;
 use App\Http\Controllers\Admin\PromoVoucherController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\BackdateSaleController;
 use App\Http\Controllers\POS\DashboardController as POSDashboardController;
 use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
@@ -38,6 +39,23 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::get('/dashboard/summary', [AdminDashboardController::class, 'summary'])
         ->name('dashboard.summary')
         ->middleware('permission:dashboard.view');
+
+    // Admin backdate sales input (does not touch POS cashier flow)
+    Route::get('backdate-sales', [BackdateSaleController::class, 'index'])
+        ->name('backdate-sales.index')
+        ->middleware('permission:sales.backdate.create');
+    Route::post('backdate-sales', [BackdateSaleController::class, 'store'])
+        ->name('backdate-sales.store')
+        ->middleware('permission:sales.backdate.create');
+    Route::post('backdate-sales/import/preview', [BackdateSaleController::class, 'previewImport'])
+        ->name('backdate-sales.import.preview')
+        ->middleware('permission:sales.backdate.create');
+    Route::post('backdate-sales/import/process', [BackdateSaleController::class, 'processImport'])
+        ->name('backdate-sales.import.process')
+        ->middleware('permission:sales.backdate.create');
+    Route::get('backdate-sales/template', [BackdateSaleController::class, 'template'])
+        ->name('backdate-sales.template')
+        ->middleware('permission:sales.backdate.create');
 
     // Master Data
     Route::post('products/import', [ProductController::class, 'import'])

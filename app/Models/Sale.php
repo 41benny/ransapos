@@ -32,6 +32,11 @@ class Sale extends Model
         'notes',
         'status',
         'kitchen_status',
+        'is_backdated',
+        'backdated_by',
+        'backdated_at',
+        'backdate_reason',
+        'manual_reference',
     ];
 
     protected $casts = [
@@ -46,6 +51,8 @@ class Sale extends Model
         'rounding_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'is_backdated' => 'boolean',
+        'backdated_at' => 'datetime',
     ];
 
     /**
@@ -70,6 +77,11 @@ class Sale extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function backdatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'backdated_by');
     }
 
     /**

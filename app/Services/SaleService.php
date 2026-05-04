@@ -12,6 +12,7 @@ use App\Models\PaymentMethod;
 use App\Models\Promotion;
 use App\Models\Voucher;
 use App\Support\SpecialPromotion;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -61,8 +62,10 @@ class SaleService
                 }
             }
 
+            $saleDate = Carbon::parse($data['sale_date'] ?? now())->toDateString();
+
             // 1. Generate invoice number
-            $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id']);
+            $invoiceNumber = $this->generateInvoiceNumber($data['outlet_id'], $saleDate);
 
             // 2. Resolve promo kategori (opsional)
             $promotion = null;
@@ -212,7 +215,7 @@ class SaleService
                 'promotion_id' => $promotion?->id,
                 'voucher_id' => $voucher?->id,
                 'voucher_code' => $voucher?->code,
-                'sale_date' => now()->toDateString(),
+                'sale_date' => $saleDate,
                 'sales_type' => $resolvedSalesType,
                 'subtotal' => $subtotal,
                 'discount_type' => $discountType,
@@ -225,6 +228,11 @@ class SaleService
                 'customer_name' => $resolvedCustomerName !== '' ? $resolvedCustomerName : null,
                 'notes' => $data['notes'] ?? null,
                 'status' => 'completed',
+                'is_backdated' => (bool) ($data['is_backdated'] ?? false),
+                'backdated_by' => $data['backdated_by'] ?? null,
+                'backdated_at' => $data['backdated_at'] ?? null,
+                'backdate_reason' => $data['backdate_reason'] ?? null,
+                'manual_reference' => $data['manual_reference'] ?? null,
             ]);
 
             // 8. Buat sale items & logika BOM / pengurangan stok
@@ -372,14 +380,15 @@ class SaleService
      * @param int $outletId
      * @return string
      */
-    protected function generateInvoiceNumber(int $outletId): string
+    protected function generateInvoiceNumber(int $outletId, ?string $saleDate = null): string
     {
-        $datePart = now()->format('ymd'); // contoh: 260214
+        $date = Carbon::parse($saleDate ?? now())->toDateString();
+        $datePart = Carbon::parse($date)->format('ymd'); // contoh: 260214
         $outlet = str_pad($outletId, 3, '0', STR_PAD_LEFT);
 
-        // Cari invoice terakhir hari ini untuk outlet ini dengan locking supaya sequence aman
+        // Cari invoice terakhir pada tanggal transaksi untuk outlet ini.
         $lastSale = Sale::where('outlet_id', $outletId)
-            ->whereDate('sale_date', now())
+            ->whereDate('sale_date', $date)
             ->lockForUpdate()
             ->orderBy('id', 'desc')
             ->first();
