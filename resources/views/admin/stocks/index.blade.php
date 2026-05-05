@@ -13,6 +13,16 @@
             <p class="text-xs font-normal text-slate-500 mt-0.5">Monitoring stok produk per outlet dan mutasi barang</p>
         </div>
         <div class="flex items-center gap-3 no-print">
+            <a href="{{ route('admin.stocks.export', array_merge(request()->query(), ['mode' => 'opname'])) }}"
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs font-normal text-emerald-700 border border-emerald-200 shadow-sm transition-all hover:bg-emerald-100 active:scale-95">
+                <i class="fas fa-file-excel text-xs text-emerald-600"></i>
+                <span>Excel Opname</span>
+            </a>
+            <a href="{{ route('admin.stocks.export', array_merge(request()->query(), ['mode' => 'analysis'])) }}"
+                class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
+                <i class="fas fa-chart-line text-xs text-indigo-500"></i>
+                <span>Excel Analisa</span>
+            </a>
             <a href="{{ route('admin.stocks.adjustment') }}"
                 class="ui-btn ui-btn-ghost inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-normal text-slate-700 border border-slate-200 shadow-sm transition-all hover:bg-slate-50 active:scale-95">
                 <i class="fas fa-adjust text-xs text-indigo-500"></i>

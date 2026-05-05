@@ -8,6 +8,7 @@ use App\Models\StockMutation;
 use App\Models\Product;
 use App\Models\Outlet;
 use App\Services\StockService;
+use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -26,40 +27,7 @@ class StockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Stock::with(['product.category', 'outlet'])
-            ->whereHas('product', function ($q) {
-                $q->stockTracked();
-            });
-
-        // Filter by outlet
-        if ($request->filled('outlet_id')) {
-            $query->where('outlet_id', $request->outlet_id);
-        }
-
-        // Filter by category
-        if ($request->filled('category_id')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('category_id', $request->category_id);
-            });
-        }
-
-        // Filter by product name
-        if ($request->filled('search')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('sku', 'like', '%' . $request->search . '%');
-            });
-        }
-
-        // Filter low stock (kurang dari min_stock)
-        if ($request->filled('low_stock') && $request->low_stock == '1') {
-            $query->whereHas('product', function ($q) {
-                $q->whereColumn('stocks.quantity', '<', 'products.min_stock');
-            });
-        }
-
-        // Order by
-        $query->orderBy('updated_at', 'desc');
+        $query = $this->buildStockIndexQuery($request);
 
         $stocks = $query->paginate(20)->withQueryString();
 
@@ -539,8 +507,133 @@ class StockController extends Controller
      */
     public function export(Request $request)
     {
-        // Will implement later with Laravel Excel or manual CSV
-        return back()->with('info', 'Export feature coming soon!');
+        $mode = $request->input('mode') === 'analysis' ? 'analysis' : 'opname';
+        $stocks = $this->buildStockIndexQuery($request)->get();
+
+        $columns = $mode === 'analysis'
+            ? $this->stockAnalysisExportColumns()
+            : $this->stockOpnameExportColumns();
+
+        $rows = $stocks->map(function (Stock $stock) use ($mode): array {
+            $product = $stock->product;
+            $quantity = (float) $stock->quantity;
+            $minStock = (float) ($product?->min_stock ?? 0);
+            $unitCost = (float) ($product?->purchase_price ?? 0);
+            $status = $this->stockStatus($quantity, $minStock);
+
+            $baseRow = [
+                'outlet' => $stock->outlet?->name ?? '-',
+                'sku' => $product?->sku ?? '',
+                'product_name' => $product?->name ?? '-',
+                'category' => $product?->category?->name ?? '-',
+                'unit' => $product?->unit ?? 'pcs',
+                'system_stock' => $quantity,
+                'physical_stock' => null,
+                'difference' => null,
+                'notes' => null,
+            ];
+
+            if ($mode === 'opname') {
+                return $baseRow;
+            }
+
+            return array_merge($baseRow, [
+                'min_stock' => $minStock,
+                'status' => $status,
+                'unit_cost' => $unitCost,
+                'inventory_value' => $quantity * $unitCost,
+                'last_mutation_at' => optional($stock->last_mutation_at)->format('Y-m-d H:i:s'),
+            ]);
+        });
+
+        $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.xlsx';
+        $sheetTitle = $mode === 'analysis' ? 'Analisa Stok' : 'Opname Stok';
+
+        ReportExport::xlsx($filename, $sheetTitle, $columns, $rows);
+    }
+
+    private function buildStockIndexQuery(Request $request)
+    {
+        $query = Stock::with(['product.category', 'outlet'])
+            ->whereHas('product', function ($q) {
+                $q->stockTracked();
+            });
+
+        if ($request->filled('outlet_id')) {
+            $query->where('outlet_id', $request->outlet_id);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('sku', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('low_stock') && $request->low_stock == '1') {
+            $query->whereHas('product', function ($q) {
+                $q->whereColumn('stocks.quantity', '<', 'products.min_stock');
+            });
+        }
+
+        return $query->orderBy('updated_at', 'desc');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function stockOpnameExportColumns(): array
+    {
+        return [
+            ['key' => 'outlet', 'label' => 'Outlet'],
+            ['key' => 'sku', 'label' => 'SKU'],
+            ['key' => 'product_name', 'label' => 'Produk'],
+            ['key' => 'category', 'label' => 'Kategori'],
+            ['key' => 'unit', 'label' => 'Satuan'],
+            ['key' => 'system_stock', 'label' => 'Stok Sistem', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'physical_stock', 'label' => 'Stok Fisik', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'difference', 'label' => 'Selisih', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'notes', 'label' => 'Catatan'],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function stockAnalysisExportColumns(): array
+    {
+        return [
+            ['key' => 'outlet', 'label' => 'Outlet'],
+            ['key' => 'sku', 'label' => 'SKU'],
+            ['key' => 'product_name', 'label' => 'Produk'],
+            ['key' => 'category', 'label' => 'Kategori'],
+            ['key' => 'unit', 'label' => 'Satuan'],
+            ['key' => 'system_stock', 'label' => 'Stok Saat Ini', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'min_stock', 'label' => 'Stok Minimum', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'status', 'label' => 'Status'],
+            ['key' => 'unit_cost', 'label' => 'HPP Satuan', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'inventory_value', 'label' => 'Nilai Stok', 'type' => 'number', 'decimals' => 2],
+            ['key' => 'last_mutation_at', 'label' => 'Mutasi Terakhir'],
+        ];
+    }
+
+    private function stockStatus(float $quantity, float $minStock): string
+    {
+        if ($quantity <= 0) {
+            return 'HABIS';
+        }
+
+        if ($quantity < $minStock) {
+            return 'LIMIT';
+        }
+
+        return 'NORMAL';
     }
 
     /**
