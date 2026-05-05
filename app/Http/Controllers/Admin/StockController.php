@@ -665,7 +665,7 @@ class StockController extends Controller
             'Kategori' => $category ?: '-',
             'Pencarian' => $request->input('search', '-'),
             'Kondisi' => $request->input('low_stock') === '1' ? 'Stok Limit / Habis' : 'Semua Stok',
-            'Kertas' => 'A4 Landscape',
+            'Kertas' => 'A4 Portrait',
         ];
     }
 

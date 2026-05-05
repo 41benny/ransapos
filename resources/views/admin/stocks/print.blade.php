@@ -6,8 +6,8 @@
     <title>{{ $title }}</title>
     <style>
         @page {
-            size: A4 landscape;
-            margin: 10mm;
+            size: A4 portrait;
+            margin: 8mm;
         }
 
         * {
@@ -18,14 +18,14 @@
             margin: 0;
             color: #111827;
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             background: #f8fafc;
         }
 
         .page {
             width: 100%;
             min-height: 100vh;
-            padding: 16px;
+            padding: 12px;
             background: #fff;
         }
 
@@ -48,17 +48,17 @@
 
         h1 {
             margin: 0 0 6px;
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1.2;
         }
 
         .meta {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 3px 14px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3px 10px;
             margin-bottom: 10px;
             color: #334155;
-            font-size: 9px;
+            font-size: 8px;
         }
 
         .meta strong {
@@ -74,7 +74,7 @@
         th,
         td {
             border: 1px solid #cbd5e1;
-            padding: 4px 5px;
+            padding: 3px 4px;
             vertical-align: top;
             word-break: break-word;
         }
@@ -82,13 +82,13 @@
         th {
             background: #e5e7eb;
             color: #111827;
-            font-size: 9px;
+            font-size: 8px;
             text-align: left;
             text-transform: uppercase;
         }
 
         td {
-            font-size: 9px;
+            font-size: 8px;
         }
 
         .number {
