@@ -550,19 +550,13 @@ class StockController extends Controller
         $sheetTitle = $mode === 'analysis' ? 'Analisa Stok' : 'Opname Stok';
 
         if ($format === 'pdf') {
-            $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.pdf';
-
-            ReportExport::pdf(
-                $filename,
-                $sheetTitle,
-                $columns,
-                $rows,
-                'landscape',
-                $this->stockExportMeta($request, $mode),
-                'inline'
-            );
-
-            return;
+            return view('admin.stocks.print', [
+                'title' => $sheetTitle,
+                'columns' => $columns,
+                'rows' => $rows,
+                'meta' => $this->stockExportMeta($request, $mode),
+                'generatedAt' => now()->format('Y-m-d H:i:s'),
+            ]);
         }
 
         $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.xlsx';
