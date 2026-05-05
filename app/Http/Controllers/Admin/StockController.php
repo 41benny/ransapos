@@ -503,11 +503,12 @@ class StockController extends Controller
     }
 
     /**
-     * Export stock report to Excel/CSV
+     * Export stock report to Excel/PDF.
      */
     public function export(Request $request)
     {
         $mode = $request->input('mode') === 'analysis' ? 'analysis' : 'opname';
+        $format = $request->input('format') === 'pdf' ? 'pdf' : 'xlsx';
         $stocks = $this->buildStockIndexQuery($request)->get();
 
         $columns = $mode === 'analysis'
@@ -546,9 +547,25 @@ class StockController extends Controller
             ]);
         });
 
-        $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.xlsx';
         $sheetTitle = $mode === 'analysis' ? 'Analisa Stok' : 'Opname Stok';
 
+        if ($format === 'pdf') {
+            $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.pdf';
+
+            ReportExport::pdf(
+                $filename,
+                $sheetTitle,
+                $columns,
+                $rows,
+                'landscape',
+                $this->stockExportMeta($request, $mode),
+                'inline'
+            );
+
+            return;
+        }
+
+        $filename = 'stok_' . $mode . '_' . now()->format('Ymd_His') . '.xlsx';
         ReportExport::xlsx($filename, $sheetTitle, $columns, $rows);
     }
 
@@ -634,6 +651,28 @@ class StockController extends Controller
         }
 
         return 'NORMAL';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function stockExportMeta(Request $request, string $mode): array
+    {
+        $outlet = $request->filled('outlet_id')
+            ? Outlet::whereKey($request->outlet_id)->value('name')
+            : 'Semua Outlet';
+        $category = $request->filled('category_id')
+            ? \App\Models\ProductCategory::whereKey($request->category_id)->value('name')
+            : 'Semua Kategori';
+
+        return [
+            'Mode' => $mode === 'analysis' ? 'Analisa Stok' : 'Opname Stok',
+            'Outlet' => $outlet ?: '-',
+            'Kategori' => $category ?: '-',
+            'Pencarian' => $request->input('search', '-'),
+            'Kondisi' => $request->input('low_stock') === '1' ? 'Stok Limit / Habis' : 'Semua Stok',
+            'Kertas' => 'A4 Landscape',
+        ];
     }
 
     /**

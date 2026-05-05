@@ -79,7 +79,8 @@ class ReportExport
         array $columns,
         iterable $rows,
         string $orientation = 'landscape',
-        array $meta = []
+        array $meta = [],
+        string $disposition = 'attachment'
     ): void
     {
         $orientation = in_array($orientation, ['portrait', 'landscape'], true) ? $orientation : 'landscape';
@@ -157,13 +158,13 @@ HTML;
         file_put_contents($tempFile, $dompdf->output());
 
         // Send file using raw PHP headers to guarantee correct filename
-        self::sendFile($tempFile, $filename, 'application/pdf');
+        self::sendFile($tempFile, $filename, 'application/pdf', $disposition);
     }
 
     /**
      * Send a file download using raw PHP headers (bypasses Laravel response layer).
      */
-    private static function sendFile(string $filePath, string $downloadName, string $contentType): void
+    private static function sendFile(string $filePath, string $downloadName, string $contentType, string $disposition = 'attachment'): void
     {
         // Clean ALL output buffers
         while (ob_get_level()) {
@@ -174,7 +175,8 @@ HTML;
 
         header('Content-Description: File Transfer');
         header('Content-Type: ' . $contentType);
-        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        $disposition = $disposition === 'inline' ? 'inline' : 'attachment';
+        header('Content-Disposition: ' . $disposition . '; filename="' . $downloadName . '"');
         header('Content-Transfer-Encoding: binary');
         header('Expires: 0');
         header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
