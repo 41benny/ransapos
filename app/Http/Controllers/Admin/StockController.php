@@ -151,6 +151,13 @@ class StockController extends Controller
                 });
             }
 
+            // Join sales table to get invoice_number for sale reference types
+            $query->leftJoin('sales', function ($join) {
+                $join->on('stock_mutations.reference_id', '=', 'sales.id')
+                     ->whereIn('stock_mutations.reference_type', ['sale', 'sale_cancellation']);
+            })
+            ->select('stock_mutations.*', 'sales.invoice_number');
+
             $this->applyAllMutationTableFilters($query, $request);
         }
 
@@ -214,6 +221,10 @@ class StockController extends Controller
 
     private function applyAllMutationTableFilters($query, Request $request): void
     {
+        if ($request->filled('filter_invoice')) {
+            $query->where('sales.invoice_number', 'like', $this->likeValue($request->input('filter_invoice')));
+        }
+
         if ($request->filled('filter_tanggal')) {
             $like = $this->likeValue($request->input('filter_tanggal'));
             $query->where(function ($subQuery) use ($like) {
@@ -261,6 +272,7 @@ class StockController extends Controller
             $query->where(function ($subQuery) use ($request, $like) {
                 $subQuery->where('stock_mutations.reference_type', 'like', $like)
                     ->orWhereRaw("CAST(stock_mutations.reference_id AS CHAR) LIKE ?", [$like])
+                    ->orWhere('sales.invoice_number', 'like', $like)
                     ->orWhere('stock_mutations.notes', 'like', $like)
                     ->orWhereHas('creator', function ($creatorQuery) use ($request) {
                         $creatorQuery->where('name', 'like', $this->likeValue($request->input('filter_referensi')));

@@ -211,6 +211,7 @@
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Stok Akhir</th>
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">HPP/Unit</th>
                             <th class="px-5 py-3 text-right text-[9px] font-normal uppercase tracking-widest text-slate-500">Nominal HPP</th>
+                            <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">No Invoice</th>
                             <th class="px-5 py-3 text-left text-[9px] font-normal uppercase tracking-widest text-slate-500">Referensi & Catatan</th>
                             @endif
                         </tr>
@@ -245,6 +246,7 @@
                                 <td class="px-1 py-1"><input type="text" data-name="filter_stok_akhir" name="filter_stok_akhir" value="{{ request('filter_stok_akhir') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_hpp_unit" name="filter_hpp_unit" value="{{ request('filter_hpp_unit') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_hpp_nominal" name="filter_hpp_nominal" value="{{ request('filter_hpp_nominal') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500 text-right"></td>
+                                <td class="px-1 py-1"><input type="text" data-name="filter_invoice" name="filter_invoice" value="{{ request('filter_invoice') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                                 <td class="px-1 py-1"><input type="text" data-name="filter_referensi" name="filter_referensi" value="{{ request('filter_referensi') }}" placeholder="Cari..." class="ui-input filter-input w-full px-1 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded focus:ring-1 focus:ring-indigo-500"></td>
                             </tr>
                         @endif
@@ -398,6 +400,23 @@
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <div class="flex flex-col gap-0.5">
+                                        {{-- No Invoice (untuk referensi sale/sale_cancellation) --}}
+                                        @if(!empty($mutation->invoice_number))
+                                            <a href="{{ route('admin.reports.sales.index', ['search' => $mutation->invoice_number]) }}"
+                                               class="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 hover:underline leading-tight"
+                                               title="Lihat di Laporan Penjualan">
+                                                {{ $mutation->invoice_number }}
+                                            </a>
+                                            @if($mutation->reference_type === 'sale_cancellation')
+                                                <span class="text-[8.5px] font-normal text-rose-500 uppercase tracking-widest">BATAL/REFUND</span>
+                                            @endif
+                                        @else
+                                            <span class="text-[10px] font-normal text-slate-300">—</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5">
+                                    <div class="flex flex-col gap-0.5">
                                         <div class="flex items-center gap-1.5">
                                             <span
                                                 class="text-[10px] font-normal text-slate-700 uppercase tracking-wider">{{ str_replace('_', ' ', $mutation->reference_type ?? 'Manual') }}</span>
@@ -433,7 +452,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $tab === 'usage' ? 8 : 9 }}" class="px-6 py-16 text-center">
+                                <td colspan="{{ $tab === 'usage' ? 8 : 10 }}" class="px-6 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-40">
                                         <i class="fas fa-history text-4xl mb-4 text-slate-300"></i>
                                         <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Tidak
