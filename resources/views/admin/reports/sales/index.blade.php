@@ -39,15 +39,14 @@
                         <!-- Date Range Group -->
                         <div class="space-y-2">
                             <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Periode Tanggal</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="relative">
-                                    <input type="date" name="date_from" value="{{ $dateFrom }}" required
-                                        class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                </div>
-                                <div class="relative">
-                                    <input type="date" name="date_to" value="{{ $dateTo }}" required
-                                        class="ui-input w-full px-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
-                                </div>
+                            <div class="relative">
+                                <i class="far fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+                                <input type="text" id="salesDateRangePicker"
+                                    placeholder="Pilih rentang tanggal..."
+                                    class="ui-input w-full pl-9 pr-3 py-2.5 text-[13px] font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer"
+                                    readonly>
+                                <input type="hidden" name="date_from" id="salesDateFrom" value="{{ $dateFrom }}">
+                                <input type="hidden" name="date_to" id="salesDateTo" value="{{ $dateTo }}">
                             </div>
                         </div>
 
@@ -543,6 +542,7 @@
     </div>
 
     @push('styles')
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
         <style>
         @media print {
             .no-print { display: none !important; }
@@ -551,9 +551,34 @@
             aside, header { display: none !important; }
             main { padding: 0 !important; }
         }
+        /* Flatpickr custom style */
+        .flatpickr-calendar {
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+            font-family: inherit;
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+        .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+        .flatpickr-day.inRange {
+            background: #eef2ff;
+            border-color: #eef2ff;
+            box-shadow: -5px 0 0 #eef2ff, 5px 0 0 #eef2ff;
+        }
+        .flatpickr-day.today {
+            border-color: #4f46e5;
+        }
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: #4f46e5;
+        }
         </style>
     @endpush
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
         <style>
             .resize-handle {
                 position: absolute;
@@ -796,6 +821,68 @@
                 if (closeBtn) closeBtn.addEventListener('click', closeModal);
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+                });
+            })();
+
+            // ── Flatpickr Date Range Picker ──
+            (function() {
+                const pickerEl = document.getElementById('salesDateRangePicker');
+                const fromInput = document.getElementById('salesDateFrom');
+                const toInput   = document.getElementById('salesDateTo');
+                if (!pickerEl) return;
+
+                // Format tanggal untuk display (dd/mm/yyyy)
+                function fmtDisplay(dateStr) {
+                    if (!dateStr) return '';
+                    const [y, m, d] = dateStr.split('-');
+                    return d + '/' + m + '/' + y;
+                }
+
+                // Set initial display value
+                const fromVal = fromInput.value;
+                const toVal   = toInput.value;
+                if (fromVal && toVal) {
+                    pickerEl.value = fmtDisplay(fromVal) + ' — ' + fmtDisplay(toVal);
+                } else if (fromVal) {
+                    pickerEl.value = fmtDisplay(fromVal);
+                }
+
+                flatpickr(pickerEl, {
+                    mode: 'range',
+                    dateFormat: 'Y-m-d',
+                    locale: {
+                        rangeSeparator: ' — ',
+                        firstDayOfWeek: 1,
+                        weekdays: {
+                            shorthand: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
+                            longhand: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
+                        },
+                        months: {
+                            shorthand: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'],
+                            longhand: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+                        }
+                    },
+                    defaultDate: (fromVal && toVal) ? [fromVal, toVal] : (fromVal ? [fromVal] : null),
+                    showMonths: 2,
+                    onReady: function(selectedDates, dateStr, instance) {
+                        // Override displayed text with dd/mm/yyyy format
+                        if (selectedDates.length === 2) {
+                            instance.element.value = fmtDisplay(instance.formatDate(selectedDates[0], 'Y-m-d')) + ' — ' + fmtDisplay(instance.formatDate(selectedDates[1], 'Y-m-d'));
+                        }
+                    },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length === 2) {
+                            const d0 = instance.formatDate(selectedDates[0], 'Y-m-d');
+                            const d1 = instance.formatDate(selectedDates[1], 'Y-m-d');
+                            fromInput.value = d0;
+                            toInput.value   = d1;
+                            instance.element.value = fmtDisplay(d0) + ' — ' + fmtDisplay(d1);
+                        } else if (selectedDates.length === 1) {
+                            const d0 = instance.formatDate(selectedDates[0], 'Y-m-d');
+                            fromInput.value = d0;
+                            toInput.value   = '';
+                        }
+                    }
                 });
             })();
         </script>

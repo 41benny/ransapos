@@ -42,22 +42,16 @@
             @endphp
             <form method="GET" class="mt-8 grid grid-cols-1 items-end gap-4 md:grid-cols-12">
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
-                <div class="md:col-span-2">
-                    <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Tanggal
-                        Dari</label>
+                <div class="md:col-span-4">
+                    <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Periode Tanggal</label>
                     <div class="relative">
-                        <i class="far fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="date" name="date_from" value="{{ $dateFrom }}"
-                            class="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
-                    </div>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Tanggal
-                        Sampai</label>
-                    <div class="relative">
-                        <i class="far fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="date" name="date_to" value="{{ $dateTo }}"
-                            class="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                        <i class="far fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+                        <input type="text" id="catalogDateRangePicker"
+                            placeholder="Pilih rentang tanggal..."
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none cursor-pointer"
+                            readonly>
+                        <input type="hidden" name="date_from" id="catalogDateFrom" value="{{ $dateFrom }}">
+                        <input type="hidden" name="date_to" id="catalogDateTo" value="{{ $dateTo }}">
                     </div>
                 </div>
                 <div class="{{ $outletColClass }}">
@@ -3681,4 +3675,90 @@
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+
+        // ── Flatpickr Date Range Picker ──
+        document.addEventListener('DOMContentLoaded', function() {
+            const pickerEl = document.getElementById('catalogDateRangePicker');
+            const fromInput = document.getElementById('catalogDateFrom');
+            const toInput   = document.getElementById('catalogDateTo');
+            if (!pickerEl || typeof flatpickr === 'undefined') return;
+
+            function fmtDisplay(dateStr) {
+                if (!dateStr) return '';
+                const [y, m, d] = dateStr.split('-');
+                return d + '/' + m + '/' + y;
+            }
+
+            const fromVal = fromInput.value;
+            const toVal   = toInput.value;
+            if (fromVal && toVal) {
+                pickerEl.value = fmtDisplay(fromVal) + ' — ' + fmtDisplay(toVal);
+            } else if (fromVal) {
+                pickerEl.value = fmtDisplay(fromVal);
+            }
+
+            flatpickr(pickerEl, {
+                mode: 'range',
+                dateFormat: 'Y-m-d',
+                locale: {
+                    rangeSeparator: ' — ',
+                    firstDayOfWeek: 1,
+                    weekdays: {
+                        shorthand: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'],
+                        longhand: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
+                    },
+                    months: {
+                        shorthand: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'],
+                        longhand: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+                    }
+                },
+                defaultDate: (fromVal && toVal) ? [fromVal, toVal] : (fromVal ? [fromVal] : null),
+                showMonths: 2,
+                onReady: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        instance.element.value = fmtDisplay(instance.formatDate(selectedDates[0], 'Y-m-d')) + ' — ' + fmtDisplay(instance.formatDate(selectedDates[1], 'Y-m-d'));
+                    }
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        const d0 = instance.formatDate(selectedDates[0], 'Y-m-d');
+                        const d1 = instance.formatDate(selectedDates[1], 'Y-m-d');
+                        fromInput.value = d0;
+                        toInput.value   = d1;
+                        instance.element.value = fmtDisplay(d0) + ' — ' + fmtDisplay(d1);
+                    } else if (selectedDates.length === 1) {
+                        const d0 = instance.formatDate(selectedDates[0], 'Y-m-d');
+                        fromInput.value = d0;
+                        toInput.value   = '';
+                    }
+                }
+            });
+        });
+    </script>
+@endpush
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+    .flatpickr-calendar {
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15);
+        border: 1px solid #e2e8f0;
+        font-family: inherit;
+    }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+    .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover {
+        background: #4f46e5;
+        border-color: #4f46e5;
+    }
+    .flatpickr-day.inRange {
+        background: #eef2ff;
+        border-color: #eef2ff;
+        box-shadow: -5px 0 0 #eef2ff, 5px 0 0 #eef2ff;
+    }
+    .flatpickr-day.today { border-color: #4f46e5; }
+    .flatpickr-months .flatpickr-prev-month:hover svg,
+    .flatpickr-months .flatpickr-next-month:hover svg { fill: #4f46e5; }
+    </style>
 @endpush
