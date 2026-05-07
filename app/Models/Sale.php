@@ -10,6 +10,7 @@ class Sale extends Model
 {
     protected $fillable = [
         'invoice_number',
+        'idempotency_key',
         'outlet_id',
         'cash_session_id',
         'user_id',

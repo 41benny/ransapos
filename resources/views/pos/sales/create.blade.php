@@ -887,6 +887,7 @@
 
                         showSuccessModal: false,
                         lastSale: null,
+                        currentOrderKey: '',
 
                         // Print Settings
                         showPrintSettingsModal: false,
@@ -1027,6 +1028,13 @@
                 },
                 methods: {
                     // ... Existing Methods ...
+                    generateOrderKey() {
+                        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                            return window.crypto.randomUUID();
+                        }
+
+                        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                    },
                     async parseApiResponse(response) {
                         const contentType = response.headers.get('content-type') || '';
 
@@ -1564,6 +1572,7 @@
                     clearCart() {
                         this.cart = [];
                         this.clearVoucher();
+                        this.currentOrderKey = this.generateOrderKey();
                     },
                     increaseQty(index) {
                         const item = this.cart[index];
@@ -1608,8 +1617,15 @@
                         return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                     },
                     async processPayment() {
+                        if (this.isProcessing) {
+                            return;
+                        }
+
+                        this.isProcessing = true;
+
                         if (!this.outletId || !this.cashSessionId) {
                             alert('No active cash session.');
+                            this.isProcessing = false;
                             return;
                         }
 
@@ -1617,20 +1633,24 @@
                             this.applyVoucherCode();
                             if (!this.appliedVoucher) {
                                 alert(this.voucherErrorMessage || 'Voucher belum valid.');
+                                this.isProcessing = false;
                                 return;
                             }
                         }
 
                         if (!this.confirmSpecialPromotionBeforePayment()) {
+                            this.isProcessing = false;
                             return;
                         }
-
-                        this.isProcessing = true;
+                        if (!this.currentOrderKey) {
+                            this.currentOrderKey = this.generateOrderKey();
+                        }
 
                         const voucherCode = this.appliedVoucher ? String(this.appliedVoucher.code || '').toUpperCase() : null;
 
                         // Payload dengan promo/voucher
                         const data = {
+                            idempotency_key: this.currentOrderKey,
                             outlet_id: this.outletId,
                             cash_session_id: this.cashSessionId,
                             customer_id: this.selectedCustomerId,
@@ -1681,6 +1701,7 @@
                                 this.selectedPaymentMethod = '';
                                 this.selectedPromotionId = '';
                                 this.clearVoucher();
+                                this.currentOrderKey = this.generateOrderKey();
                                 this.showPaymentMethodPicker = false;
                             } else {
                                 alert('Error: ' + result.message);

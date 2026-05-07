@@ -20,6 +20,7 @@ use App\Models\Sale;
 use App\Support\SpecialPromotion;
 use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -277,12 +278,39 @@ class SaleController extends Controller
                 ],
             ], 201);
         } catch (Exception $e) {
+            $existingSale = $this->findSaleByIdempotencyKey($payload ?? [], $user);
+            if ($existingSale && $e instanceof QueryException && $e->getCode() === '23000') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transaksi sudah tersimpan',
+                    'data' => [
+                        'sale_id' => $existingSale->id,
+                        'invoice_number' => $existingSale->invoice_number,
+                        'total_amount' => $existingSale->total_amount,
+                    ],
+                ], 200);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan transaksi',
                 'error' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    private function findSaleByIdempotencyKey(array $payload, $user): ?Sale
+    {
+        $key = trim((string) ($payload['idempotency_key'] ?? ''));
+        if ($key === '' || !$user) {
+            return null;
+        }
+
+        return Sale::query()
+            ->where('idempotency_key', $key)
+            ->where('outlet_id', (int) $user->outlet_id)
+            ->where('user_id', (int) $user->id)
+            ->first();
     }
 
     /**

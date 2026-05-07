@@ -59,6 +59,7 @@ class StoreSaleRequest extends FormRequest
 
         return [
             // Header transaksi
+            'idempotency_key' => 'nullable|string|max:100',
             'outlet_id' => $outletRule,
             'cash_session_id' => ['required', $cashSessionRule],
             'customer_id' => 'nullable|exists:customers,id',

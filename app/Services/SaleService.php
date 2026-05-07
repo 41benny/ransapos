@@ -37,6 +37,21 @@ class SaleService
         DB::beginTransaction();
 
         try {
+            $idempotencyKey = trim((string) ($data['idempotency_key'] ?? ''));
+            if ($idempotencyKey !== '') {
+                $existingSale = Sale::query()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->where('outlet_id', (int) $data['outlet_id'])
+                    ->where('cash_session_id', (int) $data['cash_session_id'])
+                    ->first();
+
+                if ($existingSale) {
+                    DB::commit();
+
+                    return $existingSale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer', 'promotion', 'voucher']);
+                }
+            }
+
             $cashSession = CashSession::findOrFail($data['cash_session_id']);
             if ((int) $cashSession->outlet_id !== (int) $data['outlet_id']) {
                 throw new Exception('Sesi kasir tidak sesuai dengan outlet transaksi.');
@@ -207,6 +222,7 @@ class SaleService
             // 7. Buat record sale
             $sale = Sale::create([
                 'invoice_number' => $invoiceNumber,
+                'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
                 'outlet_id' => $data['outlet_id'],
                 'cash_session_id' => $data['cash_session_id'],
                 // Gunakan auth()->id() (helper standar Laravel) jika tersedia
