@@ -338,7 +338,37 @@ class PurchaseService
     public function getPurchases(array $filters = [])
     {
         $query = Purchase::with(['outlet', 'supplier', 'creator', 'items']);
+        $query = $this->applyFilters($query, $filters);
 
+        return $query->orderBy('purchase_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(15);
+    }
+
+    /**
+     * Get summary data untuk purchases berdasarkan filter
+     * 
+     * @param array $filters
+     * @return array
+     */
+    public function getPurchaseSummary(array $filters = [])
+    {
+        $query = Purchase::query();
+        $query = $this->applyFilters($query, $filters);
+
+        return [
+            'total_amount' => (float) $query->sum('total_amount'),
+            'total_count' => $query->count(),
+            'received_count' => (clone $query)->where('status', 'received')->count(),
+            'draft_count' => (clone $query)->where('status', 'draft')->count(),
+        ];
+    }
+
+    /**
+     * Apply filters ke query purchase
+     */
+    protected function applyFilters($query, array $filters = [])
+    {
         // Filter by outlet
         if (!empty($filters['outlet_id'])) {
             $query->where('outlet_id', $filters['outlet_id']);
@@ -354,7 +384,7 @@ class PurchaseService
             $query->where('status', $filters['status']);
         }
 
-        // Filter by date range
+        // Filter by date range (separate fields)
         if (!empty($filters['date_from'])) {
             $query->whereDate('purchase_date', '>=', $filters['date_from']);
         }
@@ -363,8 +393,16 @@ class PurchaseService
             $query->whereDate('purchase_date', '<=', $filters['date_to']);
         }
 
-        return $query->orderBy('purchase_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        // Filter by single field date range (format: "YYYY-MM-DD to YYYY-MM-DD")
+        if (!empty($filters['date_range'])) {
+            $dates = explode(' to ', $filters['date_range']);
+            if (count($dates) === 2) {
+                $query->whereBetween('purchase_date', [$dates[0], $dates[1]]);
+            } else {
+                $query->whereDate('purchase_date', $dates[0]);
+            }
+        }
+
+        return $query;
     }
 }

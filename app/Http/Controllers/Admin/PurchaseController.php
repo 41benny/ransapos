@@ -34,12 +34,14 @@ class PurchaseController extends Controller
      */
     public function index(Request $request)
     {
-        $purchases = $this->purchaseService->getPurchases($request->all());
+        $filters = $request->all();
+        $purchases = $this->purchaseService->getPurchases($filters);
+        $summary = $this->purchaseService->getPurchaseSummary($filters);
         
         $outlets = Outlet::where('is_active', true)->get();
         $suppliers = Supplier::where('is_active', true)->get();
 
-        return view('admin.purchases.index', compact('purchases', 'outlets', 'suppliers'));
+        return view('admin.purchases.index', compact('purchases', 'outlets', 'suppliers', 'summary'));
     }
 
     /**

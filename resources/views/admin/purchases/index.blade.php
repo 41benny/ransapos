@@ -36,6 +36,65 @@
         </div>
     @endif
 
+    {{-- Summary Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total Transaksi Card -->
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-indigo-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-indigo-500">Total Transaksi</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                    <i class="fas fa-shopping-cart text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ $summary['total_count'] }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Total PO Tercatat</p>
+            </div>
+        </div>
+
+        <!-- Total Nilai Card -->
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Total Nilai Pembelian</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                    <i class="fas fa-money-bill-wave text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Akumulasi Nilai Transaksi</p>
+            </div>
+        </div>
+
+        <!-- Received Count Card -->
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-blue-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-blue-500">Barang Diterima</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                    <i class="fas fa-box-open text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ $summary['received_count'] }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Status Received</p>
+            </div>
+        </div>
+
+        <!-- Draft Count Card -->
+        <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-amber-500">Draft / Pending PO</span>
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+                    <i class="fas fa-clock text-xs"></i>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <h3 class="text-xl font-normal text-slate-800">{{ $summary['draft_count'] }}</h3>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">Status Draft</p>
+            </div>
+        </div>
+    </div>
+
     {{-- Filter Section --}}
     <div class="ui-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6 no-print">
         <div class="p-4 border-b border-slate-100 bg-slate-50/50">
@@ -45,7 +104,7 @@
             </div>
         </div>
         <div class="p-5">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-normal text-slate-600 uppercase tracking-wider ml-1">Outlet</label>
                     <select name="outlet_id" class="ui-input w-full px-4 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
@@ -76,6 +135,16 @@
                         <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received (Diterima)</option>
                         <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-normal text-slate-600 uppercase tracking-wider ml-1">Rentang Tanggal</label>
+                    <div class="relative">
+                        <i class="far fa-calendar-alt absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+                        <input type="text" id="purchaseDateRangePicker" name="date_range" value="{{ request('date_range') }}"
+                            placeholder="Pilih rentang tanggal..."
+                            class="ui-input w-full pl-9 pr-3 py-2.5 text-sm font-normal bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all cursor-pointer"
+                            readonly>
+                    </div>
                 </div>
                 <div class="flex items-end gap-2">
                     <button type="submit" class="ui-btn ui-btn-primary flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-900 text-white hover:bg-slate-800 transition-all active:scale-95 text-xs font-normal">
@@ -182,3 +251,40 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .flatpickr-calendar {
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+            background: #4f46e5 !important;
+            border-color: #4f46e5 !important;
+        }
+        .flatpickr-day.inRange {
+            background: #eef2ff !important;
+            border-color: #eef2ff !important;
+            box-shadow: -5px 0 0 #eef2ff, 5px 0 0 #eef2ff !important;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            flatpickr("#purchaseDateRangePicker", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                altInput: true,
+                altFormat: "d M Y",
+                prevArrow: '<i class="fas fa-chevron-left"></i>',
+                nextArrow: '<i class="fas fa-chevron-right"></i>',
+            });
+        });
+    </script>
+@endpush
