@@ -93,9 +93,11 @@
         </div>
         
         <p class="mt-6 text-center text-sm text-gray-500">
-            Morest POS System v1.0 • &copy; {{ date('Y') }}
+            Ransa POS System v1.0 • &copy; {{ date('Y') }}
         </p>
     </div>
 </div>
 @endsection
+
+
 

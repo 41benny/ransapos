@@ -158,6 +158,9 @@ return new class extends Migration
             ['key' => 'boms.update', 'module' => 'boms', 'action' => 'update', 'label' => 'Ubah BOM'],
             ['key' => 'boms.delete', 'module' => 'boms', 'action' => 'delete', 'label' => 'Hapus BOM'],
 
+            ['key' => 'productions.view', 'module' => 'productions', 'action' => 'view', 'label' => 'Lihat Produksi'],
+            ['key' => 'productions.create', 'module' => 'productions', 'action' => 'create', 'label' => 'Buat Produksi'],
+
             ['key' => 'purchases.view', 'module' => 'purchases', 'action' => 'view', 'label' => 'Lihat Purchase'],
             ['key' => 'purchases.create', 'module' => 'purchases', 'action' => 'create', 'label' => 'Buat Purchase'],
             ['key' => 'purchases.update', 'module' => 'purchases', 'action' => 'update', 'label' => 'Ubah Purchase'],

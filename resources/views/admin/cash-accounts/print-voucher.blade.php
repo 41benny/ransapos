@@ -386,7 +386,7 @@
         <div class="main-content">
             <header class="header">
                 <div class="company-brand">
-                    <h1>MORESTO</h1>
+                    <h1>Ransa</h1>
                     <p>Modern Resto Management System</p>
                 </div>
                 <div class="voucher-meta">
@@ -438,7 +438,7 @@
                 <div class="notes-and-ref">
                     <span class="mini-label">Informasi Tambahan / Catatan</span>
                     <p class="mini-text">
-                        {{ $firstLine->notes ?? 'Transaksi tervalidasi oleh sistem keuangan Moresto. Saldo akun telah diperbarui secara otomatis.' }}
+                        {{ $firstLine->notes ?? 'Transaksi tervalidasi oleh sistem keuangan Ransa. Saldo akun telah diperbarui secara otomatis.' }}
                     </p>
                 </div>
 
@@ -476,3 +476,4 @@
 </body>
 
 </html>
+

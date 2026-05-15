@@ -68,8 +68,8 @@ Catatan khusus:
   - Diskon: `5103005`
   - Meal: `5505005`
 - `moka` di mapping outlet berarti Mall Kartini.
-- `MORESTO CENTRAL PLAZA` / `OUT02` harus masuk CP, bukan CTR.
-  - Fix sudah ditambahkan dengan match: `central plaza`, `moresto central plaza`, `out02`.
+- `DOMSTEAK CENTRAL PLAZA` / `OUT02` harus masuk CP, bukan CTR.
+  - Fix sudah ditambahkan dengan match: `central plaza`, `domsteak central plaza`, `out02`.
   - Sebelumnya CP sempat salah masuk CTR karena kata `central`.
 
 ## Jurnal Sales
@@ -238,7 +238,7 @@ User sempat melihat screenshot dengan voucher `SALCTR0426`, akun `4101010`, gros
 
 Hasil audit DB:
 
-- Angka tersebut adalah `OUT02 - MORESTO CENTRAL PLAZA`, bukan `OUT010 - MORESTO TRANSMART`.
+- Angka tersebut adalah `OUT02 - DOMSTEAK CENTRAL PLAZA`, bukan `OUT010 - DOMSTEAK TRANSMART`.
 - Transmart April 2026 actual dari service:
   - Sales: `SALTRM0426`, akun penjualan `4101011`.
   - HPP: debit `5101011`, kredit `1117011`.
@@ -246,8 +246,8 @@ Hasil audit DB:
 
 Bug yang ditemukan dan diperbaiki:
 
-- `MORESTO CENTRAL PLAZA` sebelumnya match ke CTR karena mengandung kata `central`.
-- Fix: tambahkan alias CP `central plaza`, `moresto central plaza`, dan `out02`.
+- `DOMSTEAK CENTRAL PLAZA` sebelumnya match ke CTR karena mengandung kata `central`.
+- Fix: tambahkan alias CP `central plaza`, `domsteak central plaza`, dan `out02`.
 
 ## Catatan Next: Jurnal Kas Bank
 

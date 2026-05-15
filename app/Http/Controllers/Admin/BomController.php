@@ -56,6 +56,46 @@ class BomController extends Controller
         return ($hostMatch && $schemeMatch) ? $returnTo : $fallback;
     }
 
+    private function componentProductsForSourceType(string $sourceType)
+    {
+        $rawCategory = $this->rawMaterialCategory();
+
+        return Product::query()
+            ->where('is_active', true)
+            ->where(function ($query) use ($rawCategory, $sourceType) {
+                if ($rawCategory) {
+                    $query->where('category_id', $rawCategory->id);
+                } else {
+                    $query->where('product_type', 'raw_material');
+                }
+
+                if ($sourceType === self::SOURCE_TYPE_BUNDLE) {
+                    $query->orWhereHas('productionBom', function ($bomQuery) {
+                        $bomQuery->where('is_active', true);
+                    });
+                }
+            })
+            ->orderBy('name')
+            ->get();
+    }
+
+    private function finishedProductsForSourceType()
+    {
+        $rawCategory = $this->rawMaterialCategory();
+
+        if ($rawCategory) {
+            return Product::where('category_id', '!=', $rawCategory->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
+
+        return Product::where('product_type', 'finished_good')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
     public function index()
     {
         $sourceType = $this->normalizeSourceType(request()->query('source_type'), self::SOURCE_TYPE_PRODUCTION);
@@ -99,31 +139,8 @@ class BomController extends Controller
             : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
         $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultBackUrl);
 
-        $rawCategory = $this->rawMaterialCategory();
-
-        if ($rawCategory) {
-            // Prefer category-based selection: Komponen = kategori bahan baku; Produk Utama = selain itu.
-            $rawMaterials = Product::where('category_id', $rawCategory->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-
-            $finishedProducts = Product::where('category_id', '!=', $rawCategory->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        } else {
-            // Fallback for older data setups that still use product_type.
-            $finishedProducts = Product::where('product_type', 'finished_good')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-
-            $rawMaterials = Product::where('product_type', 'raw_material')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        }
+        $rawMaterials = $this->componentProductsForSourceType($sourceType);
+        $finishedProducts = $this->finishedProductsForSourceType();
 
         $prefillProductId = null;
         if (request()->filled('product_id')) {
@@ -238,29 +255,8 @@ class BomController extends Controller
             : route('admin.boms.index', ['source_type' => self::SOURCE_TYPE_PRODUCTION]);
         $returnTo = $this->resolveSafeReturnTo(request()->query('return_to'), $defaultBackUrl);
 
-        $rawCategory = $this->rawMaterialCategory();
-
-        if ($rawCategory) {
-            $rawMaterials = Product::where('category_id', $rawCategory->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-
-            $finishedProducts = Product::where('category_id', '!=', $rawCategory->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        } else {
-            $finishedProducts = Product::where('product_type', 'finished_good')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-
-            $rawMaterials = Product::where('product_type', 'raw_material')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get();
-        }
+        $rawMaterials = $this->componentProductsForSourceType($sourceType);
+        $finishedProducts = $this->finishedProductsForSourceType();
             
         return view('admin.boms.edit', compact('bom', 'finishedProducts', 'rawMaterials', 'sourceType', 'returnTo'));
     }

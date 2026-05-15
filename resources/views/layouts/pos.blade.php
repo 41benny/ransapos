@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'POS') - Morest POS</title>
+    <title>@yield('title', 'POS') - Ransa POS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
                     <div>
                         <h1 class="text-lg md:text-xl font-bold text-white leading-tight">
                             <a href="{{ route('pos.sales.create') }}" class="hover:text-white/90 transition">
-                                {{ $isAttendancePage ? 'POS Moresto' : 'POS Latte' }}
+                                {{ $isAttendancePage ? 'POS Ransa' : 'POS Latte' }}
                             </a>
                         </h1>
                         <span class="text-xs text-white/90">@yield('page-title', 'Point of Sale')</span>
@@ -126,3 +126,5 @@
 </body>
 
 </html>
+
+

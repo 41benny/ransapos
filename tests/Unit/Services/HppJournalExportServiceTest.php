@@ -261,7 +261,7 @@ class HppJournalExportServiceTest extends TestCase
         $user = User::factory()->create();
         $category = ProductCategory::factory()->create();
         $outletCentralPlaza = Outlet::factory()->create([
-            'name' => 'MORESTO CENTRAL PLAZA',
+            'name' => 'Domesteak CENTRAL PLAZA',
             'code' => 'OUT02',
             'is_active' => true,
         ]);
@@ -386,3 +386,4 @@ class HppJournalExportServiceTest extends TestCase
         ]);
     }
 }
+

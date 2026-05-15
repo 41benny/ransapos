@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Moresto POS Dashboard</title>
+    <title>Ransa POS Dashboard</title>
     {{-- Utilizing Tailwind CDN for specific custom theme configuration as requested --}}
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,7 +17,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: "#D32F2F", // Moresto Red accent
+                        primary: "#D32F2F", // Ransa Red accent
                         secondary: "#7C4DFF", // Light purple accent for 'Absensi'
                         "background-light": "#F3F4F6", // Light gray background
                         "background-dark": "#121212", // Very dark background
@@ -74,15 +74,15 @@
                         <span class="material-icons-round text-primary text-2xl">point_of_sale</span>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">Moresto POS</h1>
-                        <p class="text-xs text-text-muted-light font-medium">Moresto Dimsum</p>
+                        <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">Ransa POS</h1>
+                        <p class="text-xs text-text-muted-light font-medium">Ransa Steakhouse</p>
                     </div>
                 </a>
                 <div class="flex items-center gap-3">
                     <div class="hidden md:flex flex-col items-end mr-3">
                         <span class="text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</span>
                         <span class="text-xs text-text-muted-light">{{ auth()->user()->role?->display_name ?? 'Kasir' }}
-                            - {{ now()->format('d M, H:i') }}</span>
+                             - {{ now()->format('d M, H:i') }}</span>
                     </div>
 
                     @if(!request()->routeIs('pos.dashboard'))
@@ -130,3 +130,5 @@
 </body>
 
 </html>
+
+

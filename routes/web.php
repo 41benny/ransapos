@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PosDeviceController as AdminPosDeviceController;
 use App\Http\Controllers\Admin\PromoVoucherController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\BackdateSaleController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\POS\DashboardController as POSDashboardController;
 use App\Http\Controllers\POS\SaleController;
 use App\Http\Controllers\POS\KitchenController;
@@ -286,6 +287,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->only(['destroy'])
         ->middleware('permission:boms.delete');
 
+    // Production Transactions
+    Route::resource('productions', \App\Http\Controllers\Admin\ProductionController::class)
+        ->only(['create', 'store'])
+        ->middleware('permission:productions.create');
+    Route::resource('productions', \App\Http\Controllers\Admin\ProductionController::class)
+        ->only(['index', 'show'])
+        ->middleware('permission:productions.view');
+
     // Inventory & Stock Management
     Route::get('/stocks', [\App\Http\Controllers\Admin\StockController::class, 'index'])
         ->name('stocks.index')
@@ -518,6 +527,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::post('/void-tokens', [\App\Http\Controllers\Admin\VoidTokenController::class, 'store'])
         ->name('void-tokens.store')
         ->middleware('permission:void-tokens.create');
+
+    // Setting & Logo Management
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index')
+        ->middleware('permission:settings.manage');
+    Route::put('/settings', [SettingController::class, 'update'])->name('settings.update')
+        ->middleware('permission:settings.manage');
 
     // Role Permission Management (khusus superadmin)
     Route::prefix('permissions')->name('permissions.')->middleware(['role:superadmin', 'permission:permissions.manage'])->group(function () {

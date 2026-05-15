@@ -34,7 +34,7 @@ return [
                 'discount_coa_name' => 'Disc Penjualan CP',
                 'meal_coa_code' => '5505001',
                 'meal_coa_name' => 'By Meal & Persediaan Rusak Resto CP',
-                'match' => ['cp', 'central plaza', 'moresto central plaza', 'out02'],
+                'match' => ['cp', 'central plaza', 'Ransa central plaza', 'out02'],
             ],
             [
                 'alias_voucher' => 'CPZ',
@@ -202,7 +202,7 @@ return [
                 'hpp_coa_name' => 'Hpp Makanan CP',
                 'inventory_coa_code' => '1117002',
                 'inventory_coa_name' => 'Persediaan Barang Dagang CP',
-                'match' => ['cp', 'central plaza', 'moresto central plaza', 'out02'],
+                'match' => ['cp', 'central plaza', 'Ransa central plaza', 'out02'],
             ],
             [
                 'alias_voucher' => 'CPZ',
@@ -414,3 +414,5 @@ return [
         ],
     ],
 ];
+
+

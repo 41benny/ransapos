@@ -59,7 +59,7 @@
 ## Verifikasi Browser (DevTools)
 - Network request gambar menunjukkan:
   - URL ke folder thumbnail, contoh:
-    - `https://moresto.online/storage/products/thumbnails/EzbHg9kawpYnXnQ3db6dsUbKoAUbgan0Ztsc5j6x_thumb.jpg`
+    - `https://Domesteak.online/storage/products/thumbnails/EzbHg9kawpYnXnQ3db6dsUbKoAUbgan0Ztsc5j6x_thumb.jpg`
   - `Content-Length` kecil (contoh sekitar `13 KB`), indikasi kuat bukan full-size.
 
 ## Catatan Penting Operasional
@@ -76,3 +76,4 @@
   - masuk `php artisan tinker` lalu jalankan per baris.
 - Jika perintah `ls ... | head` error saat di tinker:
   - keluar dulu dari tinker (`exit`), jalankan di shell biasa.
+

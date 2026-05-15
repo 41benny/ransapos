@@ -22,30 +22,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Roles
-        $adminRole = Role::create([
-            'name' => 'admin',
-            'display_name' => 'Administrator',
-            'description' => 'Full access to system',
-        ]);
+        // 1. Roles (idempotent baseline)
+        $this->call(RoleSeeder::class);
 
-        $kasirRole = Role::create([
-            'name' => 'kasir',
-            'display_name' => 'Kasir',
-            'description' => 'POS operator',
-        ]);
-
-        $managerRole = Role::create([
-            'name' => 'manager',
-            'display_name' => 'Manager',
-            'description' => 'Store manager',
-        ]);
-
-        $kitchenRole = Role::create([
-            'name' => 'kitchen',
-            'display_name' => 'Kitchen Staff',
-            'description' => 'Hanya akses ke layar dapur/kitchen display',
-        ]);
+        $adminRole = Role::query()->where('name', 'admin')->firstOrFail();
+        $kasirRole = Role::query()->where('name', 'kasir')->firstOrFail();
 
         // 2. Outlets
         $outlet1 = Outlet::create([
@@ -53,7 +34,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Cabang Utama',
             'address' => 'Jl. Sudirman No. 123, Jakarta',
             'phone' => '021-12345678',
-            'email' => 'utama@morest.com',
+            'email' => 'utama@Ransa.com',
             'is_active' => true,
         ]);
 
@@ -62,14 +43,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Cabang Plaza',
             'address' => 'Plaza Senayan Lt. 2, Jakarta',
             'phone' => '021-87654321',
-            'email' => 'plaza@morest.com',
+            'email' => 'plaza@Ransa.com',
             'is_active' => true,
         ]);
 
         // 3. Users
         $admin = User::create([
             'name' => 'Admin System',
-            'email' => 'admin@morest.com',
+            'email' => 'admin@Ransa.com',
             'password' => Hash::make('password'),
             'role_id' => $adminRole->id,
             'outlet_id' => $outlet1->id,
@@ -78,7 +59,7 @@ class DatabaseSeeder extends Seeder
 
         $kasir = User::create([
             'name' => 'Kasir 1',
-            'email' => 'kasir@morest.com',
+            'email' => 'kasir@Ransa.com',
             'password' => Hash::make('password'),
             'role_id' => $kasirRole->id,
             'outlet_id' => $outlet1->id,
@@ -428,7 +409,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->command->info('✅ Data dummy berhasil dibuat!');
-        $this->command->info('👤 Admin: admin@morest.com / password');
-        $this->command->info('👤 Kasir: kasir@morest.com / password');
+        $this->command->info('👤 Admin: admin@Ransa.com / password');
+        $this->command->info('👤 Kasir: kasir@Ransa.com / password');
     }
 }
+
+

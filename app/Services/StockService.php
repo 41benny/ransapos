@@ -84,7 +84,7 @@ class StockService
                 'created_by' => $userId,
             ]);
 
-            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
+            $this->recalculateMutationBalancesIfNeeded($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -152,7 +152,7 @@ class StockService
                 'created_by' => $userId,
             ]);
 
-            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
+            $this->recalculateMutationBalancesIfNeeded($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -222,7 +222,7 @@ class StockService
                 'created_by' => $userId,
             ]);
 
-            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
+            $this->recalculateMutationBalancesIfNeeded($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -296,7 +296,7 @@ class StockService
                 'created_by' => $userId,
             ]);
 
-            $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
+            $this->recalculateMutationBalancesIfNeeded($productId, $outletId, $mutationDate);
 
             DB::commit();
         } catch (Exception $e) {
@@ -388,6 +388,30 @@ class StockService
         }
 
         $stock->save();
+    }
+
+    private function recalculateMutationBalancesIfNeeded(int $productId, int $outletId, string $mutationDate): void
+    {
+        if (! $this->shouldRecalculateMutationBalances($productId, $outletId, $mutationDate)) {
+            return;
+        }
+
+        $this->recalculateMutationBalances($productId, $outletId, $mutationDate);
+    }
+
+    private function shouldRecalculateMutationBalances(int $productId, int $outletId, string $mutationDate): bool
+    {
+        $date = $this->normalizeMutationDate($mutationDate);
+
+        if (Carbon::parse($date)->lt(today())) {
+            return true;
+        }
+
+        return StockMutation::query()
+            ->where('product_id', $productId)
+            ->where('outlet_id', $outletId)
+            ->whereDate('mutation_date', '>', $date)
+            ->exists();
     }
 
     public function recalculateAllMutationBalances(): void

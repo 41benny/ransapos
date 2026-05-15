@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Moresto POS Login</title>
+    <title>Ransa POS Login</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
@@ -105,7 +105,7 @@
     <div class="flex h-screen w-full overflow-hidden">
         <!-- Left Side: Image & Jargon -->
         <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat overflow-hidden"
-            style="background-image: url('{{ asset('images/login-bg.jpg') }}');">
+            style="background-image: url('{{ asset('images/boba-bg.jpg') }}');">
 
             <!-- Overlays -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 mix-blend-multiply"></div>
@@ -125,23 +125,23 @@
             <div class="relative z-10 animate-fade-up">
                 <div class="inline-flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-lg">
                     <span class="material-symbols-outlined" style="color: #ec4913;">restaurant_menu</span>
-                    <span class="text-white font-semibold tracking-wide text-sm font-['Outfit']">Moresto POS</span>
+                    <span class="text-white font-semibold tracking-wide text-sm font-['Outfit']">Ransa POS</span>
                 </div>
             </div>
 
             <!-- Jargon -->
             <div class="relative z-10 max-w-4xl mb-12">
                 <h1 class="text-5xl xl:text-6xl font-black text-white mb-6 leading-[0.9] font-['Outfit'] tracking-tighter animate-fade-up delay-300 drop-shadow-2xl">
-                    Authentic Dimsum,<br/>
+                    Fresh & Sweet,<br/>
                     <span class="text-white/90 inline-flex items-center gap-2.5">
-                        <span class="material-symbols-outlined luxury-symbol" aria-hidden="true">workspace_premium</span>
-                        <span class="rotating-term" id="hero-rotating-term">Modern Service.</span>
+                        <span class="material-symbols-outlined luxury-symbol" aria-hidden="true">bubble_chart</span>
+                        <span class="rotating-term" id="hero-rotating-term">Ganxie Boba.</span>
                     </span>
                 </h1>
                 <div class="w-24 h-1 bg-[#ec4913] mb-6 rounded-full animate-fade-up delay-500"></div>
                 <p class="text-lg text-white/90 font-medium animate-fade-up delay-700 leading-relaxed font-['Plus_Jakarta_Sans'] drop-shadow-lg max-w-2xl">
-                    Streamlining your restaurant operations with precision and taste.
-                    <br><span class="text-white/60 text-sm mt-3 block font-normal">Experience the future of dining management.</span>
+                    Authentic Boba Tea & Beverages for every moment.
+                    <br><span class="text-white/60 text-sm mt-3 block font-normal">Experience the sweetness of modern POS management.</span>
                 </p>
             </div>
         </div>
@@ -151,13 +151,13 @@
 
             <!-- Mobile Header -->
             <div class="lg:hidden p-4 md:p-6 flex-none flex justify-center border-b border-white/5">
-                <h2 class="text-2xl font-bold text-white font-['Outfit']">Moresto</h2>
+                <h2 class="text-2xl font-bold text-white font-['Outfit']">Ransa POS</h2>
             </div>
 
             <div class="flex-1 flex flex-col justify-center items-center px-6 py-8 sm:px-12 max-w-lg mx-auto w-full min-h-[min-content]">
                 <div class="w-full mb-8 text-center animate-fade-up delay-100">
-                    <div class="w-16 h-16 rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20" style="background: linear-gradient(to top right, #ec4913, #ea580c);">
-                        <span class="material-symbols-outlined text-white text-3xl">restaurant</span>
+                    <div class="w-20 h-20 rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20 bg-white p-2">
+                        <img src="{{ asset('images/boba-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
                     </div>
                     <h2 class="text-2xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
                     <p class="text-gray-400 text-sm md:text-base">Please enter your credentials to access the POS.</p>
@@ -289,3 +289,4 @@
     </script>
 </body>
 </html>
+

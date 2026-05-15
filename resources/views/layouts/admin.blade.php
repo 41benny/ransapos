@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin') - Moresto</title>
+    <title>@yield('title', 'Admin') - Ransa</title>
     <script>
         (function () {
-            const storageKey = 'moresto-theme';
+            const storageKey = 'Ransa-theme';
             const stored = localStorage.getItem(storageKey);
             const validThemes = ['light', 'dark', 'system'];
             const preference = validThemes.includes(stored) ? stored : 'system';
@@ -509,7 +509,7 @@
 <body class="ui-admin-body bg-slate-50 text-slate-900 font-sans antialiased">
 
     <script>
-        const THEME_STORAGE_KEY = 'moresto-theme';
+        const THEME_STORAGE_KEY = 'Ransa-theme';
         const THEME_MODES = ['light', 'dark', 'system'];
 
         function getStoredThemePreference() {
@@ -677,11 +677,11 @@
             <!-- Logo area -->
             <div class="h-20 flex items-center px-7 mb-4">
                 <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 ring-1 ring-indigo-400/30">
-                    <i class="fas fa-bowl-food text-xl"></i>
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-white/30 overflow-hidden">
+                    <img src="{{ asset('images/boba-logo.png') }}" alt="Ransa" class="w-full h-full object-contain">
                 </div>
                 <div class="ml-4 logo-text">
-                    <span class="block text-sm font-black uppercase tracking-[0.2em] text-white/90">Moresto</span>
+                    <span class="block text-sm font-black uppercase tracking-[0.2em] text-white/90">Ransa</span>
                     <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Business
                         Suite</span>
                 </div>
@@ -742,9 +742,12 @@
                             [
                                 'label' => 'Produksi',
                                 'icon' => 'fas fa-flask',
-                                'route' => 'admin.boms.index',
-                                'match' => 'admin.boms.*',
-                                'permission' => 'boms.view',
+                                'route' => null,
+                                'match' => 'admin.productions.*|admin.boms.*',
+                                'children' => [
+                                    ['label' => 'Transaksi Produksi', 'route' => 'admin.productions.index', 'match' => 'admin.productions.*', 'permission' => 'productions.view'],
+                                    ['label' => 'BOM Produksi', 'route' => 'admin.boms.index', 'match' => 'admin.boms.*', 'permission' => 'boms.view'],
+                                ],
                             ],
                             [
                                 'label' => 'Purchasing',
@@ -871,6 +874,7 @@
                 {{-- Group: System Utilities --}}
                 @php
                     $extras = [
+                        ['label' => 'Pengaturan', 'icon' => 'fas fa-cog', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'settings.manage'],
                         ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*', 'permission' => 'pos-devices.view'],
                         ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
                     ];
@@ -1057,3 +1061,5 @@
 </body>
 
 </html>
+
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Moresto POS PIN Login</title>
+    <title>Ransa POS PIN Login</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
@@ -15,15 +15,15 @@
 <body class="font-['Plus_Jakarta_Sans'] antialiased text-white" style="background-color: #221510;">
     <div class="flex h-screen w-full overflow-hidden">
         <div class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 bg-cover bg-center bg-no-repeat overflow-hidden"
-            style="background-image: url('{{ asset('images/login-bg.jpg') }}');">
+            style="background-image: url('{{ asset('images/boba-bg.jpg') }}');">
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 mix-blend-multiply"></div>
             <div class="absolute inset-0 bg-[#ec4913]/20 mix-blend-overlay"></div>
             <div class="relative z-10 max-w-sm">
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-sm border border-white/10 mb-8">
-                    <span class="material-symbols-outlined text-[#ec4913] text-lg">restaurant</span>
-                    <span class="text-sm font-semibold text-white">Moresto POS</span>
+                    <span class="material-symbols-outlined text-[#ec4913] text-lg">local_drink</span>
+                    <span class="text-sm font-semibold text-white">Ransa POS</span>
                 </div>
-                <h1 class="text-5xl leading-tight font-bold font-['Outfit'] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">Authentic Dimsum,<br />Modern Service.</h1>
+                <h1 class="text-5xl leading-tight font-bold font-['Outfit'] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">Fresh & Sweet,<br />Ganxie Boba.</h1>
                 <p class="text-white mt-5 text-lg drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]">Masuk cepat dengan PIN untuk perangkat POS yang sudah terdaftar.</p>
             </div>
         </div>
@@ -228,3 +228,5 @@
     </script>
 </body>
 </html>
+
+

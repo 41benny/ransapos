@@ -559,7 +559,7 @@
             }
             function simplifyOutletName(name) {
                 if (!name) return '';
-                let clean = name.replace(/moresto/gi, '').trim();
+                let clean = name.replace(/Ransa/gi, '').trim();
                 if (!clean) clean = String(name).trim();
                 if (clean.toLowerCase() === 'ciplaz') return 'Cplz';
                 if (clean.length > 10 && clean.includes(' ')) {
@@ -1310,3 +1310,5 @@
         })();
     </script>
 @endpush
+
+

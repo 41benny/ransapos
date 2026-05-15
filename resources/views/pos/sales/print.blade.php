@@ -20,10 +20,31 @@
     <p id="printStatus" class="print-status" aria-live="polite"></p>
 </div>
 <div class="receipt-container">
+    @php
+        $companyLogo = \App\Models\Setting::getValue('company_logo');
+        $companyName = \App\Models\Setting::getValue('company_name', $sale->outlet->name);
+        $companyAddress = \App\Models\Setting::getValue('company_address', $sale->outlet->address);
+        $companyPhone = \App\Models\Setting::getValue('company_phone', $sale->outlet->phone);
+        $receiptHeader = \App\Models\Setting::getValue('receipt_header');
+        $receiptFooter = \App\Models\Setting::getValue('receipt_footer');
+    @endphp
+
     <div class="header">
-        <h2>{{ $sale->outlet->name }}</h2>
-        <p>{{ $sale->outlet->address ?? 'Alamat Outlet' }}</p>
-        <p>{{ $sale->outlet->phone ?? '' }}</p>
+        @if($companyLogo)
+            <img src="{{ asset('storage/' . $companyLogo) }}" alt="Logo" class="receipt-logo">
+        @endif
+        <h2>{{ $companyName }}</h2>
+        @if($companyAddress)
+            <p>{{ $companyAddress }}</p>
+        @endif
+        @if($companyPhone)
+            <p>{{ $companyPhone }}</p>
+        @endif
+        @if($receiptHeader)
+            <div class="receipt-header-text" style="margin-top: 5px; font-style: italic;">
+                {!! nl2br(e($receiptHeader)) !!}
+            </div>
+        @endif
     </div>
 
     <div class="divider">================================</div>
@@ -130,9 +151,11 @@
     </div>
 
     <div class="footer">
-        <p>Terima Kasih atas Kunjungan Anda</p>
-        <p>Password Wifi: kopienak123</p>
-        <p>IG: @morest.coffee</p>
+        @if($receiptFooter)
+            {!! nl2br(e($receiptFooter)) !!}
+        @else
+            <p>Terima Kasih atas Kunjungan Anda</p>
+        @endif
     </div>
 </div>
 
@@ -192,7 +215,6 @@
         margin-top: 6px;
         font-size: 10px;
     }
-
     /* Receipt Container (58mm width aprox 220px-240px safe area) */
     .receipt-container {
         width: 58mm; /* Standard thermal paper */
@@ -250,6 +272,13 @@
         text-align: center;
         margin-top: 15px;
         font-size: 10px;
+    }
+
+    .receipt-logo {
+        max-width: 40mm;
+        max-height: 20mm;
+        object-fit: contain;
+        margin-bottom: 8px;
     }
 
     /* Print Settings */

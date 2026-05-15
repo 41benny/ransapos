@@ -24,7 +24,7 @@
                 return '-';
             }
 
-            $clean = preg_replace('/\bmoresto\b/i', '', $clean) ?? $clean;
+            $clean = preg_replace('/\bRansa\b/i', '', $clean) ?? $clean;
             $clean = trim($clean);
             if ($clean === '') {
                 $clean = trim((string) $name);
@@ -754,7 +754,7 @@
             const outletComparisonData = @json($comparisonOutlets);
             function simplifyOutletName(name) {
                 if (!name) return '';
-                let clean = name.replace(/moresto/gi, '').trim();
+                let clean = name.replace(/Ransa/gi, '').trim();
                 if (!clean) clean = String(name).trim();
                 if (clean.toLowerCase() === 'ciplaz') return 'Cplz';
                 if (clean.length > 10 && clean.includes(' ')) {
@@ -971,3 +971,5 @@
         }
     </style>
 @endsection
+
+

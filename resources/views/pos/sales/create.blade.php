@@ -1,7 +1,7 @@
 @extends('layouts.pos_v2')
 
 @section('title', 'Transaksi Penjualan')
-@section('page-title', 'MorestoPOS')
+@section('page-title', 'RansaPOS')
 
 @section('content')
     <div class="h-full flex flex-col md:flex-row overflow-hidden bg-background-light font-display text-slate-900"
@@ -1059,7 +1059,7 @@
                     getPrintSettingsStorageKey() {
                         const outletKey = this.outletId ? `outlet_${this.outletId}` : 'outlet_unknown';
                         const userKey = this.userId ? `user_${this.userId}` : 'user_unknown';
-                        return `morest_pos_print_settings_${outletKey}_${userKey}`;
+                        return `Ransa_pos_print_settings_${outletKey}_${userKey}`;
                     },
                     getBrowserVirtualPrinterName() {
                         return 'Default Printer (Browser/OS)';
@@ -1293,7 +1293,7 @@
                             const payload = [
                                 '\x1B\x40',
                                 '\x1B\x61\x01',
-                                'MOREST POS\n',
+                                'Ransa POS\n',
                                 'TEST PRINTER\n',
                                 '\x1B\x61\x00',
                                 `Printer: ${this.selectedPrinterName}\n`,
@@ -1913,3 +1913,5 @@
             </script>
         @endpush
 @endsection
+
+

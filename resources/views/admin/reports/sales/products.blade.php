@@ -195,7 +195,7 @@
                             </th>
                             @foreach($outletsForColumns as $outletCol)
                                 @php
-                                    $clean = trim(str_ireplace('moresto', '', $outletCol->name));
+                                    $clean = trim(str_ireplace('Ransa', '', $outletCol->name));
                                     if (strtolower($clean) === 'ciplaz') {
                                         $initials = 'Cplz';
                                     } elseif (strlen($clean) > 8 && str_contains($clean, ' ')) {
@@ -536,3 +536,5 @@
         </script>
     @endpush
 @endsection
+
+

@@ -233,7 +233,7 @@ class UserController extends Controller
 
         do {
             $suffix = Str::lower(Str::random(6));
-            $email = "{$base}.{$suffix}@internal.morest.local";
+            $email = "{$base}.{$suffix}@internal.Ransa.local";
         } while (User::where('email', $email)->exists());
 
         return $email;
@@ -331,3 +331,5 @@ class UserController extends Controller
         return back()->with('success', "PIN absensi berhasil diset untuk {$user->name}");
     }
 }
+
+

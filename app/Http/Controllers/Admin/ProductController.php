@@ -733,17 +733,23 @@ class ProductController extends Controller
         $rawCategoryName = config('bom.raw_material_category_name', env('BOM_RAW_MATERIAL_CATEGORY_NAME', 'Bahan Baku'));
         $rawCategory = ProductCategory::where('name', $rawCategoryName)->first();
 
-        if ($rawCategory) {
-            return Product::where('category_id', $rawCategory->id)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
-        }
-
-        return Product::where('product_type', 'raw_material')
+        $query = Product::query()
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'unit', 'purchase_price']);
+            ->where(function ($query) use ($rawCategory) {
+                if ($rawCategory) {
+                    $query->where('category_id', $rawCategory->id);
+                } else {
+                    $query->where('product_type', 'raw_material');
+                }
+
+                $query->orWhereHas('productionBom', function ($bomQuery) {
+                    $bomQuery->where('is_active', true);
+                });
+            })
+            ->withSum('stocks', 'quantity')
+            ->orderBy('name');
+
+        return $query->get(['id', 'name', 'sku', 'unit', 'purchase_price', 'product_type']);
     }
 
     private function sanitizeBundleComponents(mixed $components): Collection

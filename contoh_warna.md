@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Moresto POS Cashier Interface</title>
+<title>Domsteak POS Cashier Interface</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -58,7 +58,7 @@
 <div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
 <span class="material-symbols-outlined">restaurant_menu</span>
 </div>
-<h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Moresto<span class="text-primary">POS</span></h1>
+<h1 class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Domsteak<span class="text-primary">POS</span></h1>
 </div>
 <!-- Search Bar -->
 <div class="flex-1 max-w-xl px-4">

@@ -187,7 +187,7 @@ class SalesJournalExportServiceTest extends TestCase
         $user = User::factory()->create();
         $category = ProductCategory::factory()->create();
         $outlet = Outlet::factory()->create([
-            'name' => 'MORESTO CENTRAL PLAZA',
+            'name' => 'Domesteak CENTRAL PLAZA',
             'code' => 'OUT02',
             'is_active' => true,
         ]);
@@ -260,3 +260,4 @@ class SalesJournalExportServiceTest extends TestCase
         $this->assertFalse(collect($rows)->contains(fn ($row) => $row['_VOUCHER'] === 'SALCTR0226' || $row['NO_AKUN'] === 4101010));
     }
 }
+

@@ -175,6 +175,12 @@ class Product extends Model
             ->where('source_type', 'bundle');
     }
 
+    public function productionBom(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(BomHeader::class, 'product_id')
+            ->where('source_type', 'production');
+    }
+
     public function isAvailableForOutlet(?int $outletId): bool
     {
         if (!$this->is_active || !$this->is_sellable || !$this->is_pos_available) {

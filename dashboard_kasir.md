@@ -4,7 +4,7 @@
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Moresto POS Dashboard</title>
+<title>Domsteak POS Dashboard</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
@@ -14,7 +14,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: "#D32F2F", // Moresto Red accent
+                        primary: "#D32F2F", // Domsteak Red accent
                         secondary: "#7C4DFF", // Light purple accent for 'Absensi'
                         "background-light": "#F3F4F6", // Light gray background
                         "background-dark": "#121212", // Very dark background
@@ -68,7 +68,7 @@
 </div>
 <div>
 <h1 class="text-xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">POS Latte</h1>
-<p class="text-sm text-text-muted-light dark:text-text-muted-dark font-medium">Moresto Dimsum</p>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark font-medium">Domsteak Dimsum</p>
 </div>
 </div>
 <div class="flex items-center gap-4">

@@ -18,7 +18,7 @@ class PurchaseJournalExportServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $outlet = Outlet::factory()->create([
-            'name' => 'MORESTO CENTRAL PLAZA',
+            'name' => 'Domesteak CENTRAL PLAZA',
             'code' => 'OUT02',
             'is_active' => true,
         ]);
@@ -118,3 +118,4 @@ class PurchaseJournalExportServiceTest extends TestCase
         ]);
     }
 }
+
