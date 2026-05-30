@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Ransa Admin">
     <link rel="manifest" href="{{ asset('admin/manifest.webmanifest') }}">
-    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.v2.png') }}">
     <title>@yield('title', 'Admin') - Ransa</title>
     <script>
         (function () {

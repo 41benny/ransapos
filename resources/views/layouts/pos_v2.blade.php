@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RansaPOS">
     <link rel="manifest" href="{{ asset('pos/manifest.webmanifest') }}">
-    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.v2.png') }}">
     <title>@yield('title', 'POS') - Ransa POS</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet" />
