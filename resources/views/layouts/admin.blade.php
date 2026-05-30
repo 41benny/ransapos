@@ -684,7 +684,7 @@
             <div class="h-20 flex items-center px-7 mb-4">
                 <div
                     class="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-white/30 overflow-hidden">
-                    <img src="{{ asset('images/boba-logo.png') }}" alt="Ransa" class="w-full h-full object-contain">
+                    <img src="{{ asset('images/ganxie-mark.png') }}" alt="Ganxie" class="w-full h-full object-contain">
                 </div>
                 <div class="ml-4 logo-text">
                     <span class="block text-sm font-black uppercase tracking-[0.2em] text-white/90">Ransa</span>

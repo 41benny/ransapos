@@ -157,7 +157,7 @@
             <div class="flex-1 flex flex-col justify-center items-center px-6 py-8 sm:px-12 max-w-lg mx-auto w-full min-h-[min-content]">
                 <div class="w-full mb-8 text-center animate-fade-up delay-100">
                     <div class="w-20 h-20 rounded-2xl mx-auto mb-4 md:mb-6 flex items-center justify-center shadow-lg shadow-orange-900/20 bg-white p-2">
-                        <img src="{{ asset('images/boba-logo.png') }}" alt="Logo" class="w-full h-full object-contain">
+                        <img src="{{ asset('images/ganxie-mark.png') }}" alt="Ganxie" class="w-full h-full object-contain">
                     </div>
                     <h2 class="text-2xl font-bold text-white mb-2 font-['Outfit']">Welcome Back</h2>
                     <p class="text-gray-400 text-sm md:text-base">Please enter your credentials to access the POS.</p>
