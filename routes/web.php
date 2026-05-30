@@ -26,9 +26,9 @@ Route::get('/', function () {
 });
 
 // Authentication Routes
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware('guest');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login')->middleware(['guest', \App\Http\Middleware\NoCache::class]);
 Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('guest');
-Route::get('/pos/pin', [PosPinLoginController::class, 'show'])->name('pos.pin.show')->middleware('guest');
+Route::get('/pos/pin', [PosPinLoginController::class, 'show'])->name('pos.pin.show')->middleware(['guest', \App\Http\Middleware\NoCache::class]);
 Route::post('/pos/pin', [PosPinLoginController::class, 'login'])->name('pos.pin.login')->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
