@@ -898,7 +898,7 @@
                         selectedCategory: null,
                         filteredProducts: [],
 
-                        salesType: 'regular',
+                        salesType: @json(array_key_exists('regular', $priceLevels) ? 'regular' : (array_key_first($priceLevels) ?? 'regular')),
                         selectedPaymentMethod: '',
                         selectedCustomerId: '',
                         showPaymentMethodPicker: false,
