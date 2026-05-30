@@ -1,11 +1,11 @@
 {
-  "name": "Ransa Admin",
-  "short_name": "Admin",
+  "name": "Ganxie Admin",
+  "short_name": "Ganxie Admin",
   "start_url": "/admin/dashboard",
   "scope": "/admin",
   "display": "standalone",
-  "background_color": "#0B0F1A",
-  "theme_color": "#4f46e5",
+  "background_color": "#000000",
+  "theme_color": "#0b0f1a",
   "icons": [
     {
       "src": "/pos/icons/icon-192.png",
