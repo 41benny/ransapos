@@ -18,6 +18,7 @@ use App\Models\SaleItem;
 use App\Services\SaleService;
 use App\Models\Sale;
 use App\Support\SpecialPromotion;
+use App\Support\Printing\ThermalReceipt;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -362,6 +363,21 @@ class SaleController extends Controller
         $resolvedSale->load(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
 
         return view('pos.sales.print', ['sale' => $resolvedSale]);
+    }
+
+    /**
+     * Keluarkan struk dalam format ESC/POS (base64) untuk dicetak langsung
+     * ke printer thermal Bluetooth, mis. via RawBT di Android.
+     */
+    public function escpos(Sale $sale)
+    {
+        if (!auth()->user()->hasRole(['admin', 'superadmin']) && $sale->outlet_id !== auth()->user()->outlet_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return response()->json([
+            'base64' => ThermalReceipt::buildBase64($sale),
+        ]);
     }
 
     /**

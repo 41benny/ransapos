@@ -588,6 +588,10 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(fu
         ->name('sales.print')
         ->middleware('role:kasir,admin');
 
+    Route::get('/sales/{sale}/escpos', [SaleController::class, 'escpos'])
+        ->name('sales.escpos')
+        ->middleware('role:kasir,admin');
+
     // History and Void
     Route::get('/sales/history', [SaleController::class, 'history'])
         ->name('sales.history')

@@ -541,11 +541,32 @@
                                 class="w-full rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-sm">
                                 <option value="browser">Browser Default</option>
                                 <option value="bridge">Printer Bridge (QZ Tray)</option>
+                                <option value="webbt">Thermal Bluetooth Langsung (Web Bluetooth)</option>
+                                <option value="rawbt">Thermal Bluetooth (RawBT - Android)</option>
                             </select>
                             <p class="text-xs text-gray-500 mt-2">
-                                Browser mode memakai printer default OS. Bridge mode mencoba cetak langsung ke printer
-                                terpilih.
+                                Browser mode memakai printer default OS. Bridge mode cetak ke printer terpilih.
+                                <strong>Web Bluetooth</strong> cetak ESC/POS langsung ke printer thermal Bluetooth (BLE)
+                                tanpa aplikasi tambahan. Mode RawBT lewat aplikasi RawBT (Android).
                             </p>
+
+                            <div v-if="printEngine === 'webbt'" class="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                <div class="flex items-center justify-between gap-3 mb-3">
+                                    <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Printer Bluetooth</p>
+                                    <span :class="webbtConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'"
+                                        class="text-[10px] px-2 py-1 rounded-full font-bold uppercase">
+                                        @{{ webbtConnected ? ('Terhubung: ' + webbtDeviceName) : 'Belum Tersambung' }}
+                                    </span>
+                                </div>
+                                <button @click="connectWebBluetooth" type="button"
+                                    class="w-full rounded-lg bg-primary text-white text-sm font-semibold py-2 hover:bg-red-700 transition">
+                                    @{{ webbtConnected ? 'Sambungkan Ulang Printer' : 'Hubungkan Printer Bluetooth' }}
+                                </button>
+                                <p class="text-[11px] text-gray-500 mt-2">
+                                    Klik tombol di atas, lalu pilih <strong>RPP02N</strong> di daftar perangkat.
+                                    Hanya jalan di Chrome/Edge (Android/desktop) pada koneksi aman (HTTPS / localhost).
+                                </p>
+                            </div>
                         </div>
 
                         <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -899,6 +920,8 @@
                         printerBridgeConnected: false,
                         isLoadingPrinters: false,
                         isTestingPrint: false,
+                        webbtConnected: false,
+                        webbtDeviceName: '',
                         userId: {{ auth()->id() ?? 'null' }},
 
                         selectedPromotionId: '',
@@ -1073,7 +1096,7 @@
                             }
 
                             const parsed = JSON.parse(raw);
-                            const allowedEngines = ['browser', 'bridge'];
+                            const allowedEngines = ['browser', 'bridge', 'rawbt', 'webbt'];
 
                             this.printEngine = allowedEngines.includes(parsed.printEngine) ? parsed.printEngine : 'browser';
                             this.selectedPrinterName = typeof parsed.selectedPrinterName === 'string'
@@ -1267,7 +1290,35 @@
                         this.selectedPrinterName = detectedPrinter;
                         this.printerStatusMessage = `Smart detect memilih: ${detectedPrinter}`;
                     },
+                    rawbtTestPrint() {
+                        // Struk uji sederhana berisi perintah ESC/POS dasar.
+                        const ESC = '\x1B', GS = '\x1D';
+                        let data = ESC + '@';                     // init
+                        data += ESC + 'a' + '\x01';               // center
+                        data += GS + '!' + '\x11' + 'RANSAPOS\n'; // double size
+                        data += GS + '!' + '\x00';                // normal
+                        data += 'Tes Cetak Thermal\n';
+                        data += 'Mode RawBT (Bluetooth)\n';
+                        data += new Date().toLocaleString('id-ID') + '\n';
+                        data += '--------------------------------\n';
+                        data += 'Jika struk ini keluar,\nprinter SIAP dipakai.\n\n\n';
+                        // btoa butuh string biner (byte ESC/POS sudah dalam range 0-255).
+                        const b64 = btoa(data);
+                        window.location.href = 'intent:base64,' + b64
+                            + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+                        this.printerStatusMessage = 'Tes cetak dikirim ke RawBT.';
+                    },
                     async testPrintConfiguration() {
+                        if (this.printEngine === 'rawbt') {
+                            this.rawbtTestPrint();
+                            return;
+                        }
+
+                        if (this.printEngine === 'webbt') {
+                            await this.webbtTestPrint();
+                            return;
+                        }
+
                         if (this.printEngine !== 'bridge') {
                             alert('Mode Browser aktif. Test print gunakan tombol Print Struk biasa dan akan mengikuti default printer OS.');
                             return;
@@ -1360,7 +1411,201 @@
                             }
                         }
 
+                        if (this.printEngine === 'rawbt') {
+                            const printed = await this.printReceiptViaRawBt(normalizedSaleId);
+                            if (printed) {
+                                return;
+                            }
+                        }
+
+                        if (this.printEngine === 'webbt') {
+                            const printed = await this.printReceiptViaWebBt(normalizedSaleId);
+                            if (printed) {
+                                return;
+                            }
+                        }
+
                         window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
+                    },
+
+                    // ===== Web Bluetooth (cetak ESC/POS langsung tanpa aplikasi pihak ketiga) =====
+                    // UUID service/karakteristik umum pada printer thermal BLE.
+                    getWebBtServiceUuids() {
+                        return [
+                            0xFFE0, 0xFF00, 0x18F0, 0xFEE7,
+                            '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC/Microchip (banyak printer)
+                            '0000ff00-0000-1000-8000-00805f9b34fb',
+                        ];
+                    },
+                    async connectWebBluetooth() {
+                        if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
+                            alert('Browser ini tidak mendukung Web Bluetooth, atau halaman tidak diakses lewat koneksi aman (HTTPS/localhost). Gunakan Chrome/Edge.');
+                            return false;
+                        }
+                        try {
+                            this.printerStatusMessage = 'Mencari printer Bluetooth...';
+                            const device = await navigator.bluetooth.requestDevice({
+                                acceptAllDevices: true,
+                                optionalServices: this.getWebBtServiceUuids(),
+                            });
+
+                            device.addEventListener('gattserverdisconnected', () => {
+                                this.webbtConnected = false;
+                                this.printerStatusMessage = 'Printer Bluetooth terputus.';
+                            });
+
+                            const characteristic = await this.webbtDiscoverCharacteristic(device);
+                            if (!characteristic) {
+                                this.printerStatusMessage = 'Printer terhubung tapi tidak ditemukan jalur tulis (karakteristik). Printer mungkin hanya Bluetooth Classic (tanpa BLE).';
+                                alert('Tidak menemukan karakteristik tulis pada printer ini. Kemungkinan printer hanya mendukung Bluetooth Classic, sehingga tidak bisa via Web Bluetooth. Pakai mode RawBT atau pasang driver di PC.');
+                                return false;
+                            }
+
+                            window.__ransaBt = { device, characteristic };
+                            this.webbtConnected = true;
+                            this.webbtDeviceName = device.name || 'Printer';
+                            this.printerStatusMessage = `Printer ${this.webbtDeviceName} siap (Web Bluetooth).`;
+                            return true;
+                        } catch (error) {
+                            console.error('Gagal konek Web Bluetooth:', error);
+                            this.webbtConnected = false;
+                            this.printerStatusMessage = 'Koneksi Bluetooth dibatalkan/gagal: ' + (error && error.message ? error.message : error);
+                            return false;
+                        }
+                    },
+                    async webbtDiscoverCharacteristic(device) {
+                        const server = await device.gatt.connect();
+                        const services = await server.getPrimaryServices();
+                        for (const service of services) {
+                            let characteristics = [];
+                            try {
+                                characteristics = await service.getCharacteristics();
+                            } catch (e) {
+                                continue;
+                            }
+                            // Prioritaskan yang mendukung writeWithoutResponse, lalu write biasa.
+                            const writable = characteristics.find(c => c.properties.writeWithoutResponse)
+                                || characteristics.find(c => c.properties.write);
+                            if (writable) {
+                                return writable;
+                            }
+                        }
+                        return null;
+                    },
+                    async webbtEnsureReady() {
+                        const state = window.__ransaBt;
+                        if (!state || !state.device || !state.characteristic) {
+                            return null;
+                        }
+                        if (!state.device.gatt.connected) {
+                            // Reconnect tanpa perlu gesture pengguna.
+                            await state.device.gatt.connect();
+                            state.characteristic = await this.webbtDiscoverCharacteristic(state.device);
+                        }
+                        return state.characteristic;
+                    },
+                    base64ToBytes(b64) {
+                        const binary = atob(b64);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
+                        }
+                        return bytes;
+                    },
+                    async webbtWriteBytes(characteristic, bytes) {
+                        // Tulis bertahap (BLE MTU terbatas) agar tidak terpotong.
+                        const chunkSize = 180;
+                        const useNoResponse = characteristic.properties.writeWithoutResponse;
+                        for (let i = 0; i < bytes.length; i += chunkSize) {
+                            const chunk = bytes.slice(i, i + chunkSize);
+                            if (useNoResponse && characteristic.writeValueWithoutResponse) {
+                                await characteristic.writeValueWithoutResponse(chunk);
+                            } else {
+                                await characteristic.writeValue(chunk);
+                            }
+                            await new Promise(r => setTimeout(r, 20));
+                        }
+                    },
+                    async printReceiptViaWebBt(saleId) {
+                        try {
+                            const characteristic = await this.webbtEnsureReady();
+                            if (!characteristic) {
+                                this.printerStatusMessage = 'Printer Bluetooth belum terhubung. Buka Setting Print lalu hubungkan printer.';
+                                alert('Printer Bluetooth belum terhubung. Buka tombol Print -> Setting -> Hubungkan Printer Bluetooth.');
+                                return false;
+                            }
+
+                            const response = await fetch(`/pos/sales/${saleId}/escpos`, {
+                                headers: { 'Accept': 'application/json' },
+                                credentials: 'same-origin',
+                            });
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            const data = await response.json();
+                            if (!data || !data.base64) {
+                                throw new Error('Data ESC/POS kosong.');
+                            }
+
+                            await this.webbtWriteBytes(characteristic, this.base64ToBytes(data.base64));
+                            this.printerStatusMessage = 'Struk tercetak via Web Bluetooth.';
+                            return true;
+                        } catch (error) {
+                            console.error('Gagal cetak via Web Bluetooth:', error);
+                            this.printerStatusMessage = 'Cetak Web Bluetooth gagal: ' + (error && error.message ? error.message : error);
+                            return false;
+                        }
+                    },
+                    async webbtTestPrint() {
+                        const characteristic = await this.webbtEnsureReady();
+                        if (!characteristic) {
+                            alert('Hubungkan printer Bluetooth dulu sebelum test print.');
+                            return;
+                        }
+                        const ESC = '\x1B', GS = '\x1D';
+                        let data = ESC + '@';
+                        data += ESC + 'a' + '\x01';
+                        data += GS + '!' + '\x11' + 'RANSAPOS\n';
+                        data += GS + '!' + '\x00';
+                        data += 'Tes Web Bluetooth\n';
+                        data += new Date().toLocaleString('id-ID') + '\n';
+                        data += '--------------------------------\n';
+                        data += 'Printer SIAP dipakai.\n\n\n';
+                        const bytes = new Uint8Array(data.length);
+                        for (let i = 0; i < data.length; i++) bytes[i] = data.charCodeAt(i) & 0xFF;
+                        try {
+                            await this.webbtWriteBytes(characteristic, bytes);
+                            this.printerStatusMessage = 'Tes cetak Web Bluetooth terkirim.';
+                        } catch (error) {
+                            this.printerStatusMessage = 'Tes cetak gagal: ' + (error && error.message ? error.message : error);
+                        }
+                    },
+                    async printReceiptViaRawBt(saleId) {
+                        try {
+                            const response = await fetch(`/pos/sales/${saleId}/escpos`, {
+                                headers: { 'Accept': 'application/json' },
+                                credentials: 'same-origin',
+                            });
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            const data = await response.json();
+                            if (!data || !data.base64) {
+                                throw new Error('Data ESC/POS kosong.');
+                            }
+
+                            // Kirim ke aplikasi RawBT lewat Android intent.
+                            // Jika RawBT belum terpasang, browser membuka halaman Play Store-nya.
+                            const intentUrl = 'intent:base64,' + data.base64
+                                + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+                            window.location.href = intentUrl;
+                            this.printerStatusMessage = 'Struk dikirim ke printer thermal via RawBT.';
+                            return true;
+                        } catch (error) {
+                            console.error('Gagal cetak via RawBT:', error);
+                            this.printerStatusMessage = 'Cetak RawBT gagal, fallback ke browser print.';
+                            return false;
+                        }
                     },
                     getProductById(productId) {
                         return this.productById[Number(productId)] || null;
@@ -1862,6 +2107,22 @@
                             this.selectedPrinterName = this.getBrowserVirtualPrinterName();
                             this.printerBridgeConnected = false;
                             this.printerStatusMessage = 'Mode Browser aktif: printer mengikuti default browser/OS.';
+                        }
+
+                        if (newValue === 'rawbt') {
+                            this.availablePrinters = [];
+                            this.selectedPrinterName = '';
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'Mode RawBT aktif: struk dikirim ke printer thermal Bluetooth via aplikasi RawBT (Android). Pastikan RawBT terpasang & printer terhubung di RawBT.';
+                        }
+
+                        if (newValue === 'webbt') {
+                            this.availablePrinters = [];
+                            this.selectedPrinterName = '';
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = this.webbtConnected
+                                ? `Printer ${this.webbtDeviceName} siap (Web Bluetooth).`
+                                : 'Mode Web Bluetooth aktif: cetak langsung ke printer thermal Bluetooth (BLE) tanpa aplikasi tambahan. Klik "Hubungkan Printer Bluetooth".';
                         }
                     }
                 }
