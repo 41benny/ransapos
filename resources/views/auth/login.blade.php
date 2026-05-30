@@ -269,9 +269,9 @@
             }
 
             const rotatingTerms = [
-                'Modern Service.',
-                'Smart Operations.',
-                'Professional Standards.'
+                'Ganxie Boba.',
+                'Premium Taste.',
+                'Refreshing Drinks.'
             ];
             const rotateIntervalMs = 5600;
             const transitionDurationMs = 900;
