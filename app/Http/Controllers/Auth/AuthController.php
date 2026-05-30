@@ -144,6 +144,36 @@ class AuthController extends Controller
     }
 
     /**
+     * Arahkan user ke beranda sesuai role-nya. Dipakai oleh halaman error
+     * (mis. 403) agar user yang "nyasar" di aplikasi yang salah bisa kembali
+     * ke area yang benar tanpa terjebak loop.
+     */
+    public function home()
+    {
+        return $this->redirectByRole();
+    }
+
+    /**
+     * Hormati URL tujuan (intended) HANYA jika masih berada di area yang
+     * diizinkan untuk role tersebut. Mencegah "ketuker" antar aplikasi
+     * POS & Admin yang berbagi sesi pada origin (domain) yang sama —
+     * penyebab user terlempar ke area lain lalu kena 403.
+     */
+    protected function redirectWithinArea(string $allowedPrefix, string $fallbackRoute)
+    {
+        $intended = session()->pull('url.intended');
+
+        if (is_string($intended) && $intended !== '') {
+            $path = parse_url($intended, PHP_URL_PATH) ?: '';
+            if (str_starts_with($path, $allowedPrefix)) {
+                return redirect()->to($intended);
+            }
+        }
+
+        return redirect()->route($fallbackRoute);
+    }
+
+    /**
      * Redirect berdasarkan role user.
      */
     protected function redirectByRole()
@@ -151,13 +181,13 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if ($user->hasRole('superadmin')) {
-            return redirect()->intended(route('admin.dashboard'));
+            return $this->redirectWithinArea('/admin', 'admin.dashboard');
         }
 
         if ($user->hasRole(['admin', 'manager'])) {
             $landingRoute = $this->resolveAdminLandingRoute($user);
             if ($landingRoute !== null) {
-                return redirect()->intended(route($landingRoute));
+                return $this->redirectWithinArea('/admin', $landingRoute);
             }
 
             Auth::logout();
@@ -172,11 +202,11 @@ class AuthController extends Controller
         }
 
         if ($user->hasRole('kasir')) {
-            return redirect()->intended(route('pos.dashboard'));
+            return $this->redirectWithinArea('/pos', 'pos.dashboard');
         }
 
         if ($user->hasRole('kitchen')) {
-            return redirect()->intended(route('pos.kitchen.index'));
+            return $this->redirectWithinArea('/pos', 'pos.kitchen.index');
         }
 
         if ($user->hasRole('karyawan_outlet')) {
@@ -192,7 +222,7 @@ class AuthController extends Controller
         }
 
         if ($user->hasRole('pajak')) {
-            return redirect()->intended(route('admin.reports.sales.daily'));
+            return $this->redirectWithinArea('/admin', 'admin.reports.sales.daily');
         }
 
         Auth::logout();

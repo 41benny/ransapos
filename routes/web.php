@@ -32,6 +32,9 @@ Route::get('/pos/pin', [PosPinLoginController::class, 'show'])->name('pos.pin.sh
 Route::post('/pos/pin', [PosPinLoginController::class, 'login'])->name('pos.pin.login')->middleware('guest');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Arahkan user ke beranda yang benar sesuai role (anti-nyasar / anti-403 loop).
+Route::get('/beranda', [AuthController::class, 'home'])->name('home')->middleware('auth');
+
 // Back Office (Admin) Routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,superadmin,pajak'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
