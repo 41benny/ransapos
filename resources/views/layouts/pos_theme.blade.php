@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    @include('partials.pwa-head', ['pwaArea' => 'pos'])
     <title>Ransa POS Dashboard</title>
     {{-- Utilizing Tailwind CDN for specific custom theme configuration as requested --}}
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
@@ -127,6 +128,7 @@
         @yield('content')
     </main>
 
+    @include('partials.pwa-service-worker', ['pwaArea' => 'pos'])
 </body>
 
 </html>

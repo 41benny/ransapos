@@ -1,7 +1,8 @@
 {
   "name": "Ganxie POS",
   "short_name": "Ganxie POS",
-  "start_url": "/pos/sales",
+  "id": "/pos/",
+  "start_url": "/pos/pin",
   "scope": "/pos/",
   "display": "standalone",
   "background_color": "#000000",

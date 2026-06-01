@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.pwa-head', ['pwaArea' => 'pos'])
     <title>@yield('title', 'POS') - Ransa POS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,6 +124,7 @@
         @yield('content')
     </main>
 
+    @include('partials.pwa-service-worker', ['pwaArea' => 'pos'])
 </body>
 
 </html>

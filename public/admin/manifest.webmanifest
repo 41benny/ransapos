@@ -1,8 +1,9 @@
 {
   "name": "Ganxie Admin",
   "short_name": "Ganxie Admin",
+  "id": "/admin/",
   "start_url": "/admin/dashboard",
-  "scope": "/admin",
+  "scope": "/admin/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#0b0f1a",

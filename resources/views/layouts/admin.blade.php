@@ -4,12 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Ransa Admin">
-    <link rel="manifest" href="{{ asset('admin/manifest.webmanifest') }}">
-    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.v2.png') }}">
+    @include('partials.pwa-head', ['pwaArea' => 'admin'])
     <title>@yield('title', 'Admin') - Ransa</title>
     <script>
         (function () {
@@ -1065,17 +1060,8 @@
 
     @stack('scripts')
 
-    <script>
-        (function () {
-            if (!('serviceWorker' in navigator)) return;
-            if (window.location.pathname.indexOf('/admin') !== 0) return;
-
-            navigator.serviceWorker.register('{{ asset('admin/sw.js') }}')
-                .catch(function () { /* no-op */ });
-        })();
-    </script>
+    @include('partials.pwa-service-worker', ['pwaArea' => 'admin'])
 </body>
 
 </html>
-
 

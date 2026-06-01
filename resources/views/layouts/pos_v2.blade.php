@@ -4,12 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ef4444">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RansaPOS">
-    <link rel="manifest" href="{{ asset('pos/manifest.webmanifest') }}">
-    <link rel="apple-touch-icon" href="{{ asset('pos/icons/apple-touch-icon.v2.png') }}">
+    @include('partials.pwa-head', ['pwaArea' => 'pos'])
     <title>@yield('title', 'POS') - Ransa POS</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet" />
@@ -27,15 +22,7 @@
     </div>
     @yield('content')
 
-    <script>
-        (function () {
-            if (!('serviceWorker' in navigator)) return;
-            if (window.location.pathname.indexOf('/pos') !== 0) return;
-
-            navigator.serviceWorker.register('{{ asset('pos/sw.js') }}')
-                .catch(function () { /* no-op */ });
-        })();
-    </script>
+    @include('partials.pwa-service-worker', ['pwaArea' => 'pos'])
 
     <script>
         (function () {
@@ -113,5 +100,4 @@
 </body>
 
 </html>
-
 

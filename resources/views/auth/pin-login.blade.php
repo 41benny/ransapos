@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    @include('partials.pwa-head', ['pwaArea' => 'pos'])
     <title>Ransa POS PIN Login</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link
@@ -226,6 +227,7 @@
             updateUiState();
         });
     </script>
+    @include('partials.pwa-service-worker', ['pwaArea' => 'pos'])
 </body>
 </html>
 
