@@ -136,6 +136,7 @@ class PermissionController extends Controller
         return [
             'dashboard' => 'Dashboard',
             'products' => 'Produk',
+            'product-categories' => 'Kategori Produk',
             'outlets' => 'Outlet',
             'suppliers' => 'Supplier',
             'payment-methods' => 'Metode Pembayaran',

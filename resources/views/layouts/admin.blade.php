@@ -719,9 +719,10 @@
                                 'label' => 'Master Data',
                                 'icon' => 'fas fa-layer-group',
                                 'route' => null,
-                                'match' => 'admin.products.*|admin.outlets.*|admin.suppliers.*|admin.payment-methods.*|admin.sales-types.*|admin.customers.*|admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*|admin.users.*',
+                                'match' => 'admin.products.*|admin.product-categories.*|admin.outlets.*|admin.suppliers.*|admin.payment-methods.*|admin.sales-types.*|admin.customers.*|admin.coa-accounts.*|admin.cash-accounts.*|admin.expense-categories.*|admin.users.*',
                                 'children' => [
                                     ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => 'admin.products.*', 'permission' => 'products.view'],
+                                    ['label' => 'Kategori Produk', 'route' => 'admin.product-categories.index', 'match' => 'admin.product-categories.*', 'permission' => 'product-categories.view'],
                                     ['label' => 'Outlet', 'route' => 'admin.outlets.index', 'match' => 'admin.outlets.*', 'permission' => 'outlets.view'],
                                     ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'permission' => 'users.view'],
                                     ['label' => 'Supplier', 'route' => 'admin.suppliers.index', 'match' => 'admin.suppliers.*', 'permission' => 'suppliers.view'],
@@ -1064,4 +1065,3 @@
 </body>
 
 </html>
-

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductCategoryController;
 use App\Http\Controllers\Admin\OutletController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\SalesTypeController;
@@ -82,6 +83,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::resource('products', ProductController::class)
         ->only(['destroy'])
         ->middleware('permission:products.delete');
+
+    Route::resource('product-categories', ProductCategoryController::class)
+        ->only(['create', 'store'])
+        ->middleware('permission:product-categories.create');
+    Route::resource('product-categories', ProductCategoryController::class)
+        ->only(['index'])
+        ->middleware('permission:product-categories.view');
+    Route::resource('product-categories', ProductCategoryController::class)
+        ->only(['edit', 'update'])
+        ->middleware('permission:product-categories.update');
+    Route::resource('product-categories', ProductCategoryController::class)
+        ->only(['destroy'])
+        ->middleware('permission:product-categories.delete');
 
     Route::resource('outlets', OutletController::class)
         ->only(['create', 'store'])
