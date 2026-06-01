@@ -16,6 +16,8 @@ class Outlet extends Model
         'address',
         'phone',
         'email',
+        'receipt_header',
+        'receipt_footer',
         'is_active',
         'tax_rate',
         'service_charge_rate',

@@ -28,8 +28,8 @@ class ThermalReceipt
         $companyName = Setting::getValue('company_name', $sale->outlet->name ?? 'Outlet');
         $companyAddress = Setting::getValue('company_address', $sale->outlet->address ?? null);
         $companyPhone = Setting::getValue('company_phone', $sale->outlet->phone ?? null);
-        $receiptHeader = Setting::getValue('receipt_header');
-        $receiptFooter = Setting::getValue('receipt_footer');
+        $receiptHeader = ($sale->outlet->receipt_header ?? null) ?: Setting::getValue('receipt_header');
+        $receiptFooter = ($sale->outlet->receipt_footer ?? null) ?: Setting::getValue('receipt_footer');
 
         $out = '';
         $out .= self::ESC . '@';            // init

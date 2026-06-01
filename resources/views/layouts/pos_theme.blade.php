@@ -94,6 +94,12 @@
                         </a>
                     @endif
 
+                    <button type="button" onclick="window.location.reload()" aria-label="Muat ulang halaman"
+                        class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
+                        <span class="material-icons-round text-base">refresh</span>
+                        <span class="hidden sm:inline">Refresh</span>
+                    </button>
+
                     <a href="{{ route('pos.attendance.index') }}"
                         class="flex items-center gap-2 bg-secondary/10 hover:bg-secondary/20 text-secondary px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm">
                         <span class="material-icons-round text-base">people</span>

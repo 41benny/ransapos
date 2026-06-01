@@ -111,6 +111,43 @@
                     </div>
                 </div>
 
+                <!-- Header & Footer Struk -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="receipt_header" class="block text-sm font-medium text-gray-700 mb-2">
+                            Header Struk
+                        </label>
+                        <textarea
+                            name="receipt_header"
+                            id="receipt_header"
+                            rows="3"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('receipt_header') border-red-500 @enderror"
+                            placeholder="Teks tambahan di bagian atas struk (opsional)"
+                        >{{ old('receipt_header') }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">Kosongkan untuk hanya menampilkan info perusahaan.</p>
+                        @error('receipt_header')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="receipt_footer" class="block text-sm font-medium text-gray-700 mb-2">
+                            Footer Struk
+                        </label>
+                        <textarea
+                            name="receipt_footer"
+                            id="receipt_footer"
+                            rows="3"
+                            class="ui-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('receipt_footer') border-red-500 @enderror"
+                            placeholder="Teks di bagian bawah struk (opsional)"
+                        >{{ old('receipt_footer') }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">Kosongkan untuk memakai default "Terima Kasih atas Kunjungan Anda".</p>
+                        @error('receipt_footer')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
                 <!-- Pajak & Service Charge -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>

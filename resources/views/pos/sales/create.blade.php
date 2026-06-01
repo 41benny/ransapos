@@ -30,6 +30,14 @@
                                 d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3M8 21H5a2 2 0 01-2-2v-3m18 0v3a2 2 0 01-2 2h-3" />
                         </svg>
                     </button>
+
+                    <button type="button" title="Muat ulang halaman" onclick="if (confirm('Muat ulang halaman? Transaksi yang belum disimpan akan hilang.')) window.location.reload();"
+                        class="bg-surface-light text-gray-700 w-10 h-10 rounded-xl hover:bg-gray-100 transition shadow-sm border border-gray-200 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- Search Bar (Centered) -->

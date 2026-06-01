@@ -25,8 +25,8 @@
         $companyName = \App\Models\Setting::getValue('company_name', $sale->outlet->name);
         $companyAddress = \App\Models\Setting::getValue('company_address', $sale->outlet->address);
         $companyPhone = \App\Models\Setting::getValue('company_phone', $sale->outlet->phone);
-        $receiptHeader = \App\Models\Setting::getValue('receipt_header');
-        $receiptFooter = \App\Models\Setting::getValue('receipt_footer');
+        $receiptHeader = ($sale->outlet->receipt_header ?? null) ?: \App\Models\Setting::getValue('receipt_header');
+        $receiptFooter = ($sale->outlet->receipt_footer ?? null) ?: \App\Models\Setting::getValue('receipt_footer');
     @endphp
 
     <div class="header">
