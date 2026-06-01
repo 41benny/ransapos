@@ -125,6 +125,7 @@
     </main>
 
     @include('partials.pwa-service-worker', ['pwaArea' => 'pos'])
+    @include('partials.pwa-install-button', ['pwaArea' => 'pos'])
 </body>
 
 </html>
