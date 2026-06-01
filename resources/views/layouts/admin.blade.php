@@ -706,6 +706,8 @@
                             return (bool) ($currentUser && $currentUser->hasPermission($permission));
                         };
 
+                        $routeExists = fn (?string $route): bool => !$route || \Illuminate\Support\Facades\Route::has($route);
+
                         $mainNav = [
                             [
                                 'label' => 'Dashboard',
@@ -794,10 +796,15 @@
                         ];
 
                         $mainNav = collect($mainNav)
-                            ->map(function (array $item) use ($canAccess) {
+                            ->map(function (array $item) use ($canAccess, $routeExists) {
+                                if (!$routeExists($item['route'] ?? null)) {
+                                    return null;
+                                }
+
                                 if (isset($item['children'])) {
-                                    $item['children'] = array_values(array_filter($item['children'], function (array $child) use ($canAccess): bool {
-                                        return $canAccess($child['permission'] ?? null);
+                                    $item['children'] = array_values(array_filter($item['children'], function (array $child) use ($canAccess, $routeExists): bool {
+                                        return $routeExists($child['route'] ?? null)
+                                            && $canAccess($child['permission'] ?? null);
                                     }));
 
                                     if (count($item['children']) === 0) {
@@ -891,11 +898,12 @@
                         ];
                     }
 
-                    $extras = array_values(array_filter($extras, function (array $extra) use ($canAccess): bool {
-                        return $canAccess($extra['permission'] ?? null);
+                    $extras = array_values(array_filter($extras, function (array $extra) use ($canAccess, $routeExists): bool {
+                        return $routeExists($extra['route'] ?? null)
+                            && $canAccess($extra['permission'] ?? null);
                     }));
 
-                    $canAccessPos = $canAccess('pos.dashboard');
+                    $canAccessPos = $routeExists('pos.dashboard') && $canAccess('pos.dashboard');
                 @endphp
 
                 @if($canAccessPos || count($extras) > 0)
