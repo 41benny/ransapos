@@ -30,20 +30,22 @@
     @endphp
 
     <div class="header">
-        @if($companyLogo)
-            <img src="{{ asset('storage/' . $companyLogo) }}" alt="Logo" class="receipt-logo">
-        @endif
-        <h2>{{ $companyName }}</h2>
+        <div class="brand-row">
+            @if($companyLogo)
+                <img src="{{ asset('storage/' . $companyLogo) }}" alt="Logo" class="receipt-logo">
+            @endif
+            <div class="brand-text">
+                <h2>{{ $companyName }}</h2>
+                @if($receiptHeader)
+                    <div class="receipt-header-text">{!! nl2br(e($receiptHeader)) !!}</div>
+                @endif
+            </div>
+        </div>
         @if($companyAddress)
             <p>{{ $companyAddress }}</p>
         @endif
         @if($companyPhone)
             <p>{{ $companyPhone }}</p>
-        @endif
-        @if($receiptHeader)
-            <div class="receipt-header-text" style="margin-top: 5px; font-style: italic;">
-                {!! nl2br(e($receiptHeader)) !!}
-            </div>
         @endif
     </div>
 
@@ -262,8 +264,24 @@
     .header h2 {
         font-size: 16px;
         font-weight: bold;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         text-transform: uppercase;
+    }
+
+    .brand-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .brand-text {
+        text-align: left;
+    }
+
+    .brand-text h2 {
+        margin-bottom: 0;
     }
     
     .divider {
@@ -296,10 +314,15 @@
     }
 
     .receipt-logo {
-        max-width: 40mm;
-        max-height: 20mm;
+        max-width: 18mm;
+        max-height: 16mm;
         object-fit: contain;
-        margin-bottom: 8px;
+        flex-shrink: 0;
+    }
+
+    .receipt-header-text {
+        font-style: italic;
+        margin-top: 2px;
     }
 
     /* Print Settings */

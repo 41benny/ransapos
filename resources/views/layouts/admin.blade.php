@@ -677,9 +677,9 @@
             class="sidebar w-68 bg-[#0B0F1A] text-white flex flex-col shrink-0 h-full border-r border-white/5 relative z-50 shadow-2xl">
             <!-- Logo area -->
             <div class="h-20 flex items-center px-7 mb-4">
-                <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1 ring-1 ring-white/30 overflow-hidden">
-                    <img src="{{ asset('images/ganxie-mark.png') }}" alt="Ganxie" class="w-full h-full object-contain">
+                @php $brandLogo = \App\Models\Setting::getValue('company_logo'); @endphp
+                <div class="flex h-14 w-14 items-center justify-center overflow-hidden">
+                    <img src="{{ $brandLogo ? asset('storage/' . $brandLogo) : asset('images/ganxie-mark.png') }}" alt="Logo" class="w-full h-full object-contain">
                 </div>
                 <div class="ml-4 logo-text">
                     <span class="block text-sm font-black uppercase tracking-[0.2em] text-white/90">Ransa</span>
