@@ -61,6 +61,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Header & Footer Struk -->
+            <div class="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Header Struk</p>
+                    <p class="text-sm text-gray-900 whitespace-pre-line">{{ $outlet->receipt_header ?: '-' }}</p>
+                </div>
+
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Footer Struk</p>
+                    <p class="text-sm text-gray-900 whitespace-pre-line">{{ $outlet->receipt_footer ?: '-' }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
