@@ -125,6 +125,14 @@
                                 <input type="file" name="company_logo" id="company_logo" class="hidden" accept="image/*" onchange="previewLogo(this)">
                             </div>
 
+                            @if($settings['company_logo'])
+                                <label class="flex items-center justify-center gap-2 cursor-pointer text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors">
+                                    <input type="checkbox" name="remove_logo" value="1" class="rounded border-slate-300 text-rose-500 focus:ring-rose-500/30">
+                                    <i class="fas fa-trash-alt text-[10px]"></i>
+                                    <span>Hapus logo saat menyimpan</span>
+                                </label>
+                            @endif
+
                             <div id="logo_preview_container" class="hidden space-y-2">
                                 <p class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Preview Logo Baru:</p>
                                 <div class="w-full h-32 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200">

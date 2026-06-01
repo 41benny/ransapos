@@ -34,7 +34,19 @@ class SettingController extends Controller
             'receipt_header' => 'nullable|string',
             'receipt_footer' => 'nullable|string',
             'company_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'remove_logo' => 'nullable|boolean',
         ]);
+
+        // Hapus logo jika diminta (dan tidak sedang mengunggah logo baru)
+        if ($request->boolean('remove_logo') && !$request->hasFile('company_logo')) {
+            $oldLogo = Setting::getValue('company_logo');
+            if ($oldLogo) {
+                Storage::disk('public')->delete($oldLogo);
+            }
+            Setting::setValue('company_logo', '');
+        }
+
+        unset($validated['remove_logo']);
 
         foreach ($validated as $key => $value) {
             if ($key === 'company_logo' && $request->hasFile('company_logo')) {
