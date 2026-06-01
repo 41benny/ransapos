@@ -76,7 +76,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">Ransa POS</h1>
-                        <p class="text-xs text-text-muted-light font-medium">Ransa Steakhouse</p>
+                        <p class="text-xs text-text-muted-light font-medium">Ganxie POS</p>
                     </div>
                 </a>
                 <div class="flex items-center gap-3">
