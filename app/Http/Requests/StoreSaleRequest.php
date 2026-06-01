@@ -18,6 +18,8 @@ class StoreSaleRequest extends FormRequest
             'discount_type' => $this->input('discount_type', 'none'),
             'discount_value' => $this->input('discount_value', 0),
             'voucher_code' => $this->input('voucher_code') ? strtoupper(trim((string) $this->input('voucher_code'))) : null,
+            'manual_discount_type' => $this->input('manual_discount_type', 'none'),
+            'manual_discount_value' => $this->input('manual_discount_value', 0),
         ]);
     }
 
@@ -72,6 +74,10 @@ class StoreSaleRequest extends FormRequest
             // Diskon global
             'discount_type' => 'required|in:none,percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
+            'manual_discount_type' => 'nullable|in:none,percentage,fixed',
+            'manual_discount_value' => 'nullable|numeric|min:0',
+            'manual_discount_authorization_pin' => 'nullable|string|size:6|regex:/^[0-9]{6}$/',
+            'manual_discount_reason' => 'nullable|string|max:255',
             
             // Items
             'items' => 'required|array|min:1',
@@ -84,6 +90,8 @@ class StoreSaleRequest extends FormRequest
             // Payment
             'payment_method_id' => 'required|exists:payment_methods,id',
             'payment_amount' => 'required|numeric|min:0',
+            'payment_tendered_amount' => 'nullable|numeric|min:0',
+            'payment_change_amount' => 'nullable|numeric|min:0',
             'payment_reference' => 'nullable|string|max:200',
         ];
     }
@@ -114,6 +122,8 @@ class StoreSaleRequest extends FormRequest
             'payment_method_id.exists' => 'Metode pembayaran tidak valid',
             'payment_amount.required' => 'Jumlah pembayaran harus diisi',
             'payment_amount.min' => 'Jumlah pembayaran minimal 0',
+            'manual_discount_authorization_pin.size' => 'PIN otorisasi diskon harus 6 digit',
+            'manual_discount_authorization_pin.regex' => 'PIN otorisasi diskon harus angka 6 digit',
         ];
     }
 
@@ -125,6 +135,16 @@ class StoreSaleRequest extends FormRequest
                     'sales_type',
                     'Meal karyawan dan compliment sekarang harus diproses melalui promo, bukan metode penjualan.'
                 );
+            }
+
+            $manualDiscountType = (string) $this->input('manual_discount_type', 'none');
+            $manualDiscountValue = (float) $this->input('manual_discount_value', 0);
+            if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && !$this->filled('manual_discount_authorization_pin')) {
+                $validator->errors()->add('manual_discount_authorization_pin', 'PIN otorisasi wajib diisi untuk diskon manual dPOS.');
+            }
+
+            if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && $this->filled('voucher_code')) {
+                $validator->errors()->add('manual_discount_value', 'Diskon manual dPOS tidak bisa digabung dengan voucher pada transaksi yang sama.');
             }
         });
     }

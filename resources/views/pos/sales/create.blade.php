@@ -361,6 +361,31 @@
                         class="w-full bg-transparent border-b border-gray-300 focus:border-primary py-2 text-sm focus:outline-none placeholder-gray-400 transition">
                 </div>
 
+                <div class="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Diskon dPOS</p>
+                            <p v-if="manualDiscountAmount > 0" class="text-xs text-emerald-600 mt-0.5 truncate">
+                                @{{ manualDiscountLabel }} oleh @{{ manualDiscountAuthorizedByName || 'Supervisor' }}
+                            </p>
+                            <p v-else class="text-xs text-gray-400 mt-0.5">Manual dengan otorisasi supervisor</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button v-if="manualDiscountAmount > 0" type="button" @click="clearManualDiscount"
+                                class="px-3 py-2 text-xs font-bold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                                Hapus
+                            </button>
+                            <button type="button" @click="openManualDiscountModal"
+                                :disabled="cart.length === 0"
+                                :class="cart.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                                class="px-3 py-2 text-xs font-bold rounded-lg transition">
+                                Diskon
+                            </button>
+                        </div>
+                    </div>
+                    <p v-if="manualDiscountErrorMessage" class="text-xs text-red-600 mt-2">@{{ manualDiscountErrorMessage }}</p>
+                </div>
+
                 <div v-if="hasPromotionSelector || hasVoucherInput" class="mb-4 space-y-3">
                     <div v-if="hasPromotionSelector">
                         <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Promo
@@ -420,6 +445,10 @@
                         <span>Diskon Voucher</span>
                         <span class="font-medium text-red-600">- Rp @{{ formatNumber(voucherDiscountAmount, 2) }}</span>
                     </div>
+                    <div v-if="manualDiscountAmount > 0" class="flex justify-between text-sm text-gray-500">
+                        <span>Diskon dPOS</span>
+                        <span class="font-medium text-red-600">- Rp @{{ formatNumber(manualDiscountAmount, 2) }}</span>
+                    </div>
                     <div v-if="serviceChargeRate > 0" class="flex justify-between text-sm text-gray-500">
                         <span>Service (@{{ serviceChargeRate }}%)</span>
                         <span class="font-medium text-gray-700">Rp @{{ formatNumber(serviceChargeAmount, 2) }}</span>
@@ -463,7 +492,7 @@
                         </button>
                     </div>
 
-                    <button @click="processPayment" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
+                    <button @click="processPayment()" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
                         :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
                                                                                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                                                                                                     : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
@@ -515,6 +544,157 @@
                         <span>@{{ method.name }}</span>
                         <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
                             class="text-[10px] font-normal opacity-80">Terpilih</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Cash Payment Modal -->
+        <div v-show="showCashPaymentModal"
+            class="fixed inset-0 z-[62] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showCashPaymentModal ? 'flex' : 'none' }">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden animate-[bounceIn_0.1s_ease-out]">
+                <div class="h-14 bg-primary text-white grid grid-cols-[56px_1fr_56px] items-center">
+                    <button @click="closeCashPaymentModal" class="h-14 flex items-center justify-center hover:bg-white/10 transition">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <h3 class="text-center text-xl font-bold">Cash</h3>
+                    <div></div>
+                </div>
+
+                <div class="p-5 space-y-5">
+                    <div class="text-center">
+                        <p class="text-base font-semibold text-gray-500">Total</p>
+                        <p class="text-3xl font-black text-gray-900">Rp @{{ formatNumber(totalAmount) }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <button type="button" @click="setCashReceivedExact"
+                            class="h-14 rounded-lg border-2 border-gray-300 bg-white text-gray-600 text-base font-semibold hover:border-primary hover:text-primary transition">
+                            Uang Pas
+                        </button>
+                        <button type="button" v-for="amount in cashQuickAmounts" :key="'cash-quick-' + amount"
+                            @click="addCashReceived(amount)"
+                            class="h-14 rounded-lg border-2 border-gray-300 bg-white text-gray-600 text-base font-semibold hover:border-primary hover:text-primary transition">
+                            Rp. @{{ formatNumber(amount) }}
+                        </button>
+                        <button type="button" @click="clearCashReceived"
+                            class="h-14 rounded-lg bg-red-600 hover:bg-red-700 text-white text-lg font-bold transition">
+                            Clear
+                        </button>
+                    </div>
+
+                    <input type="number" min="0" step="1" v-model.number="cashReceivedAmount"
+                        @keyup.enter="submitCashPayment"
+                        class="w-full h-14 px-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none text-left font-mono text-2xl font-bold text-gray-800"
+                        placeholder="Rp 0">
+
+                    <div class="flex justify-between items-center rounded-lg border px-4 py-3"
+                        :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'">
+                        <span class="text-base font-bold"
+                            :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'text-rose-700' : 'text-emerald-700'">
+                            Kembalian
+                        </span>
+                        <span class="text-2xl font-black"
+                            :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'text-rose-700' : 'text-emerald-700'">
+                            Rp @{{ formatNumber(cashChangeAmount) }}
+                        </span>
+                    </div>
+                    <div v-if="Number(cashReceivedAmount || 0) < Number(totalAmount || 0)" class="-mt-3">
+                        <p v-if="Number(cashReceivedAmount || 0) < Number(totalAmount || 0)"
+                            class="text-xs text-rose-600 mt-2">Uang diterima kurang dari total transaksi.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 pt-1 max-w-md mx-auto">
+                        <button type="button" @click="closeCashPaymentModal"
+                            class="h-14 rounded-lg border-2 border-primary bg-white hover:bg-red-50 text-primary font-bold transition">
+                            Batal
+                        </button>
+                        <button type="button" @click="submitCashPayment"
+                            :disabled="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) || isProcessing"
+                            :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                            class="h-14 rounded-lg font-bold transition">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Manual Discount Authorization Modal -->
+        <div v-show="showManualDiscountModal"
+            class="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            style="display: none;" :style="{ display: showManualDiscountModal ? 'flex' : 'none' }">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-[bounceIn_0.1s_ease-out]">
+                <div class="flex justify-between items-start gap-3 mb-5">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Diskon dPOS</h3>
+                        <p class="text-sm text-gray-500 mt-1">Masukkan diskon dan PIN supervisor.</p>
+                    </div>
+                    <button @click="closeManualDiscountModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" @click="manualDiscountDraft.type = 'fixed'"
+                            :class="manualDiscountDraft.type === 'fixed' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            class="rounded-lg py-2 text-sm font-bold transition">Rp</button>
+                        <button type="button" @click="manualDiscountDraft.type = 'percentage'"
+                            :class="manualDiscountDraft.type === 'percentage' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            class="rounded-lg py-2 text-sm font-bold transition">%</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Nilai Diskon</label>
+                        <input type="number" min="0" step="0.01" v-model.number="manualDiscountDraft.value"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none text-right font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Alasan</label>
+                        <input type="text" maxlength="255" v-model.trim="manualDiscountDraft.reason"
+                            placeholder="Contoh: Kompensasi customer"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">PIN Supervisor</label>
+                        <input type="password" inputmode="numeric" maxlength="6" v-model.trim="manualDiscountDraft.pin"
+                            placeholder="6 digit"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none tracking-widest text-lg font-mono text-center">
+                    </div>
+
+                    <div class="rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm">
+                        <div class="flex justify-between text-gray-500">
+                            <span>Subtotal</span>
+                            <span>Rp @{{ formatNumber(subtotal, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-red-600 mt-1">
+                            <span>Diskon</span>
+                            <span>- Rp @{{ formatNumber(manualDiscountDraftAmount, 2) }}</span>
+                        </div>
+                    </div>
+
+                    <p v-if="manualDiscountDraft.error" class="text-sm text-red-600">@{{ manualDiscountDraft.error }}</p>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button @click="closeManualDiscountModal"
+                        class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition">Batal</button>
+                    <button @click="applyManualDiscount" :disabled="isAuthorizingManualDiscount"
+                        :class="isAuthorizingManualDiscount ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
+                        class="flex-1 py-3 rounded-xl font-bold transition">
+                        @{{ isAuthorizingManualDiscount ? 'Validasi...' : 'Terapkan' }}
                     </button>
                 </div>
             </div>
@@ -911,6 +1091,9 @@
                         selectedCustomerId: '',
                         showPaymentMethodPicker: false,
                         showPaymentModal: false,
+                        showCashPaymentModal: false,
+                        cashReceivedAmount: null,
+                        cashQuickAmounts: [1000, 2000, 5000, 10000, 20000, 50000, 100000],
 
                         orderNotes: '',
 
@@ -937,6 +1120,22 @@
                         appliedVoucher: null,
                         voucherErrorMessage: '',
                         isProcessing: false,
+
+                        showManualDiscountModal: false,
+                        isAuthorizingManualDiscount: false,
+                        manualDiscountType: 'none',
+                        manualDiscountValue: 0,
+                        manualDiscountAuthorizationPin: '',
+                        manualDiscountReason: '',
+                        manualDiscountAuthorizedByName: '',
+                        manualDiscountErrorMessage: '',
+                        manualDiscountDraft: {
+                            type: 'fixed',
+                            value: 0,
+                            reason: '',
+                            pin: '',
+                            error: ''
+                        },
 
                         outletId: {{ $activeSession->outlet_id ?? 'null' }},
                         cashSessionId: {{ $activeSession->id ?? 'null' }},
@@ -1007,8 +1206,25 @@
                         if (!this.appliedVoucher) return 0;
                         return this.calculateVoucherDiscount(this.appliedVoucher, this.subtotal);
                     },
+                    manualDiscountDraftAmount() {
+                        return this.calculateManualDiscountAmount(
+                            this.manualDiscountDraft.type,
+                            Number(this.manualDiscountDraft.value || 0)
+                        );
+                    },
+                    manualDiscountAmount() {
+                        return this.calculateManualDiscountAmount(this.manualDiscountType, this.manualDiscountValue);
+                    },
+                    manualDiscountLabel() {
+                        if (this.manualDiscountAmount <= 0) return '';
+                        if (this.manualDiscountType === 'percentage') {
+                            return `${this.formatNumber(this.manualDiscountValue, 2)}% (-Rp ${this.formatNumber(this.manualDiscountAmount, 2)})`;
+                        }
+
+                        return `Rp ${this.formatNumber(this.manualDiscountAmount, 2)}`;
+                    },
                     taxBase() {
-                        return Math.max(0, this.subtotal - this.voucherDiscountAmount);
+                        return Math.max(0, this.subtotal - this.voucherDiscountAmount - this.manualDiscountAmount);
                     },
                     serviceChargeAmount() {
                         return this.taxBase * (this.serviceChargeRate / 100);
@@ -1033,6 +1249,21 @@
                     },
                     totalAmount() {
                         return this.roundedTotalAmount;
+                    },
+                    selectedPaymentMethodObj() {
+                        if (!this.selectedPaymentMethod) return null;
+                        return this.paymentMethods.find(m => Number(m.id) === Number(this.selectedPaymentMethod)) || null;
+                    },
+                    isCashPayment() {
+                        const method = this.selectedPaymentMethodObj;
+                        const code = String(method?.code || '').toUpperCase();
+                        const name = String(method?.name || '').toLowerCase();
+                        return !!method && (code === 'CASH' || name.includes('cash') || name.includes('tunai') || Number(method.id) === 1);
+                    },
+                    cashChangeAmount() {
+                        if (!this.isCashPayment) return 0;
+                        const received = Number(this.cashReceivedAmount || 0);
+                        return Math.max(0, received - Number(this.totalAmount || 0));
                     }
                 },
                 mounted() {
@@ -1691,11 +1922,31 @@
 
                         return Math.max(0, Math.min(discount, subtotal));
                     },
+                    calculateManualDiscountAmount(type, value) {
+                        const discountType = String(type || 'none');
+                        const discountValue = Math.max(0, Number(value || 0));
+                        if (this.subtotal <= 0 || discountType === 'none' || discountValue <= 0) {
+                            return 0;
+                        }
+
+                        let discount = 0;
+                        if (discountType === 'percentage') {
+                            discount = this.subtotal * (discountValue / 100);
+                        } else if (discountType === 'fixed') {
+                            discount = discountValue;
+                        }
+
+                        return Math.max(0, Math.min(discount, this.subtotal));
+                    },
                     applyVoucherCode() {
                         const rawCode = String(this.voucherCodeInput || '').trim().toUpperCase();
                         if (!rawCode) {
                             this.clearVoucher();
                             return;
+                        }
+
+                        if (this.manualDiscountAmount > 0) {
+                            this.clearManualDiscount();
                         }
 
                         const voucher = this.findVoucherByCode(rawCode);
@@ -1719,6 +1970,92 @@
                         this.appliedVoucher = null;
                         this.voucherErrorMessage = '';
                         this.voucherCodeInput = '';
+                    },
+                    openManualDiscountModal() {
+                        if (this.cart.length === 0) {
+                            return;
+                        }
+
+                        this.manualDiscountDraft = {
+                            type: this.manualDiscountType === 'percentage' ? 'percentage' : 'fixed',
+                            value: this.manualDiscountValue || 0,
+                            reason: this.manualDiscountReason || '',
+                            pin: '',
+                            error: ''
+                        };
+                        this.manualDiscountErrorMessage = '';
+                        this.showManualDiscountModal = true;
+                    },
+                    closeManualDiscountModal() {
+                        this.showManualDiscountModal = false;
+                        this.isAuthorizingManualDiscount = false;
+                    },
+                    clearManualDiscount() {
+                        this.manualDiscountType = 'none';
+                        this.manualDiscountValue = 0;
+                        this.manualDiscountAuthorizationPin = '';
+                        this.manualDiscountReason = '';
+                        this.manualDiscountAuthorizedByName = '';
+                        this.manualDiscountErrorMessage = '';
+                    },
+                    async applyManualDiscount() {
+                        const type = String(this.manualDiscountDraft.type || 'fixed');
+                        const value = Number(this.manualDiscountDraft.value || 0);
+                        const pin = String(this.manualDiscountDraft.pin || '').trim();
+
+                        this.manualDiscountDraft.error = '';
+                        if (!['fixed', 'percentage'].includes(type) || value <= 0) {
+                            this.manualDiscountDraft.error = 'Nilai diskon harus lebih dari 0.';
+                            return;
+                        }
+
+                        if (type === 'percentage' && value > 100) {
+                            this.manualDiscountDraft.error = 'Diskon persen maksimal 100%.';
+                            return;
+                        }
+
+                        if (this.manualDiscountDraftAmount <= 0) {
+                            this.manualDiscountDraft.error = 'Diskon tidak boleh melebihi subtotal.';
+                            return;
+                        }
+
+                        if (!/^[0-9]{6}$/.test(pin)) {
+                            this.manualDiscountDraft.error = 'PIN supervisor harus 6 digit angka.';
+                            return;
+                        }
+
+                        this.isAuthorizingManualDiscount = true;
+                        try {
+                            const response = await fetch('{{ route('pos.sales.manual-discount.authorize') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ pin })
+                            });
+                            const result = await this.parseApiResponse(response);
+
+                            if (!response.ok || !result.success) {
+                                this.manualDiscountDraft.error = result.message || 'Otorisasi diskon ditolak.';
+                                return;
+                            }
+
+                            this.clearVoucher();
+                            this.manualDiscountType = type;
+                            this.manualDiscountValue = value;
+                            this.manualDiscountAuthorizationPin = pin;
+                            this.manualDiscountReason = this.manualDiscountDraft.reason || '';
+                            this.manualDiscountAuthorizedByName = result.data?.authorized_by_name || 'Supervisor';
+                            this.manualDiscountErrorMessage = '';
+                            this.showManualDiscountModal = false;
+                        } catch (e) {
+                            this.manualDiscountDraft.error = 'Gagal validasi otorisasi: ' + e.message;
+                        } finally {
+                            this.isAuthorizingManualDiscount = false;
+                        }
                     },
                     buildSpecialPromotionConfirmationMessage() {
                         if (!this.selectedPromotionRequiresConfirmation) {
@@ -1748,8 +2085,39 @@
                     },
                     selectPaymentMethod(methodId) {
                         this.selectedPaymentMethod = methodId;
+                        if (this.isCashPayment) {
+                            this.cashReceivedAmount = 0;
+                        }
                         this.showPaymentMethodPicker = false;
                         this.showPaymentModal = false;
+                    },
+                    openCashPaymentModal() {
+                        if (!this.cashReceivedAmount) {
+                            this.cashReceivedAmount = 0;
+                        }
+
+                        this.showCashPaymentModal = true;
+                    },
+                    closeCashPaymentModal() {
+                        this.showCashPaymentModal = false;
+                    },
+                    setCashReceivedExact() {
+                        this.cashReceivedAmount = Number(this.totalAmount || 0);
+                    },
+                    addCashReceived(amount) {
+                        this.cashReceivedAmount = Number(this.cashReceivedAmount || 0) + Number(amount || 0);
+                    },
+                    clearCashReceived() {
+                        this.cashReceivedAmount = 0;
+                    },
+                    submitCashPayment() {
+                        if (Number(this.cashReceivedAmount || 0) < Number(this.totalAmount || 0)) {
+                            alert('Uang tunai kurang dari total transaksi.');
+                            return;
+                        }
+
+                        this.showCashPaymentModal = false;
+                        this.processPayment(true);
                     },
                     filterProducts() {
                         let filtered = this.products;
@@ -1825,6 +2193,7 @@
                     clearCart() {
                         this.cart = [];
                         this.clearVoucher();
+                        this.clearManualDiscount();
                         this.currentOrderKey = this.generateOrderKey();
                     },
                     increaseQty(index) {
@@ -1869,7 +2238,9 @@
                         const date = new Date(dateString);
                         return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                     },
-                    async processPayment() {
+                    async processPayment(confirmCash = false) {
+                        const cashConfirmed = confirmCash === true;
+
                         if (this.isProcessing) {
                             return;
                         }
@@ -1895,6 +2266,24 @@
                             this.isProcessing = false;
                             return;
                         }
+                        if (this.manualDiscountAmount > 0 && !this.manualDiscountAuthorizationPin) {
+                            alert('Diskon dPOS belum memiliki otorisasi supervisor.');
+                            this.isProcessing = false;
+                            return;
+                        }
+                        if (this.isCashPayment && !cashConfirmed) {
+                            this.openCashPaymentModal();
+                            this.isProcessing = false;
+                            return;
+                        }
+                        if (this.isCashPayment) {
+                            const received = Number(this.cashReceivedAmount || 0);
+                            if (received < Number(this.totalAmount || 0)) {
+                                alert('Uang tunai kurang dari total transaksi.');
+                                this.isProcessing = false;
+                                return;
+                            }
+                        }
                         if (!this.currentOrderKey) {
                             this.currentOrderKey = this.generateOrderKey();
                         }
@@ -1913,6 +2302,10 @@
                             voucher_code: voucherCode,
                             discount_type: this.appliedVoucher ? this.appliedVoucher.discount_type : 'none',
                             discount_value: this.appliedVoucher ? Number(this.appliedVoucher.discount_value || 0) : 0,
+                            manual_discount_type: this.manualDiscountAmount > 0 ? this.manualDiscountType : 'none',
+                            manual_discount_value: this.manualDiscountAmount > 0 ? Number(this.manualDiscountValue || 0) : 0,
+                            manual_discount_authorization_pin: this.manualDiscountAmount > 0 ? this.manualDiscountAuthorizationPin : null,
+                            manual_discount_reason: this.manualDiscountAmount > 0 ? (this.manualDiscountReason || null) : null,
                             items: this.cart.map(i => ({
                                 product_id: i.product_id,
                                 quantity: this.normalizeQuantity(i.quantity, 1),
@@ -1921,7 +2314,9 @@
                                 notes: i.notes || null
                             })),
                             payment_method_id: this.selectedPaymentMethod,
-                            payment_amount: this.totalAmount
+                            payment_amount: this.isCashPayment ? Number(this.cashReceivedAmount || 0) : this.totalAmount,
+                            payment_tendered_amount: this.isCashPayment ? Number(this.cashReceivedAmount || 0) : null,
+                            payment_change_amount: this.isCashPayment ? Number(this.cashChangeAmount || 0) : null
                         };
 
                         try {
@@ -1952,8 +2347,10 @@
                                 this.showSuccessModal = true;
                                 this.cart = [];
                                 this.selectedPaymentMethod = '';
+                                this.cashReceivedAmount = null;
                                 this.selectedPromotionId = '';
                                 this.clearVoucher();
+                                this.clearManualDiscount();
                                 this.currentOrderKey = this.generateOrderKey();
                                 this.showPaymentMethodPicker = false;
                             } else {
@@ -2182,5 +2579,3 @@
             </script>
         @endpush
 @endsection
-
-

@@ -24,6 +24,10 @@ class Sale extends Model
         'discount_type',
         'discount_value',
         'discount_amount',
+        'discount_source',
+        'manual_discount_authorized_by',
+        'manual_discount_authorized_at',
+        'manual_discount_reason',
         'tax_amount',
         'service_charge_amount',
         'rounding_amount',
@@ -48,6 +52,8 @@ class Sale extends Model
         'subtotal' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'manual_discount_authorized_by' => 'integer',
+        'manual_discount_authorized_at' => 'datetime',
         'service_charge_amount' => 'decimal:2',
         'rounding_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
@@ -107,6 +113,16 @@ class Sale extends Model
     public function voucher(): BelongsTo
     {
         return $this->belongsTo(Voucher::class);
+    }
+
+    public function manualDiscountAuthorizer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manual_discount_authorized_by');
+    }
+
+    public function manualDiscounts(): HasMany
+    {
+        return $this->hasMany(SaleManualDiscount::class);
     }
 
     /**

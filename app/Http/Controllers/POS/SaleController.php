@@ -130,7 +130,7 @@ class SaleController extends Controller
         ])->values();
         $products = $posData->flatMap(fn(array $category) => $category['products'])->values();
         $paymentMethods = PaymentMethod::where('is_active', true)
-            ->select(['id', 'name'])
+            ->select(['id', 'code', 'name'])
             ->get();
 
         // Ambil beberapa customer aktif untuk pilihan di POS (loyalty)
@@ -297,6 +297,47 @@ class SaleController extends Controller
                 'message' => 'Gagal menyimpan transaksi',
                 'error' => $e->getMessage(),
             ], 422);
+        }
+    }
+
+    public function authorizeManualDiscount(Request $request)
+    {
+        $validated = $request->validate([
+            'pin' => ['required', 'digits:6', 'regex:/^[0-9]{6}$/'],
+        ], [
+            'pin.required' => 'PIN otorisasi wajib diisi.',
+            'pin.digits' => 'PIN otorisasi harus 6 digit.',
+            'pin.regex' => 'PIN otorisasi harus angka 6 digit.',
+        ]);
+
+        $user = $request->user();
+        if (!$user || !$user->outlet_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun Anda belum terhubung ke outlet aktif.',
+            ], 422);
+        }
+
+        try {
+            $authorizer = $this->saleService->authorizeManualDiscount(
+                pin: (string) $validated['pin'],
+                outletId: (int) $user->outlet_id,
+                cashierUserId: (int) $user->id,
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Otorisasi diskon valid.',
+                'data' => [
+                    'authorized_by_user_id' => $authorizer->id,
+                    'authorized_by_name' => $authorizer->name,
+                ],
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         }
     }
 

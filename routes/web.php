@@ -600,6 +600,9 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(fu
     Route::post('/sales', [SaleController::class, 'store'])
         ->name('sales.store')
         ->middleware('role:kasir,admin');
+    Route::post('/sales/manual-discount/authorize', [SaleController::class, 'authorizeManualDiscount'])
+        ->name('sales.manual-discount.authorize')
+        ->middleware('role:kasir,admin');
 
     Route::get('/sales/{sale}/print', [SaleController::class, 'print'])
         ->name('sales.print')

@@ -138,9 +138,30 @@
         @endforeach
         
         @php
-            $totalPaid = $sale->payments->sum('amount');
-            $change = $totalPaid - $sale->total_amount;
+            $tenderedAmount = (float) ($sale->payments->sum(function ($payment) {
+                return (float) ($payment->tendered_amount ?? 0);
+            }));
+            $fallbackPaid = (float) $sale->payments->sum('amount');
+            $totalTendered = $tenderedAmount > 0 ? $tenderedAmount : $fallbackPaid;
+            $change = max(0, $totalTendered - (float) $sale->total_amount);
+            $hasTenderedAmount = $tenderedAmount > 0;
+            $hasCashPayment = $sale->payments->contains(function ($payment) {
+                $code = strtoupper(trim((string) ($payment->paymentMethod?->code ?? '')));
+                $name = strtolower(trim((string) ($payment->paymentMethod?->name ?? '')));
+
+                return $code === 'CASH'
+                    || str_contains($name, 'cash')
+                    || str_contains($name, 'tunai')
+                    || (int) $payment->payment_method_id === 1;
+            });
         @endphp
+
+        @if($hasCashPayment && $totalTendered > 0)
+        <div class="flex-between">
+            <span>Uang Diterima</span>
+            <span>{{ number_format($totalTendered, 0, ',', '.') }}</span>
+        </div>
+        @endif
 
         @if($change > 0)
         <div class="flex-between">

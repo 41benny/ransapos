@@ -11,9 +11,12 @@ use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Promotion;
 use App\Models\Voucher;
+use App\Models\SaleManualDiscount;
+use App\Models\User;
 use App\Support\SpecialPromotion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Exception;
 
 class SaleService
@@ -173,6 +176,8 @@ class SaleService
             $discountType = $data['discount_type'] ?? 'none';
             $discountValue = (float) ($data['discount_value'] ?? 0);
             $voucher = null;
+            $discountSource = null;
+            $manualDiscountAuthorization = null;
 
             if (!empty($data['voucher_code'])) {
                 $voucherCode = strtoupper(trim((string) $data['voucher_code']));
@@ -188,10 +193,24 @@ class SaleService
                 $discountAmount = $voucher->calculateDiscountAmount($subtotal);
                 $discountType = $voucher->discount_type;
                 $discountValue = (float) $voucher->discount_value;
+                $discountSource = 'voucher';
+            } elseif ($this->hasManualDiscount($data)) {
+                $manualDiscountAuthorization = $this->authorizeManualDiscount(
+                    pin: (string) ($data['manual_discount_authorization_pin'] ?? ''),
+                    outletId: (int) $data['outlet_id'],
+                    cashierUserId: (int) ($data['user_id'] ?? 0),
+                );
+
+                $discountType = (string) $data['manual_discount_type'];
+                $discountValue = (float) $data['manual_discount_value'];
+                $discountAmount = $this->calculateHeaderDiscount($discountType, $discountValue, $subtotal);
+                $discountSource = 'dpos_authorized';
             } elseif ($discountType === 'percentage') {
                 $discountAmount = $subtotal * ($discountValue / 100);
+                $discountSource = 'manual';
             } elseif ($discountType === 'fixed') {
                 $discountAmount = $discountValue;
+                $discountSource = 'manual';
             }
 
             $discountAmount = min($discountAmount, $subtotal);
@@ -219,6 +238,22 @@ class SaleService
             $totalAmount = (float) round($rawTotalAmount, 0);
             $roundingAmount = (float) round($totalAmount - $rawTotalAmount, 2);
 
+            $paymentMethod = PaymentMethod::find((int) $data['payment_method_id']);
+            $paymentCode = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
+            $paymentName = strtolower(trim((string) ($paymentMethod?->name ?? '')));
+            $isCashPayment = $paymentCode === 'CASH'
+                || str_contains($paymentName, 'cash')
+                || str_contains($paymentName, 'tunai')
+                || (int) $data['payment_method_id'] === 1;
+            $tenderedAmount = (float) ($data['payment_tendered_amount'] ?? 0);
+            if ($isCashPayment && $tenderedAmount <= 0) {
+                $tenderedAmount = (float) ($data['payment_amount'] ?? 0);
+            }
+
+            if ($isCashPayment && $tenderedAmount < $totalAmount) {
+                throw new Exception('Uang tunai yang diterima kurang dari total transaksi.');
+            }
+
             // 7. Buat record sale
             $sale = Sale::create([
                 'invoice_number' => $invoiceNumber,
@@ -237,6 +272,10 @@ class SaleService
                 'discount_type' => $discountType,
                 'discount_value' => $discountValue,
                 'discount_amount' => $discountAmount,
+                'discount_source' => $discountSource,
+                'manual_discount_authorized_by' => $manualDiscountAuthorization?->id,
+                'manual_discount_authorized_at' => $manualDiscountAuthorization ? now() : null,
+                'manual_discount_reason' => $manualDiscountAuthorization ? ($data['manual_discount_reason'] ?? null) : null,
                 'service_charge_amount' => $serviceChargeAmount,
                 'rounding_amount' => $roundingAmount,
                 'tax_amount' => $taxAmount,
@@ -250,6 +289,21 @@ class SaleService
                 'backdate_reason' => $data['backdate_reason'] ?? null,
                 'manual_reference' => $data['manual_reference'] ?? null,
             ]);
+
+            if ($manualDiscountAuthorization && $discountAmount > 0) {
+                SaleManualDiscount::create([
+                    'sale_id' => $sale->id,
+                    'cashier_user_id' => $sale->user_id,
+                    'authorized_by_user_id' => $manualDiscountAuthorization->id,
+                    'outlet_id' => $sale->outlet_id,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
+                    'discount_amount_applied' => $discountAmount,
+                    'source' => 'dpos_authorized',
+                    'reason' => $data['manual_discount_reason'] ?? null,
+                    'authorized_at' => $sale->manual_discount_authorized_at ?? now(),
+                ]);
+            }
 
             // 8. Buat sale items & logika BOM / pengurangan stok
             $allowNegativeStock = (bool) config('app.allow_negative_stock', false);
@@ -353,6 +407,8 @@ class SaleService
                 'sale_id' => $sale->id,
                 'payment_method_id' => $data['payment_method_id'],
                 'amount' => $totalAmount,
+                'tendered_amount' => $isCashPayment ? $tenderedAmount : null,
+                'change_amount' => $isCashPayment ? max(0, $tenderedAmount - $totalAmount) : null,
                 'reference_number' => $data['payment_reference'] ?? null,
                 'notes' => $data['payment_notes'] ?? null,
             ]);
@@ -421,6 +477,62 @@ class SaleService
 
         // Format baru: INV-001260214-0001
         return "INV-{$outlet}{$datePart}-{$sequence}";
+    }
+
+    public function authorizeManualDiscount(string $pin, int $outletId, int $cashierUserId = 0): User
+    {
+        $pin = trim($pin);
+        if (!preg_match('/^[0-9]{6}$/', $pin)) {
+            throw new Exception('PIN otorisasi diskon harus 6 digit angka.');
+        }
+
+        $authorizers = User::query()
+            ->with('role.permissions')
+            ->where('is_active', true)
+            ->whereNotNull('attendance_pin')
+            ->where(function ($query) use ($outletId) {
+                $query->where('outlet_id', $outletId)
+                    ->orWhereNull('outlet_id');
+            })
+            ->get();
+
+        foreach ($authorizers as $authorizer) {
+            if (!Hash::check($pin, (string) $authorizer->attendance_pin)) {
+                continue;
+            }
+
+            if ((int) $authorizer->id === $cashierUserId && !$authorizer->hasRole(['admin', 'manager', 'superadmin'])) {
+                break;
+            }
+
+            if ($authorizer->hasRole(['admin', 'manager', 'superadmin'])
+                || $authorizer->hasPermission('pos.manual-discount.authorize')) {
+                return $authorizer;
+            }
+
+            break;
+        }
+
+        throw new Exception('PIN otorisasi diskon tidak valid atau tidak memiliki akses supervisor.');
+    }
+
+    private function hasManualDiscount(array $data): bool
+    {
+        return in_array((string) ($data['manual_discount_type'] ?? 'none'), ['percentage', 'fixed'], true)
+            && (float) ($data['manual_discount_value'] ?? 0) > 0;
+    }
+
+    private function calculateHeaderDiscount(string $discountType, float $discountValue, float $subtotal): float
+    {
+        if ($discountType === 'percentage') {
+            return $subtotal * ($discountValue / 100);
+        }
+
+        if ($discountType === 'fixed') {
+            return $discountValue;
+        }
+
+        return 0.0;
     }
 
     /**

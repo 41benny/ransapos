@@ -1106,6 +1106,7 @@ class CatalogReportController extends Controller
                 ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
                 ->leftJoin('promotions', 'sales.promotion_id', '=', 'promotions.id')
                 ->leftJoin('vouchers', 'sales.voucher_id', '=', 'vouchers.id')
+                ->leftJoin('users as manual_discount_authorizers', 'sales.manual_discount_authorized_by', '=', 'manual_discount_authorizers.id')
                 ->where('sales.status', 'completed')
                 ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                 ->where(function ($query) {
@@ -1128,6 +1129,10 @@ class CatalogReportController extends Controller
                 'sales.sales_type',
                 'sales.discount_type',
                 'sales.discount_amount',
+                'sales.discount_source',
+                'sales.manual_discount_authorized_by',
+                'sales.manual_discount_authorized_at',
+                'sales.manual_discount_reason',
                 'sales.total_amount',
                 'sales.customer_name',
                 'sales.notes',
@@ -1137,6 +1142,7 @@ class CatalogReportController extends Controller
                 'promotions.code as promotion_code',
                 'vouchers.name as voucher_name',
                 'vouchers.code as voucher_table_code',
+                'manual_discount_authorizers.name as manual_discount_authorizer_name',
                 'sales.voucher_code'
             )
                 ->selectRaw('COALESCE(sale_item_metrics.gross_value, sales.subtotal + sales.discount_amount, sales.subtotal, 0) as gross_value')
@@ -2555,6 +2561,8 @@ class CatalogReportController extends Controller
             voucherCode: $sale->voucher_code ?? $sale->voucher?->code,
             salesType: $sale->sales_type,
             discountType: $sale->discount_type,
+            discountSource: $sale->discount_source,
+            manualDiscountAuthorizerName: $sale->manualDiscountAuthorizer?->name,
             totalDiscount: $effectiveDiscount,
             isDiscountAnomaly: $isDiscountAnomaly,
         );
@@ -2604,6 +2612,8 @@ class CatalogReportController extends Controller
             voucherCode: ($sale->voucher_code ?? null) ?: ($sale->voucher_table_code ?? null),
             salesType: $sale->sales_type ?? null,
             discountType: $sale->discount_type ?? null,
+            discountSource: $sale->discount_source ?? null,
+            manualDiscountAuthorizerName: $sale->manual_discount_authorizer_name ?? null,
             totalDiscount: $effectiveDiscount,
             isDiscountAnomaly: $isDiscountAnomaly,
         );
@@ -2670,10 +2680,24 @@ class CatalogReportController extends Controller
         ?string $voucherCode,
         ?string $salesType,
         ?string $discountType,
+        ?string $discountSource,
+        ?string $manualDiscountAuthorizerName,
         float $totalDiscount,
         bool $isDiscountAnomaly = false
     ): array
     {
+        if (trim((string) $discountSource) === 'dpos_authorized') {
+            $authorizerName = trim((string) $manualDiscountAuthorizerName);
+
+            return [
+                'key' => 'discount-source:dpos-authorized',
+                'label' => $authorizerName !== ''
+                    ? 'Manual Otorisasi dPOS - ' . $authorizerName
+                    : 'Manual Otorisasi dPOS',
+                'kind' => 'dpos_authorized',
+            ];
+        }
+
         $promotionName = trim((string) $promotionName);
         if ($promotionName !== '') {
             return [

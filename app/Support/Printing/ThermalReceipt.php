@@ -105,8 +105,24 @@ class ThermalReceipt
             $name = $payment->paymentMethod?->name ?? '-';
             $out .= self::twoCols(self::ascii($name), self::money($payment->amount));
         }
-        $totalPaid = (float) $sale->payments->sum('amount');
-        $change = $totalPaid - (float) $sale->total_amount;
+        $tenderedAmount = (float) $sale->payments->sum(fn ($payment) => (float) ($payment->tendered_amount ?? 0));
+        $fallbackPaid = (float) $sale->payments->sum('amount');
+        $totalTendered = $tenderedAmount > 0 ? $tenderedAmount : $fallbackPaid;
+        $change = max(0, $totalTendered - (float) $sale->total_amount);
+        $hasCashPayment = $sale->payments->contains(function ($payment) {
+            $code = strtoupper(trim((string) ($payment->paymentMethod?->code ?? '')));
+            $name = strtolower(trim((string) ($payment->paymentMethod?->name ?? '')));
+
+            return $code === 'CASH'
+                || str_contains($name, 'cash')
+                || str_contains($name, 'tunai')
+                || (int) $payment->payment_method_id === 1;
+        });
+
+        if ($hasCashPayment && $totalTendered > 0) {
+            $out .= self::twoCols('Uang Diterima', self::money($totalTendered));
+        }
+
         if ($change > 0) {
             $out .= self::twoCols('Kembali', self::money($change));
         }
