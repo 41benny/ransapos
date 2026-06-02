@@ -561,7 +561,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
 });
 
 // POS Device Registration (Kasir/Admin/Kitchen)
-Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
+Route::prefix('pos')->name('pos.')->middleware(['auth', \App\Http\Middleware\NoCache::class])->group(function () {
     Route::get('/device/register', [PosDeviceController::class, 'showRegister'])
         ->name('device.register')
         ->middleware('role:kasir,admin,manager,kitchen');
@@ -571,7 +571,7 @@ Route::prefix('pos')->name('pos.')->middleware(['auth'])->group(function () {
 });
 
 // POS (Kasir / Kitchen) Routes
-Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device'])->group(function () {
+Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device', \App\Http\Middleware\NoCache::class])->group(function () {
     Route::get('/dashboard', [POSDashboardController::class, 'index'])
         ->name('dashboard')
         ->middleware('role:kasir,admin');
