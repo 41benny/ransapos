@@ -1138,7 +1138,7 @@
                             error: ''
                         },
 
-                        outletId: {{ $activeSession->outlet_id ?? 'null' }},
+                        outletId: {{ auth()->user()->outlet_id ?? $activeSession->outlet_id ?? 'null' }},
                         cashSessionId: {{ $activeSession->id ?? 'null' }},
 
                         taxRate: {{ $outlet->tax_rate ?? 10 }},

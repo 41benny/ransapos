@@ -555,15 +555,32 @@
                 return `Ransa_pos_print_settings_${outletKey}_${userKey}`;
             },
             getPrintEngine() {
-                try {
-                    const raw = localStorage.getItem(this.getPrintSettingsStorageKey());
-                    if (!raw) return 'browser';
-                    const parsed = JSON.parse(raw);
-                    const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
-                    return allowed.includes(parsed.printEngine) ? parsed.printEngine : 'browser';
-                } catch (e) {
-                    return 'browser';
+                const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
+                const readEngine = (raw) => {
+                    if (!raw) return null;
+                    try {
+                        const parsed = JSON.parse(raw);
+                        return allowed.includes(parsed.printEngine) ? parsed.printEngine : null;
+                    } catch (e) { return null; }
+                };
+
+                // 1) Key persis (outlet+user).
+                let engine = readEngine(localStorage.getItem(this.getPrintSettingsStorageKey()));
+                if (engine) return engine;
+
+                // 2) Fallback: cari key setting print mana pun milik user ini (jaga-jaga
+                //    kalau outletId berbeda sumber), lalu key setting print apa pun.
+                const userSuffix = this.userId ? `_user_${this.userId}` : null;
+                let anyEngine = null;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key || key.indexOf('Ransa_pos_print_settings_') !== 0) continue;
+                    const e = readEngine(localStorage.getItem(key));
+                    if (!e) continue;
+                    if (userSuffix && key.endsWith(userSuffix)) return e; // prioritas user ini
+                    anyEngine = anyEngine || e;
                 }
+                return anyEngine || 'browser';
             },
             async fetchRecapBase64(baseUrl) {
                 const url = baseUrl + '&format=escpos';
@@ -691,14 +708,61 @@
                 }
                 return bytes;
             },
-            openReceiptPrintWindow(saleId) {
+            async openReceiptPrintWindow(saleId) {
                 const normalizedSaleId = Number(saleId);
                 if (!Number.isFinite(normalizedSaleId) || normalizedSaleId <= 0) {
                     alert('ID transaksi tidak valid untuk dicetak.');
                     return;
                 }
 
+                const engine = this.getPrintEngine();
+
+                if (engine === 'rawbt') {
+                    try {
+                        const b64 = await this.fetchSaleBase64(normalizedSaleId);
+                        window.location.href = 'intent:base64,' + b64
+                            + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+                        return;
+                    } catch (e) {
+                        console.error('Gagal cetak struk via RawBT:', e);
+                    }
+                }
+
+                if (engine === 'webbt') {
+                    // Hubungkan printer dulu (mumpung masih dalam user-gesture klik), lalu cetak.
+                    let characteristic = null;
+                    try {
+                        characteristic = await this.webbtGetCharacteristic();
+                    } catch (e) {
+                        characteristic = null;
+                    }
+                    if (characteristic) {
+                        try {
+                            const b64 = await this.fetchSaleBase64(normalizedSaleId);
+                            await this.webbtWriteBytes(characteristic, this.base64ToBytes(b64));
+                            return;
+                        } catch (e) {
+                            console.error('Gagal cetak struk via Web Bluetooth:', e);
+                        }
+                    }
+                }
+
+                // Fallback: cetak biasa lewat browser.
                 window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
+            },
+            async fetchSaleBase64(saleId) {
+                const response = await fetch(`/pos/sales/${saleId}/escpos`, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                const data = await response.json();
+                if (!data || !data.base64) {
+                    throw new Error('Data ESC/POS struk kosong.');
+                }
+                return data.base64;
             },
             openHistoryWithSale(saleId) {
                 this.showHistoryModal = true;
