@@ -588,12 +588,19 @@
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     credentials: 'same-origin',
                 });
+                const text = await response.text();
                 if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
+                    throw new Error('server balas HTTP ' + response.status);
                 }
-                const data = await response.json();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    // Server mengembalikan HTML (mis. halaman rekap/ error), bukan JSON.
+                    throw new Error('respon bukan JSON - kemungkinan kode rekap belum ter-deploy di server. Cuplikan: ' + text.slice(0, 50));
+                }
                 if (!data || !data.base64) {
-                    throw new Error('Data ESC/POS rekap kosong.');
+                    throw new Error('data ESC/POS rekap kosong');
                 }
                 return data.base64;
             },
@@ -625,12 +632,23 @@
                     return;
                 }
 
+                // Langkah 1: ambil data ESC/POS rekap dari server.
+                let base64;
                 try {
-                    const base64 = await this.fetchRecapBase64(baseUrl);
+                    base64 = await this.fetchRecapBase64(baseUrl);
+                } catch (error) {
+                    console.error('Gagal AMBIL DATA rekap:', error);
+                    alert('Gagal AMBIL DATA rekap dari server: ' + (error && error.message ? error.message : error) + '\n\nMembuka cetak biasa sebagai cadangan.');
+                    window.open(baseUrl, '_blank', 'noopener,noreferrer');
+                    return;
+                }
+
+                // Langkah 2: kirim ke printer thermal.
+                try {
                     await this.webbtWriteBytes(characteristic, this.base64ToBytes(base64));
                 } catch (error) {
-                    console.error('Gagal cetak rekap thermal:', error);
-                    alert('Gagal cetak rekap ke printer thermal. Membuka cetak biasa sebagai cadangan.');
+                    console.error('Gagal KIRIM ke printer:', error);
+                    alert('Gagal KIRIM rekap ke printer: ' + (error && error.message ? error.message : error) + '\n\nMembuka cetak biasa sebagai cadangan.');
                     window.open(baseUrl, '_blank', 'noopener,noreferrer');
                 }
             },
