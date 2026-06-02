@@ -1739,21 +1739,39 @@
                         }
                         return null;
                     },
-                    async webbtTryReconnect() {
+                    async webbtTryReconnect(retries = 3) {
                         // Sambung-ulang otomatis ke printer yang IZIN-nya sudah pernah
                         // diberikan (per-origin), tanpa menampilkan dialog pemilih.
-                        if (!navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function') {
-                            return null; // browser belum dukung getDevices()
+                        if (!navigator.bluetooth) {
+                            this.printerStatusMessage = 'Browser tidak mendukung Web Bluetooth / bukan koneksi aman.';
+                            return null;
                         }
+                        if (typeof navigator.bluetooth.getDevices !== 'function') {
+                            // getDevices() belum aktif -> sambung-otomatis tidak bisa.
+                            this.printerStatusMessage = 'Sambung-otomatis belum aktif di browser ini. Aktifkan flag chrome://flags/#enable-web-bluetooth-new-permissions-backend, atau klik "Hubungkan Printer Bluetooth".';
+                            return null;
+                        }
+                        let devices = [];
                         try {
-                            const devices = await navigator.bluetooth.getDevices();
+                            devices = await navigator.bluetooth.getDevices();
+                        } catch (e) {
+                            return null;
+                        }
+                        if (!devices || devices.length === 0) {
+                            this.printerStatusMessage = 'Belum ada printer yang diizinkan. Klik "Hubungkan Printer Bluetooth" sekali.';
+                            return null;
+                        }
+
+                        this.printerStatusMessage = 'Menyambungkan ulang printer otomatis...';
+                        // Coba beberapa kali (printer kadang perlu waktu bangun setelah refresh).
+                        for (let attempt = 1; attempt <= Math.max(1, retries); attempt++) {
                             for (const device of devices) {
                                 try {
                                     const characteristic = await this.webbtDiscoverCharacteristic(device);
                                     if (characteristic) {
                                         device.addEventListener('gattserverdisconnected', () => {
                                             this.webbtConnected = false;
-                                            this.printerStatusMessage = 'Printer Bluetooth terputus (akan sambung otomatis saat cetak).';
+                                            this.printerStatusMessage = 'Printer terputus. Akan sambung otomatis saat cetak.';
                                         });
                                         window.__ransaBt = { device, characteristic };
                                         this.webbtConnected = true;
@@ -1763,7 +1781,11 @@
                                     }
                                 } catch (e) { /* coba device berikutnya */ }
                             }
-                        } catch (e) { /* abaikan, nanti fallback manual */ }
+                            if (attempt < retries) {
+                                await new Promise(r => setTimeout(r, 1200)); // jeda sebelum coba lagi
+                            }
+                        }
+                        this.printerStatusMessage = 'Gagal sambung otomatis (printer mati/jauh?). Akan dicoba lagi saat cetak.';
                         return null;
                     },
                     async webbtEnsureReady() {
