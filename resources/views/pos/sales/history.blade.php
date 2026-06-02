@@ -15,7 +15,7 @@
                     <p class="text-sm text-gray-500 mt-0.5">Rekap transaksi sesi open/closed milik Anda</p>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" onclick="window.print()"
+                    <button type="button" onclick="printReportThermal()"
                         class="flex items-center gap-2 bg-primary hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm">
                         <span class="material-icons-round text-base">print</span>
                         Print
@@ -322,6 +322,139 @@
                     window.print();
                 }, 120);
             });
+        </script>
+    @else
+        <script>
+            // Cetak Laporan ke printer thermal Bluetooth (mengikuti mode print yang
+            // tersimpan dari halaman kasir). Fallback ke dialog browser bila bukan thermal.
+            (function () {
+                const OUTLET_ID = @json(auth()->user()->outlet_id ?? null);
+                const USER_ID = @json(auth()->id() ?? null);
+                const SERVICE_UUIDS = [0xFFE0, 0xFF00, 0x18F0, 0xFEE7,
+                    '49535343-fe7d-4ae5-8fa9-9fafd205e455', '0000ff00-0000-1000-8000-00805f9b34fb'];
+
+                function storageKey() {
+                    const o = OUTLET_ID ? `outlet_${OUTLET_ID}` : 'outlet_unknown';
+                    const u = USER_ID ? `user_${USER_ID}` : 'user_unknown';
+                    return `Ransa_pos_print_settings_${o}_${u}`;
+                }
+                function getPrintEngine() {
+                    const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
+                    const read = (raw) => {
+                        if (!raw) return null;
+                        try { const p = JSON.parse(raw); return allowed.includes(p.printEngine) ? p.printEngine : null; }
+                        catch (e) { return null; }
+                    };
+                    let e = read(localStorage.getItem(storageKey()));
+                    if (e) return e;
+                    const suffix = USER_ID ? `_user_${USER_ID}` : null;
+                    let any = null;
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (!k || k.indexOf('Ransa_pos_print_settings_') !== 0) continue;
+                        const v = read(localStorage.getItem(k));
+                        if (!v) continue;
+                        if (suffix && k.endsWith(suffix)) return v;
+                        any = any || v;
+                    }
+                    return any || 'browser';
+                }
+                function escposUrl() {
+                    const params = new URLSearchParams(window.location.search || '');
+                    params.set('print', '1');
+                    params.set('format', 'escpos');
+                    return window.location.pathname + '?' + params.toString();
+                }
+                async function fetchBase64() {
+                    const r = await fetch(escposUrl(), {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                    });
+                    const text = await r.text();
+                    if (!r.ok) throw new Error('server balas HTTP ' + r.status);
+                    let d;
+                    try { d = JSON.parse(text); }
+                    catch (e) { throw new Error('respon bukan JSON (kode rekap belum ter-deploy di server?)'); }
+                    if (!d || !d.base64) throw new Error('data ESC/POS kosong');
+                    return d.base64;
+                }
+                function base64ToBytes(b64) {
+                    const b = atob(b64);
+                    const a = new Uint8Array(b.length);
+                    for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+                    return a;
+                }
+                async function discover(device) {
+                    const s = await device.gatt.connect();
+                    const svcs = await s.getPrimaryServices();
+                    for (const svc of svcs) {
+                        let chs = [];
+                        try { chs = await svc.getCharacteristics(); } catch (e) { continue; }
+                        const w = chs.find(c => c.properties.writeWithoutResponse) || chs.find(c => c.properties.write);
+                        if (w) return w;
+                    }
+                    return null;
+                }
+                async function getCharacteristic() {
+                    if (!navigator.bluetooth) {
+                        alert('Browser ini tidak mendukung Web Bluetooth, atau halaman tidak diakses lewat koneksi aman (HTTPS/localhost).');
+                        return null;
+                    }
+                    if (typeof navigator.bluetooth.getDevices === 'function') {
+                        try {
+                            const ds = await navigator.bluetooth.getDevices();
+                            for (const d of ds) {
+                                try { const c = await discover(d); if (c) return c; } catch (e) { }
+                            }
+                        } catch (e) { }
+                    }
+                    try {
+                        const d = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: SERVICE_UUIDS });
+                        return await discover(d);
+                    } catch (e) { return null; }
+                }
+                async function writeBytes(ch, bytes) {
+                    const size = 180;
+                    const nr = ch.properties.writeWithoutResponse;
+                    for (let i = 0; i < bytes.length; i += size) {
+                        const c = bytes.slice(i, i + size);
+                        if (nr && ch.writeValueWithoutResponse) await ch.writeValueWithoutResponse(c);
+                        else await ch.writeValue(c);
+                        await new Promise(r => setTimeout(r, 20));
+                    }
+                }
+
+                window.printReportThermal = async function () {
+                    const engine = getPrintEngine();
+
+                    if (engine === 'rawbt') {
+                        try {
+                            const b = await fetchBase64();
+                            window.location.href = 'intent:base64,' + b + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+                            return;
+                        } catch (e) { console.error('RawBT gagal:', e); }
+                    }
+
+                    if (engine === 'webbt') {
+                        let ch = null;
+                        try { ch = await getCharacteristic(); } catch (e) { ch = null; }
+                        if (ch) {
+                            try {
+                                const b = await fetchBase64();
+                                await writeBytes(ch, base64ToBytes(b));
+                                return;
+                            } catch (e) {
+                                console.error('Cetak thermal gagal:', e);
+                                alert('Gagal cetak laporan ke printer thermal: ' + (e && e.message ? e.message : e) + '\n\nMembuka cetak biasa.');
+                            }
+                        } else {
+                            alert('Printer Bluetooth tidak tersedia. Membuka cetak biasa.');
+                        }
+                    }
+
+                    window.print();
+                };
+            })();
         </script>
     @endif
 @endsection
