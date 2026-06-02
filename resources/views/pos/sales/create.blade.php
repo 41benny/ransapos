@@ -552,9 +552,10 @@
 
         <!-- Cash Payment Modal -->
         <div v-show="showCashPaymentModal"
-            class="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:pr-[420px] bg-black/60 backdrop-blur-sm"
+            class="fixed inset-0 z-[9999] flex items-center justify-center p-2 bg-black/60 backdrop-blur-sm"
             style="display: none;" :style="{ display: showCashPaymentModal ? 'flex' : 'none' }">
-            <div class="bg-white rounded-lg shadow-2xl w-full max-w-[520px] max-h-[calc(100vh-16px)] overflow-y-auto animate-[bounceIn_0.1s_ease-out]">
+            <div class="bg-white rounded-lg shadow-2xl overflow-y-auto animate-[bounceIn_0.1s_ease-out]"
+                style="width: min(520px, calc(100vw - 24px)); max-width: 520px; max-height: calc(100vh - 16px);">
                 <div class="h-11 bg-primary text-white grid grid-cols-[44px_1fr_44px] items-center sticky top-0 z-10">
                     <button @click="closeCashPaymentModal" class="h-11 flex items-center justify-center hover:bg-white/10 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
