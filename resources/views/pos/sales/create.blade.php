@@ -1796,6 +1796,73 @@
                         }
                         return state.characteristic;
                     },
+                    async webbtGetCharacteristic() {
+                        if (!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function') {
+                            alert('Browser ini tidak mendukung Web Bluetooth, atau halaman tidak diakses lewat koneksi aman (HTTPS/localhost). Gunakan Chrome/Edge.');
+                            return null;
+                        }
+
+                        try {
+                            const readyCharacteristic = await this.webbtEnsureReady();
+                            if (readyCharacteristic) {
+                                return readyCharacteristic;
+                            }
+                        } catch (e) {
+                            // Lanjut cari printer lain.
+                        }
+
+                        if (typeof navigator.bluetooth.getDevices === 'function') {
+                            try {
+                                const devices = await navigator.bluetooth.getDevices();
+                                for (const device of devices) {
+                                    try {
+                                        const characteristic = await this.webbtDiscoverCharacteristic(device);
+                                        if (characteristic) {
+                                            device.addEventListener('gattserverdisconnected', () => {
+                                                this.webbtConnected = false;
+                                                this.printerStatusMessage = 'Printer Bluetooth terputus.';
+                                            });
+                                            window.__ransaBt = { device, characteristic };
+                                            this.webbtConnected = true;
+                                            this.webbtDeviceName = device.name || 'Printer';
+                                            this.printerStatusMessage = `Printer ${this.webbtDeviceName} tersambung.`;
+                                            return characteristic;
+                                        }
+                                    } catch (e) {
+                                        // Coba device berikutnya.
+                                    }
+                                }
+                            } catch (e) {
+                                // Lanjut ke pemilih manual.
+                            }
+                        }
+
+                        try {
+                            this.printerStatusMessage = 'Pilih printer Bluetooth untuk cetak struk.';
+                            const device = await navigator.bluetooth.requestDevice({
+                                acceptAllDevices: true,
+                                optionalServices: this.getWebBtServiceUuids(),
+                            });
+                            const characteristic = await this.webbtDiscoverCharacteristic(device);
+                            if (!characteristic) {
+                                this.printerStatusMessage = 'Printer terhubung tapi tidak ditemukan jalur tulis.';
+                                return null;
+                            }
+
+                            device.addEventListener('gattserverdisconnected', () => {
+                                this.webbtConnected = false;
+                                this.printerStatusMessage = 'Printer Bluetooth terputus.';
+                            });
+                            window.__ransaBt = { device, characteristic };
+                            this.webbtConnected = true;
+                            this.webbtDeviceName = device.name || 'Printer';
+                            this.printerStatusMessage = `Printer ${this.webbtDeviceName} siap (Web Bluetooth).`;
+                            return characteristic;
+                        } catch (e) {
+                            this.printerStatusMessage = 'Pemilihan printer Bluetooth dibatalkan/gagal.';
+                            return null;
+                        }
+                    },
                     base64ToBytes(b64) {
                         const binary = atob(b64);
                         const bytes = new Uint8Array(binary.length);
@@ -1822,10 +1889,9 @@
                     },
                     async printReceiptViaWebBt(saleId) {
                         try {
-                            const characteristic = await this.webbtEnsureReady();
+                            const characteristic = await this.webbtGetCharacteristic();
                             if (!characteristic) {
-                                this.printerStatusMessage = 'Printer Bluetooth belum terhubung. Buka Setting Print lalu hubungkan printer.';
-                                alert('Printer Bluetooth belum terhubung. Buka tombol Print -> Setting -> Hubungkan Printer Bluetooth.');
+                                this.printerStatusMessage = 'Printer Bluetooth belum dipilih.';
                                 return false;
                             }
 
