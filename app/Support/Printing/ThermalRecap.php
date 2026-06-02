@@ -2,6 +2,8 @@
 
 namespace App\Support\Printing;
 
+use App\Models\Setting;
+
 /**
  * Membangun byte ESC/POS untuk REKAP TRANSAKSI 58mm.
  *
@@ -31,6 +33,11 @@ class ThermalRecap
         $salesTypeBreakdown = $data['sales_type_breakdown'] ?? [];
         $productRows = $data['product_rows'] ?? [];
 
+        // Samakan header dengan struk kasir (ThermalReceipt): pakai company_* dari Setting.
+        $companyName = Setting::getValue('company_name', $outletName);
+        $companyAddress = Setting::getValue('company_address', $data['outlet_address'] ?? null);
+        $companyPhone = Setting::getValue('company_phone', $data['outlet_phone'] ?? null);
+
         $out = '';
         $out .= self::ESC . '@';
         $out .= self::ESC . 't' . "\x00";
@@ -38,10 +45,20 @@ class ThermalRecap
         // ---- Header ----
         $out .= self::center();
         $out .= self::boldOn() . self::doubleOn();
-        $out .= self::line(self::ascii($outletName));
-        $out .= self::doubleOff();
-        $out .= self::line('REKAP TRANSAKSI');
-        $out .= self::boldOff();
+        // Teks dobel-lebar: maksimal 16 karakter per baris agar tidak terpotong.
+        foreach (self::wrap(self::ascii($companyName), (int) (self::WIDTH / 2)) as $row) {
+            $out .= self::line($row);
+        }
+        $out .= self::doubleOff() . self::boldOff();
+        if ($companyAddress) {
+            foreach (self::wrap(self::ascii($companyAddress), self::WIDTH) as $row) {
+                $out .= self::line($row);
+            }
+        }
+        if ($companyPhone) {
+            $out .= self::line(self::ascii($companyPhone));
+        }
+        $out .= self::boldOn() . self::line('REKAP TRANSAKSI') . self::boldOff();
         $out .= self::left();
         $out .= self::divider();
 
@@ -140,6 +157,21 @@ class ThermalRecap
         }
 
         return $left . str_repeat(' ', $space) . $right . "\n";
+    }
+
+    /**
+     * Pecah teks jadi beberapa baris sesuai lebar (default 32).
+     *
+     * @return string[]
+     */
+    private static function wrap(string $text, int $width = self::WIDTH): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return [];
+        }
+
+        return explode("\n", wordwrap($text, max(1, $width), "\n", true));
     }
 
     private static function money($value): string

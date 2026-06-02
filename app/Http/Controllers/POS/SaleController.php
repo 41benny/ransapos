@@ -624,6 +624,8 @@ class SaleController extends Controller
                 return response()->json([
                     'base64' => \App\Support\Printing\ThermalRecap::buildBase64([
                         'outlet_name' => $user->outlet->name ?? 'Outlet',
+                        'outlet_address' => $user->outlet->address ?? null,
+                        'outlet_phone' => $user->outlet->phone ?? null,
                         'cashier_name' => $user->name ?? 'Kasir',
                         'filters' => $recapFilters,
                         'summary' => $summary,
