@@ -1829,17 +1829,18 @@
                         return bytes;
                     },
                     async webbtWriteBytes(characteristic, bytes) {
-                        // Tulis bertahap (BLE MTU terbatas) agar tidak terpotong.
-                        const chunkSize = 180;
-                        const useNoResponse = characteristic.properties.writeWithoutResponse;
+                        // Utamakan tulis DENGAN respons (ada ACK) supaya tidak ada paket
+                        // yang terkirim ulang -> mencegah baris tercetak dobel di printer BLE.
+                        const chunkSize = 128;
+                        const canWithResponse = !!characteristic.properties.write;
                         for (let i = 0; i < bytes.length; i += chunkSize) {
                             const chunk = bytes.slice(i, i + chunkSize);
-                            if (useNoResponse && characteristic.writeValueWithoutResponse) {
-                                await characteristic.writeValueWithoutResponse(chunk);
-                            } else {
+                            if (canWithResponse) {
                                 await characteristic.writeValue(chunk);
+                            } else {
+                                await characteristic.writeValueWithoutResponse(chunk);
+                                await new Promise(r => setTimeout(r, 40));
                             }
-                            await new Promise(r => setTimeout(r, 20));
                         }
                     },
                     async printReceiptViaWebBt(saleId) {

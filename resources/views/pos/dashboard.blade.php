@@ -706,16 +706,17 @@
                 }
             },
             async webbtWriteBytes(characteristic, bytes) {
-                const chunkSize = 180;
-                const useNoResponse = characteristic.properties.writeWithoutResponse;
+                // Utamakan tulis DENGAN respons (ACK) agar tidak ada paket dobel.
+                const chunkSize = 128;
+                const canWithResponse = !!characteristic.properties.write;
                 for (let i = 0; i < bytes.length; i += chunkSize) {
                     const chunk = bytes.slice(i, i + chunkSize);
-                    if (useNoResponse && characteristic.writeValueWithoutResponse) {
-                        await characteristic.writeValueWithoutResponse(chunk);
-                    } else {
+                    if (canWithResponse) {
                         await characteristic.writeValue(chunk);
+                    } else {
+                        await characteristic.writeValueWithoutResponse(chunk);
+                        await new Promise(r => setTimeout(r, 40));
                     }
-                    await new Promise(r => setTimeout(r, 20));
                 }
             },
             base64ToBytes(b64) {
