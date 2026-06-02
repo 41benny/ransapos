@@ -1788,19 +1788,37 @@
                         this.printerStatusMessage = 'Gagal sambung otomatis (printer mati/jauh?). Akan dicoba lagi saat cetak.';
                         return null;
                     },
-                    async webbtEnsureReady() {
+                    async webbtEnsureReady(allowPicker = true) {
                         const state = window.__ransaBt;
-                        if (!state || !state.device || !state.characteristic) {
-                            // Koneksi hilang (mis. habis refresh/pindah halaman) ->
-                            // coba sambung-ulang otomatis ke printer yang sudah diizinkan.
-                            return await this.webbtTryReconnect();
+                        // 0) Sudah ada koneksi di memori.
+                        if (state && state.device && state.characteristic) {
+                            if (state.device.gatt.connected) {
+                                return state.characteristic;
+                            }
+                            try {
+                                await state.device.gatt.connect();
+                                state.characteristic = await this.webbtDiscoverCharacteristic(state.device);
+                                if (state.characteristic) {
+                                    return state.characteristic;
+                                }
+                            } catch (e) { /* lanjut ke langkah berikut */ }
                         }
-                        if (!state.device.gatt.connected) {
-                            // Reconnect tanpa perlu gesture pengguna.
-                            await state.device.gatt.connect();
-                            state.characteristic = await this.webbtDiscoverCharacteristic(state.device);
+
+                        // 1) Coba sambung-ulang otomatis (silent, cepat) ke printer berizin.
+                        const reconnected = await this.webbtTryReconnect(1);
+                        if (reconnected) {
+                            return reconnected;
                         }
-                        return state.characteristic;
+
+                        // 2) Fallback: tampilkan pemilih perangkat (seperti print rekap),
+                        //    user pilih printer sekali, lalu langsung cetak.
+                        if (allowPicker) {
+                            const ok = await this.connectWebBluetooth();
+                            if (ok && window.__ransaBt && window.__ransaBt.characteristic) {
+                                return window.__ransaBt.characteristic;
+                            }
+                        }
+                        return null;
                     },
                     base64ToBytes(b64) {
                         const binary = atob(b64);
