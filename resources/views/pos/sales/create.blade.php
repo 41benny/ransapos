@@ -552,54 +552,54 @@
 
         <!-- Cash Payment Modal -->
         <div v-show="showCashPaymentModal"
-            class="fixed inset-0 z-[62] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            class="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:pr-[420px] bg-black/60 backdrop-blur-sm"
             style="display: none;" :style="{ display: showCashPaymentModal ? 'flex' : 'none' }">
-            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden animate-[bounceIn_0.1s_ease-out]">
-                <div class="h-14 bg-primary text-white grid grid-cols-[56px_1fr_56px] items-center">
-                    <button @click="closeCashPaymentModal" class="h-14 flex items-center justify-center hover:bg-white/10 transition">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-[520px] max-h-[calc(100vh-16px)] overflow-y-auto animate-[bounceIn_0.1s_ease-out]">
+                <div class="h-11 bg-primary text-white grid grid-cols-[44px_1fr_44px] items-center sticky top-0 z-10">
+                    <button @click="closeCashPaymentModal" class="h-11 flex items-center justify-center hover:bg-white/10 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
                             </path>
                         </svg>
                     </button>
-                    <h3 class="text-center text-xl font-bold">Cash</h3>
+                    <h3 class="text-center text-base font-bold">Cash</h3>
                     <div></div>
                 </div>
 
-                <div class="p-5 space-y-5">
+                <div class="p-3 space-y-3">
                     <div class="text-center">
-                        <p class="text-base font-semibold text-gray-500">Total</p>
-                        <p class="text-3xl font-black text-gray-900">Rp @{{ formatNumber(totalAmount) }}</p>
+                        <p class="text-xs font-semibold text-gray-500">Total</p>
+                        <p class="text-2xl font-black text-gray-900">Rp @{{ formatNumber(totalAmount) }}</p>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-3 gap-2">
                         <button type="button" @click="setCashReceivedExact"
-                            class="h-14 rounded-lg border-2 border-gray-300 bg-white text-gray-600 text-base font-semibold hover:border-primary hover:text-primary transition">
+                            class="h-10 rounded-md border border-gray-300 bg-white px-2 text-gray-600 text-sm font-semibold hover:border-primary hover:text-primary transition">
                             Uang Pas
                         </button>
                         <button type="button" v-for="amount in cashQuickAmounts" :key="'cash-quick-' + amount"
                             @click="addCashReceived(amount)"
-                            class="h-14 rounded-lg border-2 border-gray-300 bg-white text-gray-600 text-base font-semibold hover:border-primary hover:text-primary transition">
+                            class="h-10 rounded-md border border-gray-300 bg-white px-2 text-gray-600 text-sm font-semibold hover:border-primary hover:text-primary transition">
                             Rp. @{{ formatNumber(amount) }}
                         </button>
                         <button type="button" @click="clearCashReceived"
-                            class="h-14 rounded-lg bg-red-600 hover:bg-red-700 text-white text-lg font-bold transition">
+                            class="h-10 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition">
                             Clear
                         </button>
                     </div>
 
                     <input type="number" min="0" step="1" v-model.number="cashReceivedAmount"
                         @keyup.enter="submitCashPayment"
-                        class="w-full h-14 px-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none text-left font-mono text-2xl font-bold text-gray-800"
+                        class="w-full h-11 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none text-left font-mono text-xl font-bold text-gray-800"
                         placeholder="Rp 0">
 
-                    <div class="flex justify-between items-center rounded-lg border px-4 py-3"
+                    <div class="flex justify-between items-center rounded-md border px-3 py-2"
                         :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'">
-                        <span class="text-base font-bold"
+                        <span class="text-sm font-bold"
                             :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'text-rose-700' : 'text-emerald-700'">
                             Kembalian
                         </span>
-                        <span class="text-2xl font-black"
+                        <span class="text-xl font-black"
                             :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) ? 'text-rose-700' : 'text-emerald-700'">
                             Rp @{{ formatNumber(cashChangeAmount) }}
                         </span>
@@ -609,15 +609,15 @@
                             class="text-xs text-rose-600 mt-2">Uang diterima kurang dari total transaksi.</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 pt-1 max-w-md mx-auto">
+                    <div class="grid grid-cols-2 gap-3 pt-1 max-w-sm mx-auto">
                         <button type="button" @click="closeCashPaymentModal"
-                            class="h-14 rounded-lg border-2 border-primary bg-white hover:bg-red-50 text-primary font-bold transition">
+                            class="h-11 rounded-md border border-primary bg-white hover:bg-red-50 text-primary font-bold transition">
                             Batal
                         </button>
                         <button type="button" @click="submitCashPayment"
                             :disabled="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) || isProcessing"
                             :class="Number(cashReceivedAmount || 0) < Number(totalAmount || 0) || isProcessing ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
-                            class="h-14 rounded-lg font-bold transition">
+                            class="h-11 rounded-md font-bold transition">
                             OK
                         </button>
                     </div>
