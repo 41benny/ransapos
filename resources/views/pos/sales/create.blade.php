@@ -1288,13 +1288,6 @@
                     if (this.printEngine === 'bridge') {
                         this.refreshAvailablePrinters();
                     }
-
-                    // Mode Web Bluetooth: sambung-ulang OTOMATIS ke printer yang sudah
-                    // diizinkan (tanpa dialog), supaya tidak perlu connect manual tiap
-                    // pindah/refresh halaman.
-                    if (this.printEngine === 'webbt') {
-                        this.webbtTryReconnect();
-                    }
                 },
                 methods: {
                     // ... Existing Methods ...
@@ -1788,37 +1781,17 @@
                         this.printerStatusMessage = 'Gagal sambung otomatis (printer mati/jauh?). Akan dicoba lagi saat cetak.';
                         return null;
                     },
-                    async webbtEnsureReady(allowPicker = true) {
+                    async webbtEnsureReady() {
                         const state = window.__ransaBt;
-                        // 0) Sudah ada koneksi di memori.
-                        if (state && state.device && state.characteristic) {
-                            if (state.device.gatt.connected) {
-                                return state.characteristic;
-                            }
-                            try {
-                                await state.device.gatt.connect();
-                                state.characteristic = await this.webbtDiscoverCharacteristic(state.device);
-                                if (state.characteristic) {
-                                    return state.characteristic;
-                                }
-                            } catch (e) { /* lanjut ke langkah berikut */ }
+                        if (!state || !state.device || !state.characteristic) {
+                            return null;
                         }
-
-                        // 1) Coba sambung-ulang otomatis (silent, cepat) ke printer berizin.
-                        const reconnected = await this.webbtTryReconnect(1);
-                        if (reconnected) {
-                            return reconnected;
+                        if (!state.device.gatt.connected) {
+                            // Reconnect tanpa perlu gesture pengguna.
+                            await state.device.gatt.connect();
+                            state.characteristic = await this.webbtDiscoverCharacteristic(state.device);
                         }
-
-                        // 2) Fallback: tampilkan pemilih perangkat (seperti print rekap),
-                        //    user pilih printer sekali, lalu langsung cetak.
-                        if (allowPicker) {
-                            const ok = await this.connectWebBluetooth();
-                            if (ok && window.__ransaBt && window.__ransaBt.characteristic) {
-                                return window.__ransaBt.characteristic;
-                            }
-                        }
-                        return null;
+                        return state.characteristic;
                     },
                     base64ToBytes(b64) {
                         const binary = atob(b64);
@@ -1829,20 +1802,17 @@
                         return bytes;
                     },
                     async webbtWriteBytes(characteristic, bytes) {
-                        // Paket KECIL 20 byte (muat 1 MTU default) + DENGAN respons/ACK.
-                        // Tiap paket dikonfirmasi printer -> tidak ada paket dikirim ulang
-                        // (cegah baris dobel) & tidak melebihi MTU (cegah teks rusak).
-                        const chunkSize = 20;
-                        const withResp = !!(characteristic.properties && characteristic.properties.write)
-                            && typeof characteristic.writeValueWithResponse === 'function';
+                        // Tulis bertahap (BLE MTU terbatas) agar tidak terpotong.
+                        const chunkSize = 180;
+                        const useNoResponse = characteristic.properties.writeWithoutResponse;
                         for (let i = 0; i < bytes.length; i += chunkSize) {
                             const chunk = bytes.slice(i, i + chunkSize);
-                            if (withResp) {
-                                await characteristic.writeValueWithResponse(chunk);
+                            if (useNoResponse && characteristic.writeValueWithoutResponse) {
+                                await characteristic.writeValueWithoutResponse(chunk);
                             } else {
                                 await characteristic.writeValue(chunk);
-                                await new Promise(r => setTimeout(r, 25));
                             }
+                            await new Promise(r => setTimeout(r, 20));
                         }
                     },
                     async printReceiptViaWebBt(saleId) {

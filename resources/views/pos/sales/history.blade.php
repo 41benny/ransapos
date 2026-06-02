@@ -414,18 +414,13 @@
                     } catch (e) { return null; }
                 }
                 async function writeBytes(ch, bytes) {
-                    // Paket KECIL 20 byte + DENGAN respons/ACK: cegah paket dobel & teks rusak.
-                    const size = 20;
-                    const withResp = !!(ch.properties && ch.properties.write)
-                        && typeof ch.writeValueWithResponse === 'function';
+                    const size = 180;
+                    const nr = ch.properties.writeWithoutResponse;
                     for (let i = 0; i < bytes.length; i += size) {
                         const c = bytes.slice(i, i + size);
-                        if (withResp) {
-                            await ch.writeValueWithResponse(c);
-                        } else {
-                            await ch.writeValue(c);
-                            await new Promise(r => setTimeout(r, 25));
-                        }
+                        if (nr && ch.writeValueWithoutResponse) await ch.writeValueWithoutResponse(c);
+                        else await ch.writeValue(c);
+                        await new Promise(r => setTimeout(r, 20));
                     }
                 }
 

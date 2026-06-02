@@ -706,18 +706,16 @@
                 }
             },
             async webbtWriteBytes(characteristic, bytes) {
-                // Paket KECIL 20 byte + DENGAN respons/ACK: cegah paket dobel & teks rusak.
-                const chunkSize = 20;
-                const withResp = !!(characteristic.properties && characteristic.properties.write)
-                    && typeof characteristic.writeValueWithResponse === 'function';
+                const chunkSize = 180;
+                const useNoResponse = characteristic.properties.writeWithoutResponse;
                 for (let i = 0; i < bytes.length; i += chunkSize) {
                     const chunk = bytes.slice(i, i + chunkSize);
-                    if (withResp) {
-                        await characteristic.writeValueWithResponse(chunk);
+                    if (useNoResponse && characteristic.writeValueWithoutResponse) {
+                        await characteristic.writeValueWithoutResponse(chunk);
                     } else {
                         await characteristic.writeValue(chunk);
-                        await new Promise(r => setTimeout(r, 25));
                     }
+                    await new Promise(r => setTimeout(r, 20));
                 }
             },
             base64ToBytes(b64) {
