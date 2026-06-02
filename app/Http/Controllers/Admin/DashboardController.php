@@ -30,15 +30,26 @@ class DashboardController extends Controller
 
     public function summary(Request $request)
     {
-        $dateInput = (string) $request->input('date', today()->toDateString());
+        $fallbackDate = (string) $request->input('date', today()->toDateString());
+        $dateFromInput = (string) $request->input('date_from', $fallbackDate);
+        $dateToInput = (string) $request->input('date_to', $dateFromInput);
 
         try {
-            $date = Carbon::createFromFormat('Y-m-d', $dateInput)->toDateString();
+            $dateFrom = Carbon::createFromFormat('Y-m-d', $dateFromInput)->toDateString();
+            $dateTo = Carbon::createFromFormat('Y-m-d', $dateToInput)->toDateString();
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Invalid date format. Use YYYY-MM-DD.'], 422);
+            return response()->json(['message' => 'Invalid date range format. Use YYYY-MM-DD.'], 422);
         }
 
-        $prevDate = Carbon::createFromFormat('Y-m-d', $date)->subDay()->toDateString();
+        if ($dateFrom > $dateTo) {
+            return response()->json(['message' => 'Tanggal awal tidak boleh lebih besar dari tanggal akhir.'], 422);
+        }
+
+        $periodStart = Carbon::createFromFormat('Y-m-d', $dateFrom);
+        $periodEnd = Carbon::createFromFormat('Y-m-d', $dateTo);
+        $periodDays = $periodStart->diffInDays($periodEnd) + 1;
+        $prevDateTo = $periodStart->copy()->subDay()->toDateString();
+        $prevDateFrom = $periodStart->copy()->subDays($periodDays)->toDateString();
 
         $selectedOutletIds = null;
         if ($request->has('outlet_ids')) {
@@ -90,11 +101,11 @@ class DashboardController extends Controller
             : null;
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
-        $cacheKey = 'admin.dashboard.summary:' . $date . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($date, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
             $salesBase = Sale::query()
-                ->where('sale_date', $date)
+                ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -109,7 +120,7 @@ class DashboardController extends Controller
             $discountTotal = (float) ($kpis->discount_total ?? 0);
 
             $cancelledBase = Sale::query()
-                ->where('sale_date', $date)
+                ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'cancelled')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -136,7 +147,7 @@ class DashboardController extends Controller
             $topProducts = SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('products', 'sale_items.product_id', '=', 'products.id')
-                ->where('sales.sale_date', $date)
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('sale_items.product_id', 'sale_items.product_name', 'products.thumbnail_path', 'products.image_path')
@@ -161,7 +172,7 @@ class DashboardController extends Controller
 
             $prevRankState = [];
             $prevBadgeState = [];
-            if (is_array($state) && ($state['date'] ?? null) === $date) {
+            if (is_array($state) && ($state['date_from'] ?? null) === $dateFrom && ($state['date_to'] ?? null) === $dateTo) {
                 $prevRankState = is_array($state['ranks'] ?? null) ? $state['ranks'] : [];
                 $prevBadgeState = is_array($state['badges'] ?? null) ? $state['badges'] : [];
             }
@@ -217,7 +228,8 @@ class DashboardController extends Controller
                 ->values();
 
             Setting::setValue($topStateKey, json_encode([
-                'date' => $date,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
                 'ranks' => $nextRankState,
                 'badges' => $nextBadgeState,
                 'updated_at' => now()->toIso8601String(),
@@ -227,7 +239,7 @@ class DashboardController extends Controller
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('products', 'sale_items.product_id', '=', 'products.id')
                 ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
-                ->where('sales.sale_date', $date)
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('product_categories.id', 'product_categories.name')
@@ -244,7 +256,7 @@ class DashboardController extends Controller
             $paymentMix = \App\Models\Payment::query()
                 ->join('sales', 'payments.sale_id', '=', 'sales.id')
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-                ->where('sales.sale_date', $date)
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('payment_methods.id', 'payment_methods.name')
@@ -264,7 +276,7 @@ class DashboardController extends Controller
             if ($showBreakdown) {
                 $cogsByOutlet = SaleItem::query()
                     ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                    ->where('sales.sale_date', $date)
+                    ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                     ->where('sales.status', 'completed')
                     ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                     ->groupBy('sales.outlet_id')
@@ -273,7 +285,7 @@ class DashboardController extends Controller
 
                 $outletSalesBase = Sale::query()
                     ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
-                    ->where('sales.sale_date', $date)
+                    ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
                     ->where('sales.status', 'completed')
                     ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds));
 
@@ -293,7 +305,8 @@ class DashboardController extends Controller
                     ->values();
             }
 
-            $target = (float) Setting::getValue('dashboard.daily_sales_target', 0);
+            $dailyTarget = (float) Setting::getValue('dashboard.daily_sales_target', 0);
+            $target = $dailyTarget > 0 ? ($dailyTarget * $periodDays) : 0;
             $targetProgressPct = $target > 0 ? min(100, max(0, ($totalSales / $target) * 100)) : null;
 
             $hourlyStacked = null;
@@ -308,7 +321,7 @@ class DashboardController extends Controller
                     ->all();
 
                 $hourOutletRows = Sale::query()
-                    ->where('sale_date', $date)
+                    ->whereBetween('sale_date', [$dateFrom, $dateTo])
                     ->where('status', 'completed')
                     ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds))
                     ->selectRaw('outlet_id as outlet_id, HOUR(created_at) as hour, COALESCE(SUM(total_amount), 0) as amount')
@@ -383,7 +396,9 @@ class DashboardController extends Controller
             }
 
             return [
-                'date' => $date,
+                'date' => $dateTo,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
                 'outlet_id' => $singleOutletId,
                 'outlet_ids' => $selectedOutletIds ?? [],
                 'is_all_outlets' => $isAllOutlets,
@@ -397,7 +412,9 @@ class DashboardController extends Controller
                     'cancelled_amount' => $cancelledAmount,
                 ],
                 'target' => [
-                    'daily_sales_target' => $target > 0 ? $target : null,
+                    'daily_sales_target' => $dailyTarget > 0 ? $dailyTarget : null,
+                    'period_sales_target' => $target > 0 ? $target : null,
+                    'period_days' => $periodDays,
                     'progress_pct' => $targetProgressPct,
                 ],
                 'sales_per_hour' => $salesPerHour,
@@ -411,10 +428,10 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev:' . $prevDate . ':' . $outletScopeKey;
-        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDate, $selectedOutletIds) {
+        $prevCacheKey = 'admin.dashboard.summary.prev:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds) {
             $base = Sale::query()
-                ->where('sale_date', $prevDate)
+                ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
                 ->where('status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -423,7 +440,8 @@ class DashboardController extends Controller
                 ->first();
 
             return [
-                'date' => $prevDate,
+                'date_from' => $prevDateFrom,
+                'date_to' => $prevDateTo,
                 'total_sales' => (float) ($kpis->total_sales ?? 0),
                 'total_transactions' => (int) ($kpis->total_transactions ?? 0),
             ];
@@ -433,7 +451,9 @@ class DashboardController extends Controller
         $deltaTransactions = (int) ($payload['kpis']['total_transactions'] - $prevPayload['total_transactions']);
 
         $payload['trend_vs_prev_day'] = [
-            'prev_date' => $prevPayload['date'],
+            'prev_date' => $prevPayload['date_to'],
+            'prev_date_from' => $prevPayload['date_from'],
+            'prev_date_to' => $prevPayload['date_to'],
             'prev_total_sales' => $prevPayload['total_sales'],
             'prev_total_transactions' => $prevPayload['total_transactions'],
             'delta_total_sales' => $deltaSales,

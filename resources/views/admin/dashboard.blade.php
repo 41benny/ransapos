@@ -43,10 +43,25 @@
                     </div>
                 </div>
                 <div class="h-8 w-px bg-slate-100"></div>
-                <div class="flex flex-col px-3">
+                <div class="flex flex-col gap-2 px-3">
                     <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Date Range</span>
-                    <input id="date" type="date" value="{{ $defaultDate }}"
-                        class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer" />
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input id="dateFrom" type="date" value="{{ $defaultDate }}"
+                            class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer" />
+                        <span class="text-[10px] font-black text-slate-300">to</span>
+                        <input id="dateTo" type="date" value="{{ $defaultDate }}"
+                            class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer" />
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button type="button" data-range-preset="today"
+                            class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Hari Ini</button>
+                        <button type="button" data-range-preset="yesterday"
+                            class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Kemarin</button>
+                        <button type="button" data-range-preset="week"
+                            class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Minggu Ini</button>
+                        <button type="button" data-range-preset="month"
+                            class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Bulan Ini</button>
+                    </div>
                 </div>
                 <button id="refreshBtn" type="button"
                     class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
@@ -85,7 +100,7 @@
             <div class="space-y-1">
                 <h3 id="kpiTotalSales" class="text-3xl font-black text-slate-800 tracking-tight">-</h3>
                 <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span>vs Yesterday:</span>
+                    <span>vs Prev Period:</span>
                     <span id="trendSales" class="text-slate-600">-</span>
                 </div>
             </div>
@@ -479,6 +494,12 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: #94a3b8;
         }
+
+        .date-preset-btn.is-active {
+            border-color: rgba(79, 70, 229, 0.28);
+            background: rgba(79, 70, 229, 0.08);
+            color: #4f46e5;
+        }
     </style>
 @endpush
 
@@ -499,7 +520,9 @@
             const outletDropdownMenuEl = document.getElementById('outletDropdownMenu');
             const outletAllCheckboxEl = document.getElementById('outletAllCheckbox');
             const outletCheckboxEls = Array.from(document.querySelectorAll('.outlet-checkbox'));
-            const dateEl = document.getElementById('date');
+            const dateFromEl = document.getElementById('dateFrom');
+            const dateToEl = document.getElementById('dateTo');
+            const datePresetBtns = Array.from(document.querySelectorAll('.date-preset-btn'));
             const refreshBtn = document.getElementById('refreshBtn');
             const statusTextEl = document.getElementById('statusText');
             const lastUpdatedEl = document.getElementById('lastUpdated');
@@ -793,10 +816,55 @@
 
                 updateOutletLabel();
             }
+            function getDateRange() {
+                const fallbackDate = @json($defaultDate);
+                const dateFrom = dateFromEl.value || fallbackDate;
+                const dateTo = dateToEl.value || dateFrom;
+
+                if (dateFrom > dateTo) {
+                    return { dateFrom: dateTo, dateTo: dateFrom };
+                }
+
+                return { dateFrom, dateTo };
+            }
+            function toDateInputValue(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            function getPresetRange(preset) {
+                const today = new Date(@json($defaultDate) + 'T00:00:00');
+                const start = new Date(today);
+                const end = new Date(today);
+
+                if (preset === 'yesterday') {
+                    start.setDate(start.getDate() - 1);
+                    end.setDate(end.getDate() - 1);
+                } else if (preset === 'week') {
+                    const day = start.getDay() || 7;
+                    start.setDate(start.getDate() - day + 1);
+                } else if (preset === 'month') {
+                    start.setDate(1);
+                }
+
+                return {
+                    dateFrom: toDateInputValue(start),
+                    dateTo: toDateInputValue(end),
+                };
+            }
+            function syncDatePresetState() {
+                const current = getDateRange();
+                datePresetBtns.forEach((button) => {
+                    const range = getPresetRange(button.dataset.rangePreset);
+                    button.classList.toggle('is-active', range.dateFrom === current.dateFrom && range.dateTo === current.dateTo);
+                });
+            }
             function buildUrl() {
-                const date = dateEl.value || @json($defaultDate);
+                const { dateFrom, dateTo } = getDateRange();
                 const url = new URL(endpoint, window.location.origin);
-                url.searchParams.set('date', date);
+                url.searchParams.set('date_from', dateFrom);
+                url.searchParams.set('date_to', dateTo);
 
                 const selectedOutletIds = getSelectedOutletIds();
                 if (outletAllCheckboxEl.checked || selectedOutletIds.length === 0) {
@@ -811,10 +879,10 @@
                 return url.toString();
             }
             function buildSalesVsHppUrl(outletId = null) {
-                const date = dateEl.value || @json($defaultDate);
+                const { dateFrom, dateTo } = getDateRange();
                 const url = new URL(salesVsHppEndpoint, window.location.origin);
-                url.searchParams.set('date_from', date);
-                url.searchParams.set('date_to', date);
+                url.searchParams.set('date_from', dateFrom);
+                url.searchParams.set('date_to', dateTo);
 
                 const normalizedOutletId = Number(outletId);
                 if (Number.isInteger(normalizedOutletId) && normalizedOutletId > 0) {
@@ -1150,16 +1218,16 @@
             // Removed renderOutletBreakdown
 
             function setTarget(target) {
-                const dailyTarget = Number(target?.daily_sales_target || 0);
+                const periodTarget = Number(target?.period_sales_target || target?.daily_sales_target || 0);
                 const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
 
-                if (!dailyTarget || dailyTarget <= 0 || pct === null) {
+                if (!periodTarget || periodTarget <= 0 || pct === null) {
                     targetWrapEl.classList.add('hidden');
                     return;
                 }
 
                 targetWrapEl.classList.remove('hidden');
-                targetValueEl.textContent = idr.format(dailyTarget);
+                targetValueEl.textContent = idr.format(periodTarget);
                 targetPctEl.textContent = `${pct.toFixed(0)}%`;
                 targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
             }
@@ -1300,10 +1368,27 @@
                     fetchSummary(true);
                 });
             });
-            dateEl.addEventListener('change', () => fetchSummary(true));
+            dateFromEl.addEventListener('change', () => {
+                syncDatePresetState();
+                fetchSummary(true);
+            });
+            dateToEl.addEventListener('change', () => {
+                syncDatePresetState();
+                fetchSummary(true);
+            });
+            datePresetBtns.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const range = getPresetRange(button.dataset.rangePreset);
+                    dateFromEl.value = range.dateFrom;
+                    dateToEl.value = range.dateTo;
+                    syncDatePresetState();
+                    fetchSummary(true);
+                });
+            });
             window.addEventListener('theme:changed', () => fetchSummary(false));
 
             updateOutletLabel();
+            syncDatePresetState();
             syncOutletChartModeToggle();
             fetchSummary(false);
             startAutoRefresh();
