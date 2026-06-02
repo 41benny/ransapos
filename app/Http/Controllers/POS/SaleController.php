@@ -612,16 +612,33 @@ class SaleController extends Controller
         ];
 
         if ($printMode) {
+            $recapFilters = [
+                'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
+                'date_to' => $dateTo ? $dateTo->toDateString() : '',
+            ];
+
+            // Cetak langsung ke printer thermal Bluetooth (Web Bluetooth/RawBT).
+            if ($request->input('format') === 'escpos') {
+                return response()->json([
+                    'base64' => \App\Support\Printing\ThermalRecap::buildBase64([
+                        'outlet_name' => $user->outlet->name ?? 'Outlet',
+                        'cashier_name' => $user->name ?? 'Kasir',
+                        'filters' => $recapFilters,
+                        'summary' => $summary,
+                        'payment_breakdown' => $paymentBreakdown,
+                        'sales_type_breakdown' => $salesTypeBreakdown,
+                        'product_rows' => $productRows,
+                    ]),
+                ]);
+            }
+
             return view('pos.sales.history-thermal', [
                 'sales' => $sales,
                 'summary' => $summary,
                 'paymentBreakdown' => $paymentBreakdown,
                 'salesTypeBreakdown' => $salesTypeBreakdown,
                 'productRows' => $productRows,
-                'filters' => [
-                    'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
-                    'date_to' => $dateTo ? $dateTo->toDateString() : '',
-                ],
+                'filters' => $recapFilters,
             ]);
         }
 

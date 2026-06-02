@@ -469,6 +469,8 @@
                 activeSessionId: @json($activeSession->id ?? null),
                 recapDateFrom: @json(now()->toDateString()),
                 recapDateTo: @json(now()->toDateString()),
+                outletId: @json(auth()->user()->outlet_id ?? null),
+                userId: @json(auth()->id() ?? null),
             }
         },
         methods: {
@@ -533,8 +535,161 @@
                     date_to: this.recapDateTo,
                     print: '1',
                 });
-                window.open(`{{ route('pos.sales.history') }}?${params.toString()}`, '_blank', 'noopener,noreferrer');
+                const baseUrl = `{{ route('pos.sales.history') }}?${params.toString()}`;
+                const engine = this.getPrintEngine();
+
+                // Mode thermal langsung (tanpa dialog) -> kirim ESC/POS ke printer Bluetooth.
+                if (engine === 'webbt' || engine === 'rawbt') {
+                    this.printRecapThermal(baseUrl, engine);
+                    this.showRecapModal = false;
+                    return;
+                }
+
+                // Mode lain (browser/bridge): tetap buka tab cetak biasa.
+                window.open(baseUrl, '_blank', 'noopener,noreferrer');
                 this.showRecapModal = false;
+            },
+            getPrintSettingsStorageKey() {
+                const outletKey = this.outletId ? `outlet_${this.outletId}` : 'outlet_unknown';
+                const userKey = this.userId ? `user_${this.userId}` : 'user_unknown';
+                return `Ransa_pos_print_settings_${outletKey}_${userKey}`;
+            },
+            getPrintEngine() {
+                try {
+                    const raw = localStorage.getItem(this.getPrintSettingsStorageKey());
+                    if (!raw) return 'browser';
+                    const parsed = JSON.parse(raw);
+                    const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
+                    return allowed.includes(parsed.printEngine) ? parsed.printEngine : 'browser';
+                } catch (e) {
+                    return 'browser';
+                }
+            },
+            async fetchRecapBase64(baseUrl) {
+                const url = baseUrl + '&format=escpos';
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                const data = await response.json();
+                if (!data || !data.base64) {
+                    throw new Error('Data ESC/POS rekap kosong.');
+                }
+                return data.base64;
+            },
+            async printRecapThermal(baseUrl, engine) {
+                if (engine === 'rawbt') {
+                    try {
+                        const base64 = await this.fetchRecapBase64(baseUrl);
+                        window.location.href = 'intent:base64,' + base64
+                            + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+                    } catch (error) {
+                        console.error('Gagal cetak rekap via RawBT:', error);
+                        window.open(baseUrl, '_blank', 'noopener,noreferrer');
+                    }
+                    return;
+                }
+
+                // engine === 'webbt'
+                // Hubungkan printer DULU (mumpung masih dalam "user gesture" dari klik),
+                // baru ambil data ESC/POS, lalu tulis ke printer.
+                let characteristic = null;
+                try {
+                    characteristic = await this.webbtGetCharacteristic();
+                } catch (e) {
+                    characteristic = null;
+                }
+                if (!characteristic) {
+                    alert('Printer Bluetooth tidak tersedia. Membuka cetak biasa.');
+                    window.open(baseUrl, '_blank', 'noopener,noreferrer');
+                    return;
+                }
+
+                try {
+                    const base64 = await this.fetchRecapBase64(baseUrl);
+                    await this.webbtWriteBytes(characteristic, this.base64ToBytes(base64));
+                } catch (error) {
+                    console.error('Gagal cetak rekap thermal:', error);
+                    alert('Gagal cetak rekap ke printer thermal. Membuka cetak biasa sebagai cadangan.');
+                    window.open(baseUrl, '_blank', 'noopener,noreferrer');
+                }
+            },
+            getWebBtServiceUuids() {
+                return [
+                    0xFFE0, 0xFF00, 0x18F0, 0xFEE7,
+                    '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+                    '0000ff00-0000-1000-8000-00805f9b34fb',
+                ];
+            },
+            async webbtDiscoverCharacteristic(device) {
+                const server = await device.gatt.connect();
+                const services = await server.getPrimaryServices();
+                for (const service of services) {
+                    let characteristics = [];
+                    try {
+                        characteristics = await service.getCharacteristics();
+                    } catch (e) {
+                        continue;
+                    }
+                    const writable = characteristics.find(c => c.properties.writeWithoutResponse)
+                        || characteristics.find(c => c.properties.write);
+                    if (writable) return writable;
+                }
+                return null;
+            },
+            async webbtGetCharacteristic() {
+                if (!navigator.bluetooth) {
+                    alert('Browser ini tidak mendukung Web Bluetooth, atau halaman tidak diakses lewat koneksi aman (HTTPS/localhost).');
+                    return null;
+                }
+
+                // 1) Coba pakai printer yang SUDAH diizinkan (reconnect tanpa dialog).
+                if (typeof navigator.bluetooth.getDevices === 'function') {
+                    try {
+                        const devices = await navigator.bluetooth.getDevices();
+                        for (const device of devices) {
+                            try {
+                                const ch = await this.webbtDiscoverCharacteristic(device);
+                                if (ch) return ch;
+                            } catch (e) { /* coba device berikutnya */ }
+                        }
+                    } catch (e) { /* lanjut ke pemilihan manual */ }
+                }
+
+                // 2) Belum ada izin -> tampilkan pemilih (klik tombol = user gesture, diizinkan).
+                try {
+                    const device = await navigator.bluetooth.requestDevice({
+                        acceptAllDevices: true,
+                        optionalServices: this.getWebBtServiceUuids(),
+                    });
+                    return await this.webbtDiscoverCharacteristic(device);
+                } catch (e) {
+                    return null;
+                }
+            },
+            async webbtWriteBytes(characteristic, bytes) {
+                const chunkSize = 180;
+                const useNoResponse = characteristic.properties.writeWithoutResponse;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    const chunk = bytes.slice(i, i + chunkSize);
+                    if (useNoResponse && characteristic.writeValueWithoutResponse) {
+                        await characteristic.writeValueWithoutResponse(chunk);
+                    } else {
+                        await characteristic.writeValue(chunk);
+                    }
+                    await new Promise(r => setTimeout(r, 20));
+                }
+            },
+            base64ToBytes(b64) {
+                const binary = atob(b64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
             },
             openReceiptPrintWindow(saleId) {
                 const normalizedSaleId = Number(saleId);
