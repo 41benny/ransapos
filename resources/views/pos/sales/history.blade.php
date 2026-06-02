@@ -390,7 +390,7 @@
                     for (const svc of svcs) {
                         let chs = [];
                         try { chs = await svc.getCharacteristics(); } catch (e) { continue; }
-                        const w = chs.find(c => c.properties.writeWithoutResponse) || chs.find(c => c.properties.write);
+                        const w = chs.find(c => c.properties.write) || chs.find(c => c.properties.writeWithoutResponse);
                         if (w) return w;
                     }
                     return null;

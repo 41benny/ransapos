@@ -1725,9 +1725,10 @@
                             } catch (e) {
                                 continue;
                             }
-                            // Prioritaskan yang mendukung writeWithoutResponse, lalu write biasa.
-                            const writable = characteristics.find(c => c.properties.writeWithoutResponse)
-                                || characteristics.find(c => c.properties.write);
+                            // Prioritaskan write dengan response/ACK. Beberapa printer thermal BLE
+                            // menggandakan baris saat dikirim lewat writeWithoutResponse.
+                            const writable = characteristics.find(c => c.properties.write)
+                                || characteristics.find(c => c.properties.writeWithoutResponse);
                             if (writable) {
                                 return writable;
                             }

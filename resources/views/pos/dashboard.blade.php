@@ -669,8 +669,8 @@
                     } catch (e) {
                         continue;
                     }
-                    const writable = characteristics.find(c => c.properties.writeWithoutResponse)
-                        || characteristics.find(c => c.properties.write);
+                    const writable = characteristics.find(c => c.properties.write)
+                        || characteristics.find(c => c.properties.writeWithoutResponse);
                     if (writable) return writable;
                 }
                 return null;

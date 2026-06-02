@@ -49,7 +49,11 @@ class ThermalReceipt
             $out .= self::line(self::ascii($companyPhone));
         }
         if ($receiptHeader) {
+            $duplicateHeaderLines = self::duplicateHeaderLines($companyName, $companyAddress, $companyPhone);
             foreach (self::wrap(self::ascii($receiptHeader)) as $row) {
+                if (isset($duplicateHeaderLines[self::normalizeLine($row)])) {
+                    continue;
+                }
                 $out .= self::line($row);
             }
         }
@@ -176,6 +180,27 @@ class ThermalReceipt
         }
 
         return explode("\n", wordwrap($text, self::WIDTH, "\n", true));
+    }
+
+    /** @return array<string, true> */
+    private static function duplicateHeaderLines(?string ...$values): array
+    {
+        $lines = [];
+        foreach ($values as $value) {
+            foreach (self::wrap(self::ascii($value)) as $line) {
+                $normalized = self::normalizeLine($line);
+                if ($normalized !== '') {
+                    $lines[$normalized] = true;
+                }
+            }
+        }
+
+        return $lines;
+    }
+
+    private static function normalizeLine(string $text): string
+    {
+        return preg_replace('/\s+/', ' ', strtolower(trim($text))) ?? '';
     }
 
     private static function money($value): string
