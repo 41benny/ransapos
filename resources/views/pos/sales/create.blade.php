@@ -1829,18 +1829,20 @@
                         return bytes;
                     },
                     async webbtWriteBytes(characteristic, bytes) {
-                        // Utamakan tulis DENGAN respons (ada ACK) supaya tidak ada paket
-                        // yang terkirim ulang -> mencegah baris tercetak dobel di printer BLE.
-                        const chunkSize = 128;
-                        const canWithResponse = !!characteristic.properties.write;
+                        // Printer thermal BLE murah mudah "overflow" kalau dikirim borongan
+                        // (akibatnya baris dobel / teks rusak). Kirim potongan SANGAT KECIL
+                        // (20 byte = 1 paket BLE) dengan jeda, mode tanpa-respons.
+                        const chunkSize = 20;
+                        const canNoResponse = !!characteristic.properties.writeWithoutResponse
+                            && typeof characteristic.writeValueWithoutResponse === 'function';
                         for (let i = 0; i < bytes.length; i += chunkSize) {
                             const chunk = bytes.slice(i, i + chunkSize);
-                            if (canWithResponse) {
-                                await characteristic.writeValue(chunk);
-                            } else {
+                            if (canNoResponse) {
                                 await characteristic.writeValueWithoutResponse(chunk);
-                                await new Promise(r => setTimeout(r, 40));
+                            } else {
+                                await characteristic.writeValue(chunk);
                             }
+                            await new Promise(r => setTimeout(r, 30));
                         }
                     },
                     async printReceiptViaWebBt(saleId) {

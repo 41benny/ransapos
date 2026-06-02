@@ -414,17 +414,19 @@
                     } catch (e) { return null; }
                 }
                 async function writeBytes(ch, bytes) {
-                    // Utamakan tulis DENGAN respons (ACK) agar tidak ada paket dobel.
-                    const size = 128;
-                    const canWithResponse = !!ch.properties.write;
+                    // Potongan SANGAT KECIL (20 byte) + jeda, mode tanpa-respons, agar
+                    // printer BLE tidak overflow (cegah baris dobel / teks rusak).
+                    const size = 20;
+                    const canNoResponse = !!ch.properties.writeWithoutResponse
+                        && typeof ch.writeValueWithoutResponse === 'function';
                     for (let i = 0; i < bytes.length; i += size) {
                         const c = bytes.slice(i, i + size);
-                        if (canWithResponse) {
-                            await ch.writeValue(c);
-                        } else {
+                        if (canNoResponse) {
                             await ch.writeValueWithoutResponse(c);
-                            await new Promise(r => setTimeout(r, 40));
+                        } else {
+                            await ch.writeValue(c);
                         }
+                        await new Promise(r => setTimeout(r, 30));
                     }
                 }
 
