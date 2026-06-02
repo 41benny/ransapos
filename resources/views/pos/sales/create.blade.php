@@ -864,14 +864,15 @@
                     lastSale.invoice_number : '' }}</p>
 
                 <div class="space-y-3">
-                    <button @click="printReceipt"
-                        class="w-full py-4 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition">
+                    <button @click="printReceipt" :disabled="isPrintingReceipt"
+                        :class="isPrintingReceipt ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-800'"
+                        class="w-full py-4 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z">
                             </path>
                         </svg>
-                        Print Receipt
+                        @{{ isPrintingReceipt ? 'Printing...' : 'Print Receipt' }}
                     </button>
                     <button @click="closeSuccessModal"
                         class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition">
@@ -1121,6 +1122,7 @@
                         appliedVoucher: null,
                         voucherErrorMessage: '',
                         isProcessing: false,
+                        isPrintingReceipt: false,
 
                         showManualDiscountModal: false,
                         isAuthorizingManualDiscount: false,
@@ -1802,17 +1804,19 @@
                         return bytes;
                     },
                     async webbtWriteBytes(characteristic, bytes) {
-                        // Tulis bertahap (BLE MTU terbatas) agar tidak terpotong.
-                        const chunkSize = 180;
-                        const useNoResponse = characteristic.properties.writeWithoutResponse;
+                        // Printer thermal BLE umum memakai MTU 20 byte. Pakai write dengan
+                        // respons/ACK bila tersedia agar paket tidak tercetak ulang.
+                        const chunkSize = 20;
+                        const withResponse = !!(characteristic.properties && characteristic.properties.write)
+                            && typeof characteristic.writeValueWithResponse === 'function';
                         for (let i = 0; i < bytes.length; i += chunkSize) {
                             const chunk = bytes.slice(i, i + chunkSize);
-                            if (useNoResponse && characteristic.writeValueWithoutResponse) {
-                                await characteristic.writeValueWithoutResponse(chunk);
+                            if (withResponse) {
+                                await characteristic.writeValueWithResponse(chunk);
                             } else {
                                 await characteristic.writeValue(chunk);
+                                await new Promise(r => setTimeout(r, 25));
                             }
-                            await new Promise(r => setTimeout(r, 20));
                         }
                     },
                     async printReceiptViaWebBt(saleId) {
@@ -2417,9 +2421,18 @@
                             this.isProcessing = false;
                         }
                     },
-                    printReceipt() {
-                        if (this.lastSale) {
-                            this.openReceiptPrintWindow(this.lastSale.sale_id);
+                    async printReceipt() {
+                        if (!this.lastSale || this.isPrintingReceipt) {
+                            return;
+                        }
+
+                        this.isPrintingReceipt = true;
+                        try {
+                            await this.openReceiptPrintWindow(this.lastSale.sale_id);
+                        } finally {
+                            setTimeout(() => {
+                                this.isPrintingReceipt = false;
+                            }, 1500);
                         }
                     },
                     closeSuccessModal() {

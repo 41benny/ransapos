@@ -372,6 +372,26 @@
             return params.get('autoprint') !== '0';
         }
 
+        function autoPrintKey() {
+            return 'ransa.receipt.autoprint.' + window.location.pathname + window.location.search;
+        }
+
+        function hasAutoPrinted() {
+            try {
+                return window.sessionStorage.getItem(autoPrintKey()) === '1';
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function markAutoPrinted() {
+            try {
+                window.sessionStorage.setItem(autoPrintKey(), '1');
+            } catch (error) {
+                // sessionStorage can be unavailable in private/embedded contexts.
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             var printNowButton = document.getElementById('printNowBtn');
             if (printNowButton) {
@@ -395,10 +415,11 @@
                 });
             }
 
-            if (!shouldAutoPrint()) {
+            if (!shouldAutoPrint() || hasAutoPrinted()) {
                 return;
             }
 
+            markAutoPrinted();
             setPrintStatus('Menyiapkan dialog print...', false);
             setTimeout(triggerPrint, 350);
         });

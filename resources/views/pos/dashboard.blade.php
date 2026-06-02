@@ -706,16 +706,17 @@
                 }
             },
             async webbtWriteBytes(characteristic, bytes) {
-                const chunkSize = 180;
-                const useNoResponse = characteristic.properties.writeWithoutResponse;
+                const chunkSize = 20;
+                const withResponse = !!(characteristic.properties && characteristic.properties.write)
+                    && typeof characteristic.writeValueWithResponse === 'function';
                 for (let i = 0; i < bytes.length; i += chunkSize) {
                     const chunk = bytes.slice(i, i + chunkSize);
-                    if (useNoResponse && characteristic.writeValueWithoutResponse) {
-                        await characteristic.writeValueWithoutResponse(chunk);
+                    if (withResponse) {
+                        await characteristic.writeValueWithResponse(chunk);
                     } else {
                         await characteristic.writeValue(chunk);
+                        await new Promise(r => setTimeout(r, 25));
                     }
-                    await new Promise(r => setTimeout(r, 20));
                 }
             },
             base64ToBytes(b64) {

@@ -414,13 +414,17 @@
                     } catch (e) { return null; }
                 }
                 async function writeBytes(ch, bytes) {
-                    const size = 180;
-                    const nr = ch.properties.writeWithoutResponse;
+                    const size = 20;
+                    const withResponse = !!(ch.properties && ch.properties.write)
+                        && typeof ch.writeValueWithResponse === 'function';
                     for (let i = 0; i < bytes.length; i += size) {
                         const c = bytes.slice(i, i + size);
-                        if (nr && ch.writeValueWithoutResponse) await ch.writeValueWithoutResponse(c);
-                        else await ch.writeValue(c);
-                        await new Promise(r => setTimeout(r, 20));
+                        if (withResponse) {
+                            await ch.writeValueWithResponse(c);
+                        } else {
+                            await ch.writeValue(c);
+                            await new Promise(r => setTimeout(r, 25));
+                        }
                     }
                 }
 
