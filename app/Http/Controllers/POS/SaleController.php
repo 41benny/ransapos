@@ -505,7 +505,9 @@ class SaleController extends Controller
             $baseQuery->whereDate('sale_date', '<=', $dateTo->toDateString());
         }
 
-        if ($request->wantsJson()) {
+        // Catatan: cetak rekap thermal (format=escpos) juga memakai Accept: application/json,
+        // jadi jangan short-circuit ke daftar transaksi saat format=escpos diminta.
+        if ($request->wantsJson() && $request->input('format') !== 'escpos') {
             $sales = (clone $baseQuery)
                 ->with(['items', 'customer', 'payments.paymentMethod'])
                 ->orderBy('created_at', 'desc')
