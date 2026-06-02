@@ -1288,6 +1288,13 @@
                     if (this.printEngine === 'bridge') {
                         this.refreshAvailablePrinters();
                     }
+
+                    // Mode Web Bluetooth: sambung-ulang OTOMATIS ke printer yang sudah
+                    // diizinkan (tanpa dialog), supaya tidak perlu connect manual tiap
+                    // pindah/refresh halaman.
+                    if (this.printEngine === 'webbt') {
+                        this.webbtTryReconnect();
+                    }
                 },
                 methods: {
                     // ... Existing Methods ...
@@ -1732,10 +1739,39 @@
                         }
                         return null;
                     },
+                    async webbtTryReconnect() {
+                        // Sambung-ulang otomatis ke printer yang IZIN-nya sudah pernah
+                        // diberikan (per-origin), tanpa menampilkan dialog pemilih.
+                        if (!navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function') {
+                            return null; // browser belum dukung getDevices()
+                        }
+                        try {
+                            const devices = await navigator.bluetooth.getDevices();
+                            for (const device of devices) {
+                                try {
+                                    const characteristic = await this.webbtDiscoverCharacteristic(device);
+                                    if (characteristic) {
+                                        device.addEventListener('gattserverdisconnected', () => {
+                                            this.webbtConnected = false;
+                                            this.printerStatusMessage = 'Printer Bluetooth terputus (akan sambung otomatis saat cetak).';
+                                        });
+                                        window.__ransaBt = { device, characteristic };
+                                        this.webbtConnected = true;
+                                        this.webbtDeviceName = device.name || 'Printer';
+                                        this.printerStatusMessage = `Printer ${this.webbtDeviceName} tersambung otomatis.`;
+                                        return characteristic;
+                                    }
+                                } catch (e) { /* coba device berikutnya */ }
+                            }
+                        } catch (e) { /* abaikan, nanti fallback manual */ }
+                        return null;
+                    },
                     async webbtEnsureReady() {
                         const state = window.__ransaBt;
                         if (!state || !state.device || !state.characteristic) {
-                            return null;
+                            // Koneksi hilang (mis. habis refresh/pindah halaman) ->
+                            // coba sambung-ulang otomatis ke printer yang sudah diizinkan.
+                            return await this.webbtTryReconnect();
                         }
                         if (!state.device.gatt.connected) {
                             // Reconnect tanpa perlu gesture pengguna.
