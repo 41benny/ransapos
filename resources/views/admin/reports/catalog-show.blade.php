@@ -26,11 +26,12 @@
                 $isStockAdjustment = $viewType === 'stock-adjustment';
                 $isSalesVsHpp = $viewType === 'sales-vs-hpp';
                 $isStockTransfer = $viewType === 'stock-transfer';
+                $isTopOrLow = in_array($viewType, ['top-products', 'low-selling-products'], true);
                 $usesOutletChecklist = $isSalesVsHpp;
                 $usesProductFilter = $isStockMovement || $isStockAdjustment;
                 $outletColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
                 $productColClass = $isStockAdjustment ? 'md:col-span-2' : 'md:col-span-3';
-                $actionColClass = ($isStockAdjustment || $usesProductFilter || $isStockTransfer) ? 'md:col-span-2' : 'md:col-span-5';
+                $actionColClass = ($isStockAdjustment || $usesProductFilter || $isStockTransfer) ? 'md:col-span-2' : ($isTopOrLow ? 'md:col-span-3' : 'md:col-span-5');
                 $selectedOutletIds = collect($selectedOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
                 $selectedFromOutletIds = collect($selectedFromOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
                 $selectedToOutletIds = collect($selectedToOutletIds ?? [])->map(fn($id) => (int) $id)->filter()->values()->all();
@@ -157,6 +158,23 @@
                                         data-id="{{ $product->id }}"></option>
                                 @endforeach
                             </datalist>
+                        </div>
+                    </div>
+                @endif
+                @if($isTopOrLow)
+                    <div class="md:col-span-2">
+                        <label
+                            class="mb-1.5 block text-xs font-normal uppercase tracking-widest text-slate-400">Tampilkan</label>
+                        <div class="relative">
+                            @php $selectedLimit = (int) ($summary['limit'] ?? request('limit', 50)); @endphp
+                            <select name="limit"
+                                class="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-normal text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none">
+                                @foreach([10, 25, 50, 100, 200] as $opt)
+                                    <option value="{{ $opt }}" @selected($selectedLimit === $opt)>Top {{ $opt }}</option>
+                                @endforeach
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
                         </div>
                     </div>
                 @endif
@@ -3489,6 +3507,90 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        @elseif($viewType === 'top-products' || $viewType === 'low-selling-products')
+            @php $isTop = $viewType === 'top-products'; @endphp
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                {{-- Summary Cards --}}
+                <div class="mb-5 grid grid-cols-1 gap-3 md:grid-cols-{{ $isTop ? '3' : '4' }}">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Produk</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ number_format($summary['product_count'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Qty Terjual</div>
+                        <div class="mt-2 text-2xl font-normal text-indigo-700">{{ number_format($summary['total_qty'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Omzet</div>
+                        <div class="mt-2 text-2xl font-normal text-emerald-700">Rp {{ number_format($summary['total_amount'] ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    @unless($isTop)
+                        <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                            <div class="text-xs font-normal uppercase tracking-wide text-rose-500">Tanpa Penjualan</div>
+                            <div class="mt-2 text-2xl font-normal text-rose-700">{{ number_format($summary['zero_sales_count'] ?? 0, 0, ',', '.') }}</div>
+                        </div>
+                    @endunless
+                </div>
+
+                @php
+                    $rankOffset = method_exists($rows, 'firstItem') ? max(($rows->firstItem() ?? 1) - 1, 0) : 0;
+                @endphp
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3 text-center w-16">#</th>
+                                <th class="px-4 py-3">Produk</th>
+                                <th class="px-4 py-3">SKU</th>
+                                <th class="px-4 py-3">Kategori</th>
+                                <th class="px-4 py-3 text-right">Qty Terjual</th>
+                                <th class="px-4 py-3 text-right">Transaksi</th>
+                                <th class="px-4 py-3 text-right">Total Omzet</th>
+                                <th class="px-4 py-3 text-right">Harga Rata-rata</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                @php $rank = $rankOffset + $loop->iteration; @endphp
+                                <tr class="hover:bg-slate-50 transition-colors {{ $row->total_qty == 0 ? 'bg-rose-50/40' : '' }}">
+                                    <td class="px-4 py-3 text-center">
+                                        @if($isTop && $rank <= 3)
+                                            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold
+                                                {{ $rank === 1 ? 'bg-amber-100 text-amber-700' : ($rank === 2 ? 'bg-slate-200 text-slate-600' : 'bg-orange-100 text-orange-700') }}">
+                                                {{ $rank }}
+                                            </span>
+                                        @else
+                                            <span class="text-slate-400">{{ $rank }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 font-normal text-slate-800">{{ $row->product_name }}</td>
+                                    <td class="px-4 py-3 font-mono text-xs text-slate-500">{{ $row->sku ?: '-' }}</td>
+                                    <td class="px-4 py-3 text-slate-600">{{ $row->category_name }}</td>
+                                    <td class="px-4 py-3 text-right font-normal {{ $row->total_qty == 0 ? 'text-rose-500' : 'text-indigo-700' }}">
+                                        {{ number_format($row->total_qty, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-slate-600">{{ number_format($row->transaction_count, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-right font-normal text-emerald-700">Rp {{ number_format($row->total_amount, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-500 italic">Rp {{ number_format($row->avg_price, 0, ',', '.') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-4 py-10 text-center text-slate-500 italic">
+                                        Tidak ada data produk untuk filter yang dipilih.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-3 text-[11px] text-slate-400">
+                    @if($isTop)
+                        Menampilkan produk dengan penjualan tertinggi (status transaksi selesai) pada periode &amp; outlet terpilih.
+                    @else
+                        Menampilkan produk dengan penjualan terendah, termasuk produk aktif yang belum terjual sama sekali (qty 0).
+                    @endif
+                </p>
             </div>
         @else
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">

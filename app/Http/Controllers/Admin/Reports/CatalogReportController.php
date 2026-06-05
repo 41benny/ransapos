@@ -158,8 +158,8 @@ class CatalogReportController extends Controller
             'stock-movement' => ['title' => 'Pergerakan Stok Produk', 'implemented' => true],
             'stock-transfer' => ['title' => 'Mutasi Persediaan Antar Outlet', 'implemented' => true],
             'stock-adjustments' => ['title' => 'Riwayat Adjustment Stok', 'implemented' => true],
-            'top-products' => ['title' => 'Produk Terlaris', 'implemented' => false],
-            'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => false],
+            'top-products' => ['title' => 'Produk Terlaris', 'implemented' => true],
+            'low-selling-products' => ['title' => 'Produk Kurang Laku', 'implemented' => true],
             'inventory-value' => ['title' => 'Nilai Persediaan', 'implemented' => true],
             'other-income-expense' => ['title' => 'Pendapatan Lain-Lain', 'implemented' => false],
             'attendance-recap' => ['title' => 'Rekap Absensi Karyawan', 'implemented' => true, 'existing_route' => 'admin.reports.attendance.index'],
@@ -1794,6 +1794,73 @@ class CatalogReportController extends Controller
             }
         }
 
+        // Implementasi: Produk Terlaris & Produk Kurang Laku
+        if (in_array($slug, ['top-products', 'low-selling-products'], true)) {
+            $viewType = $slug;
+            $isTop = $slug === 'top-products';
+
+            $limit = (int) $request->input('limit', 50);
+            $limit = $limit > 0 ? min($limit, 500) : 50;
+
+            $soldSub = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $soldSub->where('sales.outlet_id', $outletId);
+            }
+
+            $soldSub->select('sale_items.product_id')
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as total_amount')
+                ->selectRaw('COUNT(DISTINCT sales.id) as transaction_count')
+                ->groupBy('sale_items.product_id');
+
+            $query = DB::table('products')
+                ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+                ->leftJoinSub($soldSub, 'sold', 'sold.product_id', '=', 'products.id')
+                ->where('products.is_active', true)
+                ->select(
+                    'products.id',
+                    'products.name as product_name',
+                    'products.sku',
+                    DB::raw("COALESCE(product_categories.name, 'Tanpa Kategori') as category_name"),
+                    DB::raw('COALESCE(sold.total_qty, 0) as total_qty'),
+                    DB::raw('COALESCE(sold.total_amount, 0) as total_amount'),
+                    DB::raw('COALESCE(sold.transaction_count, 0) as transaction_count')
+                );
+
+            if ($isTop) {
+                // Hanya produk yang punya penjualan, urut dari paling laris.
+                $query->having('total_qty', '>', 0)
+                    ->orderByDesc('total_qty')
+                    ->orderByDesc('total_amount');
+            } else {
+                // Sertakan produk tanpa penjualan (qty 0), urut dari paling sedikit terjual.
+                $query->orderBy('total_qty', 'asc')
+                    ->orderBy('total_amount', 'asc')
+                    ->orderBy('products.name', 'asc');
+            }
+
+            $rows = $query->limit($limit)->get()->map(function ($row) {
+                $row->total_qty = (float) $row->total_qty;
+                $row->total_amount = (float) $row->total_amount;
+                $row->transaction_count = (int) $row->transaction_count;
+                $row->avg_price = $row->total_qty > 0 ? $row->total_amount / $row->total_qty : 0.0;
+
+                return $row;
+            });
+
+            $summary = [
+                'limit' => $limit,
+                'product_count' => $rows->count(),
+                'total_qty' => (float) $rows->sum('total_qty'),
+                'total_amount' => (float) $rows->sum('total_amount'),
+                'zero_sales_count' => $rows->where('total_qty', 0)->count(),
+            ];
+        }
+
         $format = $request->input('format');
         if (in_array($format, ['xlsx', 'pdf'], true)) {
             [$exportColumns, $exportRows] = $this->buildExportPayload($viewType, $rows, $summary);
@@ -2443,6 +2510,18 @@ class CatalogReportController extends Controller
                 ['key' => 'received_quantity', 'label' => 'Qty Diterima', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'nominal_value', 'label' => 'HPP (Nilai Rp)', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'notes', 'label' => 'Catatan', 'type' => 'text'],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if (in_array($viewType, ['top-products', 'low-selling-products'], true)) {
+            return [[
+                ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
+                ['key' => 'sku', 'label' => 'SKU', 'type' => 'text'],
+                ['key' => 'category_name', 'label' => 'Kategori', 'type' => 'text'],
+                ['key' => 'total_qty', 'label' => 'Qty Terjual', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'transaction_count', 'label' => 'Jumlah Transaksi', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_amount', 'label' => 'Total Omzet', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'avg_price', 'label' => 'Harga Rata-rata', 'type' => 'number', 'decimals' => 2],
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
