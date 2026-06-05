@@ -732,11 +732,13 @@
                                 <option value="bridge">Printer Bridge (QZ Tray)</option>
                                 <option value="webbt">Thermal Bluetooth Langsung (Web Bluetooth)</option>
                                 <option value="rawbt">Thermal Bluetooth (RawBT - Android)</option>
+                                <option value="ransapos_android">Ransapos Printer Service (Android)</option>
                             </select>
                             <p class="text-xs text-gray-500 mt-2">
                                 Browser mode memakai printer default OS. Bridge mode cetak ke printer terpilih.
                                 <strong>Web Bluetooth</strong> cetak ESC/POS langsung ke printer thermal Bluetooth (BLE)
                                 tanpa aplikasi tambahan. Mode RawBT lewat aplikasi RawBT (Android).
+                                Mode Ransapos Printer Service memakai aplikasi Android internal Ransapos.
                             </p>
 
                             <div v-if="printEngine === 'webbt'" class="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -763,11 +765,15 @@
                                 <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Status Bridge</p>
                                 <span :class="printEngine === 'browser'
                                     ? 'bg-blue-100 text-blue-700'
-                                    : (printerBridgeConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')"
+                                    : (printEngine === 'ransapos_android'
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : (printerBridgeConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'))"
                                     class="text-[10px] px-2 py-1 rounded-full font-bold uppercase">
                                     @{{ printEngine === 'browser'
                                         ? 'Mode Browser'
-                                        : (printerBridgeConnected ? 'Terhubung' : 'Belum Tersambung') }}
+                                        : (printEngine === 'ransapos_android'
+                                            ? 'Android Service'
+                                            : (printerBridgeConnected ? 'Terhubung' : 'Belum Tersambung')) }}
                                 </span>
                             </div>
                             <p class="text-xs text-gray-600 mt-2">@{{ printerStatusMessage ||
@@ -819,6 +825,9 @@
                             : 'rounded-xl border border-blue-200 bg-blue-50 p-3'">
                             <p v-if="printEngine === 'bridge'" class="text-xs text-amber-800 font-medium">
                                 Jika daftar kosong, install dan jalankan QZ Tray di device kasir, lalu klik Cari Printer.
+                            </p>
+                            <p v-else-if="printEngine === 'ransapos_android'" class="text-xs text-blue-800 font-medium">
+                                Pastikan Ransapos Printer Service sudah terinstall di tablet dan printer default sudah dipilih di aplikasi.
                             </p>
                             <p v-else class="text-xs text-blue-800 font-medium">
                                 Mode Browser tidak bisa membaca nama printer. Gunakan print dialog browser (seperti saat selesai bayar).
@@ -1338,7 +1347,7 @@
                             }
 
                             const parsed = JSON.parse(raw);
-                            const allowedEngines = ['browser', 'bridge', 'rawbt', 'webbt'];
+                            const allowedEngines = ['browser', 'bridge', 'rawbt', 'webbt', 'ransapos_android'];
 
                             this.printEngine = allowedEngines.includes(parsed.printEngine) ? parsed.printEngine : 'browser';
                             this.selectedPrinterName = typeof parsed.selectedPrinterName === 'string'
@@ -1351,6 +1360,10 @@
                             if (this.printEngine === 'browser') {
                                 this.availablePrinters = [this.getBrowserVirtualPrinterName()];
                                 this.selectedPrinterName = this.getBrowserVirtualPrinterName();
+                            } else if (this.printEngine === 'ransapos_android') {
+                                this.availablePrinters = [];
+                                this.selectedPrinterName = '';
+                                this.printerStatusMessage = 'Mode Ransapos Printer Service aktif. Struk dikirim ke aplikasi Android di tablet.';
                             }
                         } catch (error) {
                             console.warn('Gagal membaca setting print POS:', error);
@@ -1377,6 +1390,10 @@
 
                         if (this.printEngine === 'bridge') {
                             this.refreshAvailablePrinters();
+                        } else if (this.printEngine === 'ransapos_android') {
+                            this.availablePrinters = [];
+                            this.selectedPrinterName = '';
+                            this.printerStatusMessage = 'Mode Android Service aktif. Pastikan aplikasi Ransapos Printer Service sudah terinstall dan printer default sudah dipilih.';
                         } else {
                             this.availablePrinters = [this.getBrowserVirtualPrinterName()];
                             this.selectedPrinterName = this.getBrowserVirtualPrinterName();
@@ -1550,9 +1567,35 @@
                             + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
                         this.printerStatusMessage = 'Tes cetak dikirim ke RawBT.';
                     },
+                    ransaposAndroidTestPrint() {
+                        const ESC = '\x1B', GS = '\x1D';
+                        let data = ESC + '@';
+                        data += ESC + 'a' + '\x01';
+                        data += GS + '!' + '\x11' + 'RANSAPOS\n';
+                        data += GS + '!' + '\x00';
+                        data += 'Tes Android Service\n';
+                        data += new Date().toLocaleString('id-ID') + '\n';
+                        data += '--------------------------------\n';
+                        data += 'Jika struk ini keluar,\nprinter SIAP dipakai.\n\n\n';
+                        data += GS + 'V' + '\x00';
+
+                        const b64 = btoa(data);
+                        const url = 'ransaposprint://print'
+                            + '?job_id=' + encodeURIComponent('TEST-' + Date.now())
+                            + '&source=ransapos'
+                            + '&base64=' + encodeURIComponent(b64);
+
+                        window.location.href = url;
+                        this.printerStatusMessage = 'Tes cetak dikirim ke Ransapos Printer Service. Jika aplikasi tidak terbuka, pastikan APK sudah terinstall.';
+                    },
                     async testPrintConfiguration() {
                         if (this.printEngine === 'rawbt') {
                             this.rawbtTestPrint();
+                            return;
+                        }
+
+                        if (this.printEngine === 'ransapos_android') {
+                            this.ransaposAndroidTestPrint();
                             return;
                         }
 
@@ -1655,6 +1698,13 @@
 
                         if (this.printEngine === 'rawbt') {
                             const printed = await this.printReceiptViaRawBt(normalizedSaleId);
+                            if (printed) {
+                                return;
+                            }
+                        }
+
+                        if (this.printEngine === 'ransapos_android') {
+                            const printed = await this.printReceiptViaRansaposAndroid(normalizedSaleId);
                             if (printed) {
                                 return;
                             }
@@ -1964,6 +2014,34 @@
                         } catch (error) {
                             console.error('Gagal cetak via RawBT:', error);
                             this.printerStatusMessage = 'Cetak RawBT gagal, fallback ke browser print.';
+                            return false;
+                        }
+                    },
+                    async printReceiptViaRansaposAndroid(saleId) {
+                        try {
+                            const response = await fetch(`/pos/sales/${saleId}/escpos`, {
+                                headers: { 'Accept': 'application/json' },
+                                credentials: 'same-origin',
+                            });
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            const data = await response.json();
+                            if (!data || !data.base64) {
+                                throw new Error('Data ESC/POS kosong.');
+                            }
+
+                            const url = 'ransaposprint://print'
+                                + '?job_id=' + encodeURIComponent(String(saleId))
+                                + '&source=ransapos'
+                                + '&base64=' + encodeURIComponent(data.base64);
+
+                            window.location.href = url;
+                            this.printerStatusMessage = 'Struk dikirim ke Ransapos Printer Service. Jika aplikasi tidak terbuka, pastikan APK sudah terinstall lalu gunakan mode print lama sebagai fallback.';
+                            return true;
+                        } catch (error) {
+                            console.error('Gagal cetak via Ransapos Printer Service:', error);
+                            this.printerStatusMessage = 'Cetak Android Service gagal, fallback ke browser print.';
                             return false;
                         }
                     },
@@ -2649,6 +2727,13 @@
                             this.selectedPrinterName = '';
                             this.printerBridgeConnected = false;
                             this.printerStatusMessage = 'Mode RawBT aktif: struk dikirim ke printer thermal Bluetooth via aplikasi RawBT (Android). Pastikan RawBT terpasang & printer terhubung di RawBT.';
+                        }
+
+                        if (newValue === 'ransapos_android') {
+                            this.availablePrinters = [];
+                            this.selectedPrinterName = '';
+                            this.printerBridgeConnected = false;
+                            this.printerStatusMessage = 'Mode Ransapos Printer Service aktif. Pastikan APK terinstall dan printer default sudah dipilih di aplikasi Android.';
                         }
 
                         if (newValue === 'webbt') {

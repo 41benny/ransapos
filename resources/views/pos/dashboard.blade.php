@@ -539,7 +539,7 @@
                 const engine = this.getPrintEngine();
 
                 // Mode thermal langsung (tanpa dialog) -> kirim ESC/POS ke printer Bluetooth.
-                if (engine === 'webbt' || engine === 'rawbt') {
+                if (engine === 'webbt' || engine === 'rawbt' || engine === 'ransapos_android') {
                     this.printRecapThermal(baseUrl, engine);
                     this.showRecapModal = false;
                     return;
@@ -555,7 +555,7 @@
                 return `Ransa_pos_print_settings_${outletKey}_${userKey}`;
             },
             getPrintEngine() {
-                const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
+                const allowed = ['browser', 'bridge', 'rawbt', 'webbt', 'ransapos_android'];
                 const readEngine = (raw) => {
                     if (!raw) return null;
                     try {
@@ -612,6 +612,17 @@
                             + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
                     } catch (error) {
                         console.error('Gagal cetak rekap via RawBT:', error);
+                        window.open(baseUrl, '_blank', 'noopener,noreferrer');
+                    }
+                    return;
+                }
+
+                if (engine === 'ransapos_android') {
+                    try {
+                        const base64 = await this.fetchRecapBase64(baseUrl);
+                        this.openRansaposAndroidPrint(base64, 'RECAP-' + Date.now());
+                    } catch (error) {
+                        console.error('Gagal cetak rekap via Ransapos Printer Service:', error);
                         window.open(baseUrl, '_blank', 'noopener,noreferrer');
                     }
                     return;
@@ -747,6 +758,16 @@
                     }
                 }
 
+                if (engine === 'ransapos_android') {
+                    try {
+                        const b64 = await this.fetchSaleBase64(normalizedSaleId);
+                        this.openRansaposAndroidPrint(b64, String(normalizedSaleId));
+                        return;
+                    } catch (e) {
+                        console.error('Gagal cetak struk via Ransapos Printer Service:', e);
+                    }
+                }
+
                 if (engine === 'webbt') {
                     // Hubungkan printer dulu (mumpung masih dalam user-gesture klik), lalu cetak.
                     let characteristic = null;
@@ -768,6 +789,12 @@
 
                 // Fallback: cetak biasa lewat browser.
                 window.location.href = `/pos/sales/${normalizedSaleId}/print?autoprint=1`;
+            },
+            openRansaposAndroidPrint(base64, jobId) {
+                window.location.href = 'ransaposprint://print'
+                    + '?job_id=' + encodeURIComponent(jobId || String(Date.now()))
+                    + '&source=ransapos'
+                    + '&base64=' + encodeURIComponent(base64);
             },
             async fetchSaleBase64(saleId) {
                 const response = await fetch(`/pos/sales/${saleId}/escpos`, {

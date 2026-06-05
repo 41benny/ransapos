@@ -339,7 +339,7 @@
                     return `Ransa_pos_print_settings_${o}_${u}`;
                 }
                 function getPrintEngine() {
-                    const allowed = ['browser', 'bridge', 'rawbt', 'webbt'];
+                    const allowed = ['browser', 'bridge', 'rawbt', 'webbt', 'ransapos_android'];
                     const read = (raw) => {
                         if (!raw) return null;
                         try { const p = JSON.parse(raw); return allowed.includes(p.printEngine) ? p.printEngine : null; }
@@ -383,6 +383,12 @@
                     const a = new Uint8Array(b.length);
                     for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
                     return a;
+                }
+                function openRansaposAndroidPrint(base64, jobId) {
+                    window.location.href = 'ransaposprint://print'
+                        + '?job_id=' + encodeURIComponent(jobId || ('RECAP-' + Date.now()))
+                        + '&source=ransapos'
+                        + '&base64=' + encodeURIComponent(base64);
                 }
                 async function discover(device) {
                     const s = await device.gatt.connect();
@@ -437,6 +443,14 @@
                             window.location.href = 'intent:base64,' + b + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
                             return;
                         } catch (e) { console.error('RawBT gagal:', e); }
+                    }
+
+                    if (engine === 'ransapos_android') {
+                        try {
+                            const b = await fetchBase64();
+                            openRansaposAndroidPrint(b, 'RECAP-' + Date.now());
+                            return;
+                        } catch (e) { console.error('Ransapos Printer Service gagal:', e); }
                     }
 
                     if (engine === 'webbt') {
