@@ -15,10 +15,15 @@ class Attendance extends Model
         'user_id',
         'logged_in_user_id',
         'outlet_id',
+        'shift_id',
         'clock_in',
         'clock_out',
         'notes',
         'status',
+        'late_minutes',
+        'early_leave_minutes',
+        'overtime_minutes',
+        'worked_minutes',
         'ip_address',
         'user_agent',
     ];
@@ -26,6 +31,10 @@ class Attendance extends Model
     protected $casts = [
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
+        'late_minutes' => 'integer',
+        'early_leave_minutes' => 'integer',
+        'overtime_minutes' => 'integer',
+        'worked_minutes' => 'integer',
     ];
 
     /**
@@ -50,6 +59,30 @@ class Attendance extends Model
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
+    }
+
+    /**
+     * Relasi ke shift yang dipilih saat clock-in
+     */
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
+    }
+
+    /**
+     * Apakah pulang lebih cepat dari jam selesai shift
+     */
+    public function isEarlyLeave(): bool
+    {
+        return (int) $this->early_leave_minutes > 0;
+    }
+
+    /**
+     * Apakah ada lembur (clock-out melewati jam selesai shift)
+     */
+    public function isOvertime(): bool
+    {
+        return (int) $this->overtime_minutes > 0;
     }
 
     /**

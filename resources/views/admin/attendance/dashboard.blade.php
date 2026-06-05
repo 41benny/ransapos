@@ -5,6 +5,14 @@
 @section('page-subtitle', 'Ringkasan kehadiran, kedisiplinan, dan anomali absensi karyawan')
 
 @section('content')
+    @php
+        $fmtMinutes = function ($m) {
+            $m = (int) $m;
+            $h = intdiv($m, 60);
+            $min = $m % 60;
+            return $h > 0 ? ($h . 'j ' . $min . 'm') : ($min . 'm');
+        };
+    @endphp
     <div class="w-full space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-white dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 rounded-xl shadow-sm border border-orange-100 dark:border-slate-700 p-6">
             <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -111,6 +119,26 @@
             </div>
         </div>
 
+        {{-- KPI Jam Kerja & Kedisiplinan --}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                <p class="text-xs text-gray-500 dark:text-slate-400 uppercase">Total Jam Kerja</p>
+                <p class="mt-2 text-3xl font-bold text-slate-800 dark:text-white">{{ $fmtMinutes($totalWorkedMinutes) }}</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                <p class="text-xs text-gray-500 dark:text-slate-400 uppercase">Total Lembur</p>
+                <p class="mt-2 text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ $fmtMinutes($totalOvertimeMinutes) }}</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                <p class="text-xs text-gray-500 dark:text-slate-400 uppercase">Total Menit Telat</p>
+                <p class="mt-2 text-3xl font-bold text-amber-600 dark:text-amber-500">{{ $fmtMinutes($totalLateMinutes) }}</p>
+            </div>
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                <p class="text-xs text-gray-500 dark:text-slate-400 uppercase">Pulang Cepat</p>
+                <p class="mt-2 text-3xl font-bold text-rose-600 dark:text-rose-500">{{ $totalEarlyLeave }}<span class="text-base font-medium text-gray-400"> kali</span></p>
+            </div>
+        </div>
+
         @if($anomalyCount > 0)
             <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl p-5">
                 <h3 class="text-lg font-semibold text-red-900 dark:text-red-400 mb-3">Monitoring Anomali</h3>
@@ -122,6 +150,62 @@
                             <div class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ $anomaly['time']->format('d M Y H:i') }}</div>
                         </div>
                     @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if($trend->count() > 1)
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Tren Kehadiran</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">Jumlah hadir vs terlambat per hari</p>
+                <div id="attendanceTrendChart" class="w-full" style="min-height: 300px;"></div>
+            </div>
+        @endif
+
+        @if($disciplineTop->isNotEmpty() || $mostLate->isNotEmpty())
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-award text-emerald-500"></i> Paling Disiplin
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse($disciplineTop as $i => $emp)
+                            <div class="flex items-center justify-between rounded-lg bg-emerald-50/60 dark:bg-slate-700/40 px-3 py-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">{{ $i + 1 }}</span>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ $emp['employee_name'] }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ $emp['on_time_rate'] }}%</span>
+                                    <span class="block text-[10px] text-gray-400">{{ $emp['total_records'] }} absen</span>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-400 py-4 text-center">Belum ada data.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 p-5">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-triangle-exclamation text-amber-500"></i> Paling Sering Telat
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse($mostLate as $i => $emp)
+                            <div class="flex items-center justify-between rounded-lg bg-amber-50/60 dark:bg-slate-700/40 px-3 py-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">{{ $i + 1 }}</span>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ $emp['employee_name'] }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-amber-600 dark:text-amber-500">{{ $emp['late_count'] }}x telat</span>
+                                    <span class="block text-[10px] text-gray-400">total {{ $fmtMinutes($emp['late_minutes']) }}</span>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-400 py-4 text-center">Tidak ada keterlambatan. 🎉</p>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         @endif
@@ -147,9 +231,13 @@
                             <th class="px-4 py-3 text-left">Tanggal</th>
                             <th class="px-4 py-3 text-left">Karyawan</th>
                             <th class="px-4 py-3 text-left">Outlet</th>
+                            <th class="px-4 py-3 text-left">Shift</th>
                             <th class="px-4 py-3 text-left">Jam Masuk</th>
                             <th class="px-4 py-3 text-left">Jam Keluar</th>
                             <th class="px-4 py-3 text-left">Durasi</th>
+                            <th class="px-4 py-3 text-left">Telat</th>
+                            <th class="px-4 py-3 text-left">Plg Cepat</th>
+                            <th class="px-4 py-3 text-left">Lembur</th>
                             <th class="px-4 py-3 text-left">Status</th>
                             <th class="px-4 py-3 text-left">Kasir Login</th>
                             <th class="px-4 py-3 text-left">IP</th>
@@ -161,9 +249,13 @@
                                 <td class="px-4 py-3">{{ $attendance->clock_in->format('d-m-Y') }}</td>
                                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $attendance->user->name ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $attendance->outlet->name ?? '-' }}</td>
+                                <td class="px-4 py-3">{{ $attendance->shift->name ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $attendance->clock_in->format('H:i:s') }}</td>
                                 <td class="px-4 py-3">{{ $attendance->clock_out?->format('H:i:s') ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $attendance->isClockOut() ? $attendance->getDurationFormatted() : 'Masih aktif' }}</td>
+                                <td class="px-4 py-3">{{ $attendance->late_minutes > 0 ? $attendance->late_minutes . 'm' : '-' }}</td>
+                                <td class="px-4 py-3">{{ $attendance->early_leave_minutes > 0 ? $attendance->early_leave_minutes . 'm' : '-' }}</td>
+                                <td class="px-4 py-3">{{ $attendance->overtime_minutes > 0 ? $attendance->overtime_minutes . 'm' : '-' }}</td>
                                 <td class="px-4 py-3">
                                     <span
                                         class="px-2 py-1 text-xs rounded-full {{ $attendance->status === 'late' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' }}">
@@ -175,7 +267,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-slate-400">Tidak ada data absensi untuk filter ini.</td>
+                                <td colspan="13" class="px-4 py-8 text-center text-gray-500 dark:text-slate-400">Tidak ada data absensi untuk filter ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -256,6 +348,8 @@
                                 <th class="px-4 py-3 text-left">Terlambat</th>
                                 <th class="px-4 py-3 text-left">On-Time</th>
                                 <th class="px-4 py-3 text-left">Rata Durasi</th>
+                                <th class="px-4 py-3 text-left">Jam Kerja</th>
+                                <th class="px-4 py-3 text-left">Lembur</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
@@ -267,10 +361,12 @@
                                     <td class="px-4 py-3">{{ $stat['late_count'] }}</td>
                                     <td class="px-4 py-3">{{ $stat['on_time_rate'] }}%</td>
                                     <td class="px-4 py-3">{{ is_null($stat['avg_duration_minutes']) ? '-' : $stat['avg_duration_minutes'] . ' menit' }}</td>
+                                    <td class="px-4 py-3">{{ $fmtMinutes($stat['worked_minutes']) }}</td>
+                                    <td class="px-4 py-3">{{ $stat['overtime_minutes'] > 0 ? $fmtMinutes($stat['overtime_minutes']) : '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-slate-400">Belum ada data karyawan.</td>
+                                    <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-slate-400">Belum ada data karyawan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -284,4 +380,41 @@
             </div>
         </div>
     </div>
+
+    @if($trend->count() > 1)
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (typeof ApexCharts === 'undefined') return;
+                const el = document.querySelector('#attendanceTrendChart');
+                if (!el) return;
+
+                const trend = @json($trend);
+                const labels = trend.map(function (t) {
+                    const d = new Date(t.date + 'T00:00:00');
+                    return isNaN(d) ? t.date : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                });
+
+                const isDark = document.documentElement.classList.contains('dark');
+                const axisColor = isDark ? '#94a3b8' : '#64748b';
+
+                new ApexCharts(el, {
+                    chart: { type: 'area', height: 300, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit', background: 'transparent' },
+                    theme: { mode: isDark ? 'dark' : 'light' },
+                    series: [
+                        { name: 'Hadir', data: trend.map(t => t.present) },
+                        { name: 'Terlambat', data: trend.map(t => t.late) },
+                    ],
+                    colors: ['#10b981', '#f59e0b'],
+                    dataLabels: { enabled: false },
+                    stroke: { curve: 'smooth', width: 2 },
+                    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+                    xaxis: { categories: labels, labels: { style: { colors: axisColor, fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    yaxis: { labels: { formatter: v => Math.round(v), style: { colors: axisColor } }, tickAmount: 4 },
+                    legend: { position: 'top', horizontalAlign: 'right', labels: { colors: axisColor } },
+                    grid: { borderColor: isDark ? 'rgba(148,163,184,0.15)' : 'rgba(148,163,184,0.25)', strokeDashArray: 4 },
+                    tooltip: { theme: isDark ? 'dark' : 'light', y: { formatter: v => Math.round(v) + ' orang' } },
+                }).render();
+            });
+        </script>
+    @endif
 @endsection

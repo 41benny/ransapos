@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -24,12 +25,15 @@ class AttendanceController extends Controller
         $employees = User::where('outlet_id', $loggedInUser->outlet_id)
             ->where('is_active', true)
             ->with(['role', 'attendances' => function ($query) {
-                $query->whereDate('clock_in', today())->latest();
+                $query->whereDate('clock_in', today())->with('shift')->latest();
             }])
             ->orderBy('name')
             ->get();
 
-        return view('pos.attendance.index', compact('employees', 'loggedInUser'));
+        // Daftar shift aktif untuk dipilih saat clock-in
+        $shifts = Shift::active()->get();
+
+        return view('pos.attendance.index', compact('employees', 'loggedInUser', 'shifts'));
     }
 
     /**
@@ -39,7 +43,8 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'employee_id' => 'required|exists:users,id',
-            'pin' => 'required|numeric|digits:6'
+            'pin' => 'required|numeric|digits:6',
+            'shift_id' => 'required|exists:shifts,id',
         ]);
 
         $employee = User::findOrFail($request->employee_id);
@@ -48,6 +53,12 @@ class AttendanceController extends Controller
         // Validasi outlet
         if ($employee->outlet_id !== $loggedInUser->outlet_id) {
             return back()->with('error', 'Karyawan tidak terdaftar di outlet ini');
+        }
+
+        // Validasi shift aktif
+        $shift = Shift::find($request->shift_id);
+        if (!$shift || !$shift->is_active) {
+            return back()->with('error', 'Shift tidak valid atau tidak aktif. Hubungi admin.');
         }
 
         // Rate limiting per employee
@@ -78,18 +89,24 @@ class AttendanceController extends Controller
             return back()->with('error', 'Karyawan sudah melakukan clock-in hari ini');
         }
 
-        // Tentukan status (late jika > jam 9 pagi)
+        // Tentukan status berdasarkan jam masuk shift + toleransi keterlambatan
         $clockInTime = now();
-        $lateThreshold = today()->setTime(9, 0, 0);
-        $status = $clockInTime->greaterThan($lateThreshold) ? 'late' : 'present';
+        $shiftStart = $shift->startFor(today());
+        $lateThreshold = $shift->lateThresholdFor(today());
+        $isLate = $clockInTime->greaterThan($lateThreshold);
+        $status = $isLate ? 'late' : 'present';
+        // Menit telat dihitung dari jam masuk shift (hanya saat melewati toleransi)
+        $lateMinutes = $isLate ? (int) $shiftStart->diffInMinutes($clockInTime) : 0;
 
         // Buat record attendance
         $attendance = Attendance::create([
             'user_id' => $employee->id,
             'logged_in_user_id' => $loggedInUser->id,
             'outlet_id' => $employee->outlet_id,
+            'shift_id' => $shift->id,
             'clock_in' => $clockInTime,
             'status' => $status,
+            'late_minutes' => $lateMinutes,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
@@ -97,9 +114,9 @@ class AttendanceController extends Controller
         // Deteksi anomali: banyak absensi dalam waktu singkat
         $this->detectAnomalies($loggedInUser->id, $employee->outlet_id);
 
-        $statusText = $status === 'late' ? 'terlambat' : 'tepat waktu';
+        $statusText = $status === 'late' ? "terlambat {$lateMinutes} menit" : 'tepat waktu';
 
-        return back()->with('success', "Clock-in berhasil untuk {$employee->name} ({$statusText})");
+        return back()->with('success', "Clock-in berhasil untuk {$employee->name} - Shift {$shift->name} ({$statusText})");
     }
 
     /**
@@ -147,14 +164,40 @@ class AttendanceController extends Controller
             return back()->with('error', 'Karyawan belum melakukan clock-in hari ini');
         }
 
-        // Update clock_out
+        // Hitung durasi kerja, pulang cepat, dan lembur berdasarkan shift
+        $clockOutTime = now();
+        $workedMinutes = (int) $attendance->clock_in->diffInMinutes($clockOutTime);
+        $earlyLeaveMinutes = 0;
+        $overtimeMinutes = 0;
+
+        $attendance->loadMissing('shift');
+        if ($attendance->shift) {
+            $shiftEnd = $attendance->shift->endFor($attendance->clock_in);
+
+            if ($clockOutTime->lessThan($shiftEnd)) {
+                $earlyLeaveMinutes = (int) $clockOutTime->diffInMinutes($shiftEnd);
+            } elseif ($clockOutTime->greaterThan($shiftEnd)) {
+                $overtimeMinutes = (int) $shiftEnd->diffInMinutes($clockOutTime);
+            }
+        }
+
+        // Update clock_out + metrik
         $attendance->update([
-            'clock_out' => now(),
+            'clock_out' => $clockOutTime,
+            'worked_minutes' => $workedMinutes,
+            'early_leave_minutes' => $earlyLeaveMinutes,
+            'overtime_minutes' => $overtimeMinutes,
         ]);
 
         $duration = $attendance->getDurationFormatted();
+        $extra = '';
+        if ($earlyLeaveMinutes > 0) {
+            $extra = " (pulang cepat {$earlyLeaveMinutes} menit)";
+        } elseif ($overtimeMinutes > 0) {
+            $extra = " (lembur {$overtimeMinutes} menit)";
+        }
 
-        return back()->with('success', "Clock-out berhasil untuk {$employee->name}. Durasi kerja: {$duration}");
+        return back()->with('success', "Clock-out berhasil untuk {$employee->name}. Durasi kerja: {$duration}{$extra}");
     }
 
     /**

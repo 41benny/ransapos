@@ -222,6 +222,9 @@ class DatabaseSeeder extends Seeder
         // 7. Payment Methods
         $this->call(PaymentMethodSeeder::class);
 
+        // 7b. Master Shift Absensi (Pagi/Sore)
+        $this->call(ShiftSeeder::class);
+
         // 8. Cash Accounts (Akun Kas & Bank)
         CashAccount::create([
             'name' => 'Kas Toko Utama',

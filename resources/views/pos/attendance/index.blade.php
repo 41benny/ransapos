@@ -55,17 +55,43 @@
 
                     <div class="mb-4">
                         @if($hasClockOut)
-                            <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                                Selesai
-                            </span>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                    Selesai
+                                </span>
+                                @if($todayAttendance->shift)
+                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                                        {{ $todayAttendance->shift->name }}
+                                    </span>
+                                @endif
+                                @if($todayAttendance->isEarlyLeave())
+                                    <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                                        Pulang Cepat {{ $todayAttendance->early_leave_minutes }}m
+                                    </span>
+                                @elseif($todayAttendance->isOvertime())
+                                    <span class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+                                        Lembur {{ $todayAttendance->overtime_minutes }}m
+                                    </span>
+                                @endif
+                            </div>
                             <p class="mt-2 text-xs text-slate-600">
                                 {{ $todayAttendance->clock_in->format('H:i') }} - {{ $todayAttendance->clock_out->format('H:i') }}
                                 ({{ $todayAttendance->getDurationFormatted() }})
                             </p>
                         @elseif($hasClockIn)
-                            <span class="inline-flex items-center rounded-full border {{ $todayAttendance->status === 'late' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700' }} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                                {{ $todayAttendance->status === 'late' ? 'Terlambat' : 'Hadir' }}
-                            </span>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="inline-flex items-center rounded-full border {{ $todayAttendance->status === 'late' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700' }} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                                    {{ $todayAttendance->status === 'late' ? 'Terlambat' : 'Hadir' }}
+                                </span>
+                                @if($todayAttendance->shift)
+                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                                        {{ $todayAttendance->shift->name }}
+                                    </span>
+                                @endif
+                                @if($todayAttendance->status === 'late' && $todayAttendance->late_minutes > 0)
+                                    <span class="text-[10px] font-bold text-amber-600">+{{ $todayAttendance->late_minutes }}m</span>
+                                @endif
+                            </div>
                             <p class="mt-2 text-xs text-slate-600">
                                 Masuk: {{ $todayAttendance->clock_in->format('H:i') }}
                                 <span class="font-semibold text-slate-700 duration-live"
@@ -81,10 +107,32 @@
                     </div>
 
                     @if(!$hasClockOut)
+                        @if(!$hasClockIn && $shifts->isEmpty())
+                            <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
+                                Belum ada shift aktif. Minta admin menambahkan shift terlebih dahulu sebelum bisa clock-in.
+                            </div>
+                        @else
                         <form action="{{ $hasClockIn ? route('pos.attendance.clock-out') : route('pos.attendance.clock-in') }}"
                             method="POST" class="space-y-3">
                             @csrf
                             <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+
+                            @if(!$hasClockIn)
+                                <div>
+                                    <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="shift-{{ $employee->id }}">
+                                        Pilih Shift
+                                    </label>
+                                    <div class="relative">
+                                        <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">schedule</span>
+                                        <select id="shift-{{ $employee->id }}" name="shift_id" required
+                                            class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            @foreach($shifts as $shift)
+                                                <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->timeRangeLabel() }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            @endif
 
                             <div>
                                 <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="pin-{{ $employee->id }}">
@@ -104,6 +152,7 @@
                                 {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
                             </button>
                         </form>
+                        @endif
                     @endif
                 </div>
             </div>

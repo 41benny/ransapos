@@ -140,6 +140,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->only(['destroy'])
         ->middleware('permission:sales-types.delete');
 
+    // Master Shift Absensi (CRUD via modal di halaman index)
+    Route::resource('shifts', \App\Http\Controllers\Admin\ShiftController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middleware('permission:attendance.shifts.manage');
+
     // POS Device Management
     Route::get('pos-devices', [AdminPosDeviceController::class, 'index'])
         ->name('pos-devices.index')
