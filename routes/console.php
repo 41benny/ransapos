@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\ActivityLog;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
 use App\Support\Repairs\RepairPurchaseHppByQuantityAction;
 use App\Support\Repairs\RepairSaleItemCogsFromStockAction;
@@ -294,3 +296,30 @@ Artisan::command('stocks:cleanup-bundle-mutations
         return self::FAILURE;
     }
 })->purpose('Dry-run/apply hapus mutasi historis yang terlanjur terbentuk untuk produk bundle/BOM');
+
+/*
+ * Log Aktivitas — hapus log lama.
+ * Default: 90 hari. Bisa override dengan --days=180
+ *
+ * Contoh manual:
+ *   php artisan activity-logs:prune
+ *   php artisan activity-logs:prune --days=30
+ */
+Artisan::command('activity-logs:prune {--days=90 : Jumlah hari log yang disimpan}', function () {
+    $days = max(1, (int) $this->option('days'));
+    $cutoff = now()->subDays($days);
+
+    $deleted = ActivityLog::query()
+        ->where('created_at', '<', $cutoff)
+        ->delete();
+
+    $this->info("Log aktivitas lebih dari {$days} hari dihapus: {$deleted} baris.");
+    Log::info("activity-logs:prune selesai", ['days' => $days, 'deleted' => $deleted]);
+
+    return self::SUCCESS;
+})->purpose('Hapus log aktivitas lama (default: lebih dari 90 hari)');
+
+/*
+ * Jadwal otomatis: hapus log aktivitas setiap hari jam 01.00
+ */
+Schedule::command('activity-logs:prune')->dailyAt('01:00');

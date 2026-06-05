@@ -887,6 +887,7 @@
                         ['label' => 'Pengaturan', 'icon' => 'fas fa-cog', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'permission' => 'settings.manage'],
                         ['label' => 'Perangkat POS', 'icon' => 'fas fa-tablet-screen-button', 'route' => 'admin.pos-devices.index', 'match' => 'admin.pos-devices.*', 'permission' => 'pos-devices.view'],
                         ['label' => 'Token Void', 'icon' => 'fas fa-key', 'route' => 'admin.void-tokens.index', 'match' => 'admin.void-tokens.*', 'permission' => 'void-tokens.view'],
+                        ['label' => 'Log Aktivitas', 'icon' => 'fas fa-clock-rotate-left', 'route' => 'admin.activity-logs.index', 'match' => 'admin.activity-logs.*', 'permission' => 'activity-logs.view'],
                     ];
 
                     if ($currentUser?->hasRole('superadmin')) {

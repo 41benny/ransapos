@@ -550,6 +550,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->name('void-tokens.store')
         ->middleware('permission:void-tokens.create');
 
+    // Log Aktivitas (Audit Trail)
+    Route::get('/activity-logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])
+        ->name('activity-logs.index')
+        ->middleware('permission:activity-logs.view');
+
     // Setting & Logo Management
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index')
         ->middleware('permission:settings.manage');

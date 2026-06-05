@@ -160,6 +160,7 @@ class PermissionController extends Controller
             'pos-devices' => 'Perangkat POS',
             'void-tokens' => 'Token Void',
             'permissions' => 'Role Permission',
+            'activity-logs' => 'Log Aktivitas',
         ];
     }
 }
