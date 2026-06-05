@@ -119,6 +119,16 @@ class DashboardController extends Controller
 
             $discountTotal = (float) ($kpis->discount_total ?? 0);
 
+            $totalCogs = (float) SaleItem::query()
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->where('sales.status', 'completed')
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
+                ->sum('sale_items.cogs');
+
+            $grossProfit = $totalSales - $totalCogs;
+            $grossMarginPct = $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null;
+
             $cancelledBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'cancelled')
@@ -408,6 +418,9 @@ class DashboardController extends Controller
                     'total_transactions' => $totalTransactions,
                     'avg_transaction' => $avgTransaction,
                     'discount_total' => $discountTotal,
+                    'total_cogs' => $totalCogs,
+                    'gross_profit' => $grossProfit,
+                    'gross_margin_pct' => $grossMarginPct,
                     'cancelled_transactions' => $cancelledTransactions,
                     'cancelled_amount' => $cancelledAmount,
                 ],

@@ -131,34 +131,27 @@
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-amber-500 transition-all duration-500 group-hover:w-full"></div>
         </div>
 
-        {{-- Growth KPI --}}
+        {{-- Laba KPI --}}
         <div
             class="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50">
             <div class="flex items-center justify-between mb-4">
                 <div
-                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition-colors group-hover:bg-rose-600 group-hover:text-white">
-                    <i class="fas fa-arrow-trend-up text-lg"></i>
+                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                    <i class="fas fa-sack-dollar text-lg"></i>
                 </div>
                 <div class="text-right">
-                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Daily
-                        Progress</span>
-                    <span class="text-xs font-black text-slate-400">TREND</span>
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Laba Kotor</span>
+                    <span id="kpiProfitPct" class="text-xs font-black text-emerald-500">-</span>
                 </div>
             </div>
             <div class="space-y-1">
-                <div id="targetWrap" class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span id="targetPct" class="text-3xl font-black text-slate-800 tracking-tight">0%</span>
-                        <span id="targetValue"
-                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target: -</span>
-                    </div>
-                    <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                        <div id="targetBar" class="h-full bg-rose-500 rounded-full transition-all duration-1000"
-                            style="width: 0%"></div>
-                    </div>
+                <h3 id="kpiGrossProfit" class="text-3xl font-black text-slate-800 tracking-tight">-</h3>
+                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span>Omzet &minus; HPP</span>
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 h-1 w-0 bg-rose-600 transition-all duration-500 group-hover:w-full"></div>
+            <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-600 transition-all duration-500 group-hover:w-full">
+            </div>
         </div>
     </div>
 
@@ -170,7 +163,18 @@
                     <h3 class="text-lg font-bold text-slate-900">Omzet per Jam</h3>
                     <p class="text-xs text-slate-500">Berdasarkan jam transaksi (created_at)</p>
                 </div>
-                <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
+                <div class="flex items-center gap-3">
+                    <button id="hourlyStackToggle" type="button"
+                        class="hidden outlet-chart-toggle inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600"
+                        aria-pressed="false"
+                        title="Per Outlet: tinggi garis = omzet asli tiap outlet. Bertumpuk: garis ditumpuk, puncak garis = total omzet semua outlet.">
+                        <span id="hourlyStackToggleText">Per Outlet</span>
+                        <span class="outlet-chart-toggle__track">
+                            <span class="outlet-chart-toggle__thumb"></span>
+                        </span>
+                    </button>
+                    <div class="text-xs text-slate-500">00:00 - 23:00 • hover untuk detail</div>
+                </div>
             </div>
 
             <div class="flex-1 w-full min-h-[400px]" id="hourlyBars"></div>
@@ -510,6 +514,7 @@
     <script>
         (() => {
             let hourlyChart = null;
+            let hourlyChartIsStacked = null;
             let outletChart = null;
             const endpoint = @json(route('admin.dashboard.summary'));
             const salesVsHppEndpoint = @json(route('admin.reports.catalog.show', ['slug' => 'sales-vs-hpp']));
@@ -532,10 +537,8 @@
             const trendSalesEl = document.getElementById('trendSales');
             const trendSalesPctEl = document.getElementById('trendSalesPct');
 
-            const targetWrapEl = document.getElementById('targetWrap');
-            const targetValueEl = document.getElementById('targetValue');
-            const targetPctEl = document.getElementById('targetPct');
-            const targetBarEl = document.getElementById('targetBar');
+            const kpiGrossProfitEl = document.getElementById('kpiGrossProfit');
+            const kpiProfitPctEl = document.getElementById('kpiProfitPct');
 
             const hourlyBarsEl = document.getElementById('hourlyBars');
             const hourlyEmptyEl = document.getElementById('hourlyEmpty');
@@ -550,6 +553,8 @@
             const outletEmptyEl = document.getElementById('outletEmpty');
             const outletChartModeToggleEl = document.getElementById('outletChartModeToggle');
             const outletChartModeTextEl = document.getElementById('outletChartModeText');
+            const hourlyStackToggleEl = document.getElementById('hourlyStackToggle');
+            const hourlyStackToggleTextEl = document.getElementById('hourlyStackToggleText');
             const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0, });
             const hourlyPalette = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
             const hourlyOthersColor = '#94A3B8';
@@ -567,6 +572,9 @@
             };
             let timer = null; let isLoading = false;
             let outletChartMode = 'area';
+            let hourlyStackMode = 'overlap'; // 'overlap' (per outlet, default) | 'stacked' (bertumpuk)
+            let latestHourlySeries = null;
+            let latestHourlyLabels = null;
             let latestOutletRows = [];
             let latestOutletIsAllOutlets = false;
             function setStatus(text, type = 'info') {
@@ -660,6 +668,15 @@
                 outletChartModeToggleEl.classList.toggle('is-active', isCompareMode);
                 outletChartModeToggleEl.setAttribute('aria-pressed', isCompareMode ? 'true' : 'false');
                 outletChartModeTextEl.textContent = isCompareMode ? 'Mode omzet vs hpp' : 'Mode omzet';
+            }
+            function syncHourlyStackToggle(isMulti) {
+                if (!hourlyStackToggleEl || !hourlyStackToggleTextEl) return;
+                // Toggle hanya relevan saat ada >1 outlet (mode breakdown)
+                hourlyStackToggleEl.classList.toggle('hidden', !isMulti);
+                const isStacked = hourlyStackMode === 'stacked';
+                hourlyStackToggleEl.classList.toggle('is-active', isStacked);
+                hourlyStackToggleEl.setAttribute('aria-pressed', isStacked ? 'true' : 'false');
+                hourlyStackToggleTextEl.textContent = isStacked ? 'Bertumpuk' : 'Per Outlet';
             }
             function getCompactCurrencyLabel(val) {
                 if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -892,14 +909,27 @@
                 return url.toString();
             }
             function renderVelocityChart({ series, labels }) {
-                const isStacked = series.length > 1;
+                latestHourlySeries = series;
+                latestHourlyLabels = labels;
+
+                const isMulti = series.length > 1;
+                const isStacked = isMulti && hourlyStackMode === 'stacked';
                 const hasData = series.some(s => s.data.some(v => v > 0));
                 const chartTheme = getChartTheme();
                 const tooltipLabels = labels;
 
+                syncHourlyStackToggle(isMulti);
                 hourlyEmptyEl.classList.toggle('hidden', hasData);
 
+                // ApexCharts tidak selalu me-relayout saat 'stacked' diubah lewat updateOptions,
+                // jadi buat ulang chart bila status tumpukannya berganti.
+                if (hourlyChart && hourlyChartIsStacked !== isStacked) {
+                    hourlyChart.destroy();
+                    hourlyChart = null;
+                }
+
                 if (!hourlyChart) {
+                    hourlyChartIsStacked = isStacked;
                     const options = {
                         series: series,
                         chart: {
@@ -965,12 +995,12 @@
                         tooltip: {
                             theme: chartTheme.tooltipTheme,
                             ...createCurrencyTooltip(tooltipLabels, {
-                                filterZero: isStacked,
-                                sortByValue: isStacked,
+                                filterZero: isMulti,
+                                sortByValue: isMulti,
                                 titlePrefix: 'Jam',
                             }),
                         },
-                        colors: isStacked ? hourlyPalette : [chartBlue]
+                        colors: isMulti ? hourlyPalette : [chartBlue]
                     };
 
                     hourlyChart = new ApexCharts(document.querySelector("#hourlyBars"), options);
@@ -1001,13 +1031,13 @@
                         tooltip: {
                             theme: chartTheme.tooltipTheme,
                             ...createCurrencyTooltip(tooltipLabels, {
-                                filterZero: isStacked,
-                                sortByValue: isStacked,
+                                filterZero: isMulti,
+                                sortByValue: isMulti,
                                 titlePrefix: 'Jam',
                             }),
                         },
                         theme: { mode: chartTheme.dark ? 'dark' : 'light' },
-                        colors: isStacked ? hourlyPalette : [chartBlue]
+                        colors: isMulti ? hourlyPalette : [chartBlue]
                     });
                     hourlyChart.updateSeries(series);
                 }
@@ -1217,21 +1247,6 @@
 
             // Removed renderOutletBreakdown
 
-            function setTarget(target) {
-                const periodTarget = Number(target?.period_sales_target || target?.daily_sales_target || 0);
-                const pct = target?.progress_pct === null || target?.progress_pct === undefined ? null : Number(target.progress_pct);
-
-                if (!periodTarget || periodTarget <= 0 || pct === null) {
-                    targetWrapEl.classList.add('hidden');
-                    return;
-                }
-
-                targetWrapEl.classList.remove('hidden');
-                targetValueEl.textContent = idr.format(periodTarget);
-                targetPctEl.textContent = `${pct.toFixed(0)}%`;
-                targetBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-            }
-
             function escapeHtml(value) {
                 return String(value ?? '')
                     .replace(/&/g, '&amp;')
@@ -1252,7 +1267,12 @@
                 trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
                 trendSalesPctEl.textContent = formatSignedPct(trendPct);
 
-                setTarget(data?.target);
+                const grossProfit = Number(data?.kpis?.gross_profit || 0);
+                const grossMarginPct = data?.kpis?.gross_margin_pct ?? null;
+                kpiGrossProfitEl.textContent = idr.format(grossProfit);
+                kpiProfitPctEl.textContent = grossMarginPct === null ? '-' : `${Number(grossMarginPct).toFixed(1)}%`;
+                kpiProfitPctEl.classList.toggle('text-emerald-500', grossProfit >= 0);
+                kpiProfitPctEl.classList.toggle('text-rose-500', grossProfit < 0);
 
                 const showBreakdown = Boolean(data?.show_breakdown);
 
@@ -1349,6 +1369,12 @@
                 syncOutletChartModeToggle();
                 if (latestOutletIsAllOutlets) {
                     renderOutletRows(latestOutletRows, latestOutletIsAllOutlets);
+                }
+            });
+            hourlyStackToggleEl?.addEventListener('click', () => {
+                hourlyStackMode = hourlyStackMode === 'stacked' ? 'overlap' : 'stacked';
+                if (latestHourlySeries && latestHourlyLabels) {
+                    renderVelocityChart({ series: latestHourlySeries, labels: latestHourlyLabels });
                 }
             });
             document.addEventListener('click', (event) => {
