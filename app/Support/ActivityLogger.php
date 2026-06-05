@@ -36,7 +36,11 @@ class ActivityLogger
             \App\Models\StockTransfer::class    => 'Transfer Stok',
             \App\Models\Promotion::class        => 'Promo',
             \App\Models\Voucher::class          => 'Voucher',
-            \App\Models\Setting::class          => 'Pengaturan',
+            // Catatan: Setting SENGAJA tidak diaudit. Primary key-nya berupa
+            // string (kolom `key`), sementara activity_logs.subject_id bertipe
+            // integer. Selain itu dashboard memakai Setting sebagai key-value
+            // scratch (mis. dashboard.top_products.state.*) yang sering ditulis,
+            // sehingga mencatatnya = noise + error di MySQL strict mode.
             \App\Models\Shift::class            => 'Shift Absensi',
             \App\Models\BomHeader::class        => 'BOM',
             \App\Models\Production::class        => 'Produksi',
@@ -72,12 +76,16 @@ class ActivityLogger
     {
         $user = Auth::user();
 
+        // subject_id bertipe integer; lewati key non-numerik (mis. model ber-PK
+        // string) agar tidak memicu error di MySQL strict mode.
+        $subjectKey = $subject?->getKey();
+
         ActivityLog::create([
             'user_id'      => $user?->getKey(),
             'user_name'    => $user?->name,
             'event'        => $event,
             'subject_type' => $subject ? get_class($subject) : null,
-            'subject_id'   => $subject?->getKey(),
+            'subject_id'   => is_numeric($subjectKey) ? $subjectKey : null,
             'description'  => $description ?? $event,
             'properties'   => $properties ?: null,
             'ip_address'   => Request::ip(),
