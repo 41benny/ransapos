@@ -227,7 +227,7 @@
       <div class="brand-content">
         <div class="eyebrow">Dimsum · Mentai · Boba · Kopi</div>
         <div class="logo-wrap">
-          <img class="logo-img" src="{{ asset('images/ganxie/ganxie-logo.png') }}" alt="Ganxie" />
+          <img class="logo-img" src="{{ asset('images/ganxie/ganxie-logo.png') }}" alt="Ganxie" onerror="this.onerror=null;this.src='{{ asset('images/ganxie-logo.png') }}';" />
           <div class="logo-shine"></div>
         </div>
 
