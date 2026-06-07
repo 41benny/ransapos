@@ -111,7 +111,11 @@ class SalesReportController extends Controller
 
             foreach ($sales as $sale) {
                 foreach ($sale->payments as $payment) {
-                    $isCash = $payment->paymentMethod?->code === 'CASH' || $payment->payment_method_id == 1;
+                    $methodCode = strtoupper(trim((string) ($payment->paymentMethod?->code ?? '')));
+                    $methodName = strtolower(trim((string) ($payment->paymentMethod?->name ?? '')));
+                    $isCash = $methodCode === 'CASH'
+                        || str_contains($methodName, 'cash')
+                        || str_contains($methodName, 'tunai');
                     $summary['total_cash'] += $isCash ? $payment->amount : 0;
                     $summary['total_non_cash'] += $isCash ? 0 : $payment->amount;
                 }
@@ -1110,8 +1114,8 @@ class SalesReportController extends Controller
                 }
             )
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR payments.payment_method_id = 1 THEN payments.amount ELSE 0 END), 0) as total_cash")
-            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR payments.payment_method_id = 1 THEN 0 ELSE payments.amount END), 0) as total_non_cash")
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR LOWER(payment_methods.name) LIKE '%cash%' OR LOWER(payment_methods.name) LIKE '%tunai%' THEN payments.amount ELSE 0 END), 0) as total_cash")
+            ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR LOWER(payment_methods.name) LIKE '%cash%' OR LOWER(payment_methods.name) LIKE '%tunai%' THEN 0 ELSE payments.amount END), 0) as total_non_cash")
             ->first();
 
         return [
