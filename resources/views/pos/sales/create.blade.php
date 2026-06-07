@@ -473,32 +473,29 @@
 
                 <!-- Action Buttons -->
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="relative">
-                        <button type="button" @click="showPaymentModal = true"
-                            class="w-full h-14 rounded-xl border border-primary/20 bg-white px-3 py-2 flex items-center justify-between gap-2 hover:bg-red-50 transition shadow-sm">
-                            <div class="min-w-0 text-left">
-                                <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold leading-tight">
-                                    Metode
-                                </p>
-                                <p class="text-sm font-bold text-primary truncate mt-0.5 leading-tight">@{{
-                                    selectedPaymentMethodName ||
-                                    'Pilih...' }}</p>
-                            </div>
-                            <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                                </path>
-                            </svg>
-                        </button>
-                    </div>
+                    <button type="button" @click="openPaymentModal"
+                        class="w-full h-14 rounded-xl border border-primary/20 bg-white px-3 py-2 flex items-center justify-between gap-2 hover:bg-red-50 transition shadow-sm">
+                        <div class="min-w-0 text-left">
+                            <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold leading-tight">
+                                Metode
+                            </p>
+                            <p class="text-sm font-bold text-primary truncate mt-0.5 leading-tight">
+                                @{{ paymentSummaryLabel || 'Pilih...' }}
+                            </p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
 
-                    <button @click="processPayment()" :disabled="cart.length === 0 || !selectedPaymentMethod || isProcessing"
-                        :class="cart.length === 0 || !selectedPaymentMethod || isProcessing 
-                                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    <button @click="processPayment()" :disabled="cart.length === 0 || !canSubmitPayment || isProcessing"
+                        :class="cart.length === 0 || !canSubmitPayment || isProcessing
+                                                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                                                                                     : 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-red-500/30'"
                         class="w-full h-14 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 px-4">
-                        <span v-if="!isProcessing">@{{ selectedPaymentMethodName ? 'Bayar' : 'Proses'
-                            }}</span>
+                        <span v-if="!isProcessing">Bayar</span>
                         <span v-else class="flex items-center gap-2">
                             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
                                 viewBox="0 0 24 24">
@@ -523,9 +520,12 @@
         <div v-show="showPaymentModal"
             class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             style="display: none;" :style="{ display: showPaymentModal ? 'flex' : 'none' }">
-            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-[bounceIn_0.1s_ease-out]">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">Pilih Metode Pembayaran</h3>
+            <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 animate-[bounceIn_0.1s_ease-out]">
+                <div class="flex justify-between items-start gap-4 mb-5">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Pembayaran</h3>
+                        <p class="text-sm text-gray-500 mt-1">Total Rp @{{ formatNumber(totalAmount) }}</p>
+                    </div>
                     <button @click="showPaymentModal = false" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -534,17 +534,116 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto p-1 custom-scrollbar">
-                    <button type="button" v-for="method in paymentMethods" :key="'modal-pm-' + method.id"
-                        @click="selectPaymentMethod(method.id)"
-                        :class="Number(selectedPaymentMethod) === Number(method.id)
-                                                                                    ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
-                                                                                    : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
-                        class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center group">
-                        <span>@{{ method.name }}</span>
-                        <span v-if="Number(selectedPaymentMethod) === Number(method.id)"
-                            class="text-[10px] font-normal opacity-80">Terpilih</span>
+                <div class="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 mb-5">
+                    <button type="button" @click="paymentMode = 'single'"
+                        :class="paymentMode === 'single' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        class="h-10 rounded-lg text-sm font-bold transition">
+                        Single Payment
                     </button>
+                    <button type="button" @click="paymentMode = 'multi'"
+                        :class="paymentMode === 'multi' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        class="h-10 rounded-lg text-sm font-bold transition">
+                        Multi Payment
+                    </button>
+                </div>
+
+                <div v-if="paymentMode === 'single'" class="space-y-4">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto p-1 custom-scrollbar">
+                        <button type="button" v-for="method in paymentMethods" :key="'single-pm-' + method.id"
+                            @click="selectSinglePaymentMethod(method.id)"
+                            :class="Number(selectedPaymentMethod) === Number(method.id) && paymentLines.length === 1
+                                                                                        ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
+                                                                                        : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                            class="min-h-[60px] px-4 py-3 border rounded-xl text-sm md:text-base font-bold transition flex flex-col items-center justify-center gap-1 text-center">
+                            <span>@{{ method.name }}</span>
+                            <span v-if="Number(selectedPaymentMethod) === Number(method.id) && paymentLines.length === 1"
+                                class="text-[10px] font-normal opacity-80">Terpilih</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-else class="space-y-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <button type="button" v-for="method in paymentMethods" :key="'multi-pm-' + method.id"
+                            @click="addPaymentLine(method.id)"
+                            :disabled="paymentRemaining <= 0"
+                            :class="paymentRemaining <= 0 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
+                            class="min-h-[48px] px-3 py-2 border rounded-xl text-sm font-bold transition text-center">
+                            @{{ method.name }}
+                        </button>
+                    </div>
+
+                    <div class="max-h-[42vh] overflow-y-auto custom-scrollbar space-y-3 pr-1">
+                        <div v-if="paymentLines.length === 0" class="rounded-xl bg-gray-50 px-4 py-5 text-sm text-gray-400 text-center">
+                            Pilih metode di atas untuk mulai split payment.
+                        </div>
+
+                        <div v-for="(payment, index) in paymentLines" :key="payment.key"
+                            class="rounded-xl border border-gray-200 p-3 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-bold text-gray-800">@{{ paymentMethodName(payment.payment_method_id) }}</p>
+                                <button type="button" @click="removePaymentLine(index)"
+                                    class="text-xs font-bold text-red-600 hover:text-red-700">Hapus</button>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="block">
+                                    <span class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Nominal</span>
+                                    <input type="number" min="0" step="1" v-model.number="payment.amount"
+                                        @input="normalizePaymentLine(payment)"
+                                        class="mt-1 w-full h-10 rounded-lg border border-gray-200 px-3 text-sm font-bold focus:ring-primary focus:border-primary">
+                                </label>
+                                <label v-if="isPaymentLineCash(payment)" class="block">
+                                    <span class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Diterima</span>
+                                    <input type="number" min="0" step="1" v-model.number="payment.tendered_amount"
+                                        @input="normalizePaymentLine(payment)"
+                                        class="mt-1 w-full h-10 rounded-lg border border-gray-200 px-3 text-sm font-bold focus:ring-primary focus:border-primary">
+                                </label>
+                                <label v-else class="block">
+                                    <span class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Referensi</span>
+                                    <input type="text" v-model="payment.reference_number"
+                                        class="mt-1 w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:ring-primary focus:border-primary"
+                                        placeholder="Opsional">
+                                </label>
+                            </div>
+
+                            <div v-if="isPaymentLineCash(payment)" class="flex justify-between text-xs">
+                                <span class="text-gray-500">Kembalian cash</span>
+                                <span class="font-bold text-emerald-600">Rp @{{ formatNumber(paymentLineChange(payment)) }}</span>
+                            </div>
+                            <p v-if="isPaymentLineCash(payment)" class="text-[11px] text-gray-400">
+                                Jika uang cash diterima lebih besar dari sisa tagihan, nominal cash otomatis disesuaikan dan selisihnya menjadi kembalian.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm">
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Terbayar</p>
+                            <p class="font-black text-gray-800">Rp @{{ formatNumber(paymentPaidTotal) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Sisa</p>
+                            <p class="font-black" :class="paymentRemaining > 0 ? 'text-red-600' : 'text-emerald-600'">
+                                Rp @{{ formatNumber(paymentRemaining) }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Lebih</p>
+                            <p class="font-black" :class="paymentOverpaid > 0 ? 'text-red-600' : 'text-gray-800'">
+                                Rp @{{ formatNumber(paymentOverpaid) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="button" @click="showPaymentModal = false"
+                            :disabled="!canSubmitPayment"
+                            :class="!canSubmitPayment ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-hover'"
+                            class="px-5 h-11 rounded-xl text-sm font-bold transition">
+                            Simpan Pembayaran
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1099,6 +1198,8 @@
 
                         salesType: @json(array_key_exists('regular', $priceLevels) ? 'regular' : (array_key_first($priceLevels) ?? 'regular')),
                         selectedPaymentMethod: '',
+                        paymentMode: 'single',
+                        paymentLines: [],
                         selectedCustomerId: '',
                         showPaymentMethodPicker: false,
                         showPaymentModal: false,
@@ -1270,12 +1371,38 @@
                         const method = this.selectedPaymentMethodObj;
                         const code = String(method?.code || '').toUpperCase();
                         const name = String(method?.name || '').toLowerCase();
-                        return !!method && (code === 'CASH' || name.includes('cash') || name.includes('tunai') || Number(method.id) === 1);
+                        return !!method && (code === 'CASH' || name.includes('cash') || name.includes('tunai'));
                     },
                     cashChangeAmount() {
                         if (!this.isCashPayment) return 0;
                         const received = Number(this.cashReceivedAmount || 0);
                         return Math.max(0, received - Number(this.totalAmount || 0));
+                    },
+                    paymentPaidTotal() {
+                        return this.paymentLines.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+                    },
+                    paymentRemaining() {
+                        return Math.max(0, Number(this.totalAmount || 0) - Number(this.paymentPaidTotal || 0));
+                    },
+                    paymentOverpaid() {
+                        return Math.max(0, Number(this.paymentPaidTotal || 0) - Number(this.totalAmount || 0));
+                    },
+                    canSubmitPayment() {
+                        if (this.paymentMode === 'single' && this.paymentLines.length === 1) {
+                            return true;
+                        }
+
+                        return this.paymentLines.length > 0
+                            && Number(this.paymentRemaining || 0) <= 0
+                            && Number(this.paymentOverpaid || 0) <= 0;
+                    },
+                    paymentSummaryLabel() {
+                        if (this.paymentLines.length === 0) return '';
+                        if (this.paymentLines.length === 1) {
+                            return this.paymentMethodName(this.paymentLines[0].payment_method_id);
+                        }
+
+                        return `${this.paymentLines.length} metode`;
                     }
                 },
                 mounted() {
@@ -2282,13 +2409,106 @@
 
                         this.voucherErrorMessage = '';
                     },
-                    selectPaymentMethod(methodId) {
-                        this.selectedPaymentMethod = methodId;
-                        if (this.isCashPayment) {
-                            this.cashReceivedAmount = 0;
+                    openPaymentModal() {
+                        if (this.paymentLines.length > 1) {
+                            this.paymentMode = 'multi';
                         }
+                        this.showPaymentModal = true;
+                    },
+                    paymentMethodById(methodId) {
+                        return this.paymentMethods.find(method => Number(method.id) === Number(methodId)) || null;
+                    },
+                    paymentMethodName(methodId) {
+                        return this.paymentMethodById(methodId)?.name || '-';
+                    },
+                    isPaymentMethodCash(method) {
+                        const code = String(method?.code || '').toUpperCase();
+                        const name = String(method?.name || '').toLowerCase();
+                        return !!method && (code === 'CASH' || name.includes('cash') || name.includes('tunai'));
+                    },
+                    isPaymentLineCash(payment) {
+                        return this.isPaymentMethodCash(this.paymentMethodById(payment.payment_method_id));
+                    },
+                    paymentLineChange(payment) {
+                        if (!this.isPaymentLineCash(payment)) return 0;
+                        return Math.max(0, Number(payment.tendered_amount || 0) - Number(payment.amount || 0));
+                    },
+                    paymentRemainingExcluding(payment) {
+                        const otherPaid = this.paymentLines.reduce((sum, line) => {
+                            if (line.key === payment.key) return sum;
+                            return sum + Number(line.amount || 0);
+                        }, 0);
+
+                        return Math.max(0, Number(this.totalAmount || 0) - otherPaid);
+                    },
+                    selectSinglePaymentMethod(methodId) {
+                        const method = this.paymentMethodById(methodId);
+                        if (!method) return;
+
+                        const isCash = this.isPaymentMethodCash(method);
+                        const amount = Number(this.totalAmount || 0);
+                        const tenderedAmount = isCash ? Number(this.cashReceivedAmount || amount) : null;
+
+                        this.paymentMode = 'single';
+                        this.selectedPaymentMethod = methodId;
+                        this.paymentLines = [{
+                            key: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                            payment_method_id: Number(methodId),
+                            amount,
+                            tendered_amount: tenderedAmount,
+                            reference_number: '',
+                            notes: ''
+                        }];
                         this.showPaymentMethodPicker = false;
                         this.showPaymentModal = false;
+                    },
+                    addPaymentLine(methodId) {
+                        const method = this.paymentMethodById(methodId);
+                        if (!method) return;
+
+                        const remaining = Number(this.paymentRemaining || 0);
+                        const amount = remaining > 0 ? remaining : Number(this.totalAmount || 0);
+                        const isCash = this.isPaymentMethodCash(method);
+
+                        this.paymentLines.push({
+                            key: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                            payment_method_id: Number(methodId),
+                            amount,
+                            tendered_amount: isCash ? amount : null,
+                            reference_number: '',
+                            notes: ''
+                        });
+
+                        this.selectedPaymentMethod = methodId;
+                        this.showPaymentMethodPicker = false;
+                    },
+                    removePaymentLine(index) {
+                        this.paymentLines.splice(index, 1);
+                        this.selectedPaymentMethod = this.paymentLines.length > 0
+                            ? this.paymentLines[this.paymentLines.length - 1].payment_method_id
+                            : '';
+                    },
+                    normalizePaymentLine(payment) {
+                        payment.amount = Math.max(0, Number(payment.amount || 0));
+
+                        if (this.isPaymentLineCash(payment)) {
+                            const maxCashApplied = this.paymentRemainingExcluding(payment);
+                            if (payment.amount > maxCashApplied) {
+                                payment.tendered_amount = Math.max(
+                                    Number(payment.tendered_amount || 0),
+                                    Number(payment.amount || 0)
+                                );
+                                payment.amount = maxCashApplied;
+                            }
+
+                            payment.tendered_amount = Math.max(0, Number(payment.tendered_amount || 0));
+                            if (payment.tendered_amount < payment.amount) {
+                                payment.tendered_amount = payment.amount;
+                            }
+                            return;
+                        }
+
+                        payment.tendered_amount = null;
                     },
                     openCashPaymentModal() {
                         if (!this.cashReceivedAmount) {
@@ -2313,6 +2533,11 @@
                         if (Number(this.cashReceivedAmount || 0) < Number(this.totalAmount || 0)) {
                             alert('Uang tunai kurang dari total transaksi.');
                             return;
+                        }
+
+                        if (this.paymentMode === 'single' && this.paymentLines.length === 1 && this.isPaymentLineCash(this.paymentLines[0])) {
+                            this.paymentLines[0].amount = Number(this.totalAmount || 0);
+                            this.paymentLines[0].tendered_amount = Number(this.cashReceivedAmount || 0);
                         }
 
                         this.showCashPaymentModal = false;
@@ -2391,6 +2616,10 @@
                     },
                     clearCart() {
                         this.cart = [];
+                        this.paymentLines = [];
+                        this.selectedPaymentMethod = '';
+                        this.paymentMode = 'single';
+                        this.cashReceivedAmount = null;
                         this.clearVoucher();
                         this.clearManualDiscount();
                         this.currentOrderKey = this.generateOrderKey();
@@ -2470,15 +2699,49 @@
                             this.isProcessing = false;
                             return;
                         }
-                        if (this.isCashPayment && !cashConfirmed) {
+                        if (this.paymentMode === 'single' && this.paymentLines.length === 1) {
+                            const singlePayment = this.paymentLines[0];
+                            singlePayment.amount = Number(this.totalAmount || 0);
+                            if (this.isPaymentLineCash(singlePayment)) {
+                                singlePayment.tendered_amount = Math.max(
+                                    Number(singlePayment.tendered_amount || 0),
+                                    Number(this.totalAmount || 0)
+                                );
+                            }
+                        }
+                        if (this.paymentMode === 'single'
+                            && this.paymentLines.length === 1
+                            && this.isPaymentLineCash(this.paymentLines[0])
+                            && !cashConfirmed) {
+                            this.cashReceivedAmount = Number(this.paymentLines[0].tendered_amount || this.totalAmount || 0);
                             this.openCashPaymentModal();
                             this.isProcessing = false;
                             return;
                         }
-                        if (this.isCashPayment) {
-                            const received = Number(this.cashReceivedAmount || 0);
-                            if (received < Number(this.totalAmount || 0)) {
-                                alert('Uang tunai kurang dari total transaksi.');
+                        if (this.paymentLines.length === 0) {
+                            alert('Tambahkan minimal satu pembayaran.');
+                            this.isProcessing = false;
+                            return;
+                        }
+                        if (Number(this.paymentRemaining || 0) > 0) {
+                            alert('Total pembayaran masih kurang.');
+                            this.isProcessing = false;
+                            return;
+                        }
+                        if (Math.abs(Number(this.paymentPaidTotal || 0) - Number(this.totalAmount || 0)) >= 0.01) {
+                            alert('Total nominal pembayaran harus sama dengan total transaksi. Untuk kembalian cash, isi kolom Diterima lebih besar dari Nominal.');
+                            this.isProcessing = false;
+                            return;
+                        }
+                        for (const payment of this.paymentLines) {
+                            if (!payment.payment_method_id || Number(payment.amount || 0) <= 0) {
+                                alert('Setiap pembayaran wajib punya metode dan nominal lebih dari 0.');
+                                this.isProcessing = false;
+                                return;
+                            }
+
+                            if (this.isPaymentLineCash(payment) && Number(payment.tendered_amount || 0) < Number(payment.amount || 0)) {
+                                alert('Uang cash diterima tidak boleh kurang dari nominal cash.');
                                 this.isProcessing = false;
                                 return;
                             }
@@ -2512,10 +2775,18 @@
                                 discount_amount: Number(i.discount_amount || 0),
                                 notes: i.notes || null
                             })),
-                            payment_method_id: this.selectedPaymentMethod,
-                            payment_amount: this.isCashPayment ? Number(this.cashReceivedAmount || 0) : this.totalAmount,
-                            payment_tendered_amount: this.isCashPayment ? Number(this.cashReceivedAmount || 0) : null,
-                            payment_change_amount: this.isCashPayment ? Number(this.cashChangeAmount || 0) : null
+                            payment_method_id: this.paymentLines[0]?.payment_method_id || null,
+                            payment_amount: this.paymentLines[0]?.amount || this.totalAmount,
+                            payment_tendered_amount: this.paymentLines[0]?.tendered_amount || null,
+                            payment_change_amount: this.paymentLineChange(this.paymentLines[0] || {}),
+                            payments: this.paymentLines.map(payment => ({
+                                payment_method_id: payment.payment_method_id,
+                                amount: Number(payment.amount || 0),
+                                tendered_amount: this.isPaymentLineCash(payment) ? Number(payment.tendered_amount || payment.amount || 0) : null,
+                                change_amount: this.paymentLineChange(payment),
+                                reference_number: payment.reference_number || null,
+                                notes: payment.notes || null
+                            }))
                         };
 
                         try {
@@ -2546,6 +2817,8 @@
                                 this.showSuccessModal = true;
                                 this.cart = [];
                                 this.selectedPaymentMethod = '';
+                                this.paymentMode = 'single';
+                                this.paymentLines = [];
                                 this.cashReceivedAmount = null;
                                 this.selectedPromotionId = '';
                                 this.clearVoucher();

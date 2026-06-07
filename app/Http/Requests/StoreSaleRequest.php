@@ -88,11 +88,18 @@ class StoreSaleRequest extends FormRequest
             'items.*.notes' => 'nullable|string|max:255',
             
             // Payment
-            'payment_method_id' => 'required|exists:payment_methods,id',
-            'payment_amount' => 'required|numeric|min:0',
+            'payment_method_id' => 'required_without:payments|nullable|exists:payment_methods,id',
+            'payment_amount' => 'required_without:payments|nullable|numeric|min:0',
             'payment_tendered_amount' => 'nullable|numeric|min:0',
             'payment_change_amount' => 'nullable|numeric|min:0',
             'payment_reference' => 'nullable|string|max:200',
+            'payments' => 'nullable|array|min:1',
+            'payments.*.payment_method_id' => 'required_with:payments|exists:payment_methods,id',
+            'payments.*.amount' => 'required_with:payments|numeric|min:0.01',
+            'payments.*.tendered_amount' => 'nullable|numeric|min:0',
+            'payments.*.change_amount' => 'nullable|numeric|min:0',
+            'payments.*.reference_number' => 'nullable|string|max:200',
+            'payments.*.notes' => 'nullable|string|max:255',
         ];
     }
 
@@ -119,9 +126,16 @@ class StoreSaleRequest extends FormRequest
             'promotion_id.exists' => 'Promo tidak ditemukan',
             'voucher_code.max' => 'Kode voucher maksimal 60 karakter',
             'payment_method_id.required' => 'Metode pembayaran harus dipilih',
+            'payment_method_id.required_without' => 'Metode pembayaran harus dipilih',
             'payment_method_id.exists' => 'Metode pembayaran tidak valid',
             'payment_amount.required' => 'Jumlah pembayaran harus diisi',
+            'payment_amount.required_without' => 'Jumlah pembayaran harus diisi',
             'payment_amount.min' => 'Jumlah pembayaran minimal 0',
+            'payments.min' => 'Minimal harus ada satu pembayaran',
+            'payments.*.payment_method_id.required_with' => 'Metode pembayaran wajib dipilih',
+            'payments.*.payment_method_id.exists' => 'Metode pembayaran tidak valid',
+            'payments.*.amount.required_with' => 'Nominal pembayaran wajib diisi',
+            'payments.*.amount.min' => 'Nominal pembayaran harus lebih dari 0',
             'manual_discount_authorization_pin.size' => 'PIN otorisasi diskon harus 6 digit',
             'manual_discount_authorization_pin.regex' => 'PIN otorisasi diskon harus angka 6 digit',
         ];

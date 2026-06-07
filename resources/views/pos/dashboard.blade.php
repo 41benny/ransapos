@@ -161,7 +161,18 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-2 text-gray-600">
-                                            {{ $sale->payments->first()?->paymentMethod?->name ?? '-' }}
+                                            @if($sale->payments->isNotEmpty())
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    @foreach($sale->payments as $payment)
+                                                        <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700">
+                                                            <span>{{ $payment->paymentMethod?->name ?? '-' }}</span>
+                                                            <span class="text-gray-400">Rp {{ number_format($payment->amount, 0, ',', '.') }}</span>
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="px-4 py-2 font-bold text-gray-900 text-right">
                                             Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
@@ -289,8 +300,7 @@
                                 <span>•</span>
                                 <span>@{{ selectedSale.customer ? selectedSale.customer.name : 'Guest' }}</span>
                                 <span>•</span>
-                                <span class="font-medium text-gray-700">@{{
-                                    selectedSale.payments[0]?.payment_method?.name || 'Tunai' }}</span>
+                                <span class="font-medium text-gray-700">@{{ paymentSummary(selectedSale) }}</span>
                             </div>
                         </div>
                         <div v-if="selectedSale.status === 'cancelled'" class="text-right">
@@ -859,6 +869,18 @@
                     minimumFractionDigits: decimals,
                     maximumFractionDigits: decimals
                 }).format(num ?? 0);
+            },
+            paymentSummary(sale) {
+                const payments = Array.isArray(sale?.payments) ? sale.payments : [];
+                if (payments.length === 0) {
+                    return '-';
+                }
+
+                return payments.map((payment) => {
+                    const method = payment.payment_method?.name || payment.paymentMethod?.name || '-';
+                    const amount = this.formatNumber(payment.amount || 0);
+                    return `${method} Rp ${amount}`;
+                }).join(' + ');
             },
             formatDate(dateString) {
                 const date = new Date(dateString);

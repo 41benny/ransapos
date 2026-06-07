@@ -109,19 +109,27 @@ class ThermalReceipt
             $name = $payment->paymentMethod?->name ?? '-';
             $out .= self::twoCols(self::ascii($name), self::money($payment->amount));
         }
-        $tenderedAmount = (float) $sale->payments->sum(fn ($payment) => (float) ($payment->tendered_amount ?? 0));
-        $fallbackPaid = (float) $sale->payments->sum('amount');
-        $totalTendered = $tenderedAmount > 0 ? $tenderedAmount : $fallbackPaid;
-        $change = max(0, $totalTendered - (float) $sale->total_amount);
+        $totalTendered = 0.0;
+        $change = (float) $sale->payments->sum(fn ($payment) => (float) ($payment->change_amount ?? 0));
         $hasCashPayment = $sale->payments->contains(function ($payment) {
             $code = strtoupper(trim((string) ($payment->paymentMethod?->code ?? '')));
             $name = strtolower(trim((string) ($payment->paymentMethod?->name ?? '')));
 
             return $code === 'CASH'
                 || str_contains($name, 'cash')
-                || str_contains($name, 'tunai')
-                || (int) $payment->payment_method_id === 1;
+                || str_contains($name, 'tunai');
         });
+        foreach ($sale->payments as $payment) {
+            $code = strtoupper(trim((string) ($payment->paymentMethod?->code ?? '')));
+            $name = strtolower(trim((string) ($payment->paymentMethod?->name ?? '')));
+            $isCash = $code === 'CASH'
+                || str_contains($name, 'cash')
+                || str_contains($name, 'tunai');
+
+            $totalTendered += $isCash
+                ? (float) ($payment->tendered_amount ?? $payment->amount)
+                : (float) $payment->amount;
+        }
 
         if ($hasCashPayment && $totalTendered > 0) {
             $out .= self::twoCols('Uang Diterima', self::money($totalTendered));

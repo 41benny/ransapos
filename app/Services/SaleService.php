@@ -238,21 +238,7 @@ class SaleService
             $totalAmount = (float) round($rawTotalAmount, 0);
             $roundingAmount = (float) round($totalAmount - $rawTotalAmount, 2);
 
-            $paymentMethod = PaymentMethod::find((int) $data['payment_method_id']);
-            $paymentCode = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
-            $paymentName = strtolower(trim((string) ($paymentMethod?->name ?? '')));
-            $isCashPayment = $paymentCode === 'CASH'
-                || str_contains($paymentName, 'cash')
-                || str_contains($paymentName, 'tunai')
-                || (int) $data['payment_method_id'] === 1;
-            $tenderedAmount = (float) ($data['payment_tendered_amount'] ?? 0);
-            if ($isCashPayment && $tenderedAmount <= 0) {
-                $tenderedAmount = (float) ($data['payment_amount'] ?? 0);
-            }
-
-            if ($isCashPayment && $tenderedAmount < $totalAmount) {
-                throw new Exception('Uang tunai yang diterima kurang dari total transaksi.');
-            }
+            $normalizedPayments = $this->normalizePayments($data, $totalAmount);
 
             // 7. Buat record sale
             $sale = Sale::create([
@@ -403,18 +389,20 @@ class SaleService
             }
 
             // 9. Catat pembayaran
-            Payment::create([
-                'sale_id' => $sale->id,
-                'payment_method_id' => $data['payment_method_id'],
-                'amount' => $totalAmount,
-                'tendered_amount' => $isCashPayment ? $tenderedAmount : null,
-                'change_amount' => $isCashPayment ? max(0, $tenderedAmount - $totalAmount) : null,
-                'reference_number' => $data['payment_reference'] ?? null,
-                'notes' => $data['payment_notes'] ?? null,
-            ]);
+            foreach ($normalizedPayments as $paymentData) {
+                Payment::create([
+                    'sale_id' => $sale->id,
+                    'payment_method_id' => $paymentData['payment_method_id'],
+                    'amount' => $paymentData['amount'],
+                    'tendered_amount' => $paymentData['tendered_amount'],
+                    'change_amount' => $paymentData['change_amount'],
+                    'reference_number' => $paymentData['reference_number'],
+                    'notes' => $paymentData['notes'],
+                ]);
+            }
 
             // 10. Update cash session
-            $this->updateCashSession($data['cash_session_id'], $totalAmount, $data['payment_method_id']);
+            $this->updateCashSession($data['cash_session_id'], $totalAmount, $normalizedPayments);
 
             // 11. Mark voucher usage
             if ($voucher) {
@@ -540,10 +528,10 @@ class SaleService
      * 
      * @param int $sessionId
      * @param float $saleAmount
-     * @param int $paymentMethodId
+     * @param array<int, array<string, mixed>> $payments
      * @return void
      */
-    protected function updateCashSession(int $sessionId, float $saleAmount, int $paymentMethodId): void
+    protected function updateCashSession(int $sessionId, float $saleAmount, array $payments): void
     {
         $session = CashSession::findOrFail($sessionId);
         if ($session->status !== 'open') {
@@ -553,12 +541,19 @@ class SaleService
         // Update total sales
         $session->total_sales += $saleAmount;
 
-        // Update total cash atau non-cash (berbasis code payment method, fallback ke id)
-        $paymentMethod = PaymentMethod::find($paymentMethodId);
-        $isCash = $paymentMethod?->code === 'CASH' || $paymentMethodId === 1;
+        $cashTotal = 0.0;
+        $nonCashTotal = 0.0;
+        foreach ($payments as $payment) {
+            $amount = (float) ($payment['amount'] ?? 0);
+            if ($this->isCashPaymentMethod($payment['payment_method'] ?? null)) {
+                $cashTotal += $amount;
+            } else {
+                $nonCashTotal += $amount;
+            }
+        }
 
-        $session->total_cash += $isCash ? $saleAmount : 0;
-        $session->total_non_cash += $isCash ? 0 : $saleAmount;
+        $session->total_cash += $cashTotal;
+        $session->total_non_cash += $nonCashTotal;
 
         // Update expected balance
         $session->expected_balance = $session->opening_balance + $session->total_cash;
@@ -579,7 +574,7 @@ class SaleService
         DB::beginTransaction();
 
         try {
-            $sale = Sale::with(['items', 'voucher'])->findOrFail($saleId);
+            $sale = Sale::with(['items', 'voucher', 'payments.paymentMethod'])->findOrFail($saleId);
 
             // Cek apakah sudah dibatalkan
             if ($sale->status === 'cancelled') {
@@ -640,11 +635,12 @@ class SaleService
             if ($session) {
                 $session->total_sales -= $sale->total_amount;
 
-                $payment = $sale->payments->first();
-                if ($payment && $payment->payment_method_id == 1) {
-                    $session->total_cash -= $sale->total_amount;
-                } else {
-                    $session->total_non_cash -= $sale->total_amount;
+                foreach ($sale->payments as $payment) {
+                    if ($this->isCashPaymentMethod($payment->paymentMethod)) {
+                        $session->total_cash -= (float) $payment->amount;
+                    } else {
+                        $session->total_non_cash -= (float) $payment->amount;
+                    }
                 }
 
                 $session->expected_balance = $session->opening_balance + $session->total_cash;
@@ -678,5 +674,111 @@ class SaleService
     protected function calculateItemCogs(Product $product, float $quantity, int $outletId): float
     {
         return app(CostService::class)->calculateItemCogs($product, $quantity, $outletId);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizePayments(array $data, float $totalAmount): array
+    {
+        $paymentRows = $data['payments'] ?? null;
+        $isLegacyPaymentPayload = !is_array($paymentRows) || count($paymentRows) === 0;
+        if (!is_array($paymentRows) || count($paymentRows) === 0) {
+            $paymentRows = [[
+                'payment_method_id' => $data['payment_method_id'] ?? null,
+                'amount' => $totalAmount,
+                'tendered_amount' => $data['payment_tendered_amount'] ?? null,
+                'change_amount' => $data['payment_change_amount'] ?? null,
+                'reference_number' => $data['payment_reference'] ?? null,
+                'notes' => $data['payment_notes'] ?? null,
+                '_legacy_payment_amount' => $data['payment_amount'] ?? null,
+            ]];
+        }
+
+        $methodIds = collect($paymentRows)
+            ->pluck('payment_method_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $methods = PaymentMethod::query()
+            ->whereIn('id', $methodIds)
+            ->get()
+            ->keyBy('id');
+
+        if ($methods->count() !== $methodIds->count()) {
+            throw new Exception('Metode pembayaran tidak valid.');
+        }
+
+        $normalized = [];
+        $paidTotal = 0.0;
+
+        foreach ($paymentRows as $row) {
+            $methodId = (int) ($row['payment_method_id'] ?? 0);
+            /** @var PaymentMethod|null $method */
+            $method = $methods->get($methodId);
+            if (!$method) {
+                throw new Exception('Metode pembayaran tidak valid.');
+            }
+
+            $isCash = $this->isCashPaymentMethod($method);
+            $amount = round((float) ($row['amount'] ?? 0), 2);
+            $rawTendered = $row['tendered_amount'] ?? null;
+            if ($isLegacyPaymentPayload && ($rawTendered === null || $rawTendered === '')) {
+                $legacyPaymentAmount = (float) ($row['_legacy_payment_amount'] ?? 0);
+                if ($legacyPaymentAmount > $amount) {
+                    $rawTendered = $legacyPaymentAmount;
+                }
+            }
+            $tendered = $rawTendered !== null && $rawTendered !== ''
+                ? round((float) $rawTendered, 2)
+                : null;
+
+            if ($amount <= 0) {
+                throw new Exception('Nominal pembayaran harus lebih dari 0.');
+            }
+
+            if (!$isCash && $tendered !== null && abs($tendered - $amount) >= 0.01) {
+                throw new Exception('Pembayaran non-cash tidak boleh memiliki kembalian.');
+            }
+
+            if ($isCash && $tendered !== null && $tendered < $amount) {
+                throw new Exception('Uang tunai yang diterima kurang dari nominal cash.');
+            }
+
+            $change = $isCash ? max(0, (float) ($tendered ?? $amount) - $amount) : 0;
+            $paidTotal += $amount;
+
+            $normalized[] = [
+                'payment_method_id' => $methodId,
+                'payment_method' => $method,
+                'amount' => $amount,
+                'tendered_amount' => $isCash ? ($tendered ?? $amount) : null,
+                'change_amount' => $isCash ? $change : null,
+                'reference_number' => $row['reference_number'] ?? $row['payment_reference'] ?? null,
+                'notes' => $row['notes'] ?? null,
+            ];
+        }
+
+        if (abs($paidTotal - $totalAmount) >= 0.01) {
+            if ($paidTotal < $totalAmount) {
+                throw new Exception('Total pembayaran masih kurang dari total transaksi.');
+            }
+
+            throw new Exception('Total pembayaran melebihi total transaksi. Gunakan tendered amount pada pembayaran cash untuk mencatat kembalian.');
+        }
+
+        return $normalized;
+    }
+
+    private function isCashPaymentMethod(?PaymentMethod $paymentMethod): bool
+    {
+        $paymentCode = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
+        $paymentName = strtolower(trim((string) ($paymentMethod?->name ?? '')));
+
+        return $paymentCode === 'CASH'
+            || str_contains($paymentName, 'cash')
+            || str_contains($paymentName, 'tunai');
     }
 }
