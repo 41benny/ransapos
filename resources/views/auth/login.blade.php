@@ -65,8 +65,9 @@
   .logo-img,.logo-shine{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:left center;z-index:1;animation:logoIn 1.1s cubic-bezier(.2,.85,.25,1) both .15s}
   @keyframes logoIn{from{transform:scale(.9);filter:blur(3px)}to{transform:none;filter:none}}
   .logo-img{opacity:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,.7))}
+  @php($ganxieLogoAsset = asset('images/ganxie/ganxie-logo.png') . '?v=zip-login-logo')
   .logo-shine{z-index:2;pointer-events:none;
-    -webkit-mask-image:url('{{ asset('images/ganxie/ganxie-logo.png') }}');mask-image:url('{{ asset('images/ganxie/ganxie-logo.png') }}');
+    -webkit-mask-image:url('{{ $ganxieLogoAsset }}');mask-image:url('{{ $ganxieLogoAsset }}');
     -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
     -webkit-mask-position:left center;mask-position:left center;
     background:linear-gradient(108deg,transparent 42%,rgba(255,249,228,.92) 50%,transparent 58%);
@@ -227,7 +228,7 @@
       <div class="brand-content">
         <div class="eyebrow">Dimsum · Mentai · Boba · Kopi</div>
         <div class="logo-wrap">
-          <img class="logo-img" src="{{ asset('images/ganxie/ganxie-logo.png') }}" alt="Ganxie" onerror="this.onerror=null;this.src='{{ asset('images/ganxie-logo.png') }}';" />
+          <img class="logo-img" src="{{ $ganxieLogoAsset }}" alt="Ganxie" />
           <div class="logo-shine"></div>
         </div>
 
