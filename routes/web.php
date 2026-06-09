@@ -52,6 +52,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::post('backdate-sales', [BackdateSaleController::class, 'store'])
         ->name('backdate-sales.store')
         ->middleware('permission:sales.backdate.create');
+    Route::get('backdate-sales/{sale}/edit', [BackdateSaleController::class, 'edit'])
+        ->name('backdate-sales.edit')
+        ->middleware('permission:sales.backdate.create');
+    Route::put('backdate-sales/{sale}', [BackdateSaleController::class, 'update'])
+        ->name('backdate-sales.update')
+        ->middleware('permission:sales.backdate.create');
     Route::post('backdate-sales/import/preview', [BackdateSaleController::class, 'previewImport'])
         ->name('backdate-sales.import.preview')
         ->middleware('permission:sales.backdate.create');

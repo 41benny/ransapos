@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -32,6 +33,15 @@ class BackdateSaleController extends Controller
         return view('admin.backdate-sales.index', $this->formData());
     }
 
+    public function edit(Sale $sale): View
+    {
+        abort_unless($sale->is_backdated, 404);
+
+        return view('admin.backdate-sales.index', array_merge($this->formData(), [
+            'editingSale' => $sale->load(['items', 'payments.paymentMethod', 'outlet', 'customer']),
+        ]));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->rules(), $this->messages());
@@ -44,6 +54,23 @@ class BackdateSaleController extends Controller
                 ->with('success', 'Penjualan backdate berhasil disimpan. Invoice: ' . $sale->invoice_number);
         } catch (Exception $e) {
             return back()->withInput()->with('error', 'Gagal menyimpan backdate: ' . $e->getMessage());
+        }
+    }
+
+    public function update(Request $request, Sale $sale): RedirectResponse
+    {
+        abort_unless($sale->is_backdated, 404);
+
+        $validated = $request->validate($this->rules($sale), $this->messages());
+
+        try {
+            $updatedSale = $this->backdateSaleService->updateBackdateSale($sale, $validated, $request->user());
+
+            return redirect()
+                ->route('admin.backdate-sales.index')
+                ->with('success', 'Penjualan backdate berhasil diupdate. Invoice: ' . $updatedSale->invoice_number);
+        } catch (Exception $e) {
+            return back()->withInput()->with('error', 'Gagal update backdate: ' . $e->getMessage());
         }
     }
 
@@ -160,19 +187,37 @@ class BackdateSaleController extends Controller
         return [
             'outlets' => Outlet::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'products' => $this->backdateSaleService->productOptions(),
+            'salesTypes' => $this->backdateSaleService->salesTypeOptions(),
             'paymentMethods' => PaymentMethod::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->limit(200)->get(['id', 'name', 'customer_code']),
             'maxBackdateDays' => $this->backdateSaleService->maxBackdateDays(),
             'defaultSaleDate' => today()->toDateString(),
+            'backdatedSales' => Sale::query()
+                ->with(['outlet:id,code,name', 'payments.paymentMethod:id,code,name'])
+                ->where('is_backdated', true)
+                ->latest('sale_date')
+                ->latest('id')
+                ->limit(30)
+                ->get(),
         ];
     }
 
-    private function rules(): array
+    private function rules(?Sale $sale = null): array
     {
+        $salesTypeKeys = array_keys($this->backdateSaleService->salesTypeOptions());
+
         return [
-            'manual_reference' => ['required', 'string', 'max:100'],
+            'manual_reference' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('sales', 'manual_reference')
+                    ->where(fn ($query) => $query->where('is_backdated', true))
+                    ->ignore($sale?->id),
+            ],
             'sale_date' => ['required', 'date'],
             'outlet_id' => ['required', 'exists:outlets,id'],
+            'sales_type' => ['required', 'string', Rule::in($salesTypeKeys)],
             'payment_method_id' => ['required', 'exists:payment_methods,id'],
             'payment_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_reference' => ['nullable', 'string', 'max:200'],
@@ -193,6 +238,9 @@ class BackdateSaleController extends Controller
     {
         return [
             'manual_reference.required' => 'Kode transaksi manual wajib diisi.',
+            'manual_reference.unique' => 'Kode transaksi manual sudah pernah dipakai untuk backdate.',
+            'sales_type.required' => 'Metode penjualan wajib dipilih.',
+            'sales_type.in' => 'Metode penjualan tidak valid.',
             'backdate_reason.required' => 'Alasan backdate wajib diisi.',
             'items.required' => 'Minimal harus ada 1 item produk.',
             'items.*.product_id.required' => 'Produk wajib dipilih.',

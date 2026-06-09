@@ -111,4 +111,71 @@ class BackdateSaleServiceTest extends TestCase
             ],
         ], $user);
     }
+
+    public function test_admin_can_update_backdate_sale_and_move_correction_session(): void
+    {
+        $user = User::factory()->create();
+        $outlet = Outlet::factory()->create(['code' => 'MBK2']);
+        $category = ProductCategory::factory()->create();
+        $productA = Product::factory()->create([
+            'category_id' => $category->id,
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 10000,
+        ]);
+        $productB = Product::factory()->create([
+            'category_id' => $category->id,
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 20000,
+        ]);
+        $paymentMethod = PaymentMethod::create(['code' => 'CASH', 'name' => 'Cash', 'is_active' => true]);
+        $originalDate = today()->subDays(2)->toDateString();
+        $newDate = today()->subDay()->toDateString();
+
+        $service = app(BackdateSaleService::class);
+        $sale = $service->createBackdateSale([
+            'manual_reference' => 'MBK2-ORIGINAL',
+            'sale_date' => $originalDate,
+            'outlet_id' => $outlet->id,
+            'payment_method_id' => $paymentMethod->id,
+            'backdate_reason' => 'Gangguan sistem outlet.',
+            'items' => [
+                [
+                    'product_id' => $productA->id,
+                    'quantity' => 1,
+                    'unit_price' => 10000,
+                    'discount_amount' => 0,
+                ],
+            ],
+        ], $user);
+        $originalSessionId = $sale->cash_session_id;
+
+        $updated = $service->updateBackdateSale($sale, [
+            'manual_reference' => 'MBK2-UPDATED',
+            'sale_date' => $newDate,
+            'outlet_id' => $outlet->id,
+            'payment_method_id' => $paymentMethod->id,
+            'backdate_reason' => 'Tanggal catatan manual salah.',
+            'items' => [
+                [
+                    'product_id' => $productB->id,
+                    'quantity' => 2,
+                    'unit_price' => 20000,
+                    'discount_amount' => 0,
+                ],
+            ],
+        ], $user);
+
+        $updated->refresh();
+
+        $this->assertEquals('MBK2-UPDATED', $updated->manual_reference);
+        $this->assertEquals($newDate, $updated->sale_date->toDateString());
+        $this->assertNotEquals($originalSessionId, $updated->cash_session_id);
+        $this->assertEquals($newDate, $updated->cashSession->business_date->toDateString());
+        $this->assertEquals(1, $updated->items()->count());
+        $this->assertEquals($productB->id, $updated->items()->first()->product_id);
+        $this->assertEquals(1, $updated->payments()->count());
+        $this->assertEquals((float) $updated->total_amount, (float) $updated->payments()->first()->amount);
+    }
 }
