@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 class BackdateSaleService
 {
-    private const MAX_BACKDATE_DAYS = 7;
+    private const MAX_BACKDATE_DAYS = 10;
 
     public function __construct(
         private SaleService $saleService,

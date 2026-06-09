@@ -58,6 +58,14 @@ class BackdateSaleServiceTest extends TestCase
         $this->assertEquals(1, $sale->payments()->count());
     }
 
+    public function test_admin_backdate_sale_allows_ten_days_back(): void
+    {
+        $this->assertEquals(
+            today()->subDays(10)->toDateString(),
+            app(BackdateSaleService::class)->validateSaleDate(today()->subDays(10)->toDateString())
+        );
+    }
+
     public function test_duplicate_manual_reference_is_rejected(): void
     {
         $user = User::factory()->create();
