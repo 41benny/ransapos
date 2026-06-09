@@ -14,9 +14,11 @@ use App\Support\Repairs\CleanupBundleStockMutationsAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\CashSession;
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\StockMutation;
+use App\Models\Voucher;
 use Illuminate\Support\Facades\DB;
 
 Artisan::command('inspire', function () {
@@ -249,6 +251,25 @@ Artisan::command('backdate-sales:purge
     }
 
     DB::transaction(function () use ($saleIds, $sessionIds, $stockPairs, $stockService): void {
+        $customerRollbacks = Sale::query()
+            ->whereIn('id', $saleIds)
+            ->whereNotNull('customer_id')
+            ->select(
+                'customer_id',
+                DB::raw('COUNT(*) as total_transactions'),
+                DB::raw('COALESCE(SUM(total_amount), 0) as total_spending'),
+                DB::raw('COALESCE(SUM(loyalty_points_earned), 0) as loyalty_points')
+            )
+            ->groupBy('customer_id')
+            ->get();
+
+        $voucherRollbacks = Sale::query()
+            ->whereIn('id', $saleIds)
+            ->whereNotNull('voucher_id')
+            ->select('voucher_id', DB::raw('COUNT(*) as used_count'))
+            ->groupBy('voucher_id')
+            ->get();
+
         StockMutation::query()
             ->whereIn('reference_id', $saleIds)
             ->whereIn('reference_type', ['sale', 'sale_cancellation'])
@@ -283,6 +304,34 @@ Artisan::command('backdate-sales:purge
             $session->total_non_cash = (float) ($paymentTotals->total_non_cash ?? 0);
             $session->expected_balance = (float) $session->opening_balance + (float) $session->total_cash;
             $session->save();
+        }
+
+        foreach ($customerRollbacks as $rollback) {
+            $customer = Customer::query()->find($rollback->customer_id);
+            if (! $customer) {
+                continue;
+            }
+
+            $customer->loyalty_points = max(0, (int) $customer->loyalty_points - (int) $rollback->loyalty_points);
+            $customer->total_spending = max(0, (float) $customer->total_spending - (float) $rollback->total_spending);
+            $customer->total_transactions = max(0, (int) $customer->total_transactions - (int) $rollback->total_transactions);
+            $customer->last_visit = Sale::query()
+                ->where('customer_id', $customer->id)
+                ->where('status', '!=', 'cancelled')
+                ->latest('sale_date')
+                ->value('sale_date');
+            $customer->save();
+            $customer->updateMemberTier();
+        }
+
+        foreach ($voucherRollbacks as $rollback) {
+            $voucher = Voucher::query()->find($rollback->voucher_id);
+            if (! $voucher) {
+                continue;
+            }
+
+            $voucher->used_count = max(0, (int) $voucher->used_count - (int) $rollback->used_count);
+            $voucher->save();
         }
 
         foreach ($stockPairs as $pair) {
