@@ -427,7 +427,7 @@ class SalesReportController extends Controller
                 $rows = $rows->filter(fn($r) => stripos($r->no_transaksi ?? '', $request->filter_transaksi) !== false);
             }
             if ($request->filled('filter_tanggal')) {
-                $rows = $rows->filter(fn($r) => stripos(\Carbon\Carbon::parse($r->tanggal)->format('d M Y'), $request->filter_tanggal) !== false);
+                $rows = $rows->filter(fn($r) => stripos(\Carbon\Carbon::parse($r->tanggal)->format('d M Y H:i'), $request->filter_tanggal) !== false);
             }
             if ($request->filled('filter_outlet')) {
                 $rows = $rows->filter(fn($r) => stripos($r->outlet ?? '', $request->filter_outlet) !== false);
@@ -461,12 +461,13 @@ class SalesReportController extends Controller
             }
 
             $rows = $rows->map(fn ($row) => array_merge((array) $row, [
+                'tanggal' => \Carbon\Carbon::parse($row->tanggal)->format('d M Y H:i'),
                 'metode_penjualan' => str_replace('_', ' ', $row->metode_penjualan),
             ]))->all();
 
             $columns = [
                 ['key' => 'no_transaksi', 'label' => 'No Transaksi', 'type' => 'text'],
-                ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'tanggal', 'label' => 'Tanggal & Jam', 'type' => 'text'],
                 ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
                 ['key' => 'customer', 'label' => 'Customer', 'type' => 'text'],
                 ['key' => 'produk', 'label' => 'Produk', 'type' => 'text'],
@@ -1212,7 +1213,7 @@ class SalesReportController extends Controller
             $like = $this->likeValue($request->input('filter_tanggal'));
             $detailQuery->where(function ($query) use ($like) {
                 $query->whereRaw("CAST(filtered_sales.sale_date AS CHAR) LIKE ?", [$like])
-                    ->orWhereRaw("DATE_FORMAT(filtered_sales.sale_date, '%d %b %Y') LIKE ?", [$like]);
+                    ->orWhereRaw("DATE_FORMAT(filtered_sales.sale_date, '%d %b %Y %H:%i') LIKE ?", [$like]);
             });
         }
 
