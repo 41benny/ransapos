@@ -405,7 +405,7 @@ class SalesReportController extends Controller
             $rows = $detailQuery
                 ->select(
                     'sales.invoice_number as no_transaksi',
-                    'sales.sale_date as tanggal',
+                    DB::raw("CASE WHEN TIME(sales.sale_date) = '00:00:00' THEN TIMESTAMP(DATE(sales.sale_date), TIME(sales.created_at)) ELSE sales.sale_date END as tanggal"),
                     'outlets.name as outlet',
                     DB::raw("COALESCE(NULLIF(TRIM(sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer"),
                     'sale_items.product_name as produk',
@@ -1166,6 +1166,7 @@ class SalesReportController extends Controller
             ->select(
                 'filtered_sales.invoice_number as transaction_number',
                 'filtered_sales.sale_date',
+                DB::raw("CASE WHEN TIME(filtered_sales.sale_date) = '00:00:00' THEN TIMESTAMP(DATE(filtered_sales.sale_date), TIME(filtered_sales.created_at)) ELSE filtered_sales.sale_date END as sale_datetime"),
                 'outlets.name as outlet_name',
                 DB::raw("COALESCE(NULLIF(TRIM(filtered_sales.customer_name), ''), NULLIF(TRIM(customers.name), ''), 'Walk-in') as customer_name"),
                 'sale_items.product_name',
@@ -1213,7 +1214,7 @@ class SalesReportController extends Controller
             $like = $this->likeValue($request->input('filter_tanggal'));
             $detailQuery->where(function ($query) use ($like) {
                 $query->whereRaw("CAST(filtered_sales.sale_date AS CHAR) LIKE ?", [$like])
-                    ->orWhereRaw("DATE_FORMAT(filtered_sales.sale_date, '%d %b %Y %H:%i') LIKE ?", [$like]);
+                    ->orWhereRaw("DATE_FORMAT(CASE WHEN TIME(filtered_sales.sale_date) = '00:00:00' THEN TIMESTAMP(DATE(filtered_sales.sale_date), TIME(filtered_sales.created_at)) ELSE filtered_sales.sale_date END, '%d %b %Y %H:%i') LIKE ?", [$like]);
             });
         }
 

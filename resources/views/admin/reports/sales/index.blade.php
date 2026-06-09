@@ -343,7 +343,7 @@
                             @forelse($detailRows as $row)
                                 <tr class="group hover:bg-slate-50/80 transition-colors">
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] font-normal text-slate-800">{{ $row->transaction_number }}</td>
-                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ \Carbon\Carbon::parse($row->sale_date)->format('d M Y H:i') }}</td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ \Carbon\Carbon::parse($row->sale_datetime ?? $row->sale_date)->format('d M Y H:i') }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ $row->outlet_name }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-600">{{ $row->customer_name ?? 'Walk-in' }}</td>
                                     <td class="px-4 py-2.5 whitespace-nowrap text-[11px] text-slate-800 font-normal uppercase tracking-tighter">{{ $row->product_name }}</td>
