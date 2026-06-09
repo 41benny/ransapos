@@ -13,7 +13,11 @@ use App\Support\Repairs\CleanupBundleStockRecordsAction;
 use App\Support\Repairs\CleanupBundleStockMutationsAction;
 use App\Services\CashAccountService;
 use App\Services\StockService;
+use App\Models\CashSession;
 use App\Models\Product;
+use App\Models\Sale;
+use App\Models\StockMutation;
+use Illuminate\Support\Facades\DB;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -178,6 +182,132 @@ Artisan::command('balances:recalculate {--cash : Hitung ulang saldo kas/bank saj
 
     return self::SUCCESS;
 })->purpose('Hitung ulang saldo historis kas/bank dan mutasi stok');
+
+Artisan::command('backdate-sales:purge
+    {--apply : Terapkan penghapusan ke database}
+    {--date-from= : Filter tanggal awal sale_date, format YYYY-MM-DD}
+    {--date-to= : Filter tanggal akhir sale_date, format YYYY-MM-DD}
+    {--outlet-id= : Filter outlet ID tertentu}
+    {--keep-sessions : Jangan hapus cash session backdate yang sudah kosong}', function (StockService $stockService) {
+    $apply = (bool) $this->option('apply');
+    $dateFrom = trim((string) $this->option('date-from'));
+    $dateTo = trim((string) $this->option('date-to'));
+    $outletId = trim((string) $this->option('outlet-id'));
+
+    $saleQuery = Sale::query()
+        ->where('is_backdated', true)
+        ->when($dateFrom !== '', fn ($query) => $query->whereDate('sale_date', '>=', $dateFrom))
+        ->when($dateTo !== '', fn ($query) => $query->whereDate('sale_date', '<=', $dateTo))
+        ->when($outletId !== '', fn ($query) => $query->where('outlet_id', (int) $outletId));
+
+    $summary = (clone $saleQuery)
+        ->selectRaw('COUNT(*) as total_sales, COALESCE(SUM(total_amount), 0) as total_amount')
+        ->first();
+
+    $saleIds = (clone $saleQuery)->pluck('id');
+    $sessionIds = (clone $saleQuery)
+        ->whereNotNull('cash_session_id')
+        ->pluck('cash_session_id')
+        ->unique()
+        ->values();
+
+    $stockPairs = StockMutation::query()
+        ->whereIn('reference_id', $saleIds)
+        ->whereIn('reference_type', ['sale', 'sale_cancellation'])
+        ->select('product_id', 'outlet_id', DB::raw('MIN(mutation_date) as first_mutation_date'), DB::raw('COUNT(*) as total_mutations'))
+        ->groupBy('product_id', 'outlet_id')
+        ->orderBy('product_id')
+        ->orderBy('outlet_id')
+        ->get();
+
+    $stockMutationCount = (int) $stockPairs->sum('total_mutations');
+
+    $this->line(json_encode([
+        'mode' => $apply ? 'apply' : 'dry-run',
+        'filters' => [
+            'date_from' => $dateFrom !== '' ? $dateFrom : null,
+            'date_to' => $dateTo !== '' ? $dateTo : null,
+            'outlet_id' => $outletId !== '' ? (int) $outletId : null,
+        ],
+        'backdate_sales' => (int) ($summary->total_sales ?? 0),
+        'backdate_total_amount' => (float) ($summary->total_amount ?? 0),
+        'cash_sessions_affected' => $sessionIds->count(),
+        'stock_mutations_to_delete' => $stockMutationCount,
+        'stock_pairs_to_recalculate' => $stockPairs->count(),
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+    if ($saleIds->isEmpty()) {
+        $this->info('Tidak ada transaksi backdate yang cocok dengan filter.');
+
+        return self::SUCCESS;
+    }
+
+    if (! $apply) {
+        $this->warn('Dry-run saja. Jalankan lagi dengan --apply untuk benar-benar menghapus.');
+
+        return self::SUCCESS;
+    }
+
+    DB::transaction(function () use ($saleIds, $sessionIds, $stockPairs, $stockService): void {
+        StockMutation::query()
+            ->whereIn('reference_id', $saleIds)
+            ->whereIn('reference_type', ['sale', 'sale_cancellation'])
+            ->delete();
+
+        Sale::query()
+            ->whereIn('id', $saleIds)
+            ->delete();
+
+        foreach ($sessionIds as $sessionId) {
+            $totalSales = (float) DB::table('sales')
+                ->where('cash_session_id', $sessionId)
+                ->where('status', '!=', 'cancelled')
+                ->sum('total_amount');
+
+            $paymentTotals = DB::table('payments')
+                ->join('sales', 'sales.id', '=', 'payments.sale_id')
+                ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+                ->where('sales.cash_session_id', $sessionId)
+                ->where('sales.status', '!=', 'cancelled')
+                ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code = 'CASH' OR payments.payment_method_id = 1 THEN payments.amount ELSE 0 END), 0) as total_cash")
+                ->selectRaw("COALESCE(SUM(CASE WHEN payment_methods.code <> 'CASH' AND payments.payment_method_id <> 1 THEN payments.amount ELSE 0 END), 0) as total_non_cash")
+                ->first();
+
+            $session = CashSession::query()->find($sessionId);
+            if (! $session) {
+                continue;
+            }
+
+            $session->total_sales = $totalSales;
+            $session->total_cash = (float) ($paymentTotals->total_cash ?? 0);
+            $session->total_non_cash = (float) ($paymentTotals->total_non_cash ?? 0);
+            $session->expected_balance = (float) $session->opening_balance + (float) $session->total_cash;
+            $session->save();
+        }
+
+        foreach ($stockPairs as $pair) {
+            $stockService->recalculateMutationBalances(
+                (int) $pair->product_id,
+                (int) $pair->outlet_id,
+                (string) $pair->first_mutation_date
+            );
+        }
+    });
+
+    $deletedSessions = 0;
+    if (! (bool) $this->option('keep-sessions')) {
+        $deletedSessions = CashSession::query()
+            ->whereIn('id', $sessionIds)
+            ->where('session_type', 'backdate_correction')
+            ->whereDoesntHave('sales')
+            ->delete();
+    }
+
+    $this->info("Selesai hapus {$saleIds->count()} transaksi backdate.");
+    $this->info("Cash session backdate kosong yang dihapus: {$deletedSessions}.");
+
+    return self::SUCCESS;
+})->purpose('Dry-run/apply hapus semua input penjualan backdate beserta mutasi stok terkait');
 
 Artisan::command('repair:purchase-hpp-by-qty 
     {--apply : Terapkan perubahan ke database}
