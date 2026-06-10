@@ -2785,6 +2785,14 @@
                             this.isProcessing = false;
                             return;
                         }
+                        // Channel online terkunci: pastikan metode bayar default terpasang
+                        // agar "Bayar" langsung jalan tanpa harus buka popup metode.
+                        if (this.isPaymentLocked
+                            && !(this.paymentMode === 'single'
+                                && this.paymentLines.length === 1
+                                && Number(this.paymentLines[0].payment_method_id) === Number(this.lockedPaymentMethodId))) {
+                            this.applyLockedPaymentMethod();
+                        }
                         if (this.paymentMode === 'single' && this.paymentLines.length === 1) {
                             const singlePayment = this.paymentLines[0];
                             singlePayment.amount = Number(this.totalAmount || 0);
@@ -3072,6 +3080,11 @@
                         this.paymentLines = [];
                         this.selectedPaymentMethod = '';
                         this.paymentMode = 'single';
+                        // Channel online dengan metode terkunci: langsung set di belakang layar,
+                        // sehingga kasir bisa tekan "Bayar" tanpa membuka popup metode.
+                        if (this.isPaymentLocked) {
+                            this.applyLockedPaymentMethod();
+                        }
                     },
                     selectedPromotionId() { this.recalculateCart(); },
                     printEngine(newValue) {
