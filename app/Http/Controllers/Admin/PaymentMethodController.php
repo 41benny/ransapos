@@ -60,11 +60,13 @@ class PaymentMethodController extends Controller
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_]+$/', 'unique:payment_methods,code'],
             'name' => ['required', 'string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
+            'is_online_only' => ['nullable', 'boolean'],
         ], [
             'code.regex' => 'Kode hanya boleh huruf kapital, angka, dan underscore (_).',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_online_only'] = $request->boolean('is_online_only');
 
         PaymentMethod::create($validated);
 
@@ -94,11 +96,13 @@ class PaymentMethodController extends Controller
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_]+$/', 'unique:payment_methods,code,' . $paymentMethod->id],
             'name' => ['required', 'string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
+            'is_online_only' => ['nullable', 'boolean'],
         ], [
             'code.regex' => 'Kode hanya boleh huruf kapital, angka, dan underscore (_).',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_online_only'] = $request->boolean('is_online_only');
 
         if ($paymentMethod->code === 'CASH' && $validated['code'] !== 'CASH') {
             return back()

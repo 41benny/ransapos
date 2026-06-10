@@ -11,10 +11,12 @@ class PaymentMethod extends Model
         'code',
         'name',
         'is_active',
+        'is_online_only',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_online_only' => 'boolean',
     ];
 
     /**

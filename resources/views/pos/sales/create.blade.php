@@ -579,7 +579,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto p-1 custom-scrollbar">
                         <button type="button" v-for="method in paymentMethods" :key="'single-pm-' + method.id"
                             @click="selectSinglePaymentMethod(method.id)"
-                            v-show="!isPaymentLocked || Number(lockedPaymentMethodId) === Number(method.id)"
+                            v-show="isPaymentMethodAvailable(method) && (!isPaymentLocked || Number(lockedPaymentMethodId) === Number(method.id))"
                             :disabled="isPaymentLocked && Number(lockedPaymentMethodId) !== Number(method.id)"
                             :class="Number(selectedPaymentMethod) === Number(method.id) && paymentLines.length === 1
                                                                                         ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
@@ -596,6 +596,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" v-for="method in paymentMethods" :key="'multi-pm-' + method.id"
                             @click="addPaymentLine(method.id)"
+                            v-show="isPaymentMethodAvailable(method)"
                             :disabled="paymentRemaining <= 0"
                             :class="paymentRemaining <= 0 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
                             class="min-h-[48px] px-3 py-2 border rounded-xl text-sm font-bold transition text-center">
@@ -2472,6 +2473,16 @@
                         this.paymentMode = 'single';
                         // selectSinglePaymentMethod menyetel paymentLines + amount = totalAmount saat ini.
                         this.selectSinglePaymentMethod(id);
+                    },
+                    isPaymentMethodAvailable(method) {
+                        // Metode "khusus online" hanya muncul saat tipe penjualan online.
+                        const onlineOnly = method && (method.is_online_only === true
+                            || method.is_online_only === 1
+                            || method.is_online_only === '1');
+                        if (onlineOnly) {
+                            return this.isOnlineSalesType;
+                        }
+                        return true;
                     },
                     paymentMethodById(methodId) {
                         return this.paymentMethods.find(method => Number(method.id) === Number(methodId)) || null;

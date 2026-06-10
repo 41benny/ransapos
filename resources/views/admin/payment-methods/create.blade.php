@@ -71,6 +71,23 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label class="flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="is_online_only"
+                                value="1"
+                                {{ old('is_online_only') ? 'checked' : '' }}
+                                class="w-5 h-5 text-sky-600 border-gray-300 rounded focus:ring-sky-500"
+                            >
+                            <span class="ml-3 text-sm text-gray-700">Khusus Online</span>
+                        </label>
+                        <p class="mt-1 text-xs text-gray-500">Jika dicentang, metode ini hanya muncul di POS saat tipe penjualan online (mis. GoFood). Disembunyikan saat penjualan offline.</p>
+                        @error('is_online_only')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-end space-x-3">

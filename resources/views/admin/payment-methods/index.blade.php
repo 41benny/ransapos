@@ -92,7 +92,12 @@
                                     <span class="text-sm font-mono font-semibold text-gray-900">{{ $method->code }}</span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $method->name }}</div>
+                                    <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                        {{ $method->name }}
+                                        @if($method->is_online_only)
+                                            <span class="px-2 py-0.5 text-[10px] font-semibold bg-sky-100 text-sky-800 rounded-full">Khusus Online</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($method->is_active)

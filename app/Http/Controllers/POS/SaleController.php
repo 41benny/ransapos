@@ -132,7 +132,7 @@ class SaleController extends Controller
         ])->values();
         $products = $posData->flatMap(fn(array $category) => $category['products'])->values();
         $paymentMethods = PaymentMethod::where('is_active', true)
-            ->select(['id', 'code', 'name'])
+            ->select(['id', 'code', 'name', 'is_online_only'])
             ->get();
 
         // Pemetaan tipe penjualan (online) -> metode bayar default yang otomatis dikunci di POS.
