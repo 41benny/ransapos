@@ -149,14 +149,11 @@ class SaleService
 
                 $quantity = (float) $item['quantity'];
 
-                // Harga normal/preset sesuai sales_type & outlet (otoritatif dari server).
-                $normalPrice = (float) $product->getPriceByLevelAndOutlet($resolvedSalesType, (int) $data['outlet_id']);
+                // Selalu pakai harga dari kasir (perilaku asli) agar total server == total bayar.
                 $unitPrice = (float) $item['unit_price'];
 
-                // Guardrail: kanal offline tidak boleh override harga, paksa ke harga preset.
-                if (!$isOnlineSalesType) {
-                    $unitPrice = $normalPrice;
-                }
+                // Harga normal/preset sesuai sales_type & outlet, hanya untuk pembanding/laporan.
+                $normalPrice = (float) $product->getPriceByLevelAndOutlet($resolvedSalesType, (int) $data['outlet_id']);
 
                 // Tandai harga manual hanya untuk kanal online yang berbeda dari harga preset.
                 $isManualPrice = $isOnlineSalesType && abs($unitPrice - $normalPrice) >= 0.01;
