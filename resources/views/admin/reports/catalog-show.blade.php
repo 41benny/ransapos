@@ -3477,9 +3477,7 @@
                                         </a>
                                         <div class="mt-1 text-[10px] text-slate-400">Ref ID: {{ $row->sale_id ?? '-' }}</div>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-700">
-                                        {{ \Carbon\Carbon::parse($row->sale_date)->format('d/m/Y') }}
-                                    </td>
+                                    <td class="px-4 py-3 text-slate-700">{{ $row->sale_date }}</td>
                                     <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
                                     <td class="px-4 py-3 font-normal text-slate-800">{{ $row->product_name }}</td>
                                     <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->qty, 2, ',', '.') }}</td>

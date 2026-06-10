@@ -850,6 +850,7 @@ class CatalogReportController extends Controller
                     'sales.id as sale_id',
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
+                    DB::raw($this->salesVsHppDisplayDateSql() . ' as sale_date_display'),
                     'sales.outlet_id',
                     'outlets.name as outlet_name',
                     'sale_items.product_name',
@@ -1907,7 +1908,7 @@ class CatalogReportController extends Controller
     private function downloadSalesVsHppXlsx($rowsQuery, string $filename)
     {
         return (new GeneratorReportExport(
-            headings: ['No Transaksi', 'Tanggal', 'Outlet', 'Produk', 'Qty', 'Total', 'HPP', 'Laba Kotor', 'Margin'],
+            headings: ['No Transaksi', 'Tanggal & Jam', 'Outlet', 'Produk', 'Qty', 'Total', 'HPP', 'Laba Kotor', 'Margin'],
             generatorFactory: fn () => $this->generateSalesVsHppExportRows($rowsQuery),
             columnFormats: [
                 'E' => '#,##0.00',
@@ -1931,10 +1932,11 @@ class CatalogReportController extends Controller
 
         if ($request->filled('filter_tanggal')) {
             $like = $this->reportLikeValue($request->input('filter_tanggal'));
-            $rowsQuery->where(function ($query) use ($like) {
+            $dateExpr = $this->salesVsHppDisplayDateSql();
+            $rowsQuery->where(function ($query) use ($like, $dateExpr) {
                 $query->whereRaw("CAST(sales.sale_date AS CHAR) LIKE ?", [$like])
-                    ->orWhereRaw("DATE_FORMAT(sales.sale_date, '%d/%m/%Y') LIKE ?", [$like])
-                    ->orWhereRaw("DATE_FORMAT(sales.sale_date, '%d %b %Y') LIKE ?", [$like]);
+                    ->orWhereRaw("DATE_FORMAT({$dateExpr}, '%d/%m/%Y %H:%i') LIKE ?", [$like])
+                    ->orWhereRaw("DATE_FORMAT({$dateExpr}, '%d %b %Y %H:%i') LIKE ?", [$like]);
             });
         }
 
@@ -1977,6 +1979,14 @@ class CatalogReportController extends Controller
             WHEN sales.subtotal > 0 THEN ROUND((sale_items.subtotal / sales.subtotal) * sales.total_amount, 2)
             WHEN COALESCE(sale_item_counts.sale_item_count, 0) > 0 THEN ROUND(sales.total_amount / sale_item_counts.sale_item_count, 2)
             ELSE sale_items.subtotal
+        END";
+    }
+
+    private function salesVsHppDisplayDateSql(): string
+    {
+        return "CASE
+            WHEN TIME(sales.sale_date) = '00:00:00' THEN TIMESTAMP(DATE(sales.sale_date), TIME(sales.created_at))
+            ELSE sales.sale_date
         END";
     }
 
@@ -2033,6 +2043,7 @@ class CatalogReportController extends Controller
         $row->margin_percent = $totalAmount > 0
             ? round(($grossProfit / $totalAmount) * 100, 2)
             : 0.0;
+        $row->sale_date = \Carbon\Carbon::parse($row->sale_date_display ?? $row->sale_date)->format('d/m/Y H:i');
 
         return $row;
     }
@@ -2296,7 +2307,7 @@ class CatalogReportController extends Controller
         if ($viewType === 'sales-vs-hpp') {
             return [[
                 ['key' => 'transaction_number', 'label' => 'No_Transaksi', 'type' => 'text'],
-                ['key' => 'sale_date', 'label' => 'Tanggal', 'type' => 'text'],
+                ['key' => 'sale_date', 'label' => 'Tanggal & Jam', 'type' => 'text'],
                 ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
                 ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
                 ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
