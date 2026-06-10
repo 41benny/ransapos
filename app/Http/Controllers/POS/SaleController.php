@@ -41,6 +41,8 @@ class SaleController extends Controller
     public function create()
     {
         $priceLevels = SpecialPromotion::filterRuntimeSalesTypes(SalesType::priceLevels());
+        // Kode sales_type kanal online yang tersedia di runtime (untuk input harga manual).
+        $onlineSalesTypes = array_values(array_intersect(SalesType::onlineCodes(), array_keys($priceLevels)));
         $currentOutletId = (int) (auth()->user()->outlet_id ?? 0);
         $currentUserId = (int) (auth()->id() ?? 0);
 
@@ -133,6 +135,18 @@ class SaleController extends Controller
             ->select(['id', 'code', 'name'])
             ->get();
 
+        // Pemetaan tipe penjualan (online) -> metode bayar default yang otomatis dikunci di POS.
+        // Hanya sertakan jika metode bayarnya aktif & tersedia di daftar POS.
+        $activePaymentMethodIds = $paymentMethods->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $salesTypePaymentMap = SalesType::query()
+            ->active()
+            ->online()
+            ->whereNotNull('default_payment_method_id')
+            ->pluck('default_payment_method_id', 'code')
+            ->filter(fn ($methodId) => in_array((int) $methodId, $activePaymentMethodIds, true))
+            ->map(fn ($methodId) => (int) $methodId)
+            ->all();
+
         // Ambil beberapa customer aktif untuk pilihan di POS (loyalty)
         $customers = Customer::active()
             ->orderBy('name')
@@ -220,6 +234,8 @@ class SaleController extends Controller
             'customers',
             'outlet',
             'priceLevels',
+            'onlineSalesTypes',
+            'salesTypePaymentMap',
             'activePromotions',
             'activeVouchers'
         ));

@@ -306,7 +306,27 @@
 
                             <div class="flex items-center justify-between mt-1">
                                 <div class="min-w-0">
-                                    <p class="text-xs text-gray-400">@ @{{ formatNumber(item.unit_price) }}</p>
+                                    <!-- Harga statis (offline) -->
+                                    <p v-if="!isOnlineSalesType" class="text-xs text-gray-400">@ @{{ formatNumber(item.unit_price) }}</p>
+
+                                    <!-- Harga manual (online): bisa diedit -->
+                                    <div v-else class="flex items-center gap-1">
+                                        <span class="text-[11px] text-gray-400">Rp</span>
+                                        <input type="number" min="0" step="any" inputmode="numeric"
+                                            :value="item.unit_price"
+                                            @change="setUnitPriceFromInput(index, $event.target.value)"
+                                            @blur="setUnitPriceFromInput(index, $event.target.value)"
+                                            class="w-24 h-7 text-xs font-bold text-right rounded border border-sky-300 bg-sky-50 text-sky-800 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                                        <button v-if="Math.abs(Number(item.unit_price || 0) - Number(item.normal_price || 0)) >= 0.01"
+                                            @click="resetUnitPrice(index)" type="button"
+                                            title="Kembalikan ke harga normal"
+                                            class="text-[10px] text-gray-400 hover:text-sky-600 underline">reset</button>
+                                    </div>
+                                    <p v-if="isOnlineSalesType && Math.abs(Number(item.unit_price || 0) - Number(item.normal_price || 0)) >= 0.01"
+                                        class="text-[10px] text-sky-600">
+                                        Normal Rp @{{ formatNumber(item.normal_price) }}
+                                        <span class="text-amber-600">(selisih Rp @{{ formatNumber((Number(item.normal_price || 0) - Number(item.unit_price || 0)) * Number(item.quantity || 1)) }})</span>
+                                    </p>
                                     <p v-if="item.discount_amount > 0" class="text-[10px] text-red-500">
                                         Promo @{{ formatNumber(item.promo_discount_percent, 2) }}% (-Rp @{{
                                         formatNumber(item.discount_amount, 2) }})
@@ -534,7 +554,15 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 mb-5">
+                <!-- Pemberitahuan metode bayar terkunci (kanal online) -->
+                <div v-if="isPaymentLocked" class="mb-5 flex items-center gap-2 rounded-xl bg-sky-50 border border-sky-200 px-4 py-3 text-sm text-sky-800">
+                    <svg class="w-5 h-5 flex-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Metode bayar dikunci ke <b>@{{ paymentMethodName(lockedPaymentMethodId) }}</b> untuk penjualan @{{ salesType }}.</span>
+                </div>
+
+                <div v-else class="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 mb-5">
                     <button type="button" @click="paymentMode = 'single'"
                         :class="paymentMode === 'single' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                         class="h-10 rounded-lg text-sm font-bold transition">
@@ -551,6 +579,8 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto p-1 custom-scrollbar">
                         <button type="button" v-for="method in paymentMethods" :key="'single-pm-' + method.id"
                             @click="selectSinglePaymentMethod(method.id)"
+                            v-show="!isPaymentLocked || Number(lockedPaymentMethodId) === Number(method.id)"
+                            :disabled="isPaymentLocked && Number(lockedPaymentMethodId) !== Number(method.id)"
                             :class="Number(selectedPaymentMethod) === Number(method.id) && paymentLines.length === 1
                                                                                         ? 'bg-primary text-white border-primary shadow-lg shadow-red-500/30'
                                                                                         : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40 hover:bg-red-50'"
@@ -1181,6 +1211,8 @@
                         categories: @json($categories),
                         products: @json($products),
                         priceLevels: @json($priceLevels),
+                        onlineSalesTypes: @json($onlineSalesTypes ?? []),
+                        salesTypePaymentMap: @json($salesTypePaymentMap ?? (object) []),
                         customers: @json($customers),
                         paymentMethods: @json($paymentMethods),
                         activePromotions: @json($activePromotions ?? []),
@@ -1305,6 +1337,18 @@
                     },
                     selectedPromotionRequiresConfirmation() {
                         return Boolean(this.selectedPromotion && this.selectedPromotion.requires_confirmation);
+                    },
+                    isOnlineSalesType() {
+                        return Array.isArray(this.onlineSalesTypes)
+                            && this.onlineSalesTypes.includes(this.salesType);
+                    },
+                    lockedPaymentMethodId() {
+                        if (!this.isOnlineSalesType) return null;
+                        const id = this.salesTypePaymentMap && this.salesTypePaymentMap[this.salesType];
+                        return id ? Number(id) : null;
+                    },
+                    isPaymentLocked() {
+                        return this.lockedPaymentMethodId !== null;
                     },
                     cartGrossSubtotal() {
                         return this.cart.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unit_price)), 0);
@@ -2410,10 +2454,24 @@
                         this.voucherErrorMessage = '';
                     },
                     openPaymentModal() {
+                        // Kanal online dengan metode bayar terkunci: paksa single + metode default.
+                        if (this.isPaymentLocked) {
+                            this.applyLockedPaymentMethod();
+                            this.showPaymentModal = true;
+                            return;
+                        }
+
                         if (this.paymentLines.length > 1) {
                             this.paymentMode = 'multi';
                         }
                         this.showPaymentModal = true;
+                    },
+                    applyLockedPaymentMethod() {
+                        const id = this.lockedPaymentMethodId;
+                        if (!id) return;
+                        this.paymentMode = 'single';
+                        // selectSinglePaymentMethod menyetel paymentLines + amount = totalAmount saat ini.
+                        this.selectSinglePaymentMethod(id);
                     },
                     paymentMethodById(methodId) {
                         return this.paymentMethods.find(method => Number(method.id) === Number(methodId)) || null;
@@ -2576,13 +2634,34 @@
                             if (!product) return item;
 
                             const newPrice = this.getProductPrice(product);
+                            // Ganti sales_type selalu reset harga ke preset (harga manual lama dibuang).
                             const updatedItem = {
                                 ...item,
-                                unit_price: newPrice
+                                unit_price: newPrice,
+                                normal_price: newPrice
                             };
                             this.recalculateCartItem(updatedItem);
                             return updatedItem;
                         });
+                        this.refreshAppliedVoucher();
+                    },
+                    setUnitPriceFromInput(index, value) {
+                        const item = this.cart[index];
+                        if (!item) return;
+
+                        let price = Number(String(value).replace(/[^0-9.]/g, ''));
+                        if (!isFinite(price) || price < 0) {
+                            price = Number(item.normal_price || 0);
+                        }
+                        item.unit_price = price;
+                        this.recalculateCartItem(item);
+                        this.refreshAppliedVoucher();
+                    },
+                    resetUnitPrice(index) {
+                        const item = this.cart[index];
+                        if (!item) return;
+                        item.unit_price = Number(item.normal_price || 0);
+                        this.recalculateCartItem(item);
                         this.refreshAppliedVoucher();
                     },
                     addToCart(product) {
@@ -2591,7 +2670,13 @@
 
                         if (existing) {
                             existing.quantity = this.normalizeQuantity(Number(existing.quantity || 0) + 1, 1);
-                            existing.unit_price = price;
+                            existing.normal_price = price;
+                            // Pertahankan harga manual online; selain itu sinkronkan ke harga preset.
+                            const hasManualPrice = this.isOnlineSalesType
+                                && Math.abs(Number(existing.unit_price || 0) - price) >= 0.01;
+                            if (!hasManualPrice) {
+                                existing.unit_price = price;
+                            }
                             this.recalculateCartItem(existing);
                         } else {
                             const newItem = {
@@ -2599,6 +2684,7 @@
                                 name: product.name,
                                 category_id: product.category_id,
                                 unit_price: price,
+                                normal_price: price,
                                 quantity: 1,
                                 discount_amount: 0,
                                 promo_discount_percent: 0,
@@ -2980,7 +3066,13 @@
                 },
                 watch: {
                     selectedCategory() { this.filterProducts(); },
-                    salesType() { this.updateCartPricesBySalesType(); },
+                    salesType() {
+                        this.updateCartPricesBySalesType();
+                        // Reset pilihan pembayaran agar metode dari channel sebelumnya tidak tertinggal.
+                        this.paymentLines = [];
+                        this.selectedPaymentMethod = '';
+                        this.paymentMode = 'single';
+                    },
                     selectedPromotionId() { this.recalculateCart(); },
                     printEngine(newValue) {
                         if (newValue === 'bridge' && this.showPrintSettingsModal) {

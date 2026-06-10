@@ -56,6 +56,45 @@
                     </div>
 
                     <div>
+                        <label for="channel_type" class="block text-sm font-medium text-gray-700 mb-2">
+                            Kanal <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            name="channel_type"
+                            id="channel_type"
+                            class="ui-input w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('channel_type') border-red-500 @enderror"
+                            required
+                        >
+                            <option value="offline" {{ old('channel_type', 'offline') === 'offline' ? 'selected' : '' }}>Offline (dine-in / biasa)</option>
+                            <option value="online" {{ old('channel_type') === 'online' ? 'selected' : '' }}>Online (GoFood, GrabFood, ShopeeFood, dll)</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Kanal online dipakai untuk memisahkan laporan dan mengaktifkan input harga manual di POS.</p>
+                        @error('channel_type')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="default_payment_method_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Metode Bayar Default <span class="text-gray-400">(opsional)</span>
+                        </label>
+                        <select
+                            name="default_payment_method_id"
+                            id="default_payment_method_id"
+                            class="ui-input w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('default_payment_method_id') border-red-500 @enderror"
+                        >
+                            <option value="">— Tidak ada (pilih manual di kasir) —</option>
+                            @foreach($paymentMethods as $method)
+                                <option value="{{ $method->id }}" {{ (string) old('default_payment_method_id') === (string) $method->id ? 'selected' : '' }}>{{ $method->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Jika diisi pada kanal online, metode bayar ini otomatis terpilih & dikunci saat kasir memilih tipe penjualan ini.</p>
+                        @error('default_payment_method_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">
                             Urutan Tampil
                         </label>

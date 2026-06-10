@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentMethod;
 use App\Models\SalesType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,7 +44,9 @@ class SalesTypeController extends Controller
      */
     public function create(): View
     {
-        return view('admin.sales-types.create');
+        return view('admin.sales-types.create', [
+            'paymentMethods' => $this->paymentMethodOptions(),
+        ]);
     }
 
     /**
@@ -58,6 +61,8 @@ class SalesTypeController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_]+$/', 'unique:sales_types,code'],
             'name' => ['required', 'string', 'max:100'],
+            'channel_type' => ['required', 'in:offline,online'],
+            'default_payment_method_id' => ['nullable', 'integer', 'exists:payment_methods,id'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ], [
@@ -66,6 +71,7 @@ class SalesTypeController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+        $validated['default_payment_method_id'] = $validated['default_payment_method_id'] ?: null;
 
         SalesType::create($validated);
 
@@ -79,7 +85,10 @@ class SalesTypeController extends Controller
      */
     public function edit(SalesType $salesType): View
     {
-        return view('admin.sales-types.edit', compact('salesType'));
+        return view('admin.sales-types.edit', [
+            'salesType' => $salesType,
+            'paymentMethods' => $this->paymentMethodOptions(),
+        ]);
     }
 
     /**
@@ -94,6 +103,8 @@ class SalesTypeController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_]+$/', 'unique:sales_types,code,' . $salesType->id],
             'name' => ['required', 'string', 'max:100'],
+            'channel_type' => ['required', 'in:offline,online'],
+            'default_payment_method_id' => ['nullable', 'integer', 'exists:payment_methods,id'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ], [
@@ -102,6 +113,12 @@ class SalesTypeController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+        $validated['default_payment_method_id'] = $validated['default_payment_method_id'] ?: null;
+
+        // REGULAR adalah acuan offline sistem, paksa tetap offline
+        if (strtoupper($salesType->code) === 'REGULAR') {
+            $validated['channel_type'] = 'offline';
+        }
 
         // Kode REGULAR tidak boleh diubah
         if (strtoupper($salesType->code) === 'REGULAR' && $validated['code'] !== 'REGULAR') {
@@ -174,6 +191,17 @@ class SalesTypeController extends Controller
         return redirect()
             ->route('admin.sales-types.index')
             ->with('success', 'Metode penjualan berhasil dihapus.');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, PaymentMethod>
+     */
+    private function paymentMethodOptions()
+    {
+        return PaymentMethod::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'code', 'name']);
     }
 
     private function normalizeCode(string $code): string

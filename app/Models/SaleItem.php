@@ -14,6 +14,8 @@ class SaleItem extends Model
         'product_sku',
         'quantity',
         'unit_price',
+        'normal_price',
+        'is_manual_price',
         'discount_amount',
         'subtotal',
         'cogs',
@@ -23,6 +25,8 @@ class SaleItem extends Model
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
+        'normal_price' => 'decimal:2',
+        'is_manual_price' => 'boolean',
         'discount_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'cogs' => 'decimal:2',

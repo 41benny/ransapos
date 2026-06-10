@@ -12,6 +12,7 @@ use App\Models\PaymentMethod;
 use App\Models\Promotion;
 use App\Models\Voucher;
 use App\Models\SaleManualDiscount;
+use App\Models\SalesType;
 use App\Models\User;
 use App\Support\SpecialPromotion;
 use Carbon\Carbon;
@@ -131,6 +132,9 @@ class SaleService
                 $resolvedSalesType = 'regular';
             }
 
+            // Hanya kanal online yang boleh memakai harga input manual.
+            $isOnlineSalesType = SalesType::isOnlineCode($resolvedSalesType);
+
             // 4. Hitung subtotal dari items (termasuk diskon item dari promo kategori)
             $subtotal = 0;
             $normalizedItems = [];
@@ -144,7 +148,19 @@ class SaleService
                 }
 
                 $quantity = (float) $item['quantity'];
+
+                // Harga normal/preset sesuai sales_type & outlet (otoritatif dari server).
+                $normalPrice = (float) $product->getPriceByLevelAndOutlet($resolvedSalesType, (int) $data['outlet_id']);
                 $unitPrice = (float) $item['unit_price'];
+
+                // Guardrail: kanal offline tidak boleh override harga, paksa ke harga preset.
+                if (!$isOnlineSalesType) {
+                    $unitPrice = $normalPrice;
+                }
+
+                // Tandai harga manual hanya untuk kanal online yang berbeda dari harga preset.
+                $isManualPrice = $isOnlineSalesType && abs($unitPrice - $normalPrice) >= 0.01;
+
                 $baseAmount = $quantity * $unitPrice;
 
                 $manualDiscount = max(0, (float) ($item['discount_amount'] ?? 0));
@@ -165,6 +181,8 @@ class SaleService
                     'product_id' => $product->id,
                     'quantity' => $quantity,
                     'unit_price' => $unitPrice,
+                    'normal_price' => $normalPrice,
+                    'is_manual_price' => $isManualPrice,
                     'discount_amount' => $itemDiscount,
                     'subtotal' => $itemSubtotal,
                     'notes' => $item['notes'] ?? null,
@@ -309,6 +327,8 @@ class SaleService
                     'product_sku' => $product->sku,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
+                    'normal_price' => $item['normal_price'],
+                    'is_manual_price' => $item['is_manual_price'],
                     'discount_amount' => $item['discount_amount'],
                     'subtotal' => $itemSubtotal,
                     'cogs' => $itemCogs,
