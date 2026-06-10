@@ -127,6 +127,10 @@
                 <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     <span>Bill Per Invoice</span>
                 </div>
+                <div class="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                    <i class="fas fa-receipt text-amber-500"></i>
+                    <span id="kpiAvgInvoiceCount">0 invoice</span>
+                </div>
             </div>
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-amber-500 transition-all duration-500 group-hover:w-full"></div>
         </div>
@@ -534,6 +538,7 @@
 
             const kpiTotalSalesEl = document.getElementById('kpiTotalSales');
             const kpiAvgTransactionEl = document.getElementById('kpiAvgTransaction');
+            const kpiAvgInvoiceCountEl = document.getElementById('kpiAvgInvoiceCount');
             const trendSalesEl = document.getElementById('trendSales');
             const trendSalesPctEl = document.getElementById('trendSalesPct');
 
@@ -1259,6 +1264,8 @@
             function render(data) {
                 kpiTotalSalesEl.textContent = idr.format(Number(data?.kpis?.total_sales || 0));
                 kpiAvgTransactionEl.textContent = idr.format(Number(data?.kpis?.avg_transaction || 0));
+                const invoiceCount = Number(data?.kpis?.total_transactions || 0);
+                kpiAvgInvoiceCountEl.textContent = `${new Intl.NumberFormat('id-ID').format(invoiceCount)} invoice`;
 
                 const trendPct = data?.trend_vs_prev_day?.delta_total_sales_pct ?? null;
                 const trendSalesAbs = data?.trend_vs_prev_day?.delta_total_sales ?? null;
@@ -1421,5 +1428,4 @@
         })();
     </script>
 @endpush
-
 
