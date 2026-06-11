@@ -258,10 +258,21 @@ class BackdateSaleService
                     ]);
                 }
 
+                // Hormati harga yang diisi manual (transaksi backdate sering memakai harga historis
+                // yang berbeda dari katalog saat ini). Jika tidak diisi, auto-isi dari level harga.
+                $hasManualPrice = array_key_exists('unit_price', $item)
+                    && $item['unit_price'] !== null
+                    && $item['unit_price'] !== ''
+                    && is_numeric($item['unit_price']);
+
+                $unitPrice = $hasManualPrice
+                    ? (float) $item['unit_price']
+                    : $product->getPriceByLevelAndOutlet($salesType, $outletId);
+
                 return [
                     'product_id' => (int) $item['product_id'],
                     'quantity' => (float) $item['quantity'],
-                    'unit_price' => $product->getPriceByLevelAndOutlet($salesType, $outletId),
+                    'unit_price' => $unitPrice,
                     'discount_amount' => (float) ($item['discount_amount'] ?? 0),
                     'notes' => $item['notes'] ?? null,
                 ];

@@ -58,6 +58,72 @@ class BackdateSaleServiceTest extends TestCase
         $this->assertEquals(1, $sale->payments()->count());
     }
 
+    public function test_admin_backdate_sale_honours_manual_unit_price_over_catalog_price(): void
+    {
+        $user = User::factory()->create();
+        $outlet = Outlet::factory()->create(['code' => 'MBK2']);
+        $category = ProductCategory::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 25000,
+        ]);
+        $paymentMethod = PaymentMethod::create(['code' => 'CASH', 'name' => 'Cash', 'is_active' => true]);
+        $saleDate = today()->subDay()->toDateString();
+
+        $sale = app(BackdateSaleService::class)->createBackdateSale([
+            'manual_reference' => 'MBK2-MANUAL-PRICE',
+            'sale_date' => $saleDate,
+            'outlet_id' => $outlet->id,
+            'payment_method_id' => $paymentMethod->id,
+            'backdate_reason' => 'Harga historis berbeda dari katalog.',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                    'unit_price' => 18000, // harga historis, beda dari selling_price 25000
+                    'discount_amount' => 0,
+                ],
+            ],
+        ], $user);
+
+        $this->assertEquals(18000, (float) $sale->items()->first()->unit_price);
+    }
+
+    public function test_admin_backdate_sale_falls_back_to_catalog_price_when_unit_price_blank(): void
+    {
+        $user = User::factory()->create();
+        $outlet = Outlet::factory()->create(['code' => 'MBK2']);
+        $category = ProductCategory::factory()->create();
+        $product = Product::factory()->create([
+            'category_id' => $category->id,
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 25000,
+        ]);
+        $paymentMethod = PaymentMethod::create(['code' => 'CASH', 'name' => 'Cash', 'is_active' => true]);
+        $saleDate = today()->subDay()->toDateString();
+
+        $sale = app(BackdateSaleService::class)->createBackdateSale([
+            'manual_reference' => 'MBK2-AUTO-PRICE',
+            'sale_date' => $saleDate,
+            'outlet_id' => $outlet->id,
+            'payment_method_id' => $paymentMethod->id,
+            'backdate_reason' => 'Harga ikut katalog.',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                    'unit_price' => '', // kosong -> auto-isi dari katalog
+                    'discount_amount' => 0,
+                ],
+            ],
+        ], $user);
+
+        $this->assertEquals(25000, (float) $sale->items()->first()->unit_price);
+    }
+
     public function test_admin_backdate_sale_allows_ten_days_back(): void
     {
         $this->assertEquals(

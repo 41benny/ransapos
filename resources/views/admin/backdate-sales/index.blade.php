@@ -249,8 +249,8 @@
             <input type="number" name="items[__INDEX__][quantity]" min="0.01" step="0.01" value="1" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Qty" required>
         </div>
         <div class="lg:col-span-2">
-            <label class="block text-xs font-semibold text-slate-500 mb-1">Harga</label>
-            <input type="number" name="items[__INDEX__][unit_price]" min="0" step="0.01" class="ui-input price-input w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2" placeholder="Harga" readonly required>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Harga <span class="font-normal text-slate-400">(bisa diubah)</span></label>
+            <input type="number" name="items[__INDEX__][unit_price]" min="0" step="0.01" class="ui-input price-input w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Harga" required>
         </div>
         <div class="lg:col-span-2">
             <label class="block text-xs font-semibold text-slate-500 mb-1">Diskon</label>
@@ -280,6 +280,30 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Rp ' + Number(value || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 });
     }
 
+    function priceFromLevel(priceLevels, level, outletId) {
+        const key = Object.keys(priceLevels).find((k) => String(k).toLowerCase() === String(level).toLowerCase());
+        if (!key) {
+            return 0;
+        }
+
+        const data = priceLevels[key];
+
+        if (typeof data === 'number' || typeof data === 'string') {
+            return Number(data || 0);
+        }
+
+        if (data && typeof data === 'object') {
+            if (outletId && data.outlets && Number(data.outlets[outletId]) > 0) {
+                return Number(data.outlets[outletId]);
+            }
+            if (Number(data.default) > 0) {
+                return Number(data.default);
+            }
+        }
+
+        return 0;
+    }
+
     function resolveProductPrice(productId) {
         const product = productMap[productId];
         if (!product) {
@@ -289,42 +313,39 @@ document.addEventListener('DOMContentLoaded', function () {
         const level = salesTypeSelect.value || 'regular';
         const outletId = outletSelect.value ? String(outletSelect.value) : null;
         const priceLevels = product.price_levels || {};
-        const priceLevelKey = Object.keys(priceLevels).find((key) => String(key).toLowerCase() === String(level).toLowerCase());
-        const levelData = priceLevelKey ? priceLevels[priceLevelKey] : null;
 
-        if (typeof levelData === 'number' || typeof levelData === 'string') {
-            return Number(levelData || 0);
+        // Pakai harga level yang dipilih; kalau kosong/0, mundur ke level regular,
+        // lalu terakhir ke harga jual master. Jangan berhenti di level yang nilainya 0.
+        let price = priceFromLevel(priceLevels, level, outletId);
+
+        if (price <= 0 && String(level).toLowerCase() !== 'regular') {
+            price = priceFromLevel(priceLevels, 'regular', outletId);
         }
 
-        if (levelData && typeof levelData === 'object') {
-            if (outletId && levelData.outlets && levelData.outlets[outletId] && Number(levelData.outlets[outletId]) > 0) {
-                return Number(levelData.outlets[outletId]);
-            }
-            if (levelData.default !== undefined && levelData.default !== null) {
-                return Number(levelData.default || 0);
-            }
+        if (price <= 0) {
+            price = Number(product.selling_price || 0);
         }
 
-        const regularKey = Object.keys(priceLevels).find((key) => String(key).toLowerCase() === 'regular');
-        const regularData = regularKey ? priceLevels[regularKey] : null;
-        if (typeof regularData === 'number' || typeof regularData === 'string') {
-            return Number(regularData || 0);
-        }
-        if (regularData && typeof regularData === 'object' && regularData.default !== undefined) {
-            return Number(regularData.default || 0);
-        }
-
-        return Number(product.selling_price || 0);
+        return price;
     }
 
-    function updateRowPrice(row) {
+    function updateRowPrice(row, force = false) {
         const productSelect = row.querySelector('.product-select');
         const priceInput = row.querySelector('.price-input');
+
+        // Jangan timpa harga yang sudah diketik manual, kecuali dipaksa (mis. ganti produk).
+        if (!force && row.dataset.priceManual === '1') {
+            return;
+        }
+
         priceInput.value = resolveProductPrice(productSelect.value);
+        row.dataset.priceManual = '0';
     }
 
     function updateAllPrices() {
-        rows.querySelectorAll('.item-row').forEach(updateRowPrice);
+        rows.querySelectorAll('.item-row').forEach(function (row) {
+            updateRowPrice(row);
+        });
         updateSummary();
     }
 
@@ -353,6 +374,29 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summaryItemCount').textContent = itemCount;
     }
 
+    // Ubah <select> produk jadi bisa diketik/dicari (typeahead) supaya tidak repot
+    // scroll dropdown panjang saat produknya banyak. Fallback ke <select> biasa bila
+    // library belum termuat (mis. CDN diblokir).
+    function enhanceProductSelect(select, row) {
+        if (!window.TomSelect || select.tomselect) {
+            return;
+        }
+
+        new TomSelect(select, {
+            create: false,
+            maxOptions: 100,
+            allowEmptyOption: true,
+            placeholder: 'Ketik nama / SKU produk...',
+            searchField: ['text'],
+            sortField: [{ field: '$order' }, { field: 'text' }],
+            onChange: function () {
+                // Ganti produk = harga ikut diperbarui dari katalog (reset flag manual).
+                updateRowPrice(row, true);
+                updateSummary();
+            },
+        });
+    }
+
     function addRow(data = {}) {
         const wrapper = document.createElement('div');
         wrapper.innerHTML = template.replaceAll('__INDEX__', String(index++));
@@ -362,19 +406,34 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('input[name$="[quantity]"]').value = data.quantity || 1;
         row.querySelector('input[name$="[discount_amount]"]').value = data.discount_amount || 0;
         row.querySelector('input[name$="[notes]"]').value = data.notes || '';
-        updateRowPrice(row);
+
+        // Saat edit / restore old input, hormati harga yang tersimpan; jika kosong, auto-isi dari katalog.
+        if (data.unit_price !== undefined && data.unit_price !== null && data.unit_price !== '') {
+            row.querySelector('.price-input').value = data.unit_price;
+            row.dataset.priceManual = '1';
+        } else {
+            updateRowPrice(row, true);
+        }
+
+        enhanceProductSelect(row.querySelector('.product-select'), row);
         updateSummary();
     }
 
     rows.addEventListener('change', function (event) {
         if (event.target.classList.contains('product-select')) {
-            updateRowPrice(event.target.closest('.item-row'));
+            // Ganti produk = harga ikut diperbarui dari katalog (reset flag manual).
+            updateRowPrice(event.target.closest('.item-row'), true);
         }
 
         updateSummary();
     });
 
-    rows.addEventListener('input', function () {
+    rows.addEventListener('input', function (event) {
+        if (event.target.classList.contains('price-input')) {
+            // Tandai harga sudah diketik manual supaya tidak ditimpa auto-isi.
+            event.target.closest('.item-row').dataset.priceManual = '1';
+        }
+
         updateSummary();
     });
 
@@ -384,7 +443,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (rows.children.length > 1) {
-            event.target.closest('.item-row').remove();
+            const row = event.target.closest('.item-row');
+            const ts = row.querySelector('.product-select')?.tomselect;
+            if (ts) {
+                ts.destroy();
+            }
+            row.remove();
             updateSummary();
         }
     });
@@ -401,3 +465,39 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
+
+@push('scripts')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <style>
+        /* Samakan ukuran/keluarga font dengan input lain di baris (Qty, Harga, dll) */
+        .item-row .ts-wrapper,
+        .item-row .ts-control,
+        .item-row .ts-control > input,
+        .item-row .ts-control .item,
+        .item-row .ts-dropdown {
+            font-size: inherit;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        .item-row .ts-control {
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            border-color: #cbd5e1;
+            min-height: 42px;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .item-row .ts-wrapper.focus .ts-control {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 1px #6366f1;
+        }
+        .item-row .ts-dropdown {
+            border-radius: 0.5rem;
+            border-color: #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            z-index: 9999;
+        }
+        .item-row .ts-dropdown .active { background-color: #eef2ff; color: #3730a3; }
+        .item-row .ts-control > input { color: #111827 !important; }
+    </style>
+@endpush
