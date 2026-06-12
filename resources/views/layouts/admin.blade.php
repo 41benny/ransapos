@@ -708,6 +708,11 @@
 
                         $routeExists = fn (?string $route): bool => !$route || \Illuminate\Support\Facades\Route::has($route);
 
+                        // Jumlah adjustment packaging yang menunggu approval (untuk badge sidebar).
+                        $packagingPendingCount = $canAccess('packaging-adjustments.view')
+                            ? \App\Models\PackagingAdjustment::where('status', 'pending')->count()
+                            : 0;
+
                         $mainNav = [
                             [
                                 'label' => 'Dashboard',
@@ -749,8 +754,9 @@
                                 'icon' => 'fas fa-box-open',
                                 'route' => null,
                                 'match' => 'admin.packaging-items.*|admin.packaging-mappings.*|admin.packaging-adjustments.*|admin.packaging-reports.*',
+                                'badge' => $packagingPendingCount,
                                 'children' => [
-                                    ['label' => 'Approval Adjustment', 'route' => 'admin.packaging-adjustments.index', 'match' => 'admin.packaging-adjustments.*', 'permission' => 'packaging-adjustments.view'],
+                                    ['label' => 'Approval Adjustment', 'route' => 'admin.packaging-adjustments.index', 'match' => 'admin.packaging-adjustments.*', 'permission' => 'packaging-adjustments.view', 'badge' => $packagingPendingCount],
                                     ['label' => 'Laporan Closing', 'route' => 'admin.packaging-reports.closing', 'match' => 'admin.packaging-reports.*', 'permission' => 'packaging-reports.view'],
                                     ['label' => 'Mapping Produk', 'route' => 'admin.packaging-mappings.index', 'match' => 'admin.packaging-mappings.*', 'permission' => 'packaging-mappings.view'],
                                     ['label' => 'Master Item', 'route' => 'admin.packaging-items.index', 'match' => 'admin.packaging-items.*', 'permission' => 'packaging-items.view'],
@@ -854,6 +860,9 @@
                                         <i
                                             class="{{ $item['icon'] ?? $item['alt_icon'] }} w-5 text-center mr-3 scale-110 {{ $isActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400' }}"></i>
                                         <span class="sidebar-text flex-1 uppercase tracking-wider">{{ $item['label'] }}</span>
+                                        @if(!empty($item['badge']) && $item['badge'] > 0)
+                                            <span class="sidebar-text mr-2 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                                        @endif
                                         <i id="arrow-{{ $menuId }}"
                                             class="fas fa-chevron-down text-[10px] transition-transform duration-200 {{ $isActive ? 'rotate-180' : '' }} sidebar-text opacity-50"></i>
                                     </div>
@@ -872,8 +881,11 @@
                                                 : 'flex items-center pl-8 pr-3 py-2 text-[11px] font-bold text-slate-500 hover:text-white border-l border-white/5 hover:border-white/20 transition-all';
                                         @endphp
                                         <a href="{{ route($child['route']) }}"
-                                            class="{{ $childClass }} sidebar-text uppercase tracking-widest">
-                                            {{ $child['label'] }}
+                                            class="{{ $childClass }} sidebar-text uppercase tracking-widest justify-between">
+                                            <span>{{ $child['label'] }}</span>
+                                            @if(!empty($child['badge']) && $child['badge'] > 0)
+                                                <span class="min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{{ $child['badge'] > 99 ? '99+' : $child['badge'] }}</span>
+                                            @endif
                                         </a>
                                     @endforeach
                                 </div>
