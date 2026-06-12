@@ -25,6 +25,8 @@ class OpenCashSessionRequest extends FormRequest
             'outlet_id' => 'required|exists:outlets,id',
             'opening_balance' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'packaging' => 'nullable|array',
+            'packaging.*' => 'nullable|numeric|min:0',
         ];
     }
 

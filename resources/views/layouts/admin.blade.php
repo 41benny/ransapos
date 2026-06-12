@@ -745,6 +745,18 @@
                                 'permission' => 'stocks.view',
                             ],
                             [
+                                'label' => 'Packaging',
+                                'icon' => 'fas fa-box-open',
+                                'route' => null,
+                                'match' => 'admin.packaging-items.*|admin.packaging-mappings.*|admin.packaging-adjustments.*|admin.packaging-reports.*',
+                                'children' => [
+                                    ['label' => 'Approval Adjustment', 'route' => 'admin.packaging-adjustments.index', 'match' => 'admin.packaging-adjustments.*', 'permission' => 'packaging-adjustments.view'],
+                                    ['label' => 'Laporan Closing', 'route' => 'admin.packaging-reports.closing', 'match' => 'admin.packaging-reports.*', 'permission' => 'packaging-reports.view'],
+                                    ['label' => 'Mapping Produk', 'route' => 'admin.packaging-mappings.index', 'match' => 'admin.packaging-mappings.*', 'permission' => 'packaging-mappings.view'],
+                                    ['label' => 'Master Item', 'route' => 'admin.packaging-items.index', 'match' => 'admin.packaging-items.*', 'permission' => 'packaging-items.view'],
+                                ],
+                            ],
+                            [
                                 'label' => 'Produksi',
                                 'icon' => 'fas fa-flask',
                                 'route' => null,

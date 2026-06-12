@@ -83,4 +83,28 @@ class CashSession extends Model
     {
         return $this->hasMany(Sale::class);
     }
+
+    /**
+     * Stok awal packaging shift
+     */
+    public function packagingOpenings(): HasMany
+    {
+        return $this->hasMany(CashSessionPackagingOpening::class);
+    }
+
+    /**
+     * Hasil closing packaging shift
+     */
+    public function packagingClosings(): HasMany
+    {
+        return $this->hasMany(CashSessionPackagingClosing::class);
+    }
+
+    /**
+     * Adjustment packaging shift
+     */
+    public function packagingAdjustments(): HasMany
+    {
+        return $this->hasMany(PackagingAdjustment::class);
+    }
 }

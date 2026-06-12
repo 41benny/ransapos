@@ -202,10 +202,117 @@
                 </form>
             </div>
         </div>
+
+        {{-- ====================== CLOSING PACKAGING ====================== --}}
+        @if(count($packaging['rows']) > 0)
+        <div class="bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-2xl mb-8">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Closing Packaging
+                </h3>
+                @if($packaging['has_pending'])
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-300 border border-amber-500/30">
+                    ⚠ Ada adjustment pending — Closing With Pending Adjustment
+                </span>
+                @endif
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-700/50">
+                <table class="w-full text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-900/50 text-gray-400 text-[11px] uppercase tracking-wider">
+                            <th class="px-3 py-3 text-left font-medium">Item</th>
+                            <th class="px-3 py-3 text-right font-medium">Awal</th>
+                            <th class="px-3 py-3 text-right font-medium">Masuk<br>(Appr)</th>
+                            <th class="px-3 py-3 text-right font-medium">Keluar<br>(Appr)</th>
+                            <th class="px-3 py-3 text-right font-medium">Pending</th>
+                            <th class="px-3 py-3 text-center font-medium">Sisa Fisik</th>
+                            <th class="px-3 py-3 text-right font-medium">Terpakai<br>Aktual</th>
+                            <th class="px-3 py-3 text-right font-medium">Estimasi<br>Sales</th>
+                            <th class="px-3 py-3 text-right font-medium">Selisih</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/50">
+                        @foreach($packaging['rows'] as $row)
+                        @php
+                            $pendingNet = $row['pending_in'] - $row['pending_out'];
+                        @endphp
+                        <tr class="bg-gray-800/30" data-pkg-row
+                            data-available="{{ (float) $row['available'] }}"
+                            data-estimated="{{ (float) $row['estimated'] }}">
+                            <td class="px-3 py-2.5 font-medium text-white">{{ $row['item']->name }}</td>
+                            <td class="px-3 py-2.5 text-right text-gray-300 font-mono">{{ (float) $row['opening_qty'] }}</td>
+                            <td class="px-3 py-2.5 text-right text-green-400 font-mono">{{ (float) $row['approved_in'] }}</td>
+                            <td class="px-3 py-2.5 text-right text-red-400 font-mono">{{ (float) $row['approved_out'] }}</td>
+                            <td class="px-3 py-2.5 text-right font-mono {{ $pendingNet != 0 ? 'text-amber-300' : 'text-gray-600' }}">
+                                {{ $pendingNet > 0 ? '+' : '' }}{{ (float) $pendingNet }}
+                            </td>
+                            <td class="px-3 py-2.5 text-center">
+                                <input type="number" min="0" step="1"
+                                       form="closeForm"
+                                       name="packaging_physical[{{ $row['item']->id }}]"
+                                       value="{{ (float) $row['default_physical'] }}"
+                                       class="js-pkg-physical w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                            </td>
+                            <td class="px-3 py-2.5 text-right font-mono text-white js-pkg-actual">{{ (float) ($row['available'] - $row['default_physical']) }}</td>
+                            <td class="px-3 py-2.5 text-right font-mono text-indigo-300">{{ (float) $row['estimated'] }}</td>
+                            <td class="px-3 py-2.5 text-right font-mono font-semibold js-pkg-diff">0</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="mt-3 text-[11px] text-gray-500">
+                Terpakai Aktual = Awal + Masuk Approved − Keluar Approved − Sisa Fisik. Selisih = Terpakai Aktual − Estimasi Sales.
+                Nilai Sisa Fisik diisi awal dari estimasi sistem — koreksi sesuai hitungan fisik.
+            </p>
+
+            @if($packaging['unmapped']->count() > 0)
+            <div class="mt-4 p-4 rounded-xl bg-amber-900/20 border border-amber-500/30">
+                <p class="text-sm font-semibold text-amber-300 mb-2">⚠ Produk Belum Mapping Packaging ({{ $packaging['unmapped']->count() }})</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($packaging['unmapped'] as $up)
+                    <span class="text-[11px] px-2 py-1 rounded-lg bg-gray-900/60 text-gray-300 border border-gray-700">
+                        {{ $up->product_name }} <span class="text-gray-500">×{{ (float) $up->qty_sold }}</span>
+                    </span>
+                    @endforeach
+                </div>
+                <p class="mt-2 text-[11px] text-amber-200/70">Estimasi sales untuk produk di atas belum dihitung. Lengkapi mapping di backoffice.</p>
+            </div>
+            @endif
+        </div>
+        @endif
     </div>
 </div>
 
 <script>
+// ===== Packaging closing live calc =====
+function recalcPackagingRow(row) {
+    const available = parseFloat(row.getAttribute('data-available')) || 0;
+    const estimated = parseFloat(row.getAttribute('data-estimated')) || 0;
+    const physical = parseFloat(row.querySelector('.js-pkg-physical').value) || 0;
+    const actual = available - physical;
+    const diff = actual - estimated;
+
+    row.querySelector('.js-pkg-actual').textContent = actual;
+    const diffEl = row.querySelector('.js-pkg-diff');
+    diffEl.textContent = (diff > 0 ? '+' : '') + diff;
+    diffEl.className = 'px-3 py-2.5 text-right font-mono font-semibold js-pkg-diff ' +
+        (diff > 0 ? 'text-orange-400' : (diff < 0 ? 'text-sky-400' : 'text-gray-400'));
+}
+
+document.querySelectorAll('[data-pkg-row]').forEach(function (row) {
+    recalcPackagingRow(row);
+    const input = row.querySelector('.js-pkg-physical');
+    if (input) {
+        input.addEventListener('input', function () { recalcPackagingRow(row); });
+    }
+});
+
 // Calculate difference real-time
 document.getElementById('actual_balance').addEventListener('input', function() {
     const expected = {{ $activeSession->expected_balance }};

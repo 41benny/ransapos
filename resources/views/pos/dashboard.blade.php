@@ -73,6 +73,14 @@
                 <span class="text-xs font-bold text-gray-700 group-hover:text-amber-700">Petty Cash</span>
             </a>
 
+            <a href="{{ route('pos.packaging.adjustment.index') }}"
+                class="bg-white p-4 rounded-xl shadow-sm border border-orange-100 hover:border-orange-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">inventory_2</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-orange-700">Packaging</span>
+            </a>
+
             <a href="{{ route('pos.attendance.index') }}"
                 class="bg-white p-4 rounded-xl shadow-sm border border-violet-100 hover:border-violet-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 transition">

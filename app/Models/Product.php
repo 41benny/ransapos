@@ -100,6 +100,14 @@ class Product extends Model
     }
 
     /**
+     * Relasi ke mapping packaging
+     */
+    public function packagingMappings(): HasMany
+    {
+        return $this->hasMany(ProductPackagingMapping::class);
+    }
+
+    /**
      * Relasi ke purchase items
      */
     public function purchaseItems(): HasMany

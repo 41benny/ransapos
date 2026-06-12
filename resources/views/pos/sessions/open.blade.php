@@ -78,6 +78,39 @@
                               class="block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition text-sm">{{ old('notes') }}</textarea>
                 </div>
 
+                <!-- Stok Awal Packaging -->
+                @if($packagingItems->count() > 0)
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            Stok Awal Packaging
+                        </label>
+                        <button type="button" onclick="packagingUseLast()"
+                                class="text-[11px] px-2 py-1 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 transition">
+                            Gunakan Stok Terakhir
+                        </button>
+                    </div>
+                    <div class="rounded-xl border border-gray-600 divide-y divide-gray-700 overflow-hidden">
+                        @foreach($packagingItems as $item)
+                            @php $default = $packagingDefaults[$item->id] ?? 0; @endphp
+                            <div class="flex items-center gap-3 px-3 py-2 bg-gray-900/40">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-white truncate">{{ $item->name }}</p>
+                                    <p class="text-[10px] text-gray-500">
+                                        Terakhir: <span class="js-pkg-last" data-last="{{ (float) $default }}">{{ (float) $default }}</span> {{ $item->unit }}
+                                    </p>
+                                </div>
+                                <input type="number" min="0" step="1"
+                                       name="packaging[{{ $item->id }}]"
+                                       value="{{ old('packaging.'.$item->id, (float) $default) }}"
+                                       class="js-pkg-input w-24 px-2 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                            </div>
+                        @endforeach
+                    </div>
+                    <p class="mt-2 text-[11px] text-gray-500">Hitung fisik packaging di outlet. Jika berbeda dari stok terakhir, akan ditandai sebagai koreksi manual.</p>
+                </div>
+                @endif
+
                 <!-- Actions -->
                 <div class="pt-4 flex gap-4">
                     <a href="{{ route('pos.dashboard') }}" 
@@ -97,6 +130,18 @@
         </p>
     </div>
 </div>
+
+<script>
+function packagingUseLast() {
+    document.querySelectorAll('.js-pkg-input').forEach(function (input) {
+        const row = input.closest('div');
+        const last = row.querySelector('.js-pkg-last');
+        if (last) {
+            input.value = last.getAttribute('data-last');
+        }
+    });
+}
+</script>
 @endsection
 
 

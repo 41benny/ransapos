@@ -454,6 +454,35 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         ->name('cash-sessions.index')
         ->middleware('permission:cash-sessions.view');
 
+    // ===== Packaging Stock Control =====
+    // Master item packaging
+    Route::get('/packaging-items', [\App\Http\Controllers\Admin\PackagingItemController::class, 'index'])
+        ->name('packaging-items.index')->middleware('permission:packaging-items.view');
+    Route::post('/packaging-items', [\App\Http\Controllers\Admin\PackagingItemController::class, 'store'])
+        ->name('packaging-items.store')->middleware('permission:packaging-items.create');
+    Route::put('/packaging-items/{packagingItem}', [\App\Http\Controllers\Admin\PackagingItemController::class, 'update'])
+        ->name('packaging-items.update')->middleware('permission:packaging-items.update');
+
+    // Mapping produk -> packaging
+    Route::get('/packaging-mappings', [\App\Http\Controllers\Admin\ProductPackagingMappingController::class, 'index'])
+        ->name('packaging-mappings.index')->middleware('permission:packaging-mappings.view');
+    Route::put('/packaging-mappings/{product}', [\App\Http\Controllers\Admin\ProductPackagingMappingController::class, 'update'])
+        ->name('packaging-mappings.update')->middleware('permission:packaging-mappings.update');
+
+    // Approval adjustment packaging
+    Route::get('/packaging-adjustments', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'index'])
+        ->name('packaging-adjustments.index')->middleware('permission:packaging-adjustments.view');
+    Route::put('/packaging-adjustments/{packagingAdjustment}/approve', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'approve'])
+        ->name('packaging-adjustments.approve')->middleware('permission:packaging-adjustments.approve');
+    Route::put('/packaging-adjustments/{packagingAdjustment}/reject', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'reject'])
+        ->name('packaging-adjustments.reject')->middleware('permission:packaging-adjustments.reject');
+
+    // Laporan packaging
+    Route::get('/packaging-reports/closing', [\App\Http\Controllers\Admin\PackagingReportController::class, 'closing'])
+        ->name('packaging-reports.closing')->middleware('permission:packaging-reports.view');
+    Route::get('/packaging-reports/unmapped', [\App\Http\Controllers\Admin\PackagingReportController::class, 'unmapped'])
+        ->name('packaging-reports.unmapped')->middleware('permission:packaging-reports.view');
+
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
         // Katalog (semua yang punya reports.view bisa lihat)
@@ -607,6 +636,14 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device', \App\Http\
         ->middleware('role:kasir,admin');
     Route::get('/sessions/{cashSession}/print', [CashSessionController::class, 'print'])
         ->name('sessions.print')
+        ->middleware('role:kasir,admin');
+
+    // Packaging Adjustment (Kasir/Admin)
+    Route::get('/packaging/adjustment', [\App\Http\Controllers\POS\PackagingAdjustmentController::class, 'index'])
+        ->name('packaging.adjustment.index')
+        ->middleware('role:kasir,admin');
+    Route::post('/packaging/adjustment', [\App\Http\Controllers\POS\PackagingAdjustmentController::class, 'store'])
+        ->name('packaging.adjustment.store')
         ->middleware('role:kasir,admin');
 
     // Sales Transactions (Kasir/Admin)

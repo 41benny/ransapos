@@ -8,15 +8,19 @@ use App\Http\Requests\POS\CloseCashSessionRequest;
 use App\Models\CashSession;
 use App\Models\SalesType;
 use App\Services\CashSessionService;
+use App\Services\PackagingService;
 use Exception;
 
 class CashSessionController extends Controller
 {
     protected CashSessionService $cashSessionService;
 
-    public function __construct(CashSessionService $cashSessionService)
+    protected PackagingService $packagingService;
+
+    public function __construct(CashSessionService $cashSessionService, PackagingService $packagingService)
     {
         $this->cashSessionService = $cashSessionService;
+        $this->packagingService = $packagingService;
     }
 
     /**
@@ -36,7 +40,12 @@ class CashSessionController extends Controller
         // Gunakan outlet dari user yang login
         $userOutlet = auth()->user()->outlet;
 
-        return view('pos.sessions.open', compact('userOutlet'));
+        $packagingItems = $this->packagingService->activeItems();
+        $packagingDefaults = $userOutlet
+            ? $this->packagingService->openingDefaults($userOutlet->id)
+            : [];
+
+        return view('pos.sessions.open', compact('userOutlet', 'packagingItems', 'packagingDefaults'));
     }
 
     /**
@@ -53,6 +62,12 @@ class CashSessionController extends Controller
                 $posDevice?->id,
                 $request->ip()
             );
+
+            // Simpan stok awal packaging (jika dikirim).
+            $packaging = $request->input('packaging', []);
+            if (is_array($packaging) && ! empty($packaging)) {
+                $this->packagingService->saveOpenings($session, $packaging, auth()->user());
+            }
 
             return redirect()
                 ->route('pos.dashboard')
@@ -103,7 +118,10 @@ class CashSessionController extends Controller
             }
         }
 
-        return view('pos.sessions.close', compact('activeSession', 'paymentStats'));
+        // Data closing packaging
+        $packaging = $this->packagingService->closingContext($activeSession);
+
+        return view('pos.sessions.close', compact('activeSession', 'paymentStats', 'packaging'));
     }
 
     /**
@@ -132,6 +150,12 @@ class CashSessionController extends Controller
     {
         try {
             $posDevice = $request->attributes->get('pos_device');
+
+            // Simpan stok akhir fisik packaging sebelum menutup shift.
+            $packagingPhysical = $request->input('packaging_physical', []);
+            if (is_array($packagingPhysical) && ! empty($packagingPhysical)) {
+                $this->packagingService->saveClosings($cashSession, $packagingPhysical);
+            }
 
             $session = $this->cashSessionService->closeSession(
                 $cashSession,

@@ -22,6 +22,8 @@ class CloseCashSessionRequest extends FormRequest
         return [
             'actual_balance' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'packaging_physical' => 'nullable|array',
+            'packaging_physical.*' => 'nullable|numeric|min:0',
         ];
     }
 
