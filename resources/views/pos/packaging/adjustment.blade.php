@@ -39,15 +39,12 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tipe</label>
+                            <input type="hidden" name="type" id="typeInput" value="{{ old('type', 'in') }}">
                             <div class="grid grid-cols-2 gap-3">
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="type" value="in" class="peer sr-only" {{ old('type', 'in') === 'in' ? 'checked' : '' }}>
-                                    <div class="text-center py-3 rounded-xl border border-gray-600 text-gray-300 peer-checked:bg-green-900/40 peer-checked:border-green-500 peer-checked:text-green-300 transition">Masuk</div>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="type" value="out" class="peer sr-only" {{ old('type') === 'out' ? 'checked' : '' }}>
-                                    <div class="text-center py-3 rounded-xl border border-gray-600 text-gray-300 peer-checked:bg-red-900/40 peer-checked:border-red-500 peer-checked:text-red-300 transition">Keluar</div>
-                                </label>
+                                <button type="button" data-type="in" data-active="bg-green-900/40 border-green-500 text-green-300"
+                                        class="type-btn text-center py-3 rounded-xl border border-gray-600 text-gray-300 transition">Masuk</button>
+                                <button type="button" data-type="out" data-active="bg-red-900/40 border-red-500 text-red-300"
+                                        class="type-btn text-center py-3 rounded-xl border border-gray-600 text-gray-300 transition">Keluar</button>
                             </div>
                         </div>
 
@@ -146,4 +143,31 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    const input = document.getElementById('typeInput');
+    const buttons = document.querySelectorAll('.type-btn');
+
+    function setType(val) {
+        input.value = val;
+        buttons.forEach(function (btn) {
+            const active = btn.dataset.active.split(' ');
+            if (btn.dataset.type === val) {
+                btn.classList.remove('border-gray-600', 'text-gray-300');
+                btn.classList.add.apply(btn.classList, active);
+            } else {
+                btn.classList.remove.apply(btn.classList, active);
+                btn.classList.add('border-gray-600', 'text-gray-300');
+            }
+        });
+    }
+
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () { setType(btn.dataset.type); });
+    });
+
+    setType(input.value || 'in');
+})();
+</script>
 @endsection
