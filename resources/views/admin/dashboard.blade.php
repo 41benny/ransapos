@@ -151,7 +151,8 @@
             <div class="space-y-1">
                 <h3 id="kpiGrossProfit" class="text-3xl font-black text-slate-800 tracking-tight">-</h3>
                 <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    <span>Omzet &minus; HPP</span>
+                    <span>vs Prev Period:</span>
+                    <span id="trendProfit" class="text-slate-600">-</span>
                 </div>
             </div>
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-600 transition-all duration-500 group-hover:w-full">
@@ -544,6 +545,7 @@
 
             const kpiGrossProfitEl = document.getElementById('kpiGrossProfit');
             const kpiProfitPctEl = document.getElementById('kpiProfitPct');
+            const trendProfitEl = document.getElementById('trendProfit');
 
             const hourlyBarsEl = document.getElementById('hourlyBars');
             const hourlyEmptyEl = document.getElementById('hourlyEmpty');
@@ -1249,6 +1251,12 @@
                 const sign = n > 0 ? '+' : '';
                 return `${sign}${n.toFixed(1)}%`;
             }
+            function formatSignedIdr(value) {
+                if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+                const raw = Number(value);
+                const sign = raw > 0 ? '+' : '';
+                return `${sign}${idr.format(raw)}`;
+            }
 
             // Removed renderOutletBreakdown
 
@@ -1280,6 +1288,13 @@
                 kpiProfitPctEl.textContent = grossMarginPct === null ? '-' : `${Number(grossMarginPct).toFixed(1)}%`;
                 kpiProfitPctEl.classList.toggle('text-emerald-500', grossProfit >= 0);
                 kpiProfitPctEl.classList.toggle('text-rose-500', grossProfit < 0);
+
+                const prevGrossProfit = data?.trend_vs_prev_day?.prev_gross_profit ?? null;
+                const deltaGrossProfit = data?.trend_vs_prev_day?.delta_gross_profit ?? null;
+                const deltaGrossProfitPct = data?.trend_vs_prev_day?.delta_gross_profit_pct ?? null;
+                trendProfitEl.textContent = prevGrossProfit === null ? '-' : `${formatSignedIdr(deltaGrossProfit || 0)} (${formatSignedPct(deltaGrossProfitPct)})`;
+                trendProfitEl.classList.toggle('text-emerald-600', Number(deltaGrossProfit || 0) >= 0);
+                trendProfitEl.classList.toggle('text-rose-600', Number(deltaGrossProfit || 0) < 0);
 
                 const showBreakdown = Boolean(data?.show_breakdown);
 
@@ -1428,4 +1443,3 @@
         })();
     </script>
 @endpush
-

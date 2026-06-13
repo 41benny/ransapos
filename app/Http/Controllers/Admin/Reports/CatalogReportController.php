@@ -130,7 +130,7 @@ class CatalogReportController extends Controller
             'sales-by-product' => ['title' => 'Penjualan per Produk', 'implemented' => true, 'existing_route' => 'admin.reports.sales.products'],
             'sales-by-type' => ['title' => 'Penjualan per Tipe Penjualan', 'implemented' => false],
             'sales-by-payment-method' => ['title' => 'Penjualan per Metode Pembayaran', 'implemented' => true],
-            'sales-by-category' => ['title' => 'Penjualan per Kategori Produk', 'implemented' => false],
+            'sales-by-category' => ['title' => 'Penjualan per Kategori Produk', 'implemented' => true],
             'sales-by-hour' => ['title' => 'Penjualan per Jam', 'implemented' => false],
             'cancelled-sales' => ['title' => 'Penjualan yang Dibatalkan', 'implemented' => true],
             'sales-stock-out' => ['title' => 'Stok Keluar dari Penjualan', 'implemented' => false],
@@ -711,6 +711,54 @@ class CatalogReportController extends Controller
                 'payment_rows' => $paymentRows,
                 'sales_type_rows' => $salesTypeRows,
                 'product_rows' => $productRows,
+            ];
+        }
+
+        if ($slug === 'sales-by-category') {
+            $viewType = 'sales-by-category';
+
+            $query = DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+                ->where('sales.status', 'completed')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo]);
+
+            if (!empty($outletId)) {
+                $query->where('sales.outlet_id', $outletId);
+            }
+
+            $rows = $query
+                ->selectRaw("COALESCE(product_categories.name, 'Tanpa Kategori') as category_name")
+                ->selectRaw('COUNT(DISTINCT sales.id) as total_transaction_count')
+                ->selectRaw('COUNT(DISTINCT products.id) as total_product_count')
+                ->selectRaw('COALESCE(SUM(sale_items.quantity), 0) as total_qty')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal + sale_items.discount_amount), 0) as gross_sales')
+                ->selectRaw('COALESCE(SUM(sale_items.discount_amount), 0) as item_discount_total')
+                ->selectRaw('COALESCE(SUM(sale_items.subtotal), 0) as net_sales')
+                ->groupBy('category_name')
+                ->orderByDesc('net_sales')
+                ->get()
+                ->map(function ($row) {
+                    $row->total_transaction_count = (int) $row->total_transaction_count;
+                    $row->total_product_count = (int) $row->total_product_count;
+                    $row->total_qty = (float) $row->total_qty;
+                    $row->gross_sales = (float) $row->gross_sales;
+                    $row->item_discount_total = (float) $row->item_discount_total;
+                    $row->net_sales = (float) $row->net_sales;
+                    $row->avg_sales_per_qty = $row->total_qty > 0 ? $row->net_sales / $row->total_qty : 0.0;
+
+                    return $row;
+                });
+
+            $summary = [
+                'category_count' => (int) $rows->count(),
+                'total_transaction_count' => (int) $rows->sum('total_transaction_count'),
+                'total_product_count' => (int) $rows->sum('total_product_count'),
+                'total_qty' => (float) $rows->sum('total_qty'),
+                'gross_sales' => (float) $rows->sum('gross_sales'),
+                'item_discount_total' => (float) $rows->sum('item_discount_total'),
+                'net_sales' => (float) $rows->sum('net_sales'),
             ];
         }
 
@@ -2043,7 +2091,8 @@ class CatalogReportController extends Controller
         $row->margin_percent = $totalAmount > 0
             ? round(($grossProfit / $totalAmount) * 100, 2)
             : 0.0;
-        $row->sale_date = \Carbon\Carbon::parse($row->sale_date_display ?? $row->sale_date)->format('d/m/Y H:i');
+        $saleDate = $row->sale_date_display ?? $row->sale_date ?? now();
+        $row->sale_date = \Carbon\Carbon::parse($saleDate)->format('d/m/Y H:i');
 
         return $row;
     }
@@ -2350,6 +2399,19 @@ class CatalogReportController extends Controller
                 ['key' => 'payment_method_name', 'label' => 'Metode Pembayaran', 'type' => 'text'],
                 ['key' => 'total_transactions', 'label' => 'Total Transaksi', 'type' => 'number', 'decimals' => 0],
                 ['key' => 'total_amount', 'label' => 'Total Nilai', 'type' => 'number', 'decimals' => 2],
+            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+        }
+
+        if ($viewType === 'sales-by-category') {
+            return [[
+                ['key' => 'category_name', 'label' => 'Kategori', 'type' => 'text'],
+                ['key' => 'total_transaction_count', 'label' => 'Jumlah Transaksi', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_product_count', 'label' => 'Jumlah Produk', 'type' => 'number', 'decimals' => 0],
+                ['key' => 'total_qty', 'label' => 'Total Qty', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'gross_sales', 'label' => 'Gross Sales', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'item_discount_total', 'label' => 'Diskon Item', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'net_sales', 'label' => 'Net Sales', 'type' => 'number', 'decimals' => 2],
+                ['key' => 'avg_sales_per_qty', 'label' => 'Rata-rata per Qty', 'type' => 'number', 'decimals' => 2],
             ], $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 

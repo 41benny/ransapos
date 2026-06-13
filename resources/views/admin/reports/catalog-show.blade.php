@@ -2773,6 +2773,74 @@
                     </div>
                 @endif
             </div>
+        @elseif($viewType === 'sales-by-category')
+            @php
+                $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');
+                $qty = fn($value) => number_format((float) $value, 2, ',', '.');
+            @endphp
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Kategori</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">
+                            {{ number_format($summary['category_count'] ?? 0, 0, ',', '.') }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Net Sales</div>
+                        <div class="mt-2 text-2xl font-normal text-indigo-700">
+                            {{ $money($summary['net_sales'] ?? 0) }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Qty</div>
+                        <div class="mt-2 text-2xl font-normal text-emerald-700">
+                            {{ $qty($summary['total_qty'] ?? 0) }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Diskon Item</div>
+                        <div class="mt-2 text-2xl font-normal text-rose-700">
+                            {{ $money($summary['item_discount_total'] ?? 0) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">Kategori</th>
+                                <th class="px-4 py-3 text-right">Jumlah Transaksi</th>
+                                <th class="px-4 py-3 text-right">Jumlah Produk</th>
+                                <th class="px-4 py-3 text-right">Total Qty</th>
+                                <th class="px-4 py-3 text-right">Gross Sales</th>
+                                <th class="px-4 py-3 text-right">Diskon Item</th>
+                                <th class="px-4 py-3 text-right">Net Sales</th>
+                                <th class="px-4 py-3 text-right">Rata-rata / Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($rows as $row)
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-800">{{ $row->category_name }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_transaction_count, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->total_product_count, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ $qty($row->total_qty) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-900">{{ $money($row->gross_sales) }}</td>
+                                    <td class="px-4 py-3 text-right text-rose-700">{{ $money($row->item_discount_total) }}</td>
+                                    <td class="px-4 py-3 text-right font-medium text-indigo-700">{{ $money($row->net_sales) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-700">{{ $money($row->avg_sales_per_qty) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan per kategori untuk filter yang dipilih.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @elseif(in_array($viewType, ['purchase-summary', 'purchase-by-supplier', 'purchase-by-product', 'purchase-by-category', 'purchase-unpaid'], true))
             @php
                 $money = fn($value) => 'Rp ' . number_format((float) $value, 0, ',', '.');

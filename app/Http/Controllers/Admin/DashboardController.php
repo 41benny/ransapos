@@ -452,16 +452,30 @@ class DashboardController extends Controller
                 ->selectRaw('COALESCE(SUM(total_amount), 0) as total_sales, COUNT(*) as total_transactions')
                 ->first();
 
+            $totalCogs = (float) SaleItem::query()
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->whereBetween('sales.sale_date', [$prevDateFrom, $prevDateTo])
+                ->where('sales.status', 'completed')
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
+                ->sum('sale_items.cogs');
+
+            $totalSales = (float) ($kpis->total_sales ?? 0);
+            $grossProfit = $totalSales - $totalCogs;
+
             return [
                 'date_from' => $prevDateFrom,
                 'date_to' => $prevDateTo,
-                'total_sales' => (float) ($kpis->total_sales ?? 0),
+                'total_sales' => $totalSales,
                 'total_transactions' => (int) ($kpis->total_transactions ?? 0),
+                'total_cogs' => $totalCogs,
+                'gross_profit' => $grossProfit,
+                'gross_margin_pct' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null,
             ];
         });
 
         $deltaSales = (float) ($payload['kpis']['total_sales'] - $prevPayload['total_sales']);
         $deltaTransactions = (int) ($payload['kpis']['total_transactions'] - $prevPayload['total_transactions']);
+        $deltaGrossProfit = (float) ($payload['kpis']['gross_profit'] - $prevPayload['gross_profit']);
 
         $payload['trend_vs_prev_day'] = [
             'prev_date' => $prevPayload['date_to'],
@@ -469,10 +483,15 @@ class DashboardController extends Controller
             'prev_date_to' => $prevPayload['date_to'],
             'prev_total_sales' => $prevPayload['total_sales'],
             'prev_total_transactions' => $prevPayload['total_transactions'],
+            'prev_total_cogs' => $prevPayload['total_cogs'],
+            'prev_gross_profit' => $prevPayload['gross_profit'],
+            'prev_gross_margin_pct' => $prevPayload['gross_margin_pct'],
             'delta_total_sales' => $deltaSales,
             'delta_total_sales_pct' => $prevPayload['total_sales'] > 0 ? ($deltaSales / $prevPayload['total_sales']) * 100 : null,
             'delta_total_transactions' => $deltaTransactions,
             'delta_total_transactions_pct' => $prevPayload['total_transactions'] > 0 ? ($deltaTransactions / $prevPayload['total_transactions']) * 100 : null,
+            'delta_gross_profit' => $deltaGrossProfit,
+            'delta_gross_profit_pct' => $prevPayload['gross_profit'] > 0 ? ($deltaGrossProfit / $prevPayload['gross_profit']) * 100 : null,
         ];
 
         return response()->json($payload);
