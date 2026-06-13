@@ -11,6 +11,7 @@ use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            Vite::useHotFile(storage_path('framework/vite.hot'));
+        }
+
         // Hindari redirect loop guest->login saat user sebenarnya masih login.
         RedirectIfAuthenticated::redirectUsing(function (Request $request): string {
             $user = Auth::user();
