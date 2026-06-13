@@ -4,14 +4,14 @@
 @section('page-title', 'Buka Shift Kasir')
 
 @section('content')
-<div class="h-full flex items-center justify-center p-4 bg-gray-900 relative overflow-hidden">
+<div class="h-full overflow-y-auto p-4 py-6 bg-gray-900 relative">
     <!-- Background Decoration -->
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
         <div class="absolute -top-20 -left-20 w-96 h-96 bg-indigo-600 rounded-full blur-3xl filter mix-blend-multiply"></div>
         <div class="absolute top-40 right-20 w-80 h-80 bg-orange-500 rounded-full blur-3xl filter mix-blend-multiply"></div>
     </div>
 
-    <div class="w-full max-w-lg relative z-10">
+    <div class="w-full max-w-lg mx-auto relative z-10">
         <!-- Card -->
         <div class="bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700/50 p-8">
             
@@ -90,7 +90,7 @@
                             Gunakan Stok Terakhir
                         </button>
                     </div>
-                    <div class="rounded-xl border border-gray-600 divide-y divide-gray-700 overflow-hidden">
+                    <div class="rounded-xl border border-gray-600 divide-y divide-gray-700 overflow-y-auto max-h-56">
                         @foreach($packagingItems as $item)
                             @php $default = $packagingDefaults[$item->id] ?? 0; @endphp
                             <div class="flex items-center gap-3 px-3 py-2 bg-gray-900/40">
