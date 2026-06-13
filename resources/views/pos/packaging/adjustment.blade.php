@@ -49,20 +49,21 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Item Packaging</label>
-                            <select name="packaging_item_id" required
-                                    class="w-full px-3 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
-                                <option value="">-- Pilih Item --</option>
+                            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                Item &amp; Jumlah <span class="text-gray-500 normal-case">(isi yang perlu saja)</span>
+                            </label>
+                            <div class="rounded-xl border border-gray-700 divide-y divide-gray-800 overflow-y-auto max-h-72">
                                 @foreach($packagingItems as $item)
-                                <option value="{{ $item->id }}" {{ old('packaging_item_id') == $item->id ? 'selected' : '' }}>{{ $item->name }} ({{ $item->unit }})</option>
+                                <div class="flex items-center gap-3 px-3 py-2 bg-gray-900/40">
+                                    <span class="flex-1 text-sm text-white truncate">{{ $item->name }}</span>
+                                    <input type="number" min="0" step="1" inputmode="numeric"
+                                           name="items[{{ $item->id }}]"
+                                           value="{{ old('items.'.$item->id) }}"
+                                           placeholder="0"
+                                           class="w-24 px-2 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                                </div>
                                 @endforeach
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Jumlah</label>
-                            <input type="number" name="qty" min="0" step="1" value="{{ old('qty') }}" required
-                                   class="w-full px-3 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white text-right font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                            </div>
                         </div>
 
                         <div>

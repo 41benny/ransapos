@@ -472,6 +472,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     // Approval adjustment packaging
     Route::get('/packaging-adjustments', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'index'])
         ->name('packaging-adjustments.index')->middleware('permission:packaging-adjustments.view');
+    Route::put('/packaging-adjustments/bulk/approve', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'bulkApprove'])
+        ->name('packaging-adjustments.bulk-approve')->middleware('permission:packaging-adjustments.approve');
+    Route::put('/packaging-adjustments/bulk/reject', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'bulkReject'])
+        ->name('packaging-adjustments.bulk-reject')->middleware('permission:packaging-adjustments.reject');
     Route::put('/packaging-adjustments/{packagingAdjustment}/approve', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'approve'])
         ->name('packaging-adjustments.approve')->middleware('permission:packaging-adjustments.approve');
     Route::put('/packaging-adjustments/{packagingAdjustment}/reject', [\App\Http\Controllers\Admin\PackagingAdjustmentController::class, 'reject'])

@@ -73,11 +73,34 @@
     <p class="text-xs text-gray-500 mb-3"><i class="fas fa-info-circle mr-1"></i> Menampilkan adjustment <strong>pending</strong> secara default. Gunakan filter untuk melihat semua.</p>
     @endif
 
+    <form method="POST" action="{{ route('admin.packaging-adjustments.bulk-approve') }}" id="bulkForm">
+    @csrf
+    @method('PUT')
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        @if($pendingCount > 0 && (auth()->user()->hasPermission('packaging-adjustments.approve') || auth()->user()->hasPermission('packaging-adjustments.reject')))
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap items-center gap-3">
+            <span class="text-xs text-gray-500"><span id="selCount">0</span> dipilih</span>
+            @if(auth()->user()->hasPermission('packaging-adjustments.approve'))
+            <button type="submit" formaction="{{ route('admin.packaging-adjustments.bulk-approve') }}"
+                    onclick="return confirmBulk('menyetujui')"
+                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-medium">
+                <i class="fas fa-check mr-1"></i> Approve Terpilih
+            </button>
+            @endif
+            @if(auth()->user()->hasPermission('packaging-adjustments.reject'))
+            <button type="submit" formaction="{{ route('admin.packaging-adjustments.bulk-reject') }}"
+                    onclick="return confirmBulk('menolak')"
+                    class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium">
+                <i class="fas fa-times mr-1"></i> Reject Terpilih
+            </button>
+            @endif
+        </div>
+        @endif
         <div class="overflow-x-auto">
         <table class="w-full text-sm whitespace-nowrap">
             <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr>
+                    <th class="px-4 py-3 text-center"><input type="checkbox" id="selAll" class="rounded border-gray-300 text-indigo-600"></th>
                     <th class="px-4 py-3 text-left">Tanggal</th>
                     <th class="px-4 py-3 text-left">Outlet</th>
                     <th class="px-4 py-3 text-left">Shift</th>
@@ -93,6 +116,11 @@
             <tbody class="divide-y divide-gray-100">
                 @forelse($adjustments as $adj)
                 <tr>
+                    <td class="px-4 py-2.5 text-center">
+                        @if($adj->status === 'pending')
+                        <input type="checkbox" name="ids[]" value="{{ $adj->id }}" class="row-check rounded border-gray-300 text-indigo-600">
+                        @endif
+                    </td>
                     <td class="px-4 py-2.5 text-gray-500">{{ $adj->created_at->format('d M Y H:i') }}</td>
                     <td class="px-4 py-2.5 text-gray-700">{{ $adj->outlet->name ?? '-' }}</td>
                     <td class="px-4 py-2.5 text-gray-500 font-mono text-xs">{{ $adj->cashSession->session_number ?? '-' }}</td>
@@ -127,16 +155,14 @@
                         @if($adj->status === 'pending')
                         <div class="flex items-center justify-center gap-2">
                             @if(auth()->user()->hasPermission('packaging-adjustments.approve'))
-                            <form action="{{ route('admin.packaging-adjustments.approve', $adj) }}" method="POST" onsubmit="return confirm('Setujui adjustment ini?')">
-                                @csrf @method('PUT')
-                                <button class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs"><i class="fas fa-check"></i></button>
-                            </form>
+                            <button type="submit" formaction="{{ route('admin.packaging-adjustments.approve', $adj) }}"
+                                    onclick="return confirm('Setujui adjustment ini?')"
+                                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs"><i class="fas fa-check"></i></button>
                             @endif
                             @if(auth()->user()->hasPermission('packaging-adjustments.reject'))
-                            <form action="{{ route('admin.packaging-adjustments.reject', $adj) }}" method="POST" onsubmit="return confirm('Tolak adjustment ini?')">
-                                @csrf @method('PUT')
-                                <button class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs"><i class="fas fa-times"></i></button>
-                            </form>
+                            <button type="submit" formaction="{{ route('admin.packaging-adjustments.reject', $adj) }}"
+                                    onclick="return confirm('Tolak adjustment ini?')"
+                                    class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs"><i class="fas fa-times"></i></button>
                             @endif
                         </div>
                         @else
@@ -145,13 +171,40 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="10" class="px-4 py-8 text-center text-gray-400">Tidak ada adjustment.</td></tr>
+                <tr><td colspan="11" class="px-4 py-8 text-center text-gray-400">Tidak ada adjustment.</td></tr>
                 @endforelse
             </tbody>
         </table>
         </div>
     </div>
+    </form>
 
     <div class="mt-4">{{ $adjustments->links() }}</div>
 </div>
+
+<script>
+(function () {
+    const selAll = document.getElementById('selAll');
+    const checks = Array.prototype.slice.call(document.querySelectorAll('.row-check'));
+    const counter = document.getElementById('selCount');
+
+    function refresh() {
+        if (counter) counter.textContent = checks.filter(c => c.checked).length;
+    }
+    if (selAll) {
+        selAll.addEventListener('change', function () {
+            checks.forEach(c => { c.checked = selAll.checked; });
+            refresh();
+        });
+    }
+    checks.forEach(c => c.addEventListener('change', refresh));
+    refresh();
+})();
+
+function confirmBulk(action) {
+    const n = document.querySelectorAll('.row-check:checked').length;
+    if (n === 0) { alert('Pilih minimal satu adjustment dulu.'); return false; }
+    return confirm('Yakin ' + action + ' ' + n + ' adjustment terpilih?');
+}
+</script>
 @endsection

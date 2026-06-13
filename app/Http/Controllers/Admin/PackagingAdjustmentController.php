@@ -75,4 +75,37 @@ class PackagingAdjustmentController extends Controller
 
         return back()->with('success', 'Adjustment ditolak.');
     }
+
+    public function bulkApprove(Request $request)
+    {
+        $count = $this->bulkProcess($request->input('ids', []), 'approve');
+
+        return back()->with('success', $count > 0 ? "{$count} adjustment disetujui." : 'Tidak ada adjustment pending yang dipilih.');
+    }
+
+    public function bulkReject(Request $request)
+    {
+        $count = $this->bulkProcess($request->input('ids', []), 'reject');
+
+        return back()->with('success', $count > 0 ? "{$count} adjustment ditolak." : 'Tidak ada adjustment pending yang dipilih.');
+    }
+
+    private function bulkProcess(array $ids, string $action): int
+    {
+        $ids = array_filter(array_map('intval', $ids));
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $adjustments = PackagingAdjustment::whereIn('id', $ids)->where('status', 'pending')->get();
+        $user = auth()->user();
+
+        foreach ($adjustments as $adjustment) {
+            $action === 'approve'
+                ? $this->packagingService->approveAdjustment($adjustment, $user)
+                : $this->packagingService->rejectAdjustment($adjustment, $user);
+        }
+
+        return $adjustments->count();
+    }
 }
