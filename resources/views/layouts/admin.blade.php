@@ -709,9 +709,16 @@
                         $routeExists = fn (?string $route): bool => !$route || \Illuminate\Support\Facades\Route::has($route);
 
                         // Jumlah adjustment packaging yang menunggu approval (untuk badge sidebar).
-                        $packagingPendingCount = $canAccess('packaging-adjustments.view')
-                            ? \App\Models\PackagingAdjustment::where('status', 'pending')->count()
-                            : 0;
+                        // Dibungkus try/catch agar admin tidak ikut error bila migrasi packaging
+                        // belum dijalankan di environment tersebut.
+                        $packagingPendingCount = 0;
+                        if ($canAccess('packaging-adjustments.view')) {
+                            try {
+                                $packagingPendingCount = \App\Models\PackagingAdjustment::where('status', 'pending')->count();
+                            } catch (\Throwable $e) {
+                                $packagingPendingCount = 0;
+                            }
+                        }
 
                         $mainNav = [
                             [
