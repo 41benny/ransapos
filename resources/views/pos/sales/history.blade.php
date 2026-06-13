@@ -33,12 +33,15 @@
                 <p class="text-xs text-gray-600 mt-1">
                     Periode: {{ $filters['date_from'] ?? '-' }} s.d {{ $filters['date_to'] ?? '-' }}
                 </p>
+                @if(!empty($filters['q'] ?? ''))
+                    <p class="text-xs text-gray-500 mt-1">Pencarian: {{ $filters['q'] }}</p>
+                @endif
                 <p class="text-xs text-gray-500 mt-1">Dicetak: {{ now()->format('d/m/Y H:i:s') }}</p>
             </div>
 
             <form method="GET" action="{{ route('pos.sales.history') }}" class="px-6 py-4 border-b border-gray-100 no-print">
                 <input type="hidden" name="view" value="{{ $viewMode ?? 'invoice' }}">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
                     <div>
                         <label for="date_from" class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Mulai</label>
                         <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}"
@@ -48,6 +51,15 @@
                         <label for="date_to" class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Akhir</label>
                         <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}"
                             class="w-full rounded-lg border-gray-300 text-sm focus:border-primary focus:ring-primary">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="q" class="block text-xs font-semibold text-gray-600 mb-1">Cari</label>
+                        <div class="relative">
+                            <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-base text-gray-400">search</span>
+                            <input id="q" name="q" type="search" value="{{ $filters['q'] ?? '' }}"
+                                placeholder="{{ ($viewMode ?? 'invoice') === 'product' ? 'Cari produk...' : 'Cari invoice, customer, produk...' }}"
+                                class="w-full rounded-lg border-gray-300 pl-9 text-sm focus:border-primary focus:ring-primary">
+                        </div>
                     </div>
                     <div class="md:col-span-2 flex items-end gap-2">
                         <button type="submit"
@@ -65,12 +77,12 @@
             </form>
 
             <div class="px-6 py-3 border-b border-gray-100 bg-gray-50/40 flex items-center gap-2 no-print">
-                <a href="{{ route('pos.sales.history', ['view' => 'invoice', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '']) }}"
+                <a href="{{ route('pos.sales.history', ['view' => 'invoice', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '', 'q' => $filters['q'] ?? '']) }}"
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ($viewMode ?? 'invoice') === 'invoice' ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
                     <span class="material-icons-round text-sm">receipt_long</span>
                     Per Invoice
                 </a>
-                <a href="{{ route('pos.sales.history', ['view' => 'product', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '']) }}"
+                <a href="{{ route('pos.sales.history', ['view' => 'product', 'date_from' => $filters['date_from'] ?? '', 'date_to' => $filters['date_to'] ?? '', 'q' => $filters['q'] ?? '']) }}"
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ ($viewMode ?? 'invoice') === 'product' ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100' }}">
                     <span class="material-icons-round text-sm">inventory_2</span>
                     Per Produk

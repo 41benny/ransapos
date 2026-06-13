@@ -446,6 +446,7 @@ class SaleController extends Controller
         $outletId = $user->outlet_id;
         $viewMode = $request->input('view', 'invoice') === 'product' ? 'product' : 'invoice';
         $printMode = $request->boolean('print');
+        $search = trim((string) $request->input('q', ''));
         $dateFromInput = (string) $request->input('date_from', '');
         $dateToInput = (string) $request->input('date_to', '');
         $dateFrom = null;
@@ -521,6 +522,47 @@ class SaleController extends Controller
             $baseQuery->whereDate('sale_date', '<=', $dateTo->toDateString());
         }
 
+        $applyInvoiceSearch = function ($query) use ($search) {
+            if ($search === '') {
+                return;
+            }
+
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+            $query->where(function ($searchQuery) use ($like) {
+                $searchQuery
+                    ->where('invoice_number', 'like', $like)
+                    ->orWhere('customer_name', 'like', $like)
+                    ->orWhere('sales_type', 'like', $like)
+                    ->orWhereRaw('CAST(total_amount AS CHAR) LIKE ?', [$like])
+                    ->orWhereHas('customer', function ($customerQuery) use ($like) {
+                        $customerQuery->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('items', function ($itemQuery) use ($like) {
+                        $itemQuery
+                            ->where('product_name', 'like', $like)
+                            ->orWhere('product_sku', 'like', $like);
+                    })
+                    ->orWhereHas('payments.paymentMethod', function ($paymentMethodQuery) use ($like) {
+                        $paymentMethodQuery
+                            ->where('name', 'like', $like)
+                            ->orWhere('code', 'like', $like);
+                    });
+            });
+        };
+
+        $applyProductSearch = function ($query) use ($search) {
+            if ($search === '') {
+                return;
+            }
+
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+            $query->where(function ($searchQuery) use ($like) {
+                $searchQuery
+                    ->where('sale_items.product_name', 'like', $like)
+                    ->orWhere('sale_items.product_sku', 'like', $like);
+            });
+        };
+
         // Catatan: cetak rekap thermal (format=escpos) juga memakai Accept: application/json,
         // jadi jangan short-circuit ke daftar transaksi saat format=escpos diminta.
         if ($request->wantsJson() && $request->input('format') !== 'escpos') {
@@ -539,6 +581,9 @@ class SaleController extends Controller
         $salesQuery = (clone $baseQuery)
             ->with(['items', 'customer', 'payments.paymentMethod'])
             ->orderBy('created_at', 'desc');
+        if ($viewMode === 'invoice') {
+            $applyInvoiceSearch($salesQuery);
+        }
 
         $sales = $printMode
             ? $salesQuery->get()
@@ -567,8 +612,13 @@ class SaleController extends Controller
             })
             ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
             ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
-            ->groupBy('sale_items.product_name', 'sale_items.product_sku')
-            ->orderByDesc('total_qty');
+            ->groupBy('sale_items.product_name', 'sale_items.product_sku');
+
+        if ($viewMode === 'product') {
+            $applyProductSearch($productRowsQuery);
+        }
+
+        $productRowsQuery->orderByDesc('total_qty');
 
         $paymentTotalsSub = DB::table('payments')
             ->select('sale_id')
@@ -601,7 +651,13 @@ class SaleController extends Controller
             })
             ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
             ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
-            ->groupBy('sale_items.product_name', 'sale_items.product_sku', 'payments.payment_method_id', 'payment_methods.name')
+            ->groupBy('sale_items.product_name', 'sale_items.product_sku', 'payments.payment_method_id', 'payment_methods.name');
+
+        if ($viewMode === 'product') {
+            $applyProductSearch($productPaymentRows);
+        }
+
+        $productPaymentRows = $productPaymentRows
             ->orderBy('payment_methods.name')
             ->get();
 
@@ -703,6 +759,7 @@ class SaleController extends Controller
             $recapFilters = [
                 'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
                 'date_to' => $dateTo ? $dateTo->toDateString() : '',
+                'q' => $search,
             ];
 
             // Cetak langsung ke printer thermal Bluetooth (Web Bluetooth/RawBT).
@@ -745,6 +802,7 @@ class SaleController extends Controller
             'filters' => [
                 'date_from' => $dateFrom ? $dateFrom->toDateString() : '',
                 'date_to' => $dateTo ? $dateTo->toDateString() : '',
+                'q' => $search,
             ],
             'printMode' => $printMode,
         ]);
