@@ -8,7 +8,7 @@
     <title>Ransa POS Dashboard</title>
     {{-- Utilizing Tailwind CDN for specific custom theme configuration as requested --}}
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.vite-assets')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
@@ -139,4 +139,3 @@
 </body>
 
 </html>
-
