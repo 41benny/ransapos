@@ -9,11 +9,10 @@
             ? json_decode((string) file_get_contents($manifestPath), true)
             : [];
 
-        $assetUrl = function (string $path): string {
-            $basePath = trim(request()->getBaseUrl(), '/');
-            $prefix = $basePath === '' ? '' : '/' . $basePath;
+        $assetContents = function (string $path): ?string {
+            $fullPath = public_path('build/' . ltrim($path, '/'));
 
-            return $prefix . '/build/' . ltrim($path, '/');
+            return is_file($fullPath) ? file_get_contents($fullPath) : null;
         };
     @endphp
 
@@ -24,13 +23,31 @@
 
         @if(is_array($entry))
             @foreach($entry['css'] ?? [] as $cssFile)
-                <link rel="stylesheet" href="{{ $assetUrl($cssFile) }}">
+                @php
+                    $cssContents = $assetContents($cssFile);
+                @endphp
+
+                @if($cssContents !== null)
+                    <style>{!! $cssContents !!}</style>
+                @endif
             @endforeach
 
             @if(str_ends_with($entry['file'] ?? '', '.css'))
-                <link rel="stylesheet" href="{{ $assetUrl($entry['file']) }}">
+                @php
+                    $cssContents = $assetContents($entry['file']);
+                @endphp
+
+                @if($cssContents !== null)
+                    <style>{!! $cssContents !!}</style>
+                @endif
             @elseif(str_ends_with($entry['file'] ?? '', '.js'))
-                <script type="module" src="{{ $assetUrl($entry['file']) }}"></script>
+                @php
+                    $jsContents = $assetContents($entry['file']);
+                @endphp
+
+                @if($jsContents !== null)
+                    <script type="module">{!! $jsContents !!}</script>
+                @endif
             @endif
         @endif
     @endforeach
