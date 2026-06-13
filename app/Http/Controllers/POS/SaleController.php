@@ -570,9 +570,79 @@ class SaleController extends Controller
             ->groupBy('sale_items.product_name', 'sale_items.product_sku')
             ->orderByDesc('total_qty');
 
-        $productRows = $printMode
-            ? $productRowsQuery->get()
-            : $productRowsQuery->paginate(20, ['*'], 'products_page')->withQueryString();
+        $paymentTotalsSub = DB::table('payments')
+            ->select('sale_id')
+            ->selectRaw('SUM(amount) as paid_total')
+            ->groupBy('sale_id');
+
+        $productPaymentRows = SaleItem::query()
+            ->selectRaw('COALESCE(sale_items.product_name, ?) as product_name', ['Produk Tanpa Nama'])
+            ->selectRaw('COALESCE(sale_items.product_sku, ?) as product_sku', ['-'])
+            ->selectRaw('payments.payment_method_id')
+            ->selectRaw('COALESCE(payment_methods.name, ?) as method_name', ['Tanpa Metode'])
+            ->selectRaw(
+                'SUM(CASE WHEN COALESCE(payment_totals.paid_total, 0) > 0 THEN sale_items.subtotal * payments.amount / payment_totals.paid_total ELSE 0 END) as method_amount'
+            )
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->join('payments', 'payments.sale_id', '=', 'sales.id')
+            ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+            ->leftJoinSub($paymentTotalsSub, 'payment_totals', function ($join) {
+                $join->on('payment_totals.sale_id', '=', 'sales.id');
+            })
+            ->where('sales.outlet_id', $outletId)
+            ->where('sales.user_id', $user->id)
+            ->where('sales.status', 'completed')
+            ->whereNotNull('sales.cash_session_id')
+            ->whereExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('cash_sessions')
+                    ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
+                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+            })
+            ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
+            ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
+            ->groupBy('sale_items.product_name', 'sale_items.product_sku', 'payments.payment_method_id', 'payment_methods.name')
+            ->orderBy('payment_methods.name')
+            ->get();
+
+        $productPaymentMethods = $productPaymentRows
+            ->groupBy('payment_method_id')
+            ->map(function ($rows, $methodId) {
+                return (object) [
+                    'id' => $methodId === '' || $methodId === null ? 'none' : (int) $methodId,
+                    'name' => (string) ($rows->first()->method_name ?? 'Tanpa Metode'),
+                    'total_amount' => (float) $rows->sum(fn ($row) => (float) $row->method_amount),
+                ];
+            })
+            ->sortByDesc('total_amount')
+            ->values();
+
+        $productPaymentAmounts = $productPaymentRows
+            ->groupBy(fn ($row) => ($row->product_name ?? 'Produk Tanpa Nama') . '|' . ($row->product_sku ?? '-'))
+            ->map(function ($rows) {
+                return $rows
+                    ->groupBy('payment_method_id')
+                    ->mapWithKeys(function ($methodRows, $methodId) {
+                        $key = $methodId === '' || $methodId === null ? 'none' : (string) (int) $methodId;
+                        return [$key => (float) $methodRows->sum(fn ($row) => (float) $row->method_amount)];
+                    })
+                    ->all();
+            });
+
+        $attachProductPaymentAmounts = function ($rows) use ($productPaymentAmounts) {
+            return $rows->map(function ($row) use ($productPaymentAmounts) {
+                $key = ($row->product_name ?? 'Produk Tanpa Nama') . '|' . ($row->product_sku ?? '-');
+                $row->payment_amounts = $productPaymentAmounts->get($key, []);
+                return $row;
+            });
+        };
+
+        if ($printMode) {
+            $productRows = $attachProductPaymentAmounts($productRowsQuery->get());
+        } else {
+            $productRows = $productRowsQuery->paginate(20, ['*'], 'products_page')->withQueryString();
+            $productRows->setCollection($attachProductPaymentAmounts($productRows->getCollection()));
+        }
 
         $paymentBreakdown = Payment::query()
             ->selectRaw('COALESCE(payment_methods.name, ?) as method_name, SUM(payments.amount) as total_amount, COUNT(payments.id) as payment_count', ['Tanpa Metode'])
@@ -647,6 +717,7 @@ class SaleController extends Controller
                         'summary' => $summary,
                         'payment_breakdown' => $paymentBreakdown,
                         'sales_type_breakdown' => $salesTypeBreakdown,
+                        'product_payment_methods' => $productPaymentMethods,
                         'product_rows' => $productRows,
                     ]),
                 ]);
@@ -657,6 +728,7 @@ class SaleController extends Controller
                 'summary' => $summary,
                 'paymentBreakdown' => $paymentBreakdown,
                 'salesTypeBreakdown' => $salesTypeBreakdown,
+                'productPaymentMethods' => $productPaymentMethods,
                 'productRows' => $productRows,
                 'filters' => $recapFilters,
             ]);
@@ -667,6 +739,7 @@ class SaleController extends Controller
             'summary' => $summary,
             'paymentBreakdown' => $paymentBreakdown,
             'salesTypeBreakdown' => $salesTypeBreakdown,
+            'productPaymentMethods' => $productPaymentMethods,
             'productRows' => $productRows,
             'viewMode' => $viewMode,
             'filters' => [

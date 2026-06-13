@@ -32,6 +32,7 @@ class ThermalRecap
         $paymentBreakdown = $data['payment_breakdown'] ?? [];
         $salesTypeBreakdown = $data['sales_type_breakdown'] ?? [];
         $productRows = $data['product_rows'] ?? [];
+        $productPaymentMethods = $data['product_payment_methods'] ?? [];
 
         // Samakan header dengan struk kasir (ThermalReceipt): pakai company_* dari Setting.
         $companyName = Setting::getValue('company_name', $outletName);
@@ -103,7 +104,7 @@ class ThermalRecap
         $out .= self::divider();
 
         // ---- Produk terjual ----
-        $out .= self::boldOn() . self::line('PRODUK TERJUAL (QTY)') . self::boldOff();
+        $out .= self::boldOn() . self::line('PRODUK TERJUAL') . self::boldOff();
         $totalQty = 0.0;
         $totalProducts = 0;
         $hasProduct = false;
@@ -113,6 +114,16 @@ class ThermalRecap
             $qty = (float) ($row->total_qty ?? 0);
             $totalQty += $qty;
             $out .= self::twoCols(self::ascii((string) ($row->product_name ?? '-')), self::qty($qty));
+            $paymentAmounts = is_array($row->payment_amounts ?? null) ? $row->payment_amounts : [];
+            foreach ($productPaymentMethods as $method) {
+                $methodId = (string) ($method->id ?? 'none');
+                $methodAmount = (float) ($paymentAmounts[$methodId] ?? 0);
+                if ($methodAmount <= 0) {
+                    continue;
+                }
+
+                $out .= self::twoCols('  - ' . self::ascii((string) ($method->name ?? '-')), self::money($methodAmount));
+            }
         }
         if (!$hasProduct) {
             $out .= self::line('Tidak ada produk terjual');

@@ -3488,6 +3488,9 @@
                                 <th class="px-4 py-3">Outlet</th>
                                 <th class="px-4 py-3">Produk</th>
                                 <th class="px-4 py-3 text-right">Qty</th>
+                                @foreach(($summary['payment_methods'] ?? collect()) as $method)
+                                    <th class="px-4 py-3 text-right whitespace-nowrap">{{ $method->name }}</th>
+                                @endforeach
                                 <th class="px-4 py-3 text-right">Total</th>
                                 <th class="px-4 py-3 text-right">Hpp</th>
                                 <th class="px-4 py-3 text-right">Laba Kotor</th>
@@ -3514,6 +3517,11 @@
                                 <td class="px-1 py-1">
                                     <input type="text" data-name="filter_qty" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                                 </td>
+                                @foreach(($summary['payment_methods'] ?? collect()) as $method)
+                                    <td class="px-1 py-1">
+                                        <div class="h-8 rounded-lg bg-slate-50 border border-slate-100"></div>
+                                    </td>
+                                @endforeach
                                 <td class="px-1 py-1">
                                     <input type="text" data-name="filter_amount" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                                 </td>
@@ -3549,6 +3557,15 @@
                                     <td class="px-4 py-3 text-slate-700">{{ $row->outlet_name }}</td>
                                     <td class="px-4 py-3 font-normal text-slate-800">{{ $row->product_name }}</td>
                                     <td class="px-4 py-3 text-right text-slate-700">{{ number_format($row->qty, 2, ',', '.') }}</td>
+                                    @foreach(($summary['payment_methods'] ?? collect()) as $method)
+                                        @php
+                                            $paymentColumnKey = 'payment_method_' . (int) $method->id;
+                                            $paymentAmount = (float) ($row->{$paymentColumnKey} ?? 0);
+                                        @endphp
+                                        <td class="px-4 py-3 text-right text-slate-700 whitespace-nowrap">
+                                            {{ $paymentAmount > 0 ? 'Rp ' . number_format($paymentAmount, 0, ',', '.') : '-' }}
+                                        </td>
+                                    @endforeach
                                     <td class="px-4 py-3 text-right font-normal text-slate-900">Rp
                                         {{ number_format($row->total_amount, 0, ',', '.') }}
                                     </td>
@@ -3566,7 +3583,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk
+                                    <td colspan="{{ 9 + count($summary['payment_methods'] ?? []) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk
                                         filter yang dipilih.</td>
                                 </tr>
                             @endforelse

@@ -145,7 +145,7 @@
     <div class="divider"></div>
 
     <div class="section">
-        <div class="bold">PRODUK TERJUAL (QTY)</div>
+        <div class="bold">PRODUK TERJUAL</div>
         @php
             $totalQtySold = collect($productRows ?? [])->sum('total_qty');
             $totalProducts = collect($productRows ?? [])->count();
@@ -157,6 +157,18 @@
                 </span>
                 <span class="right">{{ $formatQty($row->total_qty) }}</span>
             </div>
+            @foreach(($productPaymentMethods ?? []) as $method)
+                @php
+                    $methodKey = (string) $method->id;
+                    $methodAmount = (float) (($row->payment_amounts ?? [])[$methodKey] ?? 0);
+                @endphp
+                @if($methodAmount > 0)
+                    <div class="row muted">
+                        <span class="left">- {{ $method->name }}</span>
+                        <span class="right">{{ number_format($methodAmount, 0, ',', '.') }}</span>
+                    </div>
+                @endif
+            @endforeach
         @empty
             <div class="row muted">
                 <span class="left">Tidak ada produk terjual</span>

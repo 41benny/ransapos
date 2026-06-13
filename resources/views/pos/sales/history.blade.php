@@ -120,8 +120,10 @@
                                 <thead class="bg-gray-50 text-gray-600 font-medium text-xs uppercase tracking-wider">
                                     <tr>
                                         <th class="px-6 py-3 border-b border-gray-100">Produk</th>
-                                        <th class="px-6 py-3 border-b border-gray-100">SKU</th>
                                         <th class="px-6 py-3 border-b border-gray-100 text-right">Qty Terjual</th>
+                                        @foreach(($productPaymentMethods ?? []) as $method)
+                                            <th class="px-6 py-3 border-b border-gray-100 text-right whitespace-nowrap">{{ $method->name }}</th>
+                                        @endforeach
                                         <th class="px-6 py-3 border-b border-gray-100 text-right">Jumlah Transaksi</th>
                                         <th class="px-6 py-3 border-b border-gray-100 text-right">Total Penjualan</th>
                                     </tr>
@@ -130,8 +132,16 @@
                                     @foreach($productRows as $row)
                                         <tr class="hover:bg-gray-50/50 transition-colors">
                                             <td class="px-6 py-4 font-medium text-gray-900">{{ $row->product_name }}</td>
-                                            <td class="px-6 py-4 text-gray-500 font-mono text-xs">{{ $row->product_sku }}</td>
                                             <td class="px-6 py-4 text-right font-semibold text-gray-900">{{ number_format((float) $row->total_qty, 0, ',', '.') }}</td>
+                                            @foreach(($productPaymentMethods ?? []) as $method)
+                                                @php
+                                                    $methodKey = (string) $method->id;
+                                                    $methodAmount = (float) (($row->payment_amounts ?? [])[$methodKey] ?? 0);
+                                                @endphp
+                                                <td class="px-6 py-4 text-right text-gray-700 whitespace-nowrap">
+                                                    {{ $methodAmount > 0 ? 'Rp ' . number_format($methodAmount, 0, ',', '.') : '-' }}
+                                                </td>
+                                            @endforeach
                                             <td class="px-6 py-4 text-right text-gray-700">{{ number_format((int) $row->total_transactions, 0, ',', '.') }}</td>
                                             <td class="px-6 py-4 text-right font-bold text-gray-900">Rp {{ number_format((float) $row->total_amount, 0, ',', '.') }}</td>
                                         </tr>

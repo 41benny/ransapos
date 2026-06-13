@@ -878,11 +878,33 @@ class CatalogReportController extends Controller
                 ->selectRaw('COUNT(*) as sale_item_count')
                 ->groupBy('sale_items.sale_id');
 
+            $paymentTotalsSub = DB::table('payments')
+                ->select('payments.sale_id')
+                ->selectRaw('SUM(payments.amount) as paid_total')
+                ->groupBy('payments.sale_id');
+
+            $salesVsHppPaymentMethods = DB::table('payments')
+                ->joinSub((clone $salesBaseQuery)->select('sales.id'), 'filtered_sales', function ($join) {
+                    $join->on('payments.sale_id', '=', 'filtered_sales.id');
+                })
+                ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+                ->select(
+                    'payment_methods.id',
+                    'payment_methods.name'
+                )
+                ->selectRaw('SUM(payments.amount) as total_amount')
+                ->groupBy('payment_methods.id', 'payment_methods.name')
+                ->orderByDesc('total_amount')
+                ->get();
+
             $salesItemBase = (clone $salesBaseQuery)
                 ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
                 ->leftJoinSub($saleItemCountSub, 'sale_item_counts', function ($join) {
                     $join->on('sale_item_counts.sale_id', '=', 'sales.id');
+                })
+                ->leftJoinSub($paymentTotalsSub, 'payment_totals', function ($join) {
+                    $join->on('payment_totals.sale_id', '=', 'sales.id');
                 });
 
             $itemTotals = (clone $salesItemBase)
@@ -892,9 +914,11 @@ class CatalogReportController extends Controller
                 ->first();
 
             $totalSales = (float) (clone $salesBaseQuery)->sum('sales.total_amount');
+            $lineTotalExpr = $this->salesVsHppLineTotalSql();
 
             $rowsQuery = (clone $salesItemBase)
                 ->select(
+                    'sale_items.id as sale_item_id',
                     'sales.id as sale_id',
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
@@ -908,7 +932,18 @@ class CatalogReportController extends Controller
                     'sales.total_amount as sale_total_amount',
                     'sale_item_counts.sale_item_count',
                     'sale_items.cogs as hpp_amount'
-                )
+                );
+
+            foreach ($salesVsHppPaymentMethods as $method) {
+                $methodId = (int) $method->id;
+                $alias = $this->salesVsHppPaymentColumnKey($methodId);
+                $methodPaymentSub = "COALESCE((SELECT SUM(method_payments.amount) FROM payments method_payments WHERE method_payments.sale_id = sales.id AND method_payments.payment_method_id = {$methodId}), 0)";
+                $rowsQuery->selectRaw(
+                    "CASE WHEN COALESCE(payment_totals.paid_total, 0) > 0 THEN ({$lineTotalExpr}) * {$methodPaymentSub} / payment_totals.paid_total ELSE 0 END as {$alias}"
+                );
+            }
+
+            $rowsQuery
                 ->orderByDesc('sales.sale_date')
                 ->orderByDesc('sales.id')
                 ->orderByDesc('sale_items.id');
@@ -919,6 +954,7 @@ class CatalogReportController extends Controller
                 return $this->downloadSalesVsHppXlsx(
                     rowsQuery: $rowsQuery,
                     filename: sprintf('sales-vs-hpp-%s-sd-%s.xlsx', str_replace('-', '', $dateFrom), str_replace('-', '', $dateTo)),
+                    paymentMethods: $salesVsHppPaymentMethods,
                 );
             }
 
@@ -936,6 +972,7 @@ class CatalogReportController extends Controller
                 'total_hpp' => $totalHpp,
                 'total_gross_profit' => $totalGrossProfit,
                 'gross_margin_percent' => $totalSales > 0 ? round(($totalGrossProfit / $totalSales) * 100, 2) : 0,
+                'payment_methods' => $salesVsHppPaymentMethods,
             ];
         }
 
@@ -1953,18 +1990,24 @@ class CatalogReportController extends Controller
         ]);
     }
 
-    private function downloadSalesVsHppXlsx($rowsQuery, string $filename)
+    private function downloadSalesVsHppXlsx($rowsQuery, string $filename, Collection $paymentMethods)
     {
+        $headings = ['No Transaksi', 'Tanggal & Jam', 'Outlet', 'Produk', 'Qty'];
+        foreach ($paymentMethods as $method) {
+            $headings[] = (string) $method->name;
+        }
+        array_push($headings, 'Total', 'HPP', 'Laba Kotor', 'Margin');
+
+        $columnFormats = [];
+        $numericColumnCount = 1 + $paymentMethods->count() + 4;
+        for ($index = 0; $index < $numericColumnCount; $index++) {
+            $columnFormats[$this->excelColumnName(5 + $index)] = '#,##0.00';
+        }
+
         return (new GeneratorReportExport(
-            headings: ['No Transaksi', 'Tanggal & Jam', 'Outlet', 'Produk', 'Qty', 'Total', 'HPP', 'Laba Kotor', 'Margin'],
-            generatorFactory: fn () => $this->generateSalesVsHppExportRows($rowsQuery),
-            columnFormats: [
-                'E' => '#,##0.00',
-                'F' => '#,##0.00',
-                'G' => '#,##0.00',
-                'H' => '#,##0.00',
-                'I' => '#,##0.00',
-            ],
+            headings: $headings,
+            generatorFactory: fn () => $this->generateSalesVsHppExportRows($rowsQuery, $paymentMethods),
+            columnFormats: $columnFormats,
         ))->download($filename, ExcelWriter::XLSX);
     }
 
@@ -2038,27 +2081,52 @@ class CatalogReportController extends Controller
         END";
     }
 
+    private function salesVsHppPaymentColumnKey(int $paymentMethodId): string
+    {
+        return 'payment_method_' . $paymentMethodId;
+    }
+
+    private function excelColumnName(int $oneBasedIndex): string
+    {
+        $name = '';
+        while ($oneBasedIndex > 0) {
+            $oneBasedIndex--;
+            $name = chr(65 + ($oneBasedIndex % 26)) . $name;
+            $oneBasedIndex = intdiv($oneBasedIndex, 26);
+        }
+
+        return $name;
+    }
+
     private function reportLikeValue(?string $value): string
     {
         return '%' . trim((string) $value) . '%';
     }
 
-    private function generateSalesVsHppExportRows($rowsQuery): Generator
+    private function generateSalesVsHppExportRows($rowsQuery, Collection $paymentMethods): Generator
     {
         foreach ((clone $rowsQuery)->lazy(1000) as $row) {
             $row = $this->transformSalesVsHppRow($row);
 
-            yield [
+            $values = [
                 $row->transaction_number,
                 $row->sale_date,
                 $row->outlet_name,
                 $row->product_name,
                 (float) ($row->qty ?? 0),
-                (float) ($row->total_amount ?? 0),
-                (float) ($row->hpp_amount ?? 0),
-                (float) ($row->gross_profit ?? 0),
-                (float) ($row->margin_percent ?? 0),
             ];
+
+            foreach ($paymentMethods as $method) {
+                $key = $this->salesVsHppPaymentColumnKey((int) $method->id);
+                $values[] = (float) ($row->{$key} ?? 0);
+            }
+
+            $values[] = (float) ($row->total_amount ?? 0);
+            $values[] = (float) ($row->hpp_amount ?? 0);
+            $values[] = (float) ($row->gross_profit ?? 0);
+            $values[] = (float) ($row->margin_percent ?? 0);
+
+            yield $values;
         }
     }
 
@@ -2087,6 +2155,11 @@ class CatalogReportController extends Controller
         $grossProfit = $totalAmount - $hppAmount;
 
         $row->total_amount = $totalAmount;
+        foreach ((array) $row as $key => $value) {
+            if (str_starts_with((string) $key, 'payment_method_')) {
+                $row->{$key} = round((float) $value, 2);
+            }
+        }
         $row->gross_profit = $grossProfit;
         $row->margin_percent = $totalAmount > 0
             ? round(($grossProfit / $totalAmount) * 100, 2)
@@ -2354,17 +2427,32 @@ class CatalogReportController extends Controller
         }
 
         if ($viewType === 'sales-vs-hpp') {
-            return [[
+            $columns = [
                 ['key' => 'transaction_number', 'label' => 'No_Transaksi', 'type' => 'text'],
                 ['key' => 'sale_date', 'label' => 'Tanggal & Jam', 'type' => 'text'],
                 ['key' => 'outlet_name', 'label' => 'Outlet', 'type' => 'text'],
                 ['key' => 'product_name', 'label' => 'Produk', 'type' => 'text'],
                 ['key' => 'qty', 'label' => 'Qty', 'type' => 'number', 'decimals' => 2],
+            ];
+
+            foreach (($summary['payment_methods'] ?? collect()) as $method) {
+                $columns[] = [
+                    'key' => $this->salesVsHppPaymentColumnKey((int) $method->id),
+                    'label' => (string) $method->name,
+                    'type' => 'number',
+                    'decimals' => 2,
+                ];
+            }
+
+            array_push(
+                $columns,
                 ['key' => 'total_amount', 'label' => 'Total', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'hpp_amount', 'label' => 'Hpp', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'gross_profit', 'label' => 'Laba Kotor', 'type' => 'number', 'decimals' => 2],
                 ['key' => 'margin_percent', 'label' => 'Margin', 'type' => 'number', 'decimals' => 2],
-            ], $rowsCollection->map(fn($row) => (array) $row)->all()];
+            );
+
+            return [$columns, $rowsCollection->map(fn($row) => (array) $row)->all()];
         }
 
         if ($viewType === 'sales-summary') {
