@@ -81,33 +81,63 @@
                 <!-- Stok Awal Packaging -->
                 @if($packagingItems->count() > 0)
                 <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                            Stok Awal Packaging
-                        </label>
-                        <button type="button" onclick="packagingUseLast()"
-                                class="text-[11px] px-2 py-1 rounded-lg bg-indigo-900/40 text-indigo-300 hover:bg-indigo-800/60 transition">
-                            Gunakan Stok Terakhir
-                        </button>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Stok Packaging
+                    </label>
+
+                    @if(!empty($packagingDefaults))
+                    {{-- Ada riwayat closing: saldo awal readonly, tambah kolom Penerimaan Pagi --}}
+                    <div class="rounded-xl border border-gray-600 overflow-hidden">
+                        <div class="grid grid-cols-3 px-3 py-2 bg-gray-900/60 border-b border-gray-700 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                            <div>Item</div>
+                            <div class="text-right">Saldo Awal</div>
+                            <div class="text-right pr-1">Penerimaan Pagi</div>
+                        </div>
+                        <div class="divide-y divide-gray-700 overflow-y-auto max-h-64">
+                            @foreach($packagingItems as $item)
+                                @php $saldo = (float) ($packagingDefaults[$item->id] ?? 0); @endphp
+                                <div class="grid grid-cols-3 items-center gap-2 px-3 py-2 bg-gray-900/40">
+                                    <div class="min-w-0">
+                                        <p class="text-sm text-white truncate">{{ $item->name }}</p>
+                                        <p class="text-[10px] text-gray-500">{{ $item->unit }}</p>
+                                    </div>
+                                    <div class="text-right font-mono text-gray-300 text-sm">
+                                        {{ $saldo }}
+                                        <input type="hidden" name="packaging[{{ $item->id }}]" value="{{ $saldo }}">
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <input type="number" min="0" step="1" inputmode="numeric"
+                                               name="packaging_received[{{ $item->id }}]"
+                                               value="{{ old('packaging_received.'.$item->id) }}"
+                                               placeholder="0"
+                                               class="w-24 px-2 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
+                    <p class="mt-2 text-[11px] text-gray-500">
+                        Saldo awal = sisa shift kemarin (otomatis). Isi <span class="text-indigo-400">Penerimaan Pagi</span> jika ada stok masuk — akan menunggu approval backoffice.
+                    </p>
+
+                    @else
+                    {{-- Tidak ada riwayat (shift pertama): input manual stok awal --}}
                     <div class="rounded-xl border border-gray-600 divide-y divide-gray-700 overflow-y-auto max-h-56">
                         @foreach($packagingItems as $item)
-                            @php $default = $packagingDefaults[$item->id] ?? 0; @endphp
                             <div class="flex items-center gap-3 px-3 py-2 bg-gray-900/40">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-white truncate">{{ $item->name }}</p>
-                                    <p class="text-[10px] text-gray-500">
-                                        Terakhir: <span class="js-pkg-last" data-last="{{ (float) $default }}">{{ (float) $default }}</span> {{ $item->unit }}
-                                    </p>
+                                    <p class="text-[10px] text-gray-500">{{ $item->unit }}</p>
                                 </div>
                                 <input type="number" min="0" step="1"
                                        name="packaging[{{ $item->id }}]"
-                                       value="{{ old('packaging.'.$item->id, (float) $default) }}"
-                                       class="js-pkg-input w-24 px-2 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
+                                       value="{{ old('packaging.'.$item->id, 0) }}"
+                                       class="w-24 px-2 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-right font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500">
                             </div>
                         @endforeach
                     </div>
-                    <p class="mt-2 text-[11px] text-gray-500">Hitung fisik packaging di outlet. Jika berbeda dari stok terakhir, akan ditandai sebagai koreksi manual.</p>
+                    <p class="mt-2 text-[11px] text-gray-500">Input stok awal packaging untuk shift pertama.</p>
+                    @endif
                 </div>
                 @endif
 
@@ -131,17 +161,6 @@
     </div>
 </div>
 
-<script>
-function packagingUseLast() {
-    document.querySelectorAll('.js-pkg-input').forEach(function (input) {
-        const row = input.closest('div');
-        const last = row.querySelector('.js-pkg-last');
-        if (last) {
-            input.value = last.getAttribute('data-last');
-        }
-    });
-}
-</script>
 @endsection
 
 

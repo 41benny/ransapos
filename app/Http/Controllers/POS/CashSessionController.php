@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\POS\OpenCashSessionRequest;
 use App\Http\Requests\POS\CloseCashSessionRequest;
 use App\Models\CashSession;
+use App\Models\PackagingAdjustment;
+use App\Models\PackagingItem;
 use App\Models\SalesType;
 use App\Services\CashSessionService;
 use App\Services\PackagingService;
@@ -63,15 +65,44 @@ class CashSessionController extends Controller
                 $request->ip()
             );
 
-            // Simpan stok awal packaging (jika dikirim).
+            // Simpan stok awal packaging (saldo dari closing kemarin, atau input manual shift pertama).
             $packaging = $request->input('packaging', []);
             if (is_array($packaging) && ! empty($packaging)) {
                 $this->packagingService->saveOpenings($session, $packaging, auth()->user());
             }
 
+            // Penerimaan Pagi → simpan sebagai adjustment pending (butuh approval).
+            $received = $request->input('packaging_received', []);
+            $receivedCount = 0;
+            if (is_array($received)) {
+                $validItemIds = PackagingItem::pluck('id')->all();
+                foreach ($received as $itemId => $qty) {
+                    $qty = (float) $qty;
+                    if ($qty > 0 && in_array((int) $itemId, $validItemIds, true)) {
+                        PackagingAdjustment::create([
+                            'cash_session_id'   => $session->id,
+                            'outlet_id'         => $session->outlet_id,
+                            'packaging_item_id' => (int) $itemId,
+                            'type'              => 'in',
+                            'qty'               => $qty,
+                            'reason'            => 'Penerimaan Pagi',
+                            'note'              => null,
+                            'status'            => 'pending',
+                            'requested_by'      => auth()->id(),
+                        ]);
+                        $receivedCount++;
+                    }
+                }
+            }
+
+            $successMsg = "Shift berhasil dibuka! Session: {$session->session_number}";
+            if ($receivedCount > 0) {
+                $successMsg .= " — {$receivedCount} item penerimaan pagi menunggu approval.";
+            }
+
             return redirect()
                 ->route('pos.dashboard')
-                ->with('success', "Shift berhasil dibuka! Session: {$session->session_number}");
+                ->with('success', $successMsg);
 
         } catch (Exception $e) {
             return redirect()
