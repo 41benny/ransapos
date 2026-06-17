@@ -250,12 +250,14 @@
                             <th
                                 class="text-left px-2 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
                                 Produk</th>
-                            <th
-                                class="text-right px-2 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
-                                Qty</th>
-                            <th
-                                class="text-right px-2 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic">
-                                Omzet</th>
+                            <th data-sort-col="qty"
+                                class="text-right px-2 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic cursor-pointer select-none hover:text-indigo-600 transition-colors"
+                                title="Klik untuk urutkan">
+                                Qty <span id="sortIconQty" class="ml-0.5 opacity-40">↕</span></th>
+                            <th data-sort-col="amount"
+                                class="text-right px-2 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest not-italic cursor-pointer select-none hover:text-indigo-600 transition-colors pr-2"
+                                title="Klik untuk urutkan">
+                                Omzet <span id="sortIconAmount" class="ml-0.5 opacity-100 text-indigo-500">↓</span></th>
                         </tr>
                     </thead>
                     <tbody id="productRows" class="divide-y divide-slate-100"></tbody>
@@ -1126,15 +1128,52 @@
                 }
             }
 
+            let latestTopProducts = [];
+            let topProductSortCol = 'amount';   // 'amount' | 'qty'
+            let topProductSortDir = 'desc';      // 'asc' | 'desc'
+
+            function updateSortIcons() {
+                const iconQty    = document.getElementById('sortIconQty');
+                const iconAmount = document.getElementById('sortIconAmount');
+                if (!iconQty || !iconAmount) return;
+
+                iconQty.textContent    = topProductSortCol === 'qty'    ? (topProductSortDir === 'asc' ? '↑' : '↓') : '↕';
+                iconAmount.textContent = topProductSortCol === 'amount' ? (topProductSortDir === 'asc' ? '↑' : '↓') : '↕';
+
+                iconQty.className    = 'ml-0.5 ' + (topProductSortCol === 'qty'    ? 'opacity-100 text-indigo-500' : 'opacity-40');
+                iconAmount.className = 'ml-0.5 ' + (topProductSortCol === 'amount' ? 'opacity-100 text-indigo-500' : 'opacity-40');
+            }
+
+            document.querySelectorAll('[data-sort-col]').forEach(function (th) {
+                th.addEventListener('click', function () {
+                    const col = th.dataset.sortCol;
+                    if (topProductSortCol === col) {
+                        topProductSortDir = topProductSortDir === 'desc' ? 'asc' : 'desc';
+                    } else {
+                        topProductSortCol = col;
+                        topProductSortDir = 'desc';
+                    }
+                    updateSortIcons();
+                    renderTopProducts(latestTopProducts);
+                });
+            });
+
             function renderTopProducts(rows) {
+                latestTopProducts = Array.isArray(rows) ? rows : [];
                 productRowsEl.innerHTML = '';
-                if (!rows || rows.length === 0) {
+                if (!latestTopProducts.length) {
                     productEmptyEl.classList.remove('hidden');
                     return;
                 }
 
+                const sorted = [...latestTopProducts].sort(function (a, b) {
+                    const va = Number(a[topProductSortCol] || 0);
+                    const vb = Number(b[topProductSortCol] || 0);
+                    return topProductSortDir === 'asc' ? va - vb : vb - va;
+                });
+
                 productEmptyEl.classList.add('hidden');
-                for (const row of rows) {
+                for (const row of sorted) {
                     const rank = productRowsEl.children.length + 1;
                     let trendBadge = '';
                     let movementClass = '';
