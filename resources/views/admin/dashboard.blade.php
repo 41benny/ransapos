@@ -240,7 +240,7 @@
                 </div>
             </div>
 
-            <div class="overflow-x-hidden max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+            <div class="overflow-x-hidden max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
                 <table class="w-full text-sm italic">
                     <thead class="bg-slate-50/50 sticky top-0 z-10">
                         <tr>

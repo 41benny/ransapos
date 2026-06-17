@@ -165,7 +165,6 @@ class DashboardController extends Controller
                 ->orderByDesc('amount')
                 ->orderByDesc('qty')
                 ->orderBy('sale_items.product_id')
-                ->limit(10)
                 ->get()
                 ->map(fn($row) => [
                     'product_id' => (int) $row->product_id,
