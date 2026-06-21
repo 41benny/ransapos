@@ -280,6 +280,8 @@ class PackagingService
             'rejected_at' => null,
         ]);
 
+        $this->resyncClosingSnapshot($adjustment);
+
         return $adjustment;
     }
 
@@ -300,6 +302,46 @@ class PackagingService
             'approved_at' => null,
         ]);
 
+        $this->resyncClosingSnapshot($adjustment);
+
         return $adjustment;
+    }
+
+    /**
+     * Setelah adjustment diapprove/reject, snapshot closing yang sudah tersimpan
+     * (dibuat saat shift ditutup, ketika adjustment ini masih pending) jadi basi.
+     * Hitung ulang baris closing terkait kalau shift-nya sudah closed.
+     */
+    private function resyncClosingSnapshot(PackagingAdjustment $adjustment): void
+    {
+        $session = $adjustment->cashSession;
+
+        if (! $session || $session->status !== 'closed') {
+            return;
+        }
+
+        $closing = CashSessionPackagingClosing::where('cash_session_id', $session->id)
+            ->where('packaging_item_id', $adjustment->packaging_item_id)
+            ->first();
+
+        if (! $closing) {
+            return;
+        }
+
+        $totals = $this->adjustmentTotals($session)[$adjustment->packaging_item_id]
+            ?? ['approved_in' => 0, 'approved_out' => 0, 'pending_in' => 0, 'pending_out' => 0];
+
+        $available = (float) $closing->opening_qty + $totals['approved_in'] - $totals['approved_out'];
+        $actualUsed = $available - (float) $closing->closing_physical_qty;
+        $difference = $actualUsed - (float) $closing->estimated_sales_used_qty;
+
+        $closing->update([
+            'approved_adjustment_in_qty' => $totals['approved_in'],
+            'approved_adjustment_out_qty' => $totals['approved_out'],
+            'pending_adjustment_in_qty' => $totals['pending_in'],
+            'pending_adjustment_out_qty' => $totals['pending_out'],
+            'actual_used_qty' => $actualUsed,
+            'difference_qty' => $difference,
+        ]);
     }
 }
