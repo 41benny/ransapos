@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
             <table class="ui-table min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
