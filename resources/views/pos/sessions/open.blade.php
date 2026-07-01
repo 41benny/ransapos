@@ -161,7 +161,17 @@
     </div>
 </div>
 
-@endsection
+<script>
+document.querySelector('form[action="{{ route('pos.sessions.store') }}"]')?.addEventListener('submit', function () {
+    const button = this.querySelector('button[type="submit"]');
+    if (!button || button.disabled) return;
 
+    button.disabled = true;
+    button.classList.add('opacity-60', 'cursor-not-allowed');
+    button.textContent = 'Membuka Shift...';
+});
+</script>
+
+@endsection
 
 

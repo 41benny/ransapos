@@ -30,6 +30,21 @@ class CashSessionService
         try {
             // Get user (auth atau default untuk testing)
             $userId = $user ? $user->id : (auth()->id() ?? 2);
+
+            // Serialize requests for the same cashier. The request-level validator
+            // runs before this transaction, so two near-simultaneous submissions
+            // can both pass it. Locking the user row and checking again here keeps
+            // the invariant that a cashier can only have one open session.
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+
+            $existingSession = CashSession::where('user_id', $userId)
+                ->where('status', 'open')
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingSession) {
+                throw new Exception('Anda sudah memiliki shift yang aktif. Tutup shift terlebih dahulu.');
+            }
             
             // Generate session number
             $sessionNumber = $this->generateSessionNumber($data['outlet_id']);
