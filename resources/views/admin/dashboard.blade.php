@@ -144,7 +144,7 @@
                     <i class="fas fa-sack-dollar text-lg"></i>
                 </div>
                 <div class="text-right">
-                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Laba Kotor</span>
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Laba Owner</span>
                     <span id="kpiProfitPct" class="text-xs font-black text-emerald-500">-</span>
                 </div>
             </div>
@@ -154,6 +154,7 @@
                     <span>vs Prev Period:</span>
                     <span id="trendProfit" class="text-slate-600">-</span>
                 </div>
+                <div id="kpiMerchandiseShare" class="text-[10px] font-bold text-slate-400">Komisi GoFood/GrabFood/ShopeeFood 20%: -</div>
             </div>
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-600 transition-all duration-500 group-hover:w-full">
             </div>
@@ -1323,7 +1324,9 @@
 
                 const grossProfit = Number(data?.kpis?.gross_profit || 0);
                 const grossMarginPct = data?.kpis?.gross_margin_pct ?? null;
+                const merchandiseShare = Number(data?.kpis?.merchandise_share || 0);
                 kpiGrossProfitEl.textContent = idr.format(grossProfit);
+                document.getElementById('kpiMerchandiseShare').textContent = `Komisi GoFood/GrabFood/ShopeeFood 20%: ${idr.format(merchandiseShare)}`;
                 kpiProfitPctEl.textContent = grossMarginPct === null ? '-' : `${Number(grossMarginPct).toFixed(1)}%`;
                 kpiProfitPctEl.classList.toggle('text-emerald-500', grossProfit >= 0);
                 kpiProfitPctEl.classList.toggle('text-rose-500', grossProfit < 0);

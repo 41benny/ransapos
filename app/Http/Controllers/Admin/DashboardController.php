@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Support\MerchantCommission;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -101,9 +102,10 @@ class DashboardController extends Controller
             : null;
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
-        $cacheKey = 'admin.dashboard.summary:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $onlineSalesTypes = MerchantCommission::SALES_TYPES;
+        $cacheKey = 'admin.dashboard.summary.v3:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $onlineSalesTypes) {
             $salesBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'completed')
@@ -126,7 +128,12 @@ class DashboardController extends Controller
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->sum('sale_items.cogs');
 
-            $grossProfit = $totalSales - $totalCogs;
+            $onlineSales = empty($onlineSalesTypes)
+                ? 0.0
+                : (float) (clone $salesBase)->whereIn('sales_type', $onlineSalesTypes)->sum('total_amount');
+            $merchandiseShare = $onlineSales * MerchantCommission::RATE;
+            $grossProfitBeforeMerchandise = $totalSales - $totalCogs;
+            $grossProfit = $grossProfitBeforeMerchandise - $merchandiseShare;
             $grossMarginPct = $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null;
 
             $cancelledBase = Sale::query()
@@ -418,6 +425,10 @@ class DashboardController extends Controller
                     'avg_transaction' => $avgTransaction,
                     'discount_total' => $discountTotal,
                     'total_cogs' => $totalCogs,
+                    'online_sales' => $onlineSales,
+                    'merchandise_rate' => MerchantCommission::RATE,
+                    'merchandise_share' => $merchandiseShare,
+                    'gross_profit_before_merchandise' => $grossProfitBeforeMerchandise,
                     'gross_profit' => $grossProfit,
                     'gross_margin_pct' => $grossMarginPct,
                     'cancelled_transactions' => $cancelledTransactions,
@@ -440,8 +451,8 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
-        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds) {
+        $prevCacheKey = 'admin.dashboard.summary.prev.v3:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds, $onlineSalesTypes) {
             $base = Sale::query()
                 ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
                 ->where('status', 'completed')
@@ -459,7 +470,11 @@ class DashboardController extends Controller
                 ->sum('sale_items.cogs');
 
             $totalSales = (float) ($kpis->total_sales ?? 0);
-            $grossProfit = $totalSales - $totalCogs;
+            $onlineSales = empty($onlineSalesTypes)
+                ? 0.0
+                : (float) (clone $base)->whereIn('sales_type', $onlineSalesTypes)->sum('total_amount');
+            $merchandiseShare = $onlineSales * MerchantCommission::RATE;
+            $grossProfit = $totalSales - $totalCogs - $merchandiseShare;
 
             return [
                 'date_from' => $prevDateFrom,
@@ -467,6 +482,8 @@ class DashboardController extends Controller
                 'total_sales' => $totalSales,
                 'total_transactions' => (int) ($kpis->total_transactions ?? 0),
                 'total_cogs' => $totalCogs,
+                'online_sales' => $onlineSales,
+                'merchandise_share' => $merchandiseShare,
                 'gross_profit' => $grossProfit,
                 'gross_margin_pct' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null,
             ];
@@ -483,6 +500,8 @@ class DashboardController extends Controller
             'prev_total_sales' => $prevPayload['total_sales'],
             'prev_total_transactions' => $prevPayload['total_transactions'],
             'prev_total_cogs' => $prevPayload['total_cogs'],
+            'prev_online_sales' => $prevPayload['online_sales'],
+            'prev_merchandise_share' => $prevPayload['merchandise_share'],
             'prev_gross_profit' => $prevPayload['gross_profit'],
             'prev_gross_margin_pct' => $prevPayload['gross_margin_pct'],
             'delta_total_sales' => $deltaSales,

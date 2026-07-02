@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\StockMutation;
 use App\Models\CashTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Support\MerchantCommission;
 
 class ProfitLossReportService
 {
@@ -31,7 +32,11 @@ class ProfitLossReportService
             $revenueQuery->whereIn('outlet_id', $outletIds);
         }
         
-        $totalRevenue = $revenueQuery->sum('total_amount');
+        $totalRevenue = (float) (clone $revenueQuery)->sum('total_amount');
+        $merchantSales = (float) (clone $revenueQuery)
+            ->whereIn('sales_type', MerchantCommission::SALES_TYPES)
+            ->sum('total_amount');
+        $merchantCommission = $merchantSales * MerchantCommission::RATE;
 
         // 2. HPP / COGS (Cost of Goods Sold from Stock Mutations)
         // out = HPP penjualan, in (sale_cancellation) = reversal HPP
@@ -48,7 +53,8 @@ class ProfitLossReportService
             ->value('total_cogs');
 
         // 3. LABA KOTOR (Gross Profit)
-        $grossProfit = $totalRevenue - $totalCogs;
+        $grossProfitBeforeMerchant = $totalRevenue - $totalCogs;
+        $grossProfit = $grossProfitBeforeMerchant - $merchantCommission;
 
         // 4. BIAYA OPERASIONAL (Operating Expenses by COA)
         // Exclude HPP agar tidak double-count dengan totalCogs.
@@ -162,12 +168,16 @@ class ProfitLossReportService
             
             // Revenue
             'total_revenue' => $totalRevenue,
+            'merchant_sales' => $merchantSales,
+            'merchant_commission_rate' => MerchantCommission::RATE,
+            'merchant_commission' => $merchantCommission,
             
             // COGS
             'total_cogs' => $totalCogs,
             
             // Gross Profit
             'gross_profit' => $grossProfit,
+            'gross_profit_before_merchant' => $grossProfitBeforeMerchant,
             'gross_profit_margin' => $totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0,
             
             // Operating Expenses
@@ -265,6 +275,15 @@ class ProfitLossReportService
             ->groupBy('outlet_id')
             ->pluck('total_revenue', 'outlet_id');
 
+        $merchantSalesByOutlet = Sale::query()
+            ->where('status', 'completed')
+            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereIn('outlet_id', $outletIds)
+            ->whereIn('sales_type', MerchantCommission::SALES_TYPES)
+            ->select('outlet_id', DB::raw('SUM(total_amount) as merchant_sales'))
+            ->groupBy('outlet_id')
+            ->pluck('merchant_sales', 'outlet_id');
+
         $cogsByOutlet = StockMutation::query()
             ->whereIn('reference_type', ['sale', 'sale_cancellation'])
             ->whereBetween('mutation_date', [$dateFrom, $dateTo])
@@ -277,16 +296,20 @@ class ProfitLossReportService
             ->pluck('total_cogs', 'outlet_id');
 
         $comparisonRows = collect($outletIds)
-            ->map(function (int $outletId) use ($outlets, $revenueByOutlet, $cogsByOutlet) {
+            ->map(function (int $outletId) use ($outlets, $revenueByOutlet, $merchantSalesByOutlet, $cogsByOutlet) {
                 $revenue = (float) ($revenueByOutlet[$outletId] ?? 0);
                 $cogs = (float) ($cogsByOutlet[$outletId] ?? 0);
-                $grossProfit = $revenue - $cogs;
+                $merchantSales = (float) ($merchantSalesByOutlet[$outletId] ?? 0);
+                $merchantCommission = $merchantSales * MerchantCommission::RATE;
+                $grossProfit = $revenue - $cogs - $merchantCommission;
 
                 return [
                     'id' => $outletId,
                     'name' => $outlets[$outletId]->name ?? ('Outlet #' . $outletId),
                     'revenue' => $revenue,
                     'cogs' => $cogs,
+                    'merchant_sales' => $merchantSales,
+                    'merchant_commission' => $merchantCommission,
                     'gross_profit' => $grossProfit,
                     'gross_margin' => $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0.0,
                 ];

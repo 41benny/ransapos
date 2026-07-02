@@ -210,6 +210,7 @@
                 <h3 class="text-2xl font-black text-emerald-500 mt-2 tracking-tight">
                     Rp {{ number_format($report['gross_profit'], 0, ',', '.') }}
                 </h3>
+                <p class="mt-1 text-[10px] font-bold text-slate-400">Sudah dikurangi komisi GoFood/GrabFood/ShopeeFood 20%: Rp {{ number_format($report['merchant_commission'] ?? 0, 0, ',', '.') }}</p>
                 <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <i class="fas fa-chart-line text-5xl text-emerald-500"></i>
                 </div>
@@ -291,6 +292,17 @@
                                             Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}
                                         </a>
                                     </td>
+                                </tr>
+
+                                <tr class="group hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-chevron-down text-[8px] text-slate-300"></i>
+                                            <span class="text-sm font-bold text-slate-800">Komisi Merchant 20% (GoFood, GrabFood, ShopeeFood)</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center"><span class="text-[10px] font-bold text-slate-400 tracking-widest">MERCHANT</span></td>
+                                    <td class="px-6 py-4 text-right"><span class="text-sm font-bold text-rose-500">Rp {{ number_format($report['merchant_commission'] ?? 0, 0, ',', '.') }}</span></td>
                                 </tr>
 
                                 {{-- GROSS PROFIT --}}

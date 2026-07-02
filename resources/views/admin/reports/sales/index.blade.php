@@ -173,14 +173,14 @@
             <!-- Total Omzet Card -->
             <div class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md border-l-4 border-l-emerald-500">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Total Omzet</span>
+                    <span class="text-[9px] font-normal uppercase tracking-[0.2em] text-emerald-500">Penjualan Bersih Owner</span>
                     <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
                         <i class="fas fa-money-bill-wave text-xs"></i>
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}</h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Penjualan Kotor</p>
+                    <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['net_owner_sales'] ?? $summary['total_amount'], 0, ',', '.') }}</h3>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Kotor Rp {{ number_format($summary['total_amount'], 0, ',', '.') }} − komisi merchant Rp {{ number_format($summary['merchant_commission'] ?? 0, 0, ',', '.') }}</p>
                 </div>
             </div>
 
@@ -419,7 +419,7 @@
                                     TOTAL ({{ $summary['total_transactions'] }} transaksi):
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm font-normal text-indigo-700">
-                                    Rp {{ number_format($summary['total_amount'], 0, ',', '.') }}
+                                    Rp {{ number_format($summary['net_owner_sales'] ?? $summary['total_amount'], 0, ',', '.') }}
                                 </td>
                             </tr>
                         </tfoot>
