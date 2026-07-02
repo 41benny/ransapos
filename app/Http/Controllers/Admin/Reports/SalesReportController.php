@@ -1116,7 +1116,7 @@ class SalesReportController extends Controller
             ->selectRaw('COALESCE(SUM(sales.total_amount - COALESCE(sales.rounding_amount, 0)), 0) as total_before_rounding')
             ->selectRaw('COALESCE(SUM(sales.rounding_amount), 0) as total_rounding')
             ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
-            ->selectRaw("COALESCE(SUM(CASE WHEN LOWER(sales.sales_type) IN ('gofood','grabfood','shopeefood') THEN sales.total_amount * 0.20 ELSE 0 END), 0) as merchant_commission")
+            ->selectRaw("COALESCE(SUM(CASE WHEN UPPER(sales.sales_type) IN ('GO_FOOD','GRAB_FOOD','SHOPEE_FOOD') THEN sales.total_amount * 0.20 ELSE 0 END), 0) as merchant_commission")
             ->selectRaw('COALESCE(AVG(sales.total_amount), 0) as avg_per_transaction')
             ->first();
 

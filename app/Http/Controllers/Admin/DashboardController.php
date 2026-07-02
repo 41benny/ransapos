@@ -103,7 +103,7 @@ class DashboardController extends Controller
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
         $onlineSalesTypes = MerchantCommission::SALES_TYPES;
-        $cacheKey = 'admin.dashboard.summary.v3:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v4:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
         $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $onlineSalesTypes) {
             $salesBase = Sale::query()
@@ -451,7 +451,7 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev.v3:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevCacheKey = 'admin.dashboard.summary.prev.v4:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
         $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds, $onlineSalesTypes) {
             $base = Sale::query()
                 ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
