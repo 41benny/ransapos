@@ -3476,6 +3476,9 @@
                         <div class="mt-1 text-xs font-normal text-slate-500">Margin:
                             {{ number_format($summary['gross_margin_percent'] ?? 0, 2) }}%
                         </div>
+                        <div class="mt-1 text-xs font-normal text-slate-500">Komisi merchant 20%: Rp
+                            {{ number_format($summary['merchant_commission'] ?? 0, 0, ',', '.') }}
+                        </div>
                     </div>
                 </div>
 
@@ -3492,6 +3495,7 @@
                                     <th class="px-4 py-3 text-right whitespace-nowrap">{{ $method->name }}</th>
                                 @endforeach
                                 <th class="px-4 py-3 text-right">Total</th>
+                                <th class="px-4 py-3 text-right">Komisi Merchant</th>
                                 <th class="px-4 py-3 text-right">Hpp</th>
                                 <th class="px-4 py-3 text-right">Laba Kotor</th>
                                 <th class="px-4 py-3 text-right">Margin</th>
@@ -3525,6 +3529,7 @@
                                 <td class="px-1 py-1">
                                     <input type="text" data-name="filter_amount" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                                 </td>
+                                <td class="px-1 py-1"><div class="h-8 rounded-lg bg-slate-50 border border-slate-100"></div></td>
                                 <td class="px-1 py-1">
                                     <input type="text" data-name="filter_hpp" data-report-table-filter-input placeholder="Cari..." class="ui-input filter-input w-full px-2 py-1.5 text-[11px] font-normal text-right bg-slate-50 border border-slate-100 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                                 </td>
@@ -3569,6 +3574,9 @@
                                     <td class="px-4 py-3 text-right font-normal text-slate-900">Rp
                                         {{ number_format($row->total_amount, 0, ',', '.') }}
                                     </td>
+                                    <td class="px-4 py-3 text-right font-normal text-amber-700">
+                                        {{ ($row->merchant_commission ?? 0) > 0 ? 'Rp ' . number_format($row->merchant_commission, 0, ',', '.') : '-' }}
+                                    </td>
                                     <td class="px-4 py-3 text-right font-normal text-rose-700">Rp
                                         {{ number_format($row->hpp_amount, 0, ',', '.') }}
                                     </td>
@@ -3583,7 +3591,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ 9 + count($summary['payment_methods'] ?? []) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk
+                                    <td colspan="{{ 10 + count($summary['payment_methods'] ?? []) }}" class="px-4 py-8 text-center text-slate-500">Belum ada data penjualan untuk
                                         filter yang dipilih.</td>
                                 </tr>
                             @endforelse

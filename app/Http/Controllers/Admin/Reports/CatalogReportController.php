@@ -8,6 +8,7 @@ use App\Models\Outlet;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\ReportExport;
+use App\Support\MerchantCommission;
 use App\Support\SpecialPromotion;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
@@ -914,6 +915,11 @@ class CatalogReportController extends Controller
                 ->first();
 
             $totalSales = (float) (clone $salesBaseQuery)->sum('sales.total_amount');
+            $merchantSales = (float) (clone $salesBaseQuery)
+                ->whereIn('sales.sales_type', MerchantCommission::SALES_TYPES)
+                ->whereDate('sales.sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
+                ->sum('sales.total_amount');
+            $merchantCommission = $merchantSales * MerchantCommission::RATE;
             $lineTotalExpr = $this->salesVsHppLineTotalSql();
 
             $rowsQuery = (clone $salesItemBase)
@@ -922,6 +928,7 @@ class CatalogReportController extends Controller
                     'sales.id as sale_id',
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
+                    'sales.sales_type',
                     DB::raw($this->salesVsHppDisplayDateSql() . ' as sale_date_display'),
                     'sales.outlet_id',
                     'outlets.name as outlet_name',
@@ -963,13 +970,15 @@ class CatalogReportController extends Controller
                 : $this->transformSalesVsHppPaginator($rowsQuery->paginate(250)->withQueryString());
 
             $totalHpp = (float) ($itemTotals->total_hpp ?? 0);
-            $totalGrossProfit = $totalSales - $totalHpp;
+            $totalGrossProfit = $totalSales - $totalHpp - $merchantCommission;
 
             $summary = [
                 'total_items' => (int) ($itemTotals->total_items ?? 0),
                 'total_qty' => (float) ($itemTotals->total_qty ?? 0),
                 'total_sales' => $totalSales,
                 'total_hpp' => $totalHpp,
+                'merchant_sales' => $merchantSales,
+                'merchant_commission' => $merchantCommission,
                 'total_gross_profit' => $totalGrossProfit,
                 'gross_margin_percent' => $totalSales > 0 ? round(($totalGrossProfit / $totalSales) * 100, 2) : 0,
                 'payment_methods' => $salesVsHppPaymentMethods,
@@ -1996,10 +2005,10 @@ class CatalogReportController extends Controller
         foreach ($paymentMethods as $method) {
             $headings[] = (string) $method->name;
         }
-        array_push($headings, 'Total', 'HPP', 'Laba Kotor', 'Margin');
+        array_push($headings, 'Total', 'Komisi Merchant', 'HPP', 'Laba Kotor', 'Margin');
 
         $columnFormats = [];
-        $numericColumnCount = 1 + $paymentMethods->count() + 4;
+        $numericColumnCount = 1 + $paymentMethods->count() + 5;
         for ($index = 0; $index < $numericColumnCount; $index++) {
             $columnFormats[$this->excelColumnName(5 + $index)] = '#,##0.00';
         }
@@ -2014,7 +2023,8 @@ class CatalogReportController extends Controller
     private function applySalesVsHppTableFilters($rowsQuery, Request $request): void
     {
         $lineTotalExpr = $this->salesVsHppLineTotalSql();
-        $grossProfitExpr = '(' . $lineTotalExpr . ' - COALESCE(sale_items.cogs, 0))';
+        $merchantCommissionExpr = $this->salesVsHppMerchantCommissionSql($lineTotalExpr);
+        $grossProfitExpr = '(' . $lineTotalExpr . ' - ' . $merchantCommissionExpr . ' - COALESCE(sale_items.cogs, 0))';
         $marginExpr = "CASE WHEN {$lineTotalExpr} > 0 THEN ROUND(({$grossProfitExpr} / {$lineTotalExpr}) * 100, 2) ELSE 0 END";
 
         if ($request->filled('filter_transaksi')) {
@@ -2073,6 +2083,16 @@ class CatalogReportController extends Controller
         END";
     }
 
+    private function salesVsHppMerchantCommissionSql(string $lineTotalExpr): string
+    {
+        return "CASE
+            WHEN UPPER(sales.sales_type) IN ('GO_FOOD', 'GRAB_FOOD', 'SHOPEE_FOOD')
+                AND DATE(sales.sale_date) >= '" . MerchantCommission::EFFECTIVE_DATE . "'
+            THEN ({$lineTotalExpr}) * " . MerchantCommission::RATE . "
+            ELSE 0
+        END";
+    }
+
     private function salesVsHppDisplayDateSql(): string
     {
         return "CASE
@@ -2122,6 +2142,7 @@ class CatalogReportController extends Controller
             }
 
             $values[] = (float) ($row->total_amount ?? 0);
+            $values[] = (float) ($row->merchant_commission ?? 0);
             $values[] = (float) ($row->hpp_amount ?? 0);
             $values[] = (float) ($row->gross_profit ?? 0);
             $values[] = (float) ($row->margin_percent ?? 0);
@@ -2152,7 +2173,13 @@ class CatalogReportController extends Controller
         );
 
         $hppAmount = (float) ($row->hpp_amount ?? 0);
-        $grossProfit = $totalAmount - $hppAmount;
+        $saleDate = $row->sale_date_display ?? $row->sale_date ?? null;
+        $merchantCommission = MerchantCommission::amount(
+            $totalAmount,
+            $row->sales_type ?? null,
+            $saleDate,
+        );
+        $grossProfit = $totalAmount - $merchantCommission - $hppAmount;
 
         $row->total_amount = $totalAmount;
         foreach ((array) $row as $key => $value) {
@@ -2161,11 +2188,11 @@ class CatalogReportController extends Controller
             }
         }
         $row->gross_profit = $grossProfit;
+        $row->merchant_commission = $merchantCommission;
         $row->margin_percent = $totalAmount > 0
             ? round(($grossProfit / $totalAmount) * 100, 2)
             : 0.0;
-        $saleDate = $row->sale_date_display ?? $row->sale_date ?? now();
-        $row->sale_date = \Carbon\Carbon::parse($saleDate)->format('d/m/Y H:i');
+        $row->sale_date = \Carbon\Carbon::parse($saleDate ?? now())->format('d/m/Y H:i');
 
         return $row;
     }

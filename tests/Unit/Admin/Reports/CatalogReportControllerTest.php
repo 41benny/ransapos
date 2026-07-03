@@ -196,6 +196,32 @@ class CatalogReportControllerTest extends TestCase
         $this->assertSame(36.36, $transformed->margin_percent);
     }
 
+    public function test_transform_sales_vs_hpp_row_deducts_effective_merchant_commission(): void
+    {
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+
+        $row = (object) [
+            'item_subtotal' => 100000.0,
+            'sale_subtotal' => 100000.0,
+            'sale_total_amount' => 100000.0,
+            'sale_item_count' => 1,
+            'hpp_amount' => 30000.0,
+            'sales_type' => 'GO_FOOD',
+            'sale_date' => '2026-07-02 10:00:00',
+        ];
+
+        $method = new \ReflectionMethod($controller, 'transformSalesVsHppRow');
+        $method->setAccessible(true);
+        $transformed = $method->invoke($controller, $row);
+
+        $this->assertSame(20000.0, $transformed->merchant_commission);
+        $this->assertSame(50000.0, $transformed->gross_profit);
+        $this->assertSame(50.0, $transformed->margin_percent);
+    }
+
     public function test_resolve_catalog_outlet_ids_accepts_multi_select_for_sales_vs_hpp(): void
     {
         $controller = new CatalogReportController(
