@@ -105,7 +105,7 @@ class SalesReportController extends Controller
                 'total_before_rounding' => $sales->sum(fn ($sale) => (float) $sale->total_amount - (float) ($sale->rounding_amount ?? 0)),
                 'total_rounding' => $sales->sum('rounding_amount'),
                 'total_amount' => $sales->sum('total_amount'),
-                'merchant_commission' => $sales->sum(fn ($sale) => MerchantCommission::amount($sale->total_amount, $sale->sales_type)),
+                'merchant_commission' => $sales->sum(fn ($sale) => MerchantCommission::amount($sale->total_amount, $sale->sales_type, $sale->sale_date)),
                 'avg_per_transaction' => $sales->count() > 0 ? $sales->avg('total_amount') : 0,
                 'total_cash' => 0,
                 'total_non_cash' => 0,
@@ -466,8 +466,8 @@ class SalesReportController extends Controller
             $rows = $rows->map(fn ($row) => array_merge((array) $row, [
                 'tanggal' => \Carbon\Carbon::parse($row->tanggal)->format('d M Y H:i'),
                 'metode_penjualan' => str_replace('_', ' ', $row->metode_penjualan),
-                'komisi_merchant' => MerchantCommission::amount($row->total_item, $row->metode_penjualan),
-                'total_owner' => (float) $row->total_item - MerchantCommission::amount($row->total_item, $row->metode_penjualan),
+                'komisi_merchant' => MerchantCommission::amount($row->total_item, $row->metode_penjualan, $row->tanggal),
+                'total_owner' => (float) $row->total_item - MerchantCommission::amount($row->total_item, $row->metode_penjualan, $row->tanggal),
             ]))->all();
 
             $columns = [
@@ -526,8 +526,8 @@ class SalesReportController extends Controller
                     'kasir' => $sale->user?->name ?? '-',
                     'total' => (float) $sale->total_amount,
                     'metode_penjualan' => str_replace('_', ' ', (string) $sale->sales_type),
-                    'komisi_merchant' => MerchantCommission::amount($sale->total_amount, $sale->sales_type),
-                    'total_owner' => (float) $sale->total_amount - MerchantCommission::amount($sale->total_amount, $sale->sales_type),
+                    'komisi_merchant' => MerchantCommission::amount($sale->total_amount, $sale->sales_type, $sale->sale_date),
+                    'total_owner' => (float) $sale->total_amount - MerchantCommission::amount($sale->total_amount, $sale->sales_type, $sale->sale_date),
                     'metode_bayar' => $paymentMethods ?: '-',
                 ];
             })->all();
@@ -1116,7 +1116,7 @@ class SalesReportController extends Controller
             ->selectRaw('COALESCE(SUM(sales.total_amount - COALESCE(sales.rounding_amount, 0)), 0) as total_before_rounding')
             ->selectRaw('COALESCE(SUM(sales.rounding_amount), 0) as total_rounding')
             ->selectRaw('COALESCE(SUM(sales.total_amount), 0) as total_amount')
-            ->selectRaw("COALESCE(SUM(CASE WHEN UPPER(sales.sales_type) IN ('GO_FOOD','GRAB_FOOD','SHOPEE_FOOD') THEN sales.total_amount * 0.20 ELSE 0 END), 0) as merchant_commission")
+            ->selectRaw("COALESCE(SUM(CASE WHEN UPPER(sales.sales_type) IN ('GO_FOOD','GRAB_FOOD','SHOPEE_FOOD') AND DATE(sales.sale_date) >= '2026-07-01' THEN sales.total_amount * 0.20 ELSE 0 END), 0) as merchant_commission")
             ->selectRaw('COALESCE(AVG(sales.total_amount), 0) as avg_per_transaction')
             ->first();
 

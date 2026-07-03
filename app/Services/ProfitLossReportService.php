@@ -35,6 +35,7 @@ class ProfitLossReportService
         $totalRevenue = (float) (clone $revenueQuery)->sum('total_amount');
         $merchantSales = (float) (clone $revenueQuery)
             ->whereIn('sales_type', MerchantCommission::SALES_TYPES)
+            ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
             ->sum('total_amount');
         $merchantCommission = $merchantSales * MerchantCommission::RATE;
 
@@ -280,6 +281,7 @@ class ProfitLossReportService
             ->whereBetween('sale_date', [$dateFrom, $dateTo])
             ->whereIn('outlet_id', $outletIds)
             ->whereIn('sales_type', MerchantCommission::SALES_TYPES)
+            ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
             ->select('outlet_id', DB::raw('SUM(total_amount) as merchant_sales'))
             ->groupBy('outlet_id')
             ->pluck('merchant_sales', 'outlet_id');

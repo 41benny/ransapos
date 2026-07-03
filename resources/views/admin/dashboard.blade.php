@@ -154,7 +154,7 @@
                     <span>vs Prev Period:</span>
                     <span id="trendProfit" class="text-slate-600">-</span>
                 </div>
-                <div id="kpiMerchandiseShare" class="text-[10px] font-bold text-slate-400">Komisi GoFood/GrabFood/ShopeeFood 20%: -</div>
+                <div id="kpiMerchandiseShare" class="text-[10px] font-bold text-slate-400">Komisi merchant 20% (mulai 1 Jul 2026): -</div>
             </div>
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-600 transition-all duration-500 group-hover:w-full">
             </div>
@@ -1326,7 +1326,7 @@
                 const grossMarginPct = data?.kpis?.gross_margin_pct ?? null;
                 const merchandiseShare = Number(data?.kpis?.merchandise_share || 0);
                 kpiGrossProfitEl.textContent = idr.format(grossProfit);
-                document.getElementById('kpiMerchandiseShare').textContent = `Komisi GoFood/GrabFood/ShopeeFood 20%: ${idr.format(merchandiseShare)}`;
+                document.getElementById('kpiMerchandiseShare').textContent = `Komisi merchant 20% (mulai 1 Jul 2026): ${idr.format(merchandiseShare)}`;
                 kpiProfitPctEl.textContent = grossMarginPct === null ? '-' : `${Number(grossMarginPct).toFixed(1)}%`;
                 kpiProfitPctEl.classList.toggle('text-emerald-500', grossProfit >= 0);
                 kpiProfitPctEl.classList.toggle('text-rose-500', grossProfit < 0);

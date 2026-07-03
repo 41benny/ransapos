@@ -103,7 +103,7 @@ class DashboardController extends Controller
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
         $onlineSalesTypes = MerchantCommission::SALES_TYPES;
-        $cacheKey = 'admin.dashboard.summary.v4:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v5:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
         $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $onlineSalesTypes) {
             $salesBase = Sale::query()
@@ -130,7 +130,10 @@ class DashboardController extends Controller
 
             $onlineSales = empty($onlineSalesTypes)
                 ? 0.0
-                : (float) (clone $salesBase)->whereIn('sales_type', $onlineSalesTypes)->sum('total_amount');
+                : (float) (clone $salesBase)
+                    ->whereIn('sales_type', $onlineSalesTypes)
+                    ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
+                    ->sum('total_amount');
             $merchandiseShare = $onlineSales * MerchantCommission::RATE;
             $grossProfitBeforeMerchandise = $totalSales - $totalCogs;
             $grossProfit = $grossProfitBeforeMerchandise - $merchandiseShare;
@@ -451,7 +454,7 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev.v4:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevCacheKey = 'admin.dashboard.summary.prev.v5:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
         $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds, $onlineSalesTypes) {
             $base = Sale::query()
                 ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
@@ -472,7 +475,10 @@ class DashboardController extends Controller
             $totalSales = (float) ($kpis->total_sales ?? 0);
             $onlineSales = empty($onlineSalesTypes)
                 ? 0.0
-                : (float) (clone $base)->whereIn('sales_type', $onlineSalesTypes)->sum('total_amount');
+                : (float) (clone $base)
+                    ->whereIn('sales_type', $onlineSalesTypes)
+                    ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
+                    ->sum('total_amount');
             $merchandiseShare = $onlineSales * MerchantCommission::RATE;
             $grossProfit = $totalSales - $totalCogs - $merchandiseShare;
 

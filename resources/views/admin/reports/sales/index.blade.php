@@ -180,7 +180,7 @@
                 </div>
                 <div class="flex flex-col">
                     <h3 class="text-xl font-normal text-slate-800">Rp {{ number_format($summary['net_owner_sales'] ?? $summary['total_amount'], 0, ',', '.') }}</h3>
-                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Kotor Rp {{ number_format($summary['total_amount'], 0, ',', '.') }} − komisi merchant Rp {{ number_format($summary['merchant_commission'] ?? 0, 0, ',', '.') }}</p>
+                    <p class="text-[10px] font-normal text-slate-400 mt-0.5">Kotor Rp {{ number_format($summary['total_amount'], 0, ',', '.') }} − komisi merchant sejak 1 Jul 2026 Rp {{ number_format($summary['merchant_commission'] ?? 0, 0, ',', '.') }}</p>
                 </div>
             </div>
 
