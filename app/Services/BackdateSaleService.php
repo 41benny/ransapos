@@ -12,6 +12,7 @@ use App\Models\SaleItem;
 use App\Models\SalesType;
 use App\Models\User;
 use App\Support\SpecialPromotion;
+use App\Support\MerchantCommission;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +86,7 @@ class BackdateSaleService
             'customer_id' => $payload['customer_id'] ?? null,
             'customer_name' => $payload['customer_name'] ?? null,
             'notes' => $payload['notes'] ?? null,
-            'sales_type' => $this->resolveSalesType($payload['sales_type'] ?? 'regular'),
+            'sales_type' => $this->resolveBackdateSalesType($payload),
             'discount_type' => $payload['discount_type'] ?? 'none',
             'discount_value' => (float) ($payload['discount_value'] ?? 0),
             'items' => $items,
@@ -158,7 +159,7 @@ class BackdateSaleService
                 'user_id' => $user->id,
                 'customer_id' => $payload['customer_id'] ?? null,
                 'sale_date' => $saleDate,
-                'sales_type' => $this->resolveSalesType($payload['sales_type'] ?? 'regular'),
+                'sales_type' => $this->resolveBackdateSalesType($payload),
                 'subtotal' => $summary['subtotal'],
                 'discount_type' => $payload['discount_type'] ?? 'none',
                 'discount_value' => (float) ($payload['discount_value'] ?? 0),
@@ -297,6 +298,17 @@ class BackdateSaleService
         }
 
         return $salesType;
+    }
+
+    private function resolveBackdateSalesType(array $payload): string
+    {
+        $paymentMethod = PaymentMethod::query()->find((int) ($payload['payment_method_id'] ?? 0));
+        $merchantSalesType = MerchantCommission::salesTypeForPaymentMethod(
+            $paymentMethod?->code,
+            $paymentMethod?->name,
+        );
+
+        return $merchantSalesType ?? $this->resolveSalesType($payload['sales_type'] ?? 'regular');
     }
 
     private function calculateSummary(array $payload, array $items): array

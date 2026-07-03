@@ -102,10 +102,9 @@ class DashboardController extends Controller
             : null;
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
-        $onlineSalesTypes = MerchantCommission::SALES_TYPES;
-        $cacheKey = 'admin.dashboard.summary.v5:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v6:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $onlineSalesTypes) {
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
             $salesBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'completed')
@@ -128,12 +127,9 @@ class DashboardController extends Controller
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->sum('sale_items.cogs');
 
-            $onlineSales = empty($onlineSalesTypes)
-                ? 0.0
-                : (float) (clone $salesBase)
-                    ->whereIn('sales_type', $onlineSalesTypes)
-                    ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
-                    ->sum('total_amount');
+            $merchantSalesQuery = clone $salesBase;
+            MerchantCommission::constrainSalesQuery($merchantSalesQuery);
+            $onlineSales = (float) $merchantSalesQuery->sum('total_amount');
             $merchandiseShare = $onlineSales * MerchantCommission::RATE;
             $grossProfitBeforeMerchandise = $totalSales - $totalCogs;
             $grossProfit = $grossProfitBeforeMerchandise - $merchandiseShare;
@@ -454,8 +450,8 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev.v5:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
-        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds, $onlineSalesTypes) {
+        $prevCacheKey = 'admin.dashboard.summary.prev.v6:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds) {
             $base = Sale::query()
                 ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
                 ->where('status', 'completed')
@@ -473,12 +469,9 @@ class DashboardController extends Controller
                 ->sum('sale_items.cogs');
 
             $totalSales = (float) ($kpis->total_sales ?? 0);
-            $onlineSales = empty($onlineSalesTypes)
-                ? 0.0
-                : (float) (clone $base)
-                    ->whereIn('sales_type', $onlineSalesTypes)
-                    ->whereDate('sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
-                    ->sum('total_amount');
+            $merchantSalesQuery = clone $base;
+            MerchantCommission::constrainSalesQuery($merchantSalesQuery);
+            $onlineSales = (float) $merchantSalesQuery->sum('total_amount');
             $merchandiseShare = $onlineSales * MerchantCommission::RATE;
             $grossProfit = $totalSales - $totalCogs - $merchandiseShare;
 

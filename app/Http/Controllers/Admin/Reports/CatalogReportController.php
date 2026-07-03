@@ -915,10 +915,9 @@ class CatalogReportController extends Controller
                 ->first();
 
             $totalSales = (float) (clone $salesBaseQuery)->sum('sales.total_amount');
-            $merchantSales = (float) (clone $salesBaseQuery)
-                ->whereIn('sales.sales_type', MerchantCommission::SALES_TYPES)
-                ->whereDate('sales.sale_date', '>=', MerchantCommission::EFFECTIVE_DATE)
-                ->sum('sales.total_amount');
+            $merchantSalesQuery = clone $salesBaseQuery;
+            MerchantCommission::constrainSalesQuery($merchantSalesQuery);
+            $merchantSales = (float) $merchantSalesQuery->sum('sales.total_amount');
             $merchantCommission = $merchantSales * MerchantCommission::RATE;
             $lineTotalExpr = $this->salesVsHppLineTotalSql();
 
@@ -929,6 +928,7 @@ class CatalogReportController extends Controller
                     'sales.invoice_number as transaction_number',
                     'sales.sale_date',
                     'sales.sales_type',
+                    DB::raw('CASE WHEN ' . MerchantCommission::paymentExistsSql('sales.id') . ' THEN 1 ELSE 0 END as is_merchant_payment'),
                     DB::raw($this->salesVsHppDisplayDateSql() . ' as sale_date_display'),
                     'sales.outlet_id',
                     'outlets.name as outlet_name',
@@ -2086,7 +2086,8 @@ class CatalogReportController extends Controller
     private function salesVsHppMerchantCommissionSql(string $lineTotalExpr): string
     {
         return "CASE
-            WHEN UPPER(sales.sales_type) IN ('GO_FOOD', 'GRAB_FOOD', 'SHOPEE_FOOD')
+            WHEN (UPPER(sales.sales_type) IN ('GO_FOOD', 'GRAB_FOOD', 'SHOPEE_FOOD')
+                OR " . MerchantCommission::paymentExistsSql('sales.id') . ")
                 AND DATE(sales.sale_date) >= '" . MerchantCommission::EFFECTIVE_DATE . "'
             THEN ({$lineTotalExpr}) * " . MerchantCommission::RATE . "
             ELSE 0
@@ -2176,7 +2177,7 @@ class CatalogReportController extends Controller
         $saleDate = $row->sale_date_display ?? $row->sale_date ?? null;
         $merchantCommission = MerchantCommission::amount(
             $totalAmount,
-            $row->sales_type ?? null,
+            ($row->is_merchant_payment ?? false) ? 'GO_FOOD' : ($row->sales_type ?? null),
             $saleDate,
         );
         $grossProfit = $totalAmount - $merchantCommission - $hppAmount;
