@@ -706,6 +706,7 @@ class SaleController extends Controller
             ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
             ->where('sales.outlet_id', $outletId)
             ->where('sales.user_id', $user->id)
+            ->where('sales.status', 'completed')
             ->whereNotNull('sales.cash_session_id')
             ->whereExists(function ($query) {
                 $query->selectRaw('1')

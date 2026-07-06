@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\CashSession;
 use App\Models\Outlet;
+use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Sale;
@@ -75,6 +77,51 @@ class PosReportResilienceTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($sale->invoice_number);
+    }
+
+    public function test_pos_sales_history_payment_breakdown_excludes_cancelled_sales(): void
+    {
+        $method = PaymentMethod::query()->firstOrCreate(
+            ['code' => 'SHOPEE_FOOD'],
+            ['name' => 'Shopee-Food', 'is_active' => true],
+        );
+
+        $completedSale = $this->createCompletedSaleWithoutPayments();
+        Payment::create([
+            'sale_id' => $completedSale->id,
+            'payment_method_id' => $method->id,
+            'amount' => 362800,
+        ]);
+
+        $cancelledSale = Sale::create([
+            'invoice_number' => 'INV-POS-CANCELLED-0001',
+            'outlet_id' => $this->outlet->id,
+            'cash_session_id' => $this->session->id,
+            'user_id' => $this->user->id,
+            'sale_date' => now()->toDateString(),
+            'sales_type' => 'SHOPEE_FOOD',
+            'subtotal' => 91400,
+            'discount_amount' => 0,
+            'tax_amount' => 0,
+            'total_amount' => 91400,
+            'status' => 'cancelled',
+        ]);
+        Payment::create([
+            'sale_id' => $cancelledSale->id,
+            'payment_method_id' => $method->id,
+            'amount' => 91400,
+        ]);
+
+        $response = $this->get(route('pos.sales.history'));
+
+        $response->assertOk();
+        $response->assertViewHas('paymentBreakdown', function ($rows) {
+            $shopee = $rows->firstWhere('method_name', 'Shopee-Food');
+
+            return $shopee !== null
+                && (float) $shopee->total_amount === 362800.0
+                && (int) $shopee->payment_count === 1;
+        });
     }
 
     public function test_pos_sales_print_handles_sales_without_payments(): void
