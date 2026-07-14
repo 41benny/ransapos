@@ -9,6 +9,7 @@ use App\Models\Outlet;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SalesType;
 use App\Services\BackdateSaleService;
 use Carbon\Carbon;
 use Exception;
@@ -184,11 +185,30 @@ class BackdateSaleController extends Controller
 
     private function formData(): array
     {
+        $salesTypes = $this->backdateSaleService->salesTypeOptions();
+        $paymentMethods = PaymentMethod::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']);
+
+        // Kode sales_type kanal online yang tersedia (dipakai untuk mengunci metode bayar, sama seperti di POS).
+        $onlineSalesTypes = array_values(array_intersect(SalesType::onlineCodes(), array_keys($salesTypes)));
+
+        // Pemetaan tipe penjualan (online) -> metode bayar default yang otomatis dikunci.
+        $activePaymentMethodIds = $paymentMethods->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $salesTypePaymentMap = SalesType::query()
+            ->active()
+            ->online()
+            ->whereNotNull('default_payment_method_id')
+            ->pluck('default_payment_method_id', 'code')
+            ->filter(fn ($methodId) => in_array((int) $methodId, $activePaymentMethodIds, true))
+            ->map(fn ($methodId) => (int) $methodId)
+            ->all();
+
         return [
             'outlets' => Outlet::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'products' => $this->backdateSaleService->productOptions(),
-            'salesTypes' => $this->backdateSaleService->salesTypeOptions(),
-            'paymentMethods' => PaymentMethod::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
+            'salesTypes' => $salesTypes,
+            'paymentMethods' => $paymentMethods,
+            'onlineSalesTypes' => $onlineSalesTypes,
+            'salesTypePaymentMap' => $salesTypePaymentMap,
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->limit(200)->get(['id', 'name', 'customer_code']),
             'maxBackdateDays' => $this->backdateSaleService->maxBackdateDays(),
             'defaultSaleDate' => today()->toDateString(),

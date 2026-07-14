@@ -100,12 +100,13 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Metode Bayar</label>
-                        <select name="payment_method_id" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" required>
+                        <select name="payment_method_id" id="payment_method_id" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2" required>
                             <option value="">Pilih Metode</option>
                             @foreach($paymentMethods as $method)
                                 <option value="{{ $method->id }}" @selected(old('payment_method_id', $primaryPayment?->payment_method_id) == $method->id)>{{ $method->code }} - {{ $method->name }}</option>
                             @endforeach
                         </select>
+                        <p id="paymentLockNote" class="hidden mt-1 text-xs font-medium text-amber-700"></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Jumlah Bayar Catatan</label>
@@ -272,9 +273,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const template = document.getElementById('item-row-template').innerHTML.trim();
     const outletSelect = document.getElementById('outlet_id');
     const salesTypeSelect = document.getElementById('sales_type');
+    const paymentMethodSelect = document.getElementById('payment_method_id');
+    const paymentLockNote = document.getElementById('paymentLockNote');
     const initialItems = @json($formItems ?? []);
     const productMap = @json($productPriceMap);
+    const onlineSalesTypes = @json($onlineSalesTypes ?? []);
+    const salesTypePaymentMap = @json($salesTypePaymentMap ?? []);
     let index = 0;
+
+    // Kunci Metode Bayar otomatis saat Metode Penjualan berupa kanal online (mis. GoFood),
+    // sama seperti perilaku di POS kasir.
+    function applyPaymentLock() {
+        const code = salesTypeSelect.value;
+        const lockedId = onlineSalesTypes.includes(code) ? salesTypePaymentMap[code] : null;
+
+        Array.from(paymentMethodSelect.options).forEach(function (option) {
+            if (!option.value) {
+                return;
+            }
+            option.disabled = !!lockedId && Number(option.value) !== Number(lockedId);
+        });
+
+        if (lockedId) {
+            paymentMethodSelect.value = String(lockedId);
+            paymentMethodSelect.classList.add('bg-slate-100', 'cursor-not-allowed');
+            const lockedLabel = paymentMethodSelect.querySelector('option[value="' + lockedId + '"]')?.textContent.trim();
+            paymentLockNote.textContent = 'Metode bayar dikunci ke ' + (lockedLabel || 'metode default') + ' untuk penjualan online ini.';
+            paymentLockNote.classList.remove('hidden');
+        } else {
+            paymentMethodSelect.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            paymentLockNote.classList.add('hidden');
+        }
+    }
+
+    salesTypeSelect.addEventListener('change', applyPaymentLock);
 
     function formatRupiah(value) {
         return 'Rp ' + Number(value || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 });
@@ -462,6 +494,8 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         addRow();
     }
+
+    applyPaymentLock();
 });
 </script>
 @endsection
