@@ -915,6 +915,7 @@ class CatalogReportController extends Controller
                 ->first();
 
             $totalSales = (float) (clone $salesBaseQuery)->sum('sales.total_amount');
+            $totalInvoices = (int) (clone $salesBaseQuery)->count();
             $merchantSalesQuery = clone $salesBaseQuery;
             MerchantCommission::constrainSalesQuery($merchantSalesQuery);
             $merchantSales = (float) $merchantSalesQuery->sum('sales.total_amount');
@@ -977,6 +978,8 @@ class CatalogReportController extends Controller
                 'total_qty' => (float) ($itemTotals->total_qty ?? 0),
                 'total_sales' => $totalSales,
                 'total_hpp' => $totalHpp,
+                'total_invoices' => $totalInvoices,
+                'avg_per_invoice' => $totalInvoices > 0 ? $totalSales / $totalInvoices : 0,
                 'merchant_sales' => $merchantSales,
                 'merchant_commission' => $merchantCommission,
                 'total_gross_profit' => $totalGrossProfit,

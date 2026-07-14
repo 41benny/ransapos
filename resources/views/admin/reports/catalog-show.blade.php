@@ -3451,8 +3451,13 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Jumlah Item</div>
-                        <div class="mt-2 text-2xl font-normal text-slate-900">{{ number_format($summary['total_items'] ?? 0) }}
+                        <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Rata-rata / Invoice</div>
+                        <div class="mt-2 text-2xl font-normal text-slate-900">Rp
+                            {{ number_format($summary['avg_per_invoice'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="mt-1 text-xs font-normal text-slate-500">
+                            {{ number_format($summary['total_invoices'] ?? 0) }} invoice &middot;
+                            {{ number_format($summary['total_items'] ?? 0) }} item
                         </div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
