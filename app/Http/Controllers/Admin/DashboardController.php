@@ -127,6 +127,16 @@ class DashboardController extends Controller
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->sum('sale_items.cogs');
 
+            // Jumlah produk berbeda (SKU unik) yang terjual, sama seperti definisi "Jumlah Item"
+            // di laporan Penjualan Vs HPP.
+            $totalItems = (int) SaleItem::query()
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->where('sales.status', 'completed')
+                ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
+                ->selectRaw('COUNT(DISTINCT sale_items.product_name) as total_items')
+                ->value('total_items');
+
             $merchantSalesQuery = clone $salesBase;
             MerchantCommission::constrainSalesQuery($merchantSalesQuery);
             $onlineSales = (float) $merchantSalesQuery->sum('total_amount');
@@ -421,6 +431,7 @@ class DashboardController extends Controller
                 'kpis' => [
                     'total_sales' => $totalSales,
                     'total_transactions' => $totalTransactions,
+                    'total_items' => $totalItems,
                     'avg_transaction' => $avgTransaction,
                     'discount_total' => $discountTotal,
                     'total_cogs' => $totalCogs,
