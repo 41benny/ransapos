@@ -506,12 +506,15 @@ class SaleController extends Controller
             $dateFrom = $maxRangeStart;
         }
 
+        // Riwayat dibatasi ke shift milik kasir ini, bukan ke `sales.user_id`. Transaksi yang
+        // diinput admin lewat backdate tetap milik shift tempat penjualannya terjadi, jadi harus
+        // ikut tampil di rekap kasir yang menjalankan shift tersebut.
         $baseQuery = Sale::query()
             ->where('outlet_id', $outletId)
-            ->where('user_id', $user->id)
             ->whereNotNull('cash_session_id')
-            ->whereHas('cashSession', function ($query) {
-                $query->whereIn('status', ['open', 'closed']);
+            ->whereHas('cashSession', function ($query) use ($user) {
+                $query->whereIn('status', ['open', 'closed'])
+                    ->where('user_id', $user->id);
             });
 
         if ($dateFrom) {
@@ -601,14 +604,14 @@ class SaleController extends Controller
             ->selectRaw('COUNT(DISTINCT sale_items.sale_id) as total_transactions')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->where('sales.outlet_id', $outletId)
-            ->where('sales.user_id', $user->id)
             ->where('sales.status', 'completed')
             ->whereNotNull('sales.cash_session_id')
-            ->whereExists(function ($query) {
+            ->whereExists(function ($query) use ($user) {
                 $query->selectRaw('1')
                     ->from('cash_sessions')
                     ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
-                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+                    ->whereIn('cash_sessions.status', ['open', 'closed'])
+                    ->where('cash_sessions.user_id', $user->id);
             })
             ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
             ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
@@ -640,14 +643,14 @@ class SaleController extends Controller
                 $join->on('payment_totals.sale_id', '=', 'sales.id');
             })
             ->where('sales.outlet_id', $outletId)
-            ->where('sales.user_id', $user->id)
             ->where('sales.status', 'completed')
             ->whereNotNull('sales.cash_session_id')
-            ->whereExists(function ($query) {
+            ->whereExists(function ($query) use ($user) {
                 $query->selectRaw('1')
                     ->from('cash_sessions')
                     ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
-                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+                    ->whereIn('cash_sessions.status', ['open', 'closed'])
+                    ->where('cash_sessions.user_id', $user->id);
             })
             ->whereDate('sales.sale_date', '>=', $dateFrom->toDateString())
             ->whereDate('sales.sale_date', '<=', $dateTo->toDateString())
@@ -705,14 +708,14 @@ class SaleController extends Controller
             ->join('sales', 'sales.id', '=', 'payments.sale_id')
             ->leftJoin('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
             ->where('sales.outlet_id', $outletId)
-            ->where('sales.user_id', $user->id)
             ->where('sales.status', 'completed')
             ->whereNotNull('sales.cash_session_id')
-            ->whereExists(function ($query) {
+            ->whereExists(function ($query) use ($user) {
                 $query->selectRaw('1')
                     ->from('cash_sessions')
                     ->whereColumn('cash_sessions.id', 'sales.cash_session_id')
-                    ->whereIn('cash_sessions.status', ['open', 'closed']);
+                    ->whereIn('cash_sessions.status', ['open', 'closed'])
+                    ->where('cash_sessions.user_id', $user->id);
             });
 
         if ($dateFrom) {
