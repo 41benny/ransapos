@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Imports\BackdateSalesImport;
+use App\Models\CashSession;
 use App\Models\Customer;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
@@ -202,8 +203,32 @@ class BackdateSaleController extends Controller
             ->map(fn ($methodId) => (int) $methodId)
             ->all();
 
+        // Shift yang bisa ditempeli backdate, untuk seluruh rentang tanggal yang diizinkan.
+        // Dikirim sekaligus lalu difilter di form berdasarkan outlet + tanggal terpilih.
+        $maxDays = $this->backdateSaleService->maxBackdateDays();
+        $sessionOptions = CashSession::query()
+            ->with('user:id,name')
+            ->where('session_type', '!=', 'backdate_correction')
+            ->whereDate('opened_at', '>=', today()->subDays($maxDays)->toDateString())
+            ->orderBy('opened_at')
+            ->get(['id', 'outlet_id', 'user_id', 'session_number', 'opened_at', 'closed_at', 'status'])
+            ->map(fn (CashSession $session) => [
+                'id' => $session->id,
+                'outlet_id' => (int) $session->outlet_id,
+                'date' => $session->opened_at->toDateString(),
+                'label' => sprintf(
+                    '%s — %s (%s%s)',
+                    $session->session_number,
+                    $session->user?->name ?? 'Tanpa kasir',
+                    $session->opened_at->format('H:i'),
+                    $session->closed_at ? '–' . $session->closed_at->format('H:i') : ' – belum tutup'
+                ),
+            ])
+            ->values();
+
         return [
             'outlets' => Outlet::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
+            'sessionOptions' => $sessionOptions,
             'products' => $this->backdateSaleService->productOptions(),
             'salesTypes' => $salesTypes,
             'paymentMethods' => $paymentMethods,
@@ -237,6 +262,7 @@ class BackdateSaleController extends Controller
             ],
             'sale_date' => ['required', 'date'],
             'outlet_id' => ['required', 'exists:outlets,id'],
+            'cash_session_id' => ['nullable', 'exists:cash_sessions,id'],
             'sales_type' => ['required', 'string', Rule::in($salesTypeKeys)],
             'payment_method_id' => ['required', 'exists:payment_methods,id'],
             'payment_amount' => ['nullable', 'numeric', 'min:0'],

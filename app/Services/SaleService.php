@@ -61,7 +61,9 @@ class SaleService
                 throw new Exception('Sesi kasir tidak sesuai dengan outlet transaksi.');
             }
 
-            if ($cashSession->status !== 'open') {
+            // Input backdate memang ditujukan ke shift yang sudah lewat dan umumnya sudah ditutup.
+            // Guard ini hanya untuk mencegah kasir menjual ke sesi yang bukan miliknya lagi.
+            if ($cashSession->status !== 'open' && ! ($data['is_backdated'] ?? false)) {
                 throw new Exception('Sesi kasir sudah ditutup. Silakan buka sesi baru.');
             }
 
@@ -419,7 +421,12 @@ class SaleService
             }
 
             // 10. Update cash session
-            $this->updateCashSession($data['cash_session_id'], $totalAmount, $normalizedPayments);
+            $this->updateCashSession(
+                $data['cash_session_id'],
+                $totalAmount,
+                $normalizedPayments,
+                (bool) ($data['is_backdated'] ?? false)
+            );
 
             // 11. Mark voucher usage
             if ($voucher) {
@@ -548,10 +555,10 @@ class SaleService
      * @param array<int, array<string, mixed>> $payments
      * @return void
      */
-    protected function updateCashSession(int $sessionId, float $saleAmount, array $payments): void
+    protected function updateCashSession(int $sessionId, float $saleAmount, array $payments, bool $isBackdated = false): void
     {
         $session = CashSession::findOrFail($sessionId);
-        if ($session->status !== 'open') {
+        if ($session->status !== 'open' && ! $isBackdated) {
             throw new Exception('Sesi kasir sudah ditutup. Silakan buka sesi baru.');
         }
 
@@ -572,8 +579,12 @@ class SaleService
         $session->total_cash += $cashTotal;
         $session->total_non_cash += $nonCashTotal;
 
-        // Update expected balance
-        $session->expected_balance = $session->opening_balance + $session->total_cash;
+        // Shift yang sudah ditutup: `actual_balance` dan `difference` sudah merekam hasil hitung
+        // uang fisik saat closing. Menaikkan `expected_balance` retroaktif akan memunculkan
+        // selisih kas palsu, jadi saldo dibekukan dan hanya rekap penjualan yang dikoreksi.
+        if ($session->status === 'open') {
+            $session->expected_balance = $session->opening_balance + $session->total_cash;
+        }
 
         $session->save();
     }
@@ -660,7 +671,12 @@ class SaleService
                     }
                 }
 
-                $session->expected_balance = $session->opening_balance + $session->total_cash;
+                // Sama seperti pada input backdate: saldo kas shift yang sudah ditutup dibekukan
+                // karena `actual_balance` adalah hasil hitung uang fisik saat closing.
+                if ($session->status === 'open') {
+                    $session->expected_balance = $session->opening_balance + $session->total_cash;
+                }
+
                 $session->save();
             }
 

@@ -87,6 +87,13 @@
                             @endforeach
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Shift Tujuan</label>
+                        <select name="cash_session_id" id="cash_session_id" class="ui-input w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">Pilih outlet & tanggal dulu</option>
+                        </select>
+                        <p id="cash_session_hint" class="mt-1 text-xs text-slate-500"></p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -279,7 +286,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const productMap = @json($productPriceMap);
     const onlineSalesTypes = @json($onlineSalesTypes ?? []);
     const salesTypePaymentMap = @json($salesTypePaymentMap ?? []);
+    const saleDateInput = document.querySelector('input[name="sale_date"]');
+    const sessionSelect = document.getElementById('cash_session_id');
+    const sessionHint = document.getElementById('cash_session_hint');
+    const sessionOptions = @json($sessionOptions ?? []);
+    const selectedSessionId = @json(old('cash_session_id', $editingSale?->cash_session_id));
     let index = 0;
+
+    // Tampilkan shift kasir yang benar-benar berjalan di outlet + tanggal terpilih, supaya
+    // transaksi backdate menempel ke shift aslinya (rekap penjualan & packaging ikut terkoreksi).
+    function refreshSessionOptions() {
+        const outletId = Number(outletSelect.value);
+        const date = saleDateInput.value;
+
+        if (!outletId || !date) {
+            sessionSelect.innerHTML = '<option value="">Pilih outlet & tanggal dulu</option>';
+            sessionHint.textContent = '';
+            return;
+        }
+
+        const matches = sessionOptions.filter(function (session) {
+            return session.outlet_id === outletId && session.date === date;
+        });
+
+        if (matches.length === 0) {
+            sessionSelect.innerHTML = '<option value="">Tidak ada shift — pakai sesi koreksi</option>';
+            sessionHint.textContent = 'Tidak ada shift di tanggal ini. Transaksi masuk ke sesi koreksi otomatis.';
+            return;
+        }
+
+        sessionSelect.innerHTML = matches.length > 1
+            ? '<option value="">Pilih shift…</option>'
+            : '';
+
+        matches.forEach(function (session) {
+            const option = document.createElement('option');
+            option.value = session.id;
+            option.textContent = session.label;
+            sessionSelect.appendChild(option);
+        });
+
+        if (selectedSessionId && matches.some(function (s) { return s.id === Number(selectedSessionId); })) {
+            sessionSelect.value = String(selectedSessionId);
+        }
+
+        sessionHint.textContent = matches.length > 1
+            ? 'Ada ' + matches.length + ' shift di tanggal ini. Wajib pilih salah satu.'
+            : 'Transaksi akan menempel ke shift ini.';
+    }
+
+    outletSelect.addEventListener('change', refreshSessionOptions);
+    saleDateInput.addEventListener('change', refreshSessionOptions);
+    refreshSessionOptions();
 
     // Kunci Metode Bayar otomatis saat Metode Penjualan berupa kanal online (mis. GoFood),
     // sama seperti perilaku di POS kasir.

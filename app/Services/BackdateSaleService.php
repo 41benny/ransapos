@@ -27,6 +27,7 @@ class BackdateSaleService
         private SaleService $saleService,
         private StockService $stockService,
         private CostService $costService,
+        private PackagingService $packagingService,
     )
     {
     }
@@ -67,10 +68,11 @@ class BackdateSaleService
             throw new Exception("Kode transaksi manual {$manualReference} sudah pernah dipakai.");
         }
 
-        $session = $this->getCorrectionSession(
+        $session = $this->resolveTargetSession(
             outletId: (int) $payload['outlet_id'],
             saleDate: $saleDate,
-            user: $user
+            user: $user,
+            requestedSessionId: isset($payload['cash_session_id']) ? (int) $payload['cash_session_id'] : null
         );
 
         $items = $this->normalizeItemsWithAutomaticPrices($payload);
@@ -79,7 +81,7 @@ class BackdateSaleService
             throw new Exception('Minimal harus ada 1 item produk.');
         }
 
-        return $this->saleService->createSale([
+        $sale = $this->saleService->createSale([
             'outlet_id' => (int) $payload['outlet_id'],
             'cash_session_id' => $session->id,
             'user_id' => $user->id,
@@ -101,6 +103,10 @@ class BackdateSaleService
             'backdate_reason' => $payload['backdate_reason'],
             'manual_reference' => $manualReference,
         ]);
+
+        $this->packagingService->recomputeClosings($session);
+
+        return $sale;
     }
 
     public function updateBackdateSale(Sale $sale, array $payload, User $user): Sale
@@ -139,13 +145,16 @@ class BackdateSaleService
         return DB::transaction(function () use ($sale, $payload, $user, $saleDate, $manualReference, $items): Sale {
             $sale->load(['items.product.bomHeader.details.component', 'payments', 'cashSession']);
 
+            $previousSession = $sale->cashSession;
+
             $this->restoreExistingSaleStock($sale, $user);
             $this->removeSaleFromCashSession($sale);
 
-            $session = $this->getCorrectionSession(
+            $session = $this->resolveTargetSession(
                 outletId: (int) $payload['outlet_id'],
                 saleDate: $saleDate,
-                user: $user
+                user: $user,
+                requestedSessionId: isset($payload['cash_session_id']) ? (int) $payload['cash_session_id'] : null
             );
 
             $summary = $this->calculateSummary($payload, $items);
@@ -188,6 +197,12 @@ class BackdateSaleService
             ]);
 
             $this->addSaleToCashSession($session, (float) $summary['total_amount'], (int) $payload['payment_method_id']);
+
+            // Shift asal maupun tujuan sama-sama berubah komposisi penjualannya.
+            if ($previousSession && $previousSession->id !== $session->id) {
+                $this->packagingService->recomputeClosings($previousSession);
+            }
+            $this->packagingService->recomputeClosings($session);
 
             return $sale->fresh(['items', 'payments.paymentMethod', 'outlet', 'user', 'customer']);
         });
@@ -504,12 +519,26 @@ class BackdateSaleService
     private function adjustCashSession(CashSession $session, float $amount, int $paymentMethodId): void
     {
         $paymentMethod = PaymentMethod::query()->find($paymentMethodId);
-        $isCash = $paymentMethod?->code === 'CASH' || $paymentMethodId === 1;
+
+        // Kenali metode tunai dari kode/namanya saja. Sebelumnya ada fallback `id === 1` yang
+        // mengasumsikan baris pertama selalu Cash — asumsi itu diam-diam salah begitu urutan
+        // id berubah, dan bikin QRIS terhitung sebagai kas.
+        $code = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
+        $name = strtolower(trim((string) ($paymentMethod?->name ?? '')));
+        $isCash = $code === 'CASH' || str_contains($name, 'cash') || str_contains($name, 'tunai');
 
         $session->total_sales = (float) $session->total_sales + $amount;
         $session->total_cash = (float) $session->total_cash + ($isCash ? $amount : 0);
         $session->total_non_cash = (float) $session->total_non_cash + ($isCash ? 0 : $amount);
-        $session->expected_balance = (float) $session->opening_balance + (float) $session->total_cash;
+
+        // Shift yang sudah ditutup: `actual_balance` dan `difference` adalah hasil hitung uang
+        // fisik saat closing, jadi fakta historis. Menaikkan `expected_balance` retroaktif akan
+        // memunculkan selisih kas palsu pada shift yang sebenarnya sudah pas. Rekap penjualan
+        // tetap ikut terkoreksi lewat total_sales/total_cash/total_non_cash di atas.
+        if ($session->status !== 'closed') {
+            $session->expected_balance = (float) $session->opening_balance + (float) $session->total_cash;
+        }
+
         $session->save();
     }
 
@@ -525,6 +554,98 @@ class BackdateSaleService
         }
 
         return null;
+    }
+
+    /**
+     * Pindahkan satu penjualan ke shift lain, sekaligus rapikan rekap kas & packaging.
+     *
+     * Dipakai oleh command migrasi data backdate lama yang terlanjur masuk ke sesi koreksi
+     * sintetis. Transaksi yang sudah dibatalkan hanya dipindah relasinya: nilainya sudah
+     * dikurangkan dari sesi lama oleh proses pembatalan, jadi tidak boleh dikoreksi dua kali.
+     */
+    public function moveSaleToSession(Sale $sale, CashSession $target): void
+    {
+        $sale->loadMissing(['payments', 'cashSession']);
+        $previous = $sale->cashSession;
+
+        if ($previous && (int) $previous->id === (int) $target->id) {
+            return;
+        }
+
+        DB::transaction(function () use ($sale, $target, $previous): void {
+            $affectsCash = $sale->status !== 'cancelled';
+            $paymentMethodId = (int) optional($sale->payments->first())->payment_method_id;
+
+            if ($affectsCash && $previous) {
+                $this->adjustCashSession($previous, -1 * (float) $sale->total_amount, $paymentMethodId);
+            }
+
+            $sale->cash_session_id = $target->id;
+            $sale->save();
+
+            if ($affectsCash) {
+                $this->adjustCashSession($target, (float) $sale->total_amount, $paymentMethodId);
+            }
+
+            if ($previous) {
+                $this->packagingService->recomputeClosings($previous);
+            }
+            $this->packagingService->recomputeClosings($target);
+        });
+    }
+
+    /**
+     * Shift kasir yang tersedia untuk ditempeli transaksi backdate pada outlet + tanggal tertentu.
+     *
+     * Catatan: `business_date` hanya terisi pada sesi koreksi backdate, sesi reguler dari POS
+     * membiarkannya NULL. Karena itu pencocokan tanggal memakai `opened_at`.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CashSession>
+     */
+    public function availableSessions(int $outletId, string $saleDate)
+    {
+        return CashSession::query()
+            ->with('user:id,name')
+            ->where('outlet_id', $outletId)
+            ->where('session_type', '!=', 'backdate_correction')
+            ->whereDate('opened_at', $saleDate)
+            ->orderBy('opened_at')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Tentukan shift tujuan transaksi backdate.
+     *
+     * Prioritas: shift reguler yang benar-benar berjalan pada tanggal tersebut, supaya rekap
+     * penjualan dan estimasi pemakaian packaging ikut terkoreksi. Sesi koreksi sintetis hanya
+     * dibuat bila memang tidak ada shift sama sekali di tanggal itu.
+     */
+    private function resolveTargetSession(int $outletId, string $saleDate, User $user, ?int $requestedSessionId = null): CashSession
+    {
+        $sessions = $this->availableSessions($outletId, $saleDate);
+
+        if ($requestedSessionId) {
+            $selected = $sessions->firstWhere('id', $requestedSessionId);
+
+            if (! $selected) {
+                throw new Exception('Shift yang dipilih tidak ada di outlet dan tanggal tersebut.');
+            }
+
+            return $selected;
+        }
+
+        if ($sessions->count() === 1) {
+            return $sessions->first();
+        }
+
+        if ($sessions->count() > 1) {
+            throw new Exception(
+                'Ada ' . $sessions->count() . ' shift pada tanggal tersebut. Pilih shift tujuan terlebih dahulu.'
+            );
+        }
+
+        return $this->getCorrectionSession($outletId, $saleDate, $user);
     }
 
     private function getCorrectionSession(int $outletId, string $saleDate, User $user): CashSession

@@ -264,6 +264,53 @@ class PackagingService
     }
 
     /**
+     * Hitung ulang closing packaging sebuah shift tanpa mengubah hasil hitung fisik kasir.
+     *
+     * Dipakai ketika ada penjualan yang masuk/keluar dari shift setelah shift ditutup
+     * (mis. input backdate). Estimasi & selisih dihitung ulang, `closing_physical_qty`
+     * dipertahankan apa adanya karena itu hasil hitung fisik saat closing.
+     */
+    public function recomputeClosings(CashSession $session): void
+    {
+        $existing = CashSessionPackagingClosing::where('cash_session_id', $session->id)
+            ->get()
+            ->keyBy('packaging_item_id');
+
+        // Shift belum pernah di-closing packaging: tidak ada yang perlu dihitung ulang.
+        if ($existing->isEmpty()) {
+            return;
+        }
+
+        $context = $this->closingContext($session);
+
+        DB::transaction(function () use ($context, $existing) {
+            foreach ($context['rows'] as $row) {
+                $closing = $existing->get($row['item']->id);
+
+                // Hanya perbarui baris yang memang sudah ada. Item packaging yang baru
+                // ditambahkan setelah shift ditutup tidak boleh muncul retroaktif.
+                if (! $closing) {
+                    continue;
+                }
+
+                $physical = (float) $closing->closing_physical_qty;
+                $actualUsed = $row['available'] - $physical;
+
+                $closing->update([
+                    'opening_qty' => $row['opening_qty'],
+                    'approved_adjustment_in_qty' => $row['approved_in'],
+                    'approved_adjustment_out_qty' => $row['approved_out'],
+                    'pending_adjustment_in_qty' => $row['pending_in'],
+                    'pending_adjustment_out_qty' => $row['pending_out'],
+                    'actual_used_qty' => $actualUsed,
+                    'estimated_sales_used_qty' => $row['estimated'],
+                    'difference_qty' => $actualUsed - $row['estimated'],
+                ]);
+            }
+        });
+    }
+
+    /**
      * Approve adjustment packaging.
      */
     public function approveAdjustment(PackagingAdjustment $adjustment, User $approver): PackagingAdjustment

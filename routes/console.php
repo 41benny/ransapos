@@ -11,9 +11,11 @@ use App\Support\Repairs\RepairSaleItemCogsFromStockAction;
 use App\Support\Repairs\RepairSaleItemCogsFromProductsAction;
 use App\Support\Repairs\CleanupBundleStockRecordsAction;
 use App\Support\Repairs\CleanupBundleStockMutationsAction;
+use App\Services\BackdateSaleService;
 use App\Services\CashAccountService;
 use App\Services\StockService;
 use App\Models\CashSession;
+use App\Models\CashSessionPackagingClosing;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
@@ -357,6 +359,219 @@ Artisan::command('backdate-sales:purge
 
     return self::SUCCESS;
 })->purpose('Dry-run/apply hapus semua input penjualan backdate beserta mutasi stok terkait');
+
+/**
+ * Pindahkan penjualan backdate dari sesi koreksi sintetis (CS-BACKDATE-*) ke shift kasir yang
+ * benar-benar berjalan pada tanggal tersebut. Selama transaksi backdate menempel di sesi
+ * terpisah, pemakaian packaging-nya tidak pernah terhitung di shift mana pun sehingga laporan
+ * selisih cup/box selalu meleset.
+ *
+ * Tanpa --apply, seluruh perubahan dijalankan lalu di-rollback, jadi angka yang ditampilkan
+ * adalah hasil sungguhan dan bukan perkiraan.
+ */
+Artisan::command('backdate-sales:migrate-to-shift
+    {--apply : Terapkan perpindahan ke database}
+    {--outlet-id= : Filter outlet ID tertentu}
+    {--map=* : Tujuan untuk tanggal ambigu, format sesiBackdateId:shiftTujuanId}
+    {--keep-sessions : Jangan tandai cash session backdate yang sudah kosong sebagai closed}', function (BackdateSaleService $backdateSaleService) {
+    $apply = (bool) $this->option('apply');
+    $outletId = trim((string) $this->option('outlet-id'));
+
+    $overrides = [];
+    foreach ((array) $this->option('map') as $pair) {
+        if (! preg_match('/^(\d+):(\d+)$/', trim((string) $pair), $matches)) {
+            $this->error("Format --map salah: {$pair}. Gunakan sesiBackdateId:shiftTujuanId.");
+
+            return self::FAILURE;
+        }
+
+        $overrides[(int) $matches[1]] = (int) $matches[2];
+    }
+
+    $backdateSessions = CashSession::query()
+        ->where('session_type', 'backdate_correction')
+        ->when($outletId !== '', fn ($query) => $query->where('outlet_id', (int) $outletId))
+        ->orderBy('id')
+        ->get();
+
+    if ($backdateSessions->isEmpty()) {
+        $this->info('Tidak ada sesi backdate yang perlu dipindah.');
+
+        return self::SUCCESS;
+    }
+
+    $moves = [];
+    $planRows = [];
+    $targetIds = [];
+
+    foreach ($backdateSessions as $session) {
+        $sales = Sale::query()
+            ->with('payments')
+            ->where('cash_session_id', $session->id)
+            ->orderBy('id')
+            ->get();
+
+        if ($sales->isEmpty()) {
+            continue;
+        }
+
+        // `business_date` hanya terisi pada sesi backdate; sesi reguler dari POS membiarkannya
+        // NULL, jadi pencocokan shift memakai tanggal `opened_at`.
+        $date = $session->business_date?->toDateString() ?? $session->opened_at->toDateString();
+
+        $candidates = CashSession::query()
+            ->with('user:id,name')
+            ->where('outlet_id', $session->outlet_id)
+            ->where('session_type', '!=', 'backdate_correction')
+            ->whereDate('opened_at', $date)
+            ->orderBy('opened_at')
+            ->get();
+
+        $target = null;
+
+        if (isset($overrides[$session->id])) {
+            $target = $candidates->firstWhere('id', $overrides[$session->id]);
+            $plan = $target
+                ? 'dipilih manual -> #' . $target->id
+                : 'TUJUAN --map TIDAK VALID untuk tanggal ini';
+        } elseif ($candidates->count() === 1) {
+            $target = $candidates->first();
+            $plan = 'pindah -> #' . $target->id . ' (' . ($target->user?->name ?? '-') . ')';
+        } elseif ($candidates->count() > 1) {
+            $plan = 'AMBIGU, ' . $candidates->count() . ' shift: ' . $candidates->pluck('id')->implode(', ')
+                . ' — pakai --map=' . $session->id . ':<id>';
+        } else {
+            $plan = 'DILEWATI, tidak ada shift di tanggal ini';
+        }
+
+        $planRows[] = [
+            $session->id,
+            $session->outlet_id,
+            $date,
+            $sales->count(),
+            'Rp ' . number_format((float) $sales->sum('total_amount'), 0, ',', '.'),
+            $plan,
+        ];
+
+        if (! $target) {
+            continue;
+        }
+
+        $targetIds[] = $target->id;
+        foreach ($sales as $sale) {
+            $moves[] = ['sale' => $sale, 'target' => $target];
+        }
+    }
+
+    $this->table(['Sesi backdate', 'Outlet', 'Tanggal', 'Sale', 'Nilai', 'Rencana'], $planRows);
+
+    if (empty($moves)) {
+        $this->warn('Tidak ada transaksi yang bisa dipindah otomatis.');
+
+        return self::SUCCESS;
+    }
+
+    $snapshot = function () use ($targetIds) {
+        if (empty($targetIds)) {
+            return [];
+        }
+
+        return CashSessionPackagingClosing::query()
+            ->with('packagingItem:id,name')
+            ->whereIn('cash_session_id', array_unique($targetIds))
+            ->get()
+            ->mapWithKeys(fn ($row) => [
+                $row->cash_session_id . '|' . ($row->packagingItem?->name ?? $row->packaging_item_id) => [
+                    'estimated' => (float) $row->estimated_sales_used_qty,
+                    'difference' => (float) $row->difference_qty,
+                ],
+            ])
+            ->all();
+    };
+
+    $format = fn (float $value) => rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+
+    if (! $apply) {
+        $this->comment('MODE SIMULASI — perubahan dijalankan lalu dibatalkan untuk melihat dampak nyata.');
+    }
+
+    DB::beginTransaction();
+
+    try {
+        $before = $snapshot();
+
+        foreach ($moves as $move) {
+            $backdateSaleService->moveSaleToSession($move['sale'], $move['target']);
+        }
+
+        $emptied = [];
+        if (! (bool) $this->option('keep-sessions')) {
+            foreach ($backdateSessions as $session) {
+                if ($session->status === 'closed' || Sale::where('cash_session_id', $session->id)->exists()) {
+                    continue;
+                }
+
+                $session->forceFill([
+                    'status' => 'closed',
+                    'closed_at' => now(),
+                    'actual_balance' => 0,
+                    'difference' => 0,
+                    'notes' => trim(($session->notes ? $session->notes . "\n" : '')
+                        . 'Dikosongkan oleh backdate-sales:migrate-to-shift, transaksi dipindah ke shift asli.'),
+                ])->save();
+
+                $emptied[] = '#' . $session->id;
+            }
+        }
+
+        $after = $snapshot();
+        $diffRows = [];
+
+        foreach ($after as $key => $now) {
+            $was = $before[$key] ?? null;
+            if ($was && $was['difference'] === $now['difference'] && $was['estimated'] === $now['estimated']) {
+                continue;
+            }
+
+            [$sessionId, $itemName] = explode('|', $key, 2);
+            $diffRows[] = [
+                $sessionId,
+                $itemName,
+                $was ? $format($was['estimated']) . ' -> ' . $format($now['estimated']) : $format($now['estimated']),
+                $was ? $format($was['difference']) . ' -> ' . $format($now['difference']) : $format($now['difference']),
+            ];
+        }
+
+        if (empty($diffRows)) {
+            $this->info('Tidak ada baris closing packaging yang berubah.');
+        } else {
+            $this->info('Perubahan closing packaging:');
+            $this->table(['Shift', 'Item', 'Estimasi', 'Selisih'], $diffRows);
+            $this->comment('Selisih negatif = terjual lebih banyak daripada packaging yang hilang dari rak, '
+                . 'artinya hitungan fisik saat closing kemungkinan kelebihan.');
+        }
+
+        if ($emptied) {
+            $this->info('Sesi backdate kosong yang ditandai closed: ' . implode(', ', $emptied));
+        }
+
+        if ($apply) {
+            DB::commit();
+            $this->info('Selesai. ' . count($moves) . ' transaksi dipindah.');
+        } else {
+            DB::rollBack();
+            $this->comment('Simulasi dibatalkan — tidak ada data yang berubah.');
+            $this->comment('Jalankan ulang dengan --apply bila hasil di atas sudah sesuai.');
+        }
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        $this->error('Gagal: ' . $e->getMessage());
+
+        return self::FAILURE;
+    }
+
+    return self::SUCCESS;
+})->purpose('Dry-run/apply pindahkan penjualan backdate ke shift kasir aslinya dan hitung ulang packaging');
 
 Artisan::command('repair:purchase-hpp-by-qty 
     {--apply : Terapkan perubahan ke database}
