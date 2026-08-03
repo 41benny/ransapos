@@ -57,6 +57,14 @@
                 <span class="text-xs font-bold text-emerald-800 group-hover:text-emerald-900">Kasir / POS</span>
             </a>
 
+            <button type="button" @click="openHistory"
+                class="w-full bg-white p-4 rounded-xl shadow-sm border border-red-100 hover:border-red-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">search</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-red-700">Cari / Void</span>
+            </button>
+
             <button type="button" @click="openRecapModal"
                 class="w-full bg-white p-4 rounded-xl shadow-sm border border-rose-100 hover:border-rose-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
@@ -153,7 +161,7 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-xs">
                                 @foreach($todaySales as $sale)
-                                    <tr class="hover:bg-gray-50/50 transition-colors cursor-pointer" @click="openHistoryWithSale({{ $sale->id }})">
+                                    <tr class="hover:bg-gray-50/50 transition-colors cursor-pointer" @click="openHistoryWithSale({{ $sale->id }}, @js($sale->invoice_number), @js($sale->sale_date->toDateString()))">
                                         <td class="px-4 py-2 font-mono text-gray-900 whitespace-nowrap">
                                             {{ $sale->invoice_number }}
                                             <div class="text-[10px] text-gray-400">{{ $sale->created_at->format('H:i') }}</div>
@@ -252,15 +260,18 @@
 
     <!-- History Modal -->
     <div v-if="showHistoryModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm"
         style="display: none;" v-show="showHistoryModal">
-        <div class="bg-surface-light rounded-2xl shadow-2xl w-full max-w-5xl h-[80vh] flex overflow-hidden">
+        <div class="bg-surface-light rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] sm:h-[80vh] flex flex-col md:flex-row overflow-hidden">
 
             <!-- Left: Transaction List -->
-            <div class="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
-                <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
-                    <h3 class="font-bold text-gray-800">Riwayat Transaksi</h3>
-                    <button @click="fetchHistory" :disabled="isLoadingHistory" class="text-primary hover:text-red-700">
+            <div class="w-full md:w-1/3 h-[46%] md:h-full min-h-0 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50 flex flex-col">
+                <div class="p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Cari Transaksi</h3>
+                        <p class="text-[11px] text-gray-500">Pilih transaksi yang akan di-void</p>
+                    </div>
+                    <button @click="fetchHistory(false)" :disabled="isLoadingHistory" class="text-primary hover:text-red-700" title="Muat ulang">
                         <svg :class="{'animate-spin': isLoadingHistory}" class="w-5 h-5" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -268,10 +279,25 @@
                         </svg>
                     </button>
                 </div>
-                <div class="flex-1 overflow-y-auto">
+
+                <form @submit.prevent="applyHistoryFilters" class="p-3 border-b border-gray-200 bg-white space-y-2 shrink-0">
+                    <input type="search" v-model.trim="historySearch"
+                        placeholder="Faktur, menu, nominal, pelanggan..."
+                        class="w-full rounded-lg border-gray-300 text-xs focus:border-primary focus:ring-primary">
+                    <div class="flex gap-2">
+                        <input type="date" v-model="historyDate"
+                            class="min-w-0 flex-1 rounded-lg border-gray-300 text-xs focus:border-primary focus:ring-primary">
+                        <button type="submit"
+                            class="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-red-700">Cari</button>
+                        <button type="button" @click="resetHistoryFilters"
+                            class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200">Reset</button>
+                    </div>
+                </form>
+
+                <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
                     <div v-if="isLoadingHistory" class="p-8 text-center text-gray-400">Loading...</div>
                     <div v-else-if="historySales.length === 0" class="p-8 text-center text-gray-400">Belum ada transaksi
-                        pada riwayat sesi Anda.</div>
+                        yang cocok pada tanggal ini.</div>
                     <template v-else>
                         <div v-for="sale in historySales" :key="sale.id" @click="selectSale(sale)"
                             :class="{'bg-white border-l-4 border-primary shadow-sm': selectedSale && selectedSale.id === sale.id, 'hover:bg-gray-100 border-l-4 border-transparent': !selectedSale || selectedSale.id !== sale.id}"
@@ -288,22 +314,28 @@
                                     class="px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-700 font-bold uppercase">OK</span>
                             </div>
                         </div>
+                        <div v-if="hasMoreHistory" class="p-3">
+                            <button type="button" @click="loadMoreHistory" :disabled="isLoadingMoreHistory"
+                                class="w-full py-2 rounded-lg border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                @{{ isLoadingMoreHistory ? 'Memuat...' : 'Muat lebih banyak' }}
+                            </button>
+                        </div>
                     </template>
                 </div>
-                <div class="p-4 border-t border-gray-200 bg-white">
+                <div class="p-3 border-t border-gray-200 bg-white shrink-0">
                     <button @click="closeHistory"
                         class="w-full py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-bold">Tutup</button>
                 </div>
             </div>
 
             <!-- Right: Transaction Detail -->
-            <div class="w-2/3 flex flex-col bg-white">
-                <div v-if="selectedSale" class="flex-1 flex flex-col h-full">
+            <div class="w-full md:w-2/3 flex-1 md:h-full min-h-0 flex flex-col bg-white">
+                <div v-if="selectedSale" class="flex-1 min-h-0 flex flex-col h-full">
                     <!-- Header -->
-                    <div class="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+                    <div class="p-3 sm:p-4 md:p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50 shrink-0">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-800 mb-1">@{{ selectedSale.invoice_number }}</h2>
-                            <div class="flex gap-4 text-sm text-gray-500">
+                            <h2 class="text-lg md:text-2xl font-bold text-gray-800 mb-1">@{{ selectedSale.invoice_number }}</h2>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs md:text-sm text-gray-500">
                                 <span>@{{ formatDate(selectedSale.created_at) }}</span>
                                 <span>•</span>
                                 <span>@{{ selectedSale.customer ? selectedSale.customer.name : 'Guest' }}</span>
@@ -320,7 +352,7 @@
                     </div>
 
                     <!-- Items -->
-                    <div class="flex-1 overflow-y-auto p-6">
+                    <div class="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 md:p-6">
                         <table class="w-full">
                             <thead>
                                 <tr
@@ -349,15 +381,15 @@
                     </div>
 
                     <!-- Footer Actions -->
-                    <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
-                        <div class="text-right flex-1 mr-8">
+                    <div class="p-3 sm:p-4 md:p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-between sm:items-center shrink-0">
+                        <div class="text-left sm:text-right flex-1 sm:mr-4">
                             <p class="text-sm text-gray-500 mb-1">Total Amount</p>
-                            <p class="text-3xl font-bold text-primary">Rp @{{ formatNumber(selectedSale.total_amount) }}
+                            <p class="text-xl md:text-3xl font-bold text-primary">Rp @{{ formatNumber(selectedSale.total_amount) }}
                             </p>
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex flex-wrap gap-2 sm:gap-3">
                             <button @click="printReceiptFromHistory(selectedSale)"
-                                class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 shadow-sm flex items-center gap-2">
+                                class="flex-1 sm:flex-none px-4 md:px-6 py-2.5 md:py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 shadow-sm flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -365,7 +397,7 @@
                                 Print Struk
                             </button>
                             <button v-if="selectedSale.status !== 'cancelled'" @click="openVoidModal"
-                                class="px-6 py-3 bg-red-100 text-red-700 border border-red-200 font-bold rounded-xl hover:bg-red-200 shadow-sm flex items-center gap-2">
+                                class="flex-1 sm:flex-none px-4 md:px-6 py-2.5 md:py-3 bg-red-100 text-red-700 border border-red-200 font-bold rounded-xl hover:bg-red-200 shadow-sm flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -481,6 +513,11 @@
                 historySales: [],
                 selectedSale: null,
                 isLoadingHistory: false,
+                isLoadingMoreHistory: false,
+                historySearch: '',
+                historyDate: @json(now()->toDateString()),
+                historyPage: 1,
+                hasMoreHistory: false,
                 isVoiding: false,
                 voidReason: '',
                 voidToken: '',
@@ -828,9 +865,19 @@
                 }
                 return data.base64;
             },
-            openHistoryWithSale(saleId) {
+            openHistory() {
+                this.historySearch = '';
+                this.historyDate = @json(now()->toDateString());
+                this.selectedSale = null;
                 this.showHistoryModal = true;
-                this.fetchHistory().then(() => {
+                this.fetchHistory(false);
+            },
+            openHistoryWithSale(saleId, invoiceNumber = '', saleDate = '') {
+                this.historySearch = invoiceNumber;
+                this.historyDate = saleDate || @json(now()->toDateString());
+                this.selectedSale = null;
+                this.showHistoryModal = true;
+                this.fetchHistory(false).then(() => {
                     const found = this.historySales.find(s => s.id == saleId);
                     if (found) {
                         this.selectedSale = found;
@@ -841,10 +888,40 @@
                 this.showHistoryModal = false;
                 this.selectedSale = null;
             },
-            async fetchHistory() {
-                this.isLoadingHistory = true;
+            applyHistoryFilters() {
+                this.selectedSale = null;
+                this.fetchHistory(false);
+            },
+            resetHistoryFilters() {
+                this.historySearch = '';
+                this.historyDate = @json(now()->toDateString());
+                this.selectedSale = null;
+                this.fetchHistory(false);
+            },
+            loadMoreHistory() {
+                if (!this.hasMoreHistory || this.isLoadingMoreHistory) {
+                    return;
+                }
+                this.fetchHistory(true);
+            },
+            async fetchHistory(append = false) {
+                const requestedPage = append ? this.historyPage + 1 : 1;
+                this.isLoadingHistory = !append;
+                this.isLoadingMoreHistory = append;
                 try {
-                    const response = await fetch('{{ route('pos.sales.history') }}', {
+                    const params = new URLSearchParams({
+                        page: String(requestedPage),
+                        per_page: '20',
+                    });
+                    if (this.historySearch) {
+                        params.set('q', this.historySearch);
+                    }
+                    if (this.historyDate) {
+                        params.set('date_from', this.historyDate);
+                        params.set('date_to', this.historyDate);
+                    }
+
+                    const response = await fetch(`{{ route('pos.sales.history') }}?${params.toString()}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
@@ -857,8 +934,13 @@
                     }
 
                     if (result.success) {
-                        this.historySales = result.data;
-                        if (this.historySales.length > 0 && !this.selectedSale) {
+                        const incomingSales = Array.isArray(result.data) ? result.data : [];
+                        this.historySales = append
+                            ? [...this.historySales, ...incomingSales.filter(incoming => !this.historySales.some(existing => existing.id === incoming.id))]
+                            : incomingSales;
+                        this.historyPage = Number(result.meta?.current_page || requestedPage);
+                        this.hasMoreHistory = Boolean(result.meta?.has_more);
+                        if (!append && this.historySales.length > 0 && !this.selectedSale) {
                             this.selectedSale = this.historySales[0];
                         }
                     }
@@ -867,6 +949,7 @@
                     alert('Gagal mengambil history transaksi');
                 } finally {
                     this.isLoadingHistory = false;
+                    this.isLoadingMoreHistory = false;
                 }
             },
             selectSale(sale) {

@@ -569,15 +569,25 @@ class SaleController extends Controller
         // Catatan: cetak rekap thermal (format=escpos) juga memakai Accept: application/json,
         // jadi jangan short-circuit ke daftar transaksi saat format=escpos diminta.
         if ($request->wantsJson() && $request->input('format') !== 'escpos') {
-            $sales = (clone $baseQuery)
+            $salesQuery = (clone $baseQuery)
                 ->with(['items', 'customer', 'payments.paymentMethod'])
-                ->orderBy('created_at', 'desc')
-                ->limit(50) // Batasi 50 transaksi terakhir
-                ->get();
+                ->orderBy('created_at', 'desc');
+
+            $applyInvoiceSearch($salesQuery);
+
+            $perPage = max(1, min(50, $request->integer('per_page', 50)));
+            $sales = $salesQuery->paginate($perPage, ['*'], 'page');
 
             return response()->json([
                 'success' => true,
-                'data' => $sales
+                'data' => $sales->items(),
+                'meta' => [
+                    'current_page' => $sales->currentPage(),
+                    'last_page' => $sales->lastPage(),
+                    'per_page' => $sales->perPage(),
+                    'total' => $sales->total(),
+                    'has_more' => $sales->hasMorePages(),
+                ],
             ]);
         }
 

@@ -107,4 +107,83 @@ class PosSalesHistoryScopeTest extends TestCase
             ->assertSuccessful()
             ->assertDontSee($sale->invoice_number);
     }
+
+    public function test_json_history_can_find_transactions_without_an_invoice_number_and_load_more(): void
+    {
+        $outlet = Outlet::factory()->create(['tax_rate' => 0, 'service_charge_rate' => 0]);
+        $kasirRole = Role::firstOrCreate(['name' => 'kasir'], ['display_name' => 'Kasir']);
+        $cashier = User::factory()->create(['outlet_id' => $outlet->id, 'role_id' => $kasirRole->id]);
+        $category = ProductCategory::factory()->create();
+        $dimsum = Product::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Dimsum Finder',
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 12000,
+        ]);
+        $tea = Product::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Es Teh',
+            'product_type' => 'service',
+            'is_sellable' => true,
+            'selling_price' => 8000,
+        ]);
+        $qris = PaymentMethod::create(['code' => 'QRIS_FINDER', 'name' => 'QRIS Finder', 'is_active' => true]);
+        $cash = PaymentMethod::create(['code' => 'CASH_FINDER', 'name' => 'Tunai Finder', 'is_active' => true]);
+
+        $shift = CashSession::create([
+            'session_number' => 'CS-FINDER',
+            'session_type' => 'regular',
+            'outlet_id' => $outlet->id,
+            'user_id' => $cashier->id,
+            'opening_balance' => 0,
+            'opened_at' => today()->setTime(10, 0),
+            'status' => 'open',
+        ]);
+
+        $targetSale = app(SaleService::class)->createSale([
+            'outlet_id' => $outlet->id,
+            'cash_session_id' => $shift->id,
+            'user_id' => $cashier->id,
+            'items' => [['product_id' => $dimsum->id, 'quantity' => 1, 'unit_price' => 12000, 'discount_amount' => 0]],
+            'payment_method_id' => $qris->id,
+            'payment_amount' => 12000,
+            'sale_date' => today()->toDateString(),
+        ]);
+
+        app(SaleService::class)->createSale([
+            'outlet_id' => $outlet->id,
+            'cash_session_id' => $shift->id,
+            'user_id' => $cashier->id,
+            'items' => [['product_id' => $tea->id, 'quantity' => 1, 'unit_price' => 8000, 'discount_amount' => 0]],
+            'payment_method_id' => $cash->id,
+            'payment_amount' => 8000,
+            'sale_date' => today()->toDateString(),
+        ]);
+
+        foreach (['Dimsum Finder', 'QRIS Finder', '12000'] as $query) {
+            $this->actingAs($cashier)
+                ->getJson(route('pos.sales.history', [
+                    'q' => $query,
+                    'date_from' => today()->toDateString(),
+                    'date_to' => today()->toDateString(),
+                ]))
+                ->assertOk()
+                ->assertJsonPath('data.0.id', $targetSale->id)
+                ->assertJsonPath('meta.total', 1);
+        }
+
+        $this->actingAs($cashier)
+            ->getJson(route('pos.sales.history', [
+                'date_from' => today()->toDateString(),
+                'date_to' => today()->toDateString(),
+                'per_page' => 1,
+                'page' => 1,
+            ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.has_more', true);
+    }
 }
