@@ -11,6 +11,7 @@ use App\Models\PackagingItem;
 use App\Models\SalesType;
 use App\Services\CashSessionService;
 use App\Services\PackagingService;
+use App\Services\PosDrawerExpenseService;
 use Exception;
 
 class CashSessionController extends Controller
@@ -19,10 +20,16 @@ class CashSessionController extends Controller
 
     protected PackagingService $packagingService;
 
-    public function __construct(CashSessionService $cashSessionService, PackagingService $packagingService)
-    {
+    protected PosDrawerExpenseService $drawerExpenseService;
+
+    public function __construct(
+        CashSessionService $cashSessionService,
+        PackagingService $packagingService,
+        PosDrawerExpenseService $drawerExpenseService
+    ) {
         $this->cashSessionService = $cashSessionService;
         $this->packagingService = $packagingService;
+        $this->drawerExpenseService = $drawerExpenseService;
     }
 
     /**
@@ -152,7 +159,27 @@ class CashSessionController extends Controller
         // Data closing packaging
         $packaging = $this->packagingService->closingContext($activeSession);
 
-        return view('pos.sessions.close', compact('activeSession', 'paymentStats', 'packaging'));
+        // Modul Pengeluaran Kios. Saat flag mati, layar closing memakai panel
+        // rekonsiliasi lama supaya tidak ada perubahan perilaku sama sekali.
+        $drawerEnabled = $this->drawerExpenseService->isEnabled()
+            && ! $activeSession->isBackdateCorrection();
+
+        $drawerExpenses = collect();
+        if ($drawerEnabled) {
+            $this->drawerExpenseService->recalculateSessionTotals($activeSession);
+            $activeSession->refresh();
+            $drawerExpenses = $this->drawerExpenseService->expensesFor($activeSession);
+        }
+
+        return view('pos.sessions.close', compact(
+            'activeSession',
+            'paymentStats',
+            'packaging',
+            'drawerEnabled',
+            'drawerExpenses'
+        ) + [
+            'differenceTolerance' => $this->drawerExpenseService->differenceTolerance(),
+        ]);
     }
 
     /**
@@ -190,10 +217,11 @@ class CashSessionController extends Controller
 
             $session = $this->cashSessionService->closeSession(
                 $cashSession,
-                $request->actual_balance,
+                (float) $request->actual_balance,
                 $request->notes,
                 $posDevice?->id,
-                $request->ip()
+                $request->ip(),
+                $request->filled('retained_balance') ? (float) $request->retained_balance : 0.0
             );
 
             $diffMessage = '';

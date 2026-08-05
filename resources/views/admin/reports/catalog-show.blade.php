@@ -3448,6 +3448,32 @@
             </script>
             @endpush
         @elseif($viewType === 'sales-vs-hpp')
+            @php
+                $previousComparison = $summary['comparison'] ?? [];
+                $previousPeriodLabel = !empty($previousComparison['date_from']) && !empty($previousComparison['date_to'])
+                    ? \Carbon\Carbon::parse($previousComparison['date_from'])->format('d M Y') . ' - ' . \Carbon\Carbon::parse($previousComparison['date_to'])->format('d M Y')
+                    : 'periode sebelumnya';
+                $kpiTrend = function (string $key, bool $inverse = false) use ($previousComparison) {
+                    $data = $previousComparison[$key] ?? [];
+                    $delta = (float) ($data['delta'] ?? 0);
+                    $deltaPercent = $data['delta_percent'] ?? null;
+                    $isPositive = $inverse ? $delta <= 0 : $delta >= 0;
+                    $sign = $delta > 0 ? '+' : ($delta < 0 ? '-' : '');
+                    $percentSign = $deltaPercent > 0 ? '+' : ($deltaPercent < 0 ? '-' : '');
+
+                    return [
+                        'class' => $isPositive ? 'text-emerald-600' : 'text-rose-600',
+                        'amount' => $sign . 'Rp ' . number_format(abs($delta), 0, ',', '.'),
+                        'percent' => $deltaPercent === null
+                            ? '-'
+                            : $percentSign . number_format(abs((float) $deltaPercent), 2, ',', '.') . '%',
+                    ];
+                };
+                $avgTrend = $kpiTrend('avg_per_invoice');
+                $salesTrend = $kpiTrend('total_sales');
+                $hppTrend = $kpiTrend('total_hpp', true);
+                $profitTrend = $kpiTrend('total_gross_profit');
+            @endphp
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -3459,17 +3485,29 @@
                             {{ number_format($summary['total_invoices'] ?? 0) }} invoice &middot;
                             {{ number_format($summary['total_items'] ?? 0) }} item
                         </div>
+                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wide text-slate-400" title="Dibandingkan dengan {{ $previousPeriodLabel }}">
+                            <span>vs Prev Period:</span>
+                            <span class="{{ $avgTrend['class'] }}">{{ $avgTrend['amount'] }} ({{ $avgTrend['percent'] }})</span>
+                        </div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total Penjualan</div>
                         <div class="mt-2 text-2xl font-normal text-emerald-700">Rp
                             {{ number_format($summary['total_sales'] ?? 0, 0, ',', '.') }}
                         </div>
+                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wide text-slate-400" title="Dibandingkan dengan {{ $previousPeriodLabel }}">
+                            <span>vs Prev Period:</span>
+                            <span class="{{ $salesTrend['class'] }}">{{ $salesTrend['amount'] }} ({{ $salesTrend['percent'] }})</span>
+                        </div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div class="text-xs font-normal uppercase tracking-wide text-slate-500">Total HPP</div>
                         <div class="mt-2 text-2xl font-normal text-rose-700">Rp
                             {{ number_format($summary['total_hpp'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wide text-slate-400" title="Dibandingkan dengan {{ $previousPeriodLabel }}">
+                            <span>vs Prev Period:</span>
+                            <span class="{{ $hppTrend['class'] }}">{{ $hppTrend['amount'] }} ({{ $hppTrend['percent'] }})</span>
                         </div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -3483,6 +3521,10 @@
                         </div>
                         <div class="mt-1 text-xs font-normal text-slate-500">Komisi merchant 20%: Rp
                             {{ number_format($summary['merchant_commission'] ?? 0, 0, ',', '.') }}
+                        </div>
+                        <div class="mt-2 text-[10px] font-bold uppercase tracking-wide text-slate-400" title="Dibandingkan dengan {{ $previousPeriodLabel }}">
+                            <span>vs Prev Period:</span>
+                            <span class="{{ $profitTrend['class'] }}">{{ $profitTrend['amount'] }} ({{ $profitTrend['percent'] }})</span>
                         </div>
                     </div>
                 </div>

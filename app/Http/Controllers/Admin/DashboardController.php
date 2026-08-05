@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CashTransaction;
 use App\Models\Outlet;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -102,9 +103,9 @@ class DashboardController extends Controller
             : null;
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
 
-        $cacheKey = 'admin.dashboard.summary.v6:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v8:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $prevDateFrom, $prevDateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
             $salesBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'completed')
@@ -144,6 +145,15 @@ class DashboardController extends Controller
             $grossProfitBeforeMerchandise = $totalSales - $totalCogs;
             $grossProfit = $grossProfitBeforeMerchandise - $merchandiseShare;
             $grossMarginPct = $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null;
+
+            // Sama persis dengan query di ProfitLossReportService: mencakup semua
+            // biaya operasional termasuk Pengeluaran Kios (COA type=expense) yang
+            // sudah diposting ke cash_transactions setelah shift ditutup. Dibuat
+            // konsisten dengan Laporan Laba Rugi supaya "Laba Owner" di dashboard
+            // dan laporan resmi tidak pernah menunjukkan angka yang berbeda.
+            $totalExpenses = static::calculateTotalOperatingExpenses($dateFrom, $dateTo, $selectedOutletIds);
+            $netProfit = $grossProfit - $totalExpenses;
+            $netMarginPct = $totalSales > 0 ? ($netProfit / $totalSales) * 100 : null;
 
             $cancelledBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
@@ -299,34 +309,28 @@ class DashboardController extends Controller
 
             $outletSales = collect();
             if ($showBreakdown) {
-                $cogsByOutlet = SaleItem::query()
-                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                    ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
-                    ->where('sales.status', 'completed')
-                    ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
-                    ->groupBy('sales.outlet_id')
-                    ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs), 0) as total_cogs')
-                    ->pluck('total_cogs', 'outlet_id');
+                $currentOutletMetrics = static::calculateOutletProfitMetrics($dateFrom, $dateTo, $selectedOutletIds);
+                $previousOutletMetrics = static::calculateOutletProfitMetrics($prevDateFrom, $prevDateTo, $selectedOutletIds);
 
-                $outletSalesBase = Sale::query()
-                    ->join('outlets', 'sales.outlet_id', '=', 'outlets.id')
-                    ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
-                    ->where('sales.status', 'completed')
-                    ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds));
+                $outletSales = collect(array_unique([
+                    ...array_keys($currentOutletMetrics),
+                    ...array_keys($previousOutletMetrics),
+                ]))
+                    ->map(function (int $outletId) use ($currentOutletMetrics, $previousOutletMetrics) {
+                        $current = $currentOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
+                        $previous = $previousOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
+                        $deltaNetProfit = (float) $current['net_profit'] - (float) $previous['net_profit'];
 
-                $outletSales = $outletSalesBase
-                    ->groupBy('outlets.id', 'outlets.name')
-                    ->selectRaw('outlets.id as outlet_id, outlets.name as outlet_name, COALESCE(SUM(sales.total_amount), 0) as amount, COUNT(*) as transactions, MAX(sales.created_at) as last_sale_at')
-                    ->orderBy('outlets.name')
-                    ->get()
-                    ->map(fn($row) => [
-                        'outlet_id' => (int) $row->outlet_id,
-                        'outlet_name' => (string) $row->outlet_name,
-                        'amount' => (float) $row->amount,
-                        'cogs' => (float) ($cogsByOutlet[$row->outlet_id] ?? 0),
-                        'transactions' => (int) $row->transactions,
-                        'last_sale_at' => $row->last_sale_at ? Carbon::parse($row->last_sale_at)->toIso8601String() : null,
-                    ])
+                        return [
+                            ...$current,
+                            'previous_net_profit' => (float) $previous['net_profit'],
+                            'delta_net_profit' => $deltaNetProfit,
+                            'delta_net_profit_pct' => (float) $previous['net_profit'] > 0
+                                ? ($deltaNetProfit / (float) $previous['net_profit']) * 100
+                                : null,
+                        ];
+                    })
+                    ->sortBy('outlet_name')
                     ->values();
             }
 
@@ -441,6 +445,9 @@ class DashboardController extends Controller
                     'gross_profit_before_merchandise' => $grossProfitBeforeMerchandise,
                     'gross_profit' => $grossProfit,
                     'gross_margin_pct' => $grossMarginPct,
+                    'total_expenses' => $totalExpenses,
+                    'net_profit' => $netProfit,
+                    'net_margin_pct' => $netMarginPct,
                     'cancelled_transactions' => $cancelledTransactions,
                     'cancelled_amount' => $cancelledAmount,
                 ],
@@ -461,7 +468,7 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev.v6:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevCacheKey = 'admin.dashboard.summary.prev.v7:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
         $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds) {
             $base = Sale::query()
                 ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
@@ -486,6 +493,9 @@ class DashboardController extends Controller
             $merchandiseShare = $onlineSales * MerchantCommission::RATE;
             $grossProfit = $totalSales - $totalCogs - $merchandiseShare;
 
+            $totalExpenses = static::calculateTotalOperatingExpenses($prevDateFrom, $prevDateTo, $selectedOutletIds);
+            $netProfit = $grossProfit - $totalExpenses;
+
             return [
                 'date_from' => $prevDateFrom,
                 'date_to' => $prevDateTo,
@@ -496,12 +506,16 @@ class DashboardController extends Controller
                 'merchandise_share' => $merchandiseShare,
                 'gross_profit' => $grossProfit,
                 'gross_margin_pct' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null,
+                'total_expenses' => $totalExpenses,
+                'net_profit' => $netProfit,
+                'net_margin_pct' => $totalSales > 0 ? ($netProfit / $totalSales) * 100 : null,
             ];
         });
 
         $deltaSales = (float) ($payload['kpis']['total_sales'] - $prevPayload['total_sales']);
         $deltaTransactions = (int) ($payload['kpis']['total_transactions'] - $prevPayload['total_transactions']);
         $deltaGrossProfit = (float) ($payload['kpis']['gross_profit'] - $prevPayload['gross_profit']);
+        $deltaNetProfit = (float) ($payload['kpis']['net_profit'] - $prevPayload['net_profit']);
 
         $payload['trend_vs_prev_day'] = [
             'prev_date' => $prevPayload['date_to'],
@@ -514,14 +528,162 @@ class DashboardController extends Controller
             'prev_merchandise_share' => $prevPayload['merchandise_share'],
             'prev_gross_profit' => $prevPayload['gross_profit'],
             'prev_gross_margin_pct' => $prevPayload['gross_margin_pct'],
+            'prev_total_expenses' => $prevPayload['total_expenses'],
+            'prev_net_profit' => $prevPayload['net_profit'],
+            'prev_net_margin_pct' => $prevPayload['net_margin_pct'],
             'delta_total_sales' => $deltaSales,
             'delta_total_sales_pct' => $prevPayload['total_sales'] > 0 ? ($deltaSales / $prevPayload['total_sales']) * 100 : null,
             'delta_total_transactions' => $deltaTransactions,
             'delta_total_transactions_pct' => $prevPayload['total_transactions'] > 0 ? ($deltaTransactions / $prevPayload['total_transactions']) * 100 : null,
             'delta_gross_profit' => $deltaGrossProfit,
             'delta_gross_profit_pct' => $prevPayload['gross_profit'] > 0 ? ($deltaGrossProfit / $prevPayload['gross_profit']) * 100 : null,
+            'delta_net_profit' => $deltaNetProfit,
+            'delta_net_profit_pct' => $prevPayload['net_profit'] > 0 ? ($deltaNetProfit / $prevPayload['net_profit']) * 100 : null,
         ];
 
         return response()->json($payload);
+    }
+
+    /**
+     * Ringkasan laba bersih per outlet. Rumus ini sengaja identik dengan KPI
+     * Laba Owner agar kontribusi semua outlet dapat direkonsiliasi ke total.
+     * Baris outlet_id=0 merepresentasikan biaya operasional yang belum memiliki
+     * outlet pada akun kasnya.
+     *
+     * @param  array<int>|null  $outletIds
+     * @return array<int, array<string, float|int|string|null>>
+     */
+    protected static function calculateOutletProfitMetrics(string $dateFrom, string $dateTo, ?array $outletIds): array
+    {
+        $salesRows = Sale::query()
+            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->where('status', 'completed')
+            ->when($outletIds !== null, fn($q) => $q->whereIn('outlet_id', $outletIds))
+            ->groupBy('outlet_id')
+            ->selectRaw('outlet_id, COALESCE(SUM(total_amount), 0) as amount, COUNT(*) as transactions, MAX(created_at) as last_sale_at')
+            ->get()
+            ->keyBy('outlet_id');
+
+        $cogsByOutlet = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+            ->where('sales.status', 'completed')
+            ->when($outletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $outletIds))
+            ->groupBy('sales.outlet_id')
+            ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs), 0) as total_cogs')
+            ->pluck('total_cogs', 'outlet_id');
+
+        $merchantSalesQuery = Sale::query()
+            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->where('status', 'completed')
+            ->when($outletIds !== null, fn($q) => $q->whereIn('outlet_id', $outletIds));
+        MerchantCommission::constrainSalesQuery($merchantSalesQuery);
+        $merchantSalesByOutlet = $merchantSalesQuery
+            ->groupBy('outlet_id')
+            ->selectRaw('outlet_id, COALESCE(SUM(total_amount), 0) as merchant_sales')
+            ->pluck('merchant_sales', 'outlet_id');
+
+        $expenseRows = CashTransaction::query()
+            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+            ->where('cash_transactions.type', 'out')
+            ->whereNotNull('cash_transactions.coa_account_id')
+            ->where('coa_accounts.type', 'expense')
+            ->where('coa_accounts.group', '!=', 'HPP')
+            ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo])
+            ->when(!empty($outletIds), fn($q) => $q->whereIn('cash_accounts.outlet_id', $outletIds))
+            ->groupBy('cash_accounts.outlet_id')
+            ->selectRaw('cash_accounts.outlet_id, COALESCE(SUM(cash_transactions.amount), 0) as total_expenses')
+            ->get();
+
+        $expensesByOutlet = [];
+        foreach ($expenseRows as $row) {
+            $outletId = $row->outlet_id === null ? 0 : (int) $row->outlet_id;
+            $expensesByOutlet[$outletId] = (float) $row->total_expenses;
+        }
+
+        $outletIdsInMetrics = collect([
+            ...$salesRows->keys()->all(),
+            ...$cogsByOutlet->keys()->all(),
+            ...$merchantSalesByOutlet->keys()->all(),
+            ...array_keys($expensesByOutlet),
+        ])
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+        $outletNames = Outlet::query()
+            ->whereIn('id', $outletIdsInMetrics->filter(fn($id) => $id > 0))
+            ->pluck('name', 'id');
+
+        return $outletIdsInMetrics
+            ->mapWithKeys(function (int $outletId) use ($salesRows, $cogsByOutlet, $merchantSalesByOutlet, $expensesByOutlet, $outletNames) {
+                $sales = $salesRows->get($outletId);
+                $amount = (float) ($sales->amount ?? 0);
+                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0);
+                $merchantCommission = (float) ($merchantSalesByOutlet[$outletId] ?? 0) * MerchantCommission::RATE;
+                $operatingExpenses = (float) ($expensesByOutlet[$outletId] ?? 0);
+
+                return [$outletId => [
+                    'outlet_id' => $outletId,
+                    'outlet_name' => $outletId === 0
+                        ? 'Biaya Tanpa Outlet'
+                        : (string) ($outletNames[$outletId] ?? "Outlet #{$outletId}"),
+                    'amount' => $amount,
+                    'cogs' => $cogs,
+                    'transactions' => (int) ($sales->transactions ?? 0),
+                    'last_sale_at' => !empty($sales?->last_sale_at)
+                        ? Carbon::parse($sales->last_sale_at)->toIso8601String()
+                        : null,
+                    'merchant_commission' => $merchantCommission,
+                    'operating_expenses' => $operatingExpenses,
+                    'net_profit' => $amount - $cogs - $merchantCommission - $operatingExpenses,
+                ]];
+            })
+            ->all();
+    }
+
+    /**
+     * @return array<string, float|int|string|null>
+     */
+    protected static function emptyOutletProfitMetrics(int $outletId): array
+    {
+        return [
+            'outlet_id' => $outletId,
+            'outlet_name' => $outletId === 0 ? 'Biaya Tanpa Outlet' : "Outlet #{$outletId}",
+            'amount' => 0.0,
+            'cogs' => 0.0,
+            'transactions' => 0,
+            'last_sale_at' => null,
+            'merchant_commission' => 0.0,
+            'operating_expenses' => 0.0,
+            'net_profit' => 0.0,
+        ];
+    }
+
+    /**
+     * Total biaya operasional periode tertentu, meniru persis query di
+     * ProfitLossReportService::generate() (cash_transactions type=out, COA
+     * type=expense, group != HPP) supaya "Laba Owner" di dashboard selalu
+     * sinkron dengan Laporan Laba Rugi resmi. Termasuk Pengeluaran Kios
+     * (petty cash laci) begitu shift ditutup dan baris jurnalnya diposting.
+     *
+     * @param  array<int>|null  $outletIds
+     */
+    protected static function calculateTotalOperatingExpenses(string $dateFrom, string $dateTo, ?array $outletIds): float
+    {
+        $query = CashTransaction::query()
+            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
+            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
+            ->where('cash_transactions.type', 'out')
+            ->whereNotNull('cash_transactions.coa_account_id')
+            ->where('coa_accounts.type', 'expense')
+            ->where('coa_accounts.group', '!=', 'HPP')
+            ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo]);
+
+        if (!empty($outletIds)) {
+            $query->whereIn('cash_accounts.outlet_id', $outletIds);
+        }
+
+        return (float) $query->sum('cash_transactions.amount');
     }
 }

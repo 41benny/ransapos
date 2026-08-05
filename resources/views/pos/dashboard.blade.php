@@ -73,6 +73,15 @@
                 <span class="text-xs font-bold text-gray-700 group-hover:text-rose-700">Print Rekap</span>
             </button>
 
+            @if(\App\Models\Setting::getBool('pos_drawer_expense_enabled', false))
+            <a href="{{ route('pos.expenses.index') }}"
+                class="bg-white p-4 rounded-xl shadow-sm border border-amber-100 hover:border-amber-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
+                <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">payments</span>
+                </div>
+                <span class="text-xs font-bold text-gray-700 group-hover:text-amber-700">Pengeluaran</span>
+            </a>
+            @else
             <a href="{{ route('pos.petty-cash.index') }}"
                 class="bg-white p-4 rounded-xl shadow-sm border border-amber-100 hover:border-amber-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">
                 <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
@@ -80,6 +89,7 @@
                 </div>
                 <span class="text-xs font-bold text-gray-700 group-hover:text-amber-700">Petty Cash</span>
             </a>
+            @endif
 
             <a href="{{ route('pos.packaging.adjustment.index') }}"
                 class="bg-white p-4 rounded-xl shadow-sm border border-orange-100 hover:border-orange-300 hover:shadow-md transition group flex flex-col items-center justify-center gap-2 text-center h-24">

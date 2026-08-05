@@ -159,6 +159,37 @@ class CatalogSalesVsHppTableFilterTest extends TestCase
         $this->assertStringContainsString('filter_product=Produk Match HPP', urldecode($paginator->url(2)));
     }
 
+    public function test_sales_vs_hpp_kpis_compare_with_the_immediately_previous_equal_length_period(): void
+    {
+        $this->seedSaleRow('INV-HPP-PREV', $this->matchingProduct, '2026-04-03', 1, 100000, 40000);
+
+        $controller = new CatalogReportController(
+            Mockery::mock(BalanceSheetReportService::class),
+            Mockery::mock(ProfitLossReportService::class),
+        );
+        $method = new \ReflectionMethod($controller, 'buildSalesVsHppPreviousComparison');
+        $method->setAccessible(true);
+        $comparison = $method->invoke(
+            $controller,
+            '2026-04-04',
+            '2026-04-04',
+            [$this->outlet->id],
+            null,
+            150000.0,
+            1,
+            50000.0,
+            100000.0,
+        );
+
+        $this->assertSame('2026-04-03', $comparison['date_from']);
+        $this->assertSame('2026-04-03', $comparison['date_to']);
+        $this->assertSame(100000.0, $comparison['total_sales']['previous']);
+        $this->assertSame(50000.0, $comparison['total_sales']['delta']);
+        $this->assertSame(50.0, $comparison['total_sales']['delta_percent']);
+        $this->assertSame(10000.0, $comparison['total_hpp']['delta']);
+        $this->assertSame(40000.0, $comparison['total_gross_profit']['delta']);
+    }
+
     protected function seedSaleRow(
         string $invoiceNumber,
         Product $product,

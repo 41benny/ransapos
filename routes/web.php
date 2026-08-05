@@ -677,6 +677,21 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device', \App\Http\
         ->name('sales.void')
         ->middleware('role:kasir,admin');
 
+    // Pengeluaran Kios — uang tunai keluar dari LACI kasir.
+    // Berbeda dari Petty Cash di bawah yang memotong kantong kas kecil terpisah.
+    Route::get('/expenses', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'index'])
+        ->name('expenses.index')
+        ->middleware('role:kasir,admin,manager,superadmin');
+    Route::get('/expenses/create', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'create'])
+        ->name('expenses.create')
+        ->middleware('role:kasir,admin,manager,superadmin');
+    Route::post('/expenses', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'store'])
+        ->name('expenses.store')
+        ->middleware('role:kasir,admin,manager,superadmin');
+    Route::post('/expenses/{expense}/void', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'void'])
+        ->name('expenses.void')
+        ->middleware('role:kasir,admin,manager,superadmin');
+
     // Petty Cash POS (Kas Kecil Outlet, terpisah dari kas sales)
     Route::get('/petty-cash', [\App\Http\Controllers\POS\PettyCashController::class, 'index'])
         ->name('petty-cash.index')

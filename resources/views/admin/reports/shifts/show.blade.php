@@ -91,8 +91,20 @@
                     <span class="text-sm text-gray-600">Total Non-Cash:</span>
                     <span class="text-sm font-normal text-blue-600">Rp {{ number_format($cashSession->total_non_cash, 0, ',', '.') }}</span>
                 </div>
+                @if($drawerModuleUsed)
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Pengeluaran Tunai (Laci):</span>
+                    <span class="text-sm font-normal text-red-600">&minus; Rp {{ number_format($cashSession->total_cash_expense, 0, ',', '.') }}</span>
+                </div>
+                @if($cashSession->total_noncash_expense > 0)
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Pengeluaran Non-Tunai:</span>
+                    <span class="text-sm font-normal text-gray-500">Rp {{ number_format($cashSession->total_noncash_expense, 0, ',', '.') }} <span class="text-xs">(tidak potong laci)</span></span>
+                </div>
+                @endif
+                @endif
                 <div class="flex justify-between pt-3 border-t border-gray-200">
-                    <span class="text-sm font-normal text-gray-600">Kas yang Seharusnya:</span>
+                    <span class="text-sm font-normal text-gray-600">{{ $drawerModuleUsed ? 'Saldo Laci Seharusnya:' : 'Kas yang Seharusnya:' }}</span>
                     <span class="text-sm font-normal text-gray-900">Rp {{ number_format($cashSession->expected_balance, 0, ',', '.') }}</span>
                 </div>
                 @if($cashSession->status === 'closed')
@@ -110,11 +122,79 @@
                         <span class="text-lg font-normal text-gray-600">Rp 0</span>
                     @endif
                 </div>
+                @if($drawerModuleUsed)
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Modal Disisakan:</span>
+                    <span class="text-sm font-normal text-gray-900">Rp {{ number_format($cashSession->retained_balance, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between pt-3 border-t-2 border-emerald-200">
+                    <span class="text-base font-normal text-emerald-800">Setoran:</span>
+                    <span class="text-lg font-normal text-emerald-700">Rp {{ number_format($cashSession->deposit_amount, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Status Setoran:</span>
+                    <span class="text-sm font-normal">
+                        @php
+                            $depositLabels = ['pending' => 'Menunggu', 'handed_over' => 'Diserahkan', 'verified' => 'Terverifikasi'];
+                        @endphp
+                        <span class="px-2 py-0.5 text-xs rounded-full {{ $cashSession->deposit_status === 'verified' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800' }}">
+                            {{ $depositLabels[$cashSession->deposit_status] ?? $cashSession->deposit_status }}
+                        </span>
+                    </span>
+                </div>
+                @endif
                 @endif
             </div>
         </div>
     </div>
 </div>
+
+@if($drawerModuleUsed)
+<!-- Rincian Pengeluaran Kios -->
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="text-lg font-normal text-gray-900 mb-4">Rincian Pengeluaran Kios</h3>
+    @if($drawerExpenses->isEmpty())
+        <p class="text-sm text-gray-500">Tidak ada pengeluaran pada shift ini.</p>
+    @else
+        <div class="overflow-x-auto">
+            <table class="ui-table imperial-table w-full">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Waktu</th>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Keperluan</th>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Penerima</th>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Kategori</th>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Sumber</th>
+                        <th class="px-4 py-2 text-right text-xs font-normal text-gray-600 uppercase">Jumlah</th>
+                        <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Dicatat Oleh</th>
+                        <th class="px-4 py-2 text-center text-xs font-normal text-gray-600 uppercase">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($drawerExpenses as $expense)
+                    <tr class="{{ $expense->isVoided() ? 'opacity-50' : '' }}">
+                        <td class="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">{{ $expense->created_at->format('d M, H:i') }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900 {{ $expense->isVoided() ? 'line-through' : '' }}">{{ $expense->description }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->recipient_name }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->coaAccount->name ?? '-' }}</td>
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}</td>
+                        <td class="px-4 py-2 text-right text-sm font-normal {{ $expense->isVoided() ? 'text-gray-400 line-through' : 'text-gray-900' }}">Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->creator->name ?? '-' }}</td>
+                        <td class="px-4 py-2 text-center">
+                            @if($expense->isVoided())
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800" title="{{ $expense->void_reason }}">Dibatalkan</span>
+                            @else
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">Posted</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
+@endif
 
 <!-- Summary Box -->
 <div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">

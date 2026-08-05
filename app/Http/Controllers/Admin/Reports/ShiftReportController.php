@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\CashSession;
+use App\Models\CashSessionExpense;
 use App\Models\Outlet;
 use App\Models\PosDevice;
 use App\Models\User;
@@ -122,13 +123,28 @@ class ShiftReportController extends Controller
 
         $sessionDiagnostics = $this->buildSessionDiagnostics($cashSession, $salesMetrics);
 
+        // Modul Pengeluaran Kios (laci) — dikenali dari drawer_cash_account_id
+        // yang terisi, karena itu hanya diset saat shift dibuka dengan flag
+        // `pos_drawer_expense_enabled` menyala. Shift lama/flag-mati tetap
+        // memakai panel "Kas yang Seharusnya" lama tanpa rincian pengeluaran.
+        $drawerModuleUsed = ! is_null($cashSession->drawer_cash_account_id);
+        $drawerExpenses = $drawerModuleUsed
+            ? CashSessionExpense::query()
+                ->where('cash_session_id', $cashSession->id)
+                ->with(['coaAccount', 'creator'])
+                ->orderBy('created_at')
+                ->get()
+            : collect();
+
         return view('admin.reports.shifts.show', compact(
             'cashSession',
             'sales',
             'salesMetrics',
             'paymentBreakdown',
             'topProducts',
-            'sessionDiagnostics'
+            'sessionDiagnostics',
+            'drawerModuleUsed',
+            'drawerExpenses'
         ));
     }
 

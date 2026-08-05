@@ -61,6 +61,8 @@
                             class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Minggu Ini</button>
                         <button type="button" data-range-preset="month"
                             class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Bulan Ini</button>
+                        <button type="button" data-range-preset="last-month"
+                            class="date-preset-btn rounded-lg border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:border-indigo-200 hover:text-indigo-600">Bulan Lalu</button>
                     </div>
                 </div>
                 <button id="refreshBtn" type="button"
@@ -145,8 +147,8 @@
                     class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
                     <i class="fas fa-sack-dollar text-lg"></i>
                 </div>
-                <div class="text-right">
-                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Laba Owner</span>
+                <div class="text-right" title="Laba bersih = Omzet − HPP − Komisi merchant − Biaya operasional (termasuk Pengeluaran Kios setelah shift ditutup). Angka sama dengan Laporan Laba Rugi.">
+                    <span class="block text-[10px] font-black uppercase tracking-widest text-slate-400">Laba Bersih (Owner)</span>
                     <span id="kpiProfitPct" class="text-xs font-black text-emerald-500">-</span>
                 </div>
             </div>
@@ -157,6 +159,7 @@
                     <span id="trendProfit" class="text-slate-600">-</span>
                 </div>
                 <div id="kpiMerchandiseShare" class="text-[10px] font-bold text-slate-400">Komisi merchant 20% (mulai 1 Jul 2026): -</div>
+                <div id="kpiTotalExpenses" class="text-[10px] font-bold text-slate-400">Biaya operasional (termasuk Pengeluaran Kios): -</div>
             </div>
             <div class="absolute bottom-0 left-0 h-1 w-0 bg-emerald-600 transition-all duration-500 group-hover:w-full">
             </div>
@@ -876,6 +879,10 @@
                     start.setDate(start.getDate() - day + 1);
                 } else if (preset === 'month') {
                     start.setDate(1);
+                } else if (preset === 'last-month') {
+                    start.setDate(1);
+                    start.setMonth(start.getMonth() - 1);
+                    end.setDate(0);
                 }
 
                 return {
@@ -1253,18 +1260,24 @@
                 const marginContainer = document.getElementById('outletMarginContainer');
                 const marginList = document.getElementById('outletMarginList');
                 if (marginContainer && marginList) {
-                    if (hasData) {
+                    if (hasData || rows.some(r => Number(r.net_profit || 0) !== 0 || Number(r.previous_net_profit || 0) !== 0)) {
                         marginContainer.classList.remove('hidden');
                         marginList.innerHTML = rows.map(r => {
                             const rev = Number(r.amount || 0);
                             const cogs = Number(r.cogs || 0);
                             const cogsPct = rev > 0 ? (cogs / rev * 100).toFixed(1) : 0;
-                            const reportUrl = buildSalesVsHppUrl(r.outlet_id);
-                            const cardTag = canOpenSalesVsHppReport ? 'a' : 'div';
-                            const cardAttrs = canOpenSalesVsHppReport
+                            const netProfit = Number(r.net_profit || 0);
+                            const prevNetProfit = Number(r.previous_net_profit || 0);
+                            const deltaNetProfit = Number(r.delta_net_profit || 0);
+                            const deltaNetProfitPct = r.delta_net_profit_pct;
+                            const deltaClass = deltaNetProfit >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                            const isReportableOutlet = Number(r.outlet_id || 0) > 0 && canOpenSalesVsHppReport;
+                            const reportUrl = isReportableOutlet ? buildSalesVsHppUrl(r.outlet_id) : '';
+                            const cardTag = isReportableOutlet ? 'a' : 'div';
+                            const cardAttrs = isReportableOutlet
                                 ? `href="${escapeHtml(reportUrl)}" title="Lihat laporan Sales vs HPP"`
                                 : '';
-                            const cardClass = canOpenSalesVsHppReport
+                            const cardClass = isReportableOutlet
                                 ? 'group relative block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50'
                                 : 'group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50';
                             return `
@@ -1276,6 +1289,12 @@
                                     </div>
                                     <div class="w-full rounded-full bg-blue-500 h-1.5 overflow-hidden opacity-80 transition-all duration-300 group-hover:opacity-100">
                                         <div class="bg-rose-500 h-1.5 rounded-full transition-all duration-500" style="width: ${cogsPct}%"></div>
+                                    </div>
+                                    <div class="mt-3 border-t border-slate-100 pt-3">
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-slate-400">Laba Bersih</div>
+                                        <div class="mt-0.5 text-sm font-black ${netProfit >= 0 ? 'text-slate-800' : 'text-rose-700'}">${idr.format(netProfit)}</div>
+                                        <div class="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">vs Prev Period: <span class="${deltaClass}">${formatSignedIdr(deltaNetProfit)} (${formatSignedPct(deltaNetProfitPct)})</span></div>
+                                        <div class="mt-1 text-[9px] font-semibold text-slate-400">Komisi: ${idr.format(Number(r.merchant_commission || 0))} &middot; Biaya: ${idr.format(Number(r.operating_expenses || 0))}</div>
                                     </div>
                                     <div class="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
                                 </${cardTag}>
@@ -1327,21 +1346,27 @@
                 trendSalesEl.textContent = trendPrev === null ? '-' : `${idr.format(Number(trendSalesAbs || 0))} (${formatSignedPct(trendPct)})`;
                 trendSalesPctEl.textContent = formatSignedPct(trendPct);
 
-                const grossProfit = Number(data?.kpis?.gross_profit || 0);
-                const grossMarginPct = data?.kpis?.gross_margin_pct ?? null;
+                // Laba Owner = laba BERSIH (omzet - HPP - komisi merchant - biaya
+                // operasional), sengaja disamakan rumusnya dengan Laporan Laba Rugi
+                // (lihat DashboardController::calculateTotalOperatingExpenses) supaya
+                // dua tempat ini tidak pernah menunjukkan angka yang berbeda.
+                const netProfit = Number(data?.kpis?.net_profit || 0);
+                const netMarginPct = data?.kpis?.net_margin_pct ?? null;
                 const merchandiseShare = Number(data?.kpis?.merchandise_share || 0);
-                kpiGrossProfitEl.textContent = idr.format(grossProfit);
+                const totalExpenses = Number(data?.kpis?.total_expenses || 0);
+                kpiGrossProfitEl.textContent = idr.format(netProfit);
                 document.getElementById('kpiMerchandiseShare').textContent = `Komisi merchant 20% (mulai 1 Jul 2026): ${idr.format(merchandiseShare)}`;
-                kpiProfitPctEl.textContent = grossMarginPct === null ? '-' : `${Number(grossMarginPct).toFixed(1)}%`;
-                kpiProfitPctEl.classList.toggle('text-emerald-500', grossProfit >= 0);
-                kpiProfitPctEl.classList.toggle('text-rose-500', grossProfit < 0);
+                document.getElementById('kpiTotalExpenses').textContent = `Biaya operasional (termasuk Pengeluaran Kios): ${idr.format(totalExpenses)}`;
+                kpiProfitPctEl.textContent = netMarginPct === null ? '-' : `${Number(netMarginPct).toFixed(1)}%`;
+                kpiProfitPctEl.classList.toggle('text-emerald-500', netProfit >= 0);
+                kpiProfitPctEl.classList.toggle('text-rose-500', netProfit < 0);
 
-                const prevGrossProfit = data?.trend_vs_prev_day?.prev_gross_profit ?? null;
-                const deltaGrossProfit = data?.trend_vs_prev_day?.delta_gross_profit ?? null;
-                const deltaGrossProfitPct = data?.trend_vs_prev_day?.delta_gross_profit_pct ?? null;
-                trendProfitEl.textContent = prevGrossProfit === null ? '-' : `${formatSignedIdr(deltaGrossProfit || 0)} (${formatSignedPct(deltaGrossProfitPct)})`;
-                trendProfitEl.classList.toggle('text-emerald-600', Number(deltaGrossProfit || 0) >= 0);
-                trendProfitEl.classList.toggle('text-rose-600', Number(deltaGrossProfit || 0) < 0);
+                const prevNetProfit = data?.trend_vs_prev_day?.prev_net_profit ?? null;
+                const deltaNetProfit = data?.trend_vs_prev_day?.delta_net_profit ?? null;
+                const deltaNetProfitPct = data?.trend_vs_prev_day?.delta_net_profit_pct ?? null;
+                trendProfitEl.textContent = prevNetProfit === null ? '-' : `${formatSignedIdr(deltaNetProfit || 0)} (${formatSignedPct(deltaNetProfitPct)})`;
+                trendProfitEl.classList.toggle('text-emerald-600', Number(deltaNetProfit || 0) >= 0);
+                trendProfitEl.classList.toggle('text-rose-600', Number(deltaNetProfit || 0) < 0);
 
                 const showBreakdown = Boolean(data?.show_breakdown);
 

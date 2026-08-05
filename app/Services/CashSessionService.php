@@ -10,6 +10,38 @@ use Exception;
 
 class CashSessionService
 {
+    public function __construct(
+        protected ?PosDrawerExpenseService $expenseService = null,
+        protected ?ShiftClosingPostingService $postingService = null,
+    ) {
+        $this->expenseService ??= app(PosDrawerExpenseService::class);
+        $this->postingService ??= app(ShiftClosingPostingService::class);
+    }
+
+    /**
+     * Modal awal yang disarankan untuk shift berikutnya: modal disisakan dari
+     * shift operasional terakhir yang sudah ditutup di outlet ini (SHIFT-01).
+     *
+     * Selama modal awal bisa diketik bebas, rantai modal terputus dan selisih
+     * hari ini bisa ditutup dengan mengetik ulang modal besok.
+     */
+    public function suggestedOpeningBalance(int $outletId): ?float
+    {
+        $lastClosed = CashSession::query()
+            ->where('outlet_id', $outletId)
+            ->where('status', 'closed')
+            ->where('session_type', '!=', 'backdate_correction')
+            ->orderByDesc('closed_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $lastClosed) {
+            return null;
+        }
+
+        return (float) $lastClosed->retained_balance;
+    }
+
     /**
      * Buka shift kasir baru
      * 
@@ -69,6 +101,24 @@ class CashSessionService
                 'status' => 'open',
             ]);
 
+            // Modul Pengeluaran Kios: kaitkan shift ke laci outlet dan samakan
+            // saldo buku laci dengan modal awal. Dilewati kalau flag masih mati
+            // supaya perilaku lama benar-benar tidak tersentuh.
+            if ($this->expenseService->isEnabled()) {
+                $drawer = $this->expenseService->resolveDrawerAccount((int) $data['outlet_id']);
+
+                if (! $drawer) {
+                    throw new Exception(
+                        'Akun laci kasir untuk outlet ini belum ada. Minta admin membuat akun kas dengan tipe penggunaan "Laci Kasir".'
+                    );
+                }
+
+                $session->drawer_cash_account_id = $drawer->id;
+                $session->save();
+
+                $this->postingService->syncOpeningBalance($session, $drawer);
+            }
+
             DB::commit();
 
             return $session->load(['outlet', 'user']);
@@ -93,22 +143,57 @@ class CashSessionService
         float $actualBalance,
         ?string $notes = null,
         ?int $closedPosDeviceId = null,
-        ?string $closedIp = null
+        ?string $closedIp = null,
+        ?float $retainedBalance = null
     ): CashSession
     {
         DB::beginTransaction();
-        
+
         try {
+            // Kunci baris shift supaya input pengeluaran yang datang bersamaan
+            // tidak lolos setelah totalnya dihitung (TEK-02).
+            $session = CashSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+
             // Validasi session masih open
             if ($session->status !== 'open') {
                 throw new Exception('Sesi kasir sudah ditutup sebelumnya');
             }
 
-            // Hitung selisih (actual - expected)
-            $difference = $actualBalance - $session->expected_balance;
+            $moduleEnabled = $this->expenseService->isEnabled() && ! $session->isBackdateCorrection();
 
-            // Update session
-            $session->update([
+            if ($moduleEnabled) {
+                // Hitung ulang dari baris detail, bukan percaya kolom agregat.
+                $this->expenseService->recalculateSessionTotals($session);
+                $session->refresh();
+
+                $expected = $session->calculateExpectedBalance();
+
+                $retained = round((float) ($retainedBalance ?? 0), 2);
+                if ($retained < 0) {
+                    throw new Exception('Modal disisakan tidak boleh negatif.');
+                }
+
+                // Tidak bisa menyisakan uang yang tidak ada di laci (SETOR-03).
+                if ($retained > $actualBalance) {
+                    throw new Exception(
+                        'Modal disisakan (Rp ' . number_format($retained, 0, ',', '.') .
+                        ') melebihi uang fisik (Rp ' . number_format($actualBalance, 0, ',', '.') . ').'
+                    );
+                }
+
+                $session->expected_balance = $expected;
+                $session->retained_balance = $retained;
+
+                // Setoran adalah turunan: yang bisa disetor hanyalah uang yang
+                // benar-benar ada, bukan uang yang seharusnya ada (SETOR-02).
+                $session->deposit_amount = round($actualBalance - $retained, 2);
+                $session->deposit_status = 'pending';
+            }
+
+            // Hitung selisih (actual - expected)
+            $difference = round($actualBalance - (float) $session->expected_balance, 2);
+
+            $session->fill([
                 'actual_balance' => $actualBalance,
                 'difference' => $difference,
                 'closed_at' => now(),
@@ -117,6 +202,19 @@ class CashSessionService
                 'status' => 'closed',
                 'notes' => $notes ? ($session->notes ? $session->notes . "\n\n" . $notes : $notes) : $session->notes,
             ]);
+            $session->save();
+
+            if ($moduleEnabled) {
+                $drawer = $session->drawer_cash_account_id
+                    ? \App\Models\CashAccount::find($session->drawer_cash_account_id)
+                    : $this->expenseService->resolveDrawerAccount((int) $session->outlet_id);
+
+                if (! $drawer) {
+                    throw new Exception('Akun laci kasir tidak ditemukan. Closing dibatalkan.');
+                }
+
+                $this->postingService->postClosing($session, $drawer);
+            }
 
             DB::commit();
 

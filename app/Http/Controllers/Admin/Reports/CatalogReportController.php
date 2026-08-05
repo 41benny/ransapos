@@ -12,6 +12,7 @@ use App\Support\MerchantCommission;
 use App\Support\SpecialPromotion;
 use App\Services\BalanceSheetReportService;
 use App\Services\ProfitLossReportService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -973,6 +974,17 @@ class CatalogReportController extends Controller
             $totalHpp = (float) ($itemTotals->total_hpp ?? 0);
             $totalGrossProfit = $totalSales - $totalHpp - $merchantCommission;
 
+            $previousComparison = $this->buildSalesVsHppPreviousComparison(
+                dateFrom: $dateFrom,
+                dateTo: $dateTo,
+                selectedOutletIds: $selectedOutletIds,
+                outletId: $outletId,
+                totalSales: $totalSales,
+                totalInvoices: $totalInvoices,
+                totalHpp: $totalHpp,
+                totalGrossProfit: $totalGrossProfit,
+            );
+
             $summary = [
                 'total_items' => (int) ($itemTotals->total_items ?? 0),
                 'total_qty' => (float) ($itemTotals->total_qty ?? 0),
@@ -985,6 +997,7 @@ class CatalogReportController extends Controller
                 'total_gross_profit' => $totalGrossProfit,
                 'gross_margin_percent' => $totalSales > 0 ? round(($totalGrossProfit / $totalSales) * 100, 2) : 0,
                 'payment_methods' => $salesVsHppPaymentMethods,
+                'comparison' => $previousComparison,
             ];
         }
 
@@ -2075,6 +2088,77 @@ class CatalogReportController extends Controller
         if ($request->filled('filter_margin')) {
             $rowsQuery->whereRaw("CAST({$marginExpr} AS CHAR) LIKE ?", [$this->reportLikeValue($request->input('filter_margin'))]);
         }
+    }
+
+    /**
+     * Build KPI deltas against the immediately preceding period with the same
+     * number of calendar days, matching the Owner Dashboard comparison scheme.
+     *
+     * @param  array<int>  $selectedOutletIds
+     * @return array<string, mixed>
+     */
+    private function buildSalesVsHppPreviousComparison(
+        string $dateFrom,
+        string $dateTo,
+        array $selectedOutletIds,
+        mixed $outletId,
+        float $totalSales,
+        int $totalInvoices,
+        float $totalHpp,
+        float $totalGrossProfit,
+    ): array {
+        $periodStart = Carbon::parse($dateFrom)->startOfDay();
+        $periodEnd = Carbon::parse($dateTo)->startOfDay();
+        $periodDays = $periodStart->diffInDays($periodEnd) + 1;
+        $previousDateTo = $periodStart->copy()->subDay()->toDateString();
+        $previousDateFrom = $periodStart->copy()->subDays($periodDays)->toDateString();
+
+        $previousSalesBaseQuery = DB::table('sales')
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.sale_date', [$previousDateFrom, $previousDateTo]);
+
+        if (!empty($selectedOutletIds)) {
+            $previousSalesBaseQuery->whereIn('sales.outlet_id', $selectedOutletIds);
+        } elseif (!empty($outletId)) {
+            $previousSalesBaseQuery->where('sales.outlet_id', $outletId);
+        }
+
+        $previousTotalSales = (float) (clone $previousSalesBaseQuery)->sum('sales.total_amount');
+        $previousTotalInvoices = (int) (clone $previousSalesBaseQuery)->count();
+        $previousTotalHpp = (float) DB::table('sale_items')
+            ->joinSub((clone $previousSalesBaseQuery)->select('sales.id'), 'previous_sales', function ($join) {
+                $join->on('sale_items.sale_id', '=', 'previous_sales.id');
+            })
+            ->sum('sale_items.cogs');
+        $previousMerchantSalesQuery = clone $previousSalesBaseQuery;
+        MerchantCommission::constrainSalesQuery($previousMerchantSalesQuery);
+        $previousMerchantCommission = (float) $previousMerchantSalesQuery->sum('sales.total_amount') * MerchantCommission::RATE;
+        $previousGrossProfit = $previousTotalSales - $previousTotalHpp - $previousMerchantCommission;
+        $previousAvgPerInvoice = $previousTotalInvoices > 0
+            ? $previousTotalSales / $previousTotalInvoices
+            : 0;
+
+        $comparison = static function (float $current, float $previous): array {
+            $delta = $current - $previous;
+
+            return [
+                'previous' => $previous,
+                'delta' => $delta,
+                'delta_percent' => $previous > 0 ? ($delta / $previous) * 100 : null,
+            ];
+        };
+
+        return [
+            'date_from' => $previousDateFrom,
+            'date_to' => $previousDateTo,
+            'avg_per_invoice' => $comparison(
+                $totalInvoices > 0 ? $totalSales / $totalInvoices : 0,
+                $previousAvgPerInvoice
+            ),
+            'total_sales' => $comparison($totalSales, $previousTotalSales),
+            'total_hpp' => $comparison($totalHpp, $previousTotalHpp),
+            'total_gross_profit' => $comparison($totalGrossProfit, $previousGrossProfit),
+        ];
     }
 
     private function salesVsHppLineTotalSql(): string

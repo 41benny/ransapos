@@ -124,20 +124,43 @@
                         </h3>
 
                         <!-- Cash Flow Visualize -->
-                        <div class="space-y-4 mb-8">
-                            <div class="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl border border-gray-600/30">
-                                <div>
-                                    <p class="text-sm text-gray-400 mb-1">Saldo Awal (Modal)</p>
-                                    <p class="text-xl font-bold text-white">Rp {{ number_format($activeSession->opening_balance, 0, ',', '.') }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-sm text-gray-400 mb-1">Total Tunai Masuk</p>
-                                    <p class="text-xl font-bold text-green-400">+ Rp {{ number_format($activeSession->total_cash, 0, ',', '.') }}</p>
-                                </div>
+                        <div class="space-y-3 mb-6">
+                            <div class="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-xl border border-gray-600/30">
+                                <span class="text-sm text-gray-400">Modal awal</span>
+                                <span class="text-lg font-bold text-white font-mono">Rp {{ number_format($activeSession->opening_balance, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-xl border border-gray-600/30">
+                                <span class="text-sm text-gray-400">Penerimaan tunai</span>
+                                <span class="text-lg font-bold text-green-400 font-mono">+ Rp {{ number_format($activeSession->total_cash, 0, ',', '.') }}</span>
                             </div>
 
+                            @if($drawerEnabled)
+                            <div class="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-xl border border-gray-600/30">
+                                <span class="text-sm text-gray-400">
+                                    Pengeluaran tunai
+                                    @if($drawerExpenses->isNotEmpty())
+                                        <button type="button" onclick="document.getElementById('expenseDetail').classList.toggle('hidden')"
+                                                class="ml-1 text-xs text-indigo-400 hover:text-indigo-300 underline">rincian</button>
+                                    @endif
+                                </span>
+                                <span class="text-lg font-bold text-red-400 font-mono">&minus; Rp {{ number_format($activeSession->total_cash_expense, 0, ',', '.') }}</span>
+                            </div>
+
+                            <div id="expenseDetail" class="hidden px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50 space-y-2">
+                                @foreach($drawerExpenses as $expense)
+                                    <div class="flex items-start justify-between gap-3 text-xs">
+                                        <div class="min-w-0">
+                                            <p class="text-gray-300 truncate">{{ $expense->description }}</p>
+                                            <p class="text-gray-500">{{ $expense->recipient_name }} &middot; {{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? '' }}</p>
+                                        </div>
+                                        <span class="font-mono text-gray-300 whitespace-nowrap">Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @endif
+
                             <div class="p-4 bg-indigo-900/20 rounded-xl border border-indigo-500/30 text-center">
-                                <p class="text-sm text-indigo-300 mb-1 font-medium">Total Uang Tunai yang Seharusnya Ada</p>
+                                <p class="text-sm text-indigo-300 mb-1 font-medium">Saldo Laci Seharusnya</p>
                                 <p class="text-3xl font-bold text-white tracking-tight">Rp {{ number_format($activeSession->expected_balance, 0, ',', '.') }}</p>
                             </div>
                         </div>
@@ -145,20 +168,32 @@
                         <!-- Input Actual Cash -->
                         <div class="mb-6">
                             <label for="actual_balance" class="block text-sm font-medium text-gray-300 mb-2">
-                                Kas Fisik Aktual <span class="text-red-400">*</span>
+                                Hitung Fisik <span class="text-red-400">*</span>
                             </label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <span class="text-gray-400 text-lg font-bold">Rp</span>
                                 </div>
-                                <input type="number" 
-                                       name="actual_balance" 
-                                       id="actual_balance" 
-                                       value="{{ old('actual_balance', $activeSession->expected_balance) }}"
-                                       step="100"
-                                       min="0"
-                                       required
-                                       class="w-full pl-12 pr-4 py-4 bg-gray-900 text-white text-2xl font-bold rounded-xl border border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition shadow-inner placeholder-gray-600">
+                                {{--
+                                    Di-prefill dengan Saldo Laci Seharusnya atas permintaan eksplisit
+                                    operasional (mengikuti perilaku lama). CATATAN RISIKO: kasir yang
+                                    tidak mengubah angka ini akan submit dengan selisih otomatis Rp 0
+                                    tanpa benar-benar menghitung uang fisik — rekonsiliasi jadi tidak
+                                    efektif untuk kasir yang tidak disiplin mengubahnya. Sudah
+                                    disampaikan ke pemilik sistem dan tetap dipilih dengan sadar.
+
+                                    Input teks (bukan type="number") supaya bisa diberi pemisah ribuan
+                                    saat diketik. Nilai mentah yang benar-benar dikirim ke server
+                                    disimpan di hidden input actual_balance, disinkronkan oleh JS.
+                                --}}
+                                <input type="text"
+                                       inputmode="numeric"
+                                       id="actual_balance_display"
+                                       autocomplete="off"
+                                       placeholder="Hitung dulu uang di laci"
+                                       class="w-full pl-12 pr-4 py-4 bg-gray-900 text-white text-2xl font-bold rounded-xl border border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition shadow-inner placeholder-gray-600 placeholder:text-base placeholder:font-normal">
+                                <input type="hidden" name="actual_balance" id="actual_balance"
+                                       value="{{ old('actual_balance', (int) $activeSession->expected_balance) }}">
                             </div>
                             <p class="mt-2 text-xs text-gray-400">Hitung manual uang tunai di laci dan masukkan nominalnya di sini.</p>
                         </div>
@@ -171,6 +206,44 @@
                             </div>
                             <p id="diffDesc" class="text-xs mt-1 opacity-80"></p>
                         </div>
+
+                        @if($drawerEnabled)
+                        <!-- Modal disisakan & setoran -->
+                        <div class="mb-6">
+                            <label for="retained_balance" class="block text-sm font-medium text-gray-300 mb-2">
+                                Modal Disisakan untuk Shift Berikutnya
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <span class="text-gray-400 font-bold">Rp</span>
+                                </div>
+                                {{--
+                                    Default mengikuti modal awal shift ini (bukan 0): kios biasanya
+                                    menyisakan modal yang sama tiap hari, jadi kasir tidak perlu
+                                    ketik ulang angka yang sama tiap closing. Tetap bisa diubah
+                                    kalau memang mau menyisakan modal yang berbeda.
+
+                                    Sama seperti Hitung Fisik: input teks bermasking + hidden input
+                                    untuk nilai mentah yang dikirim ke server.
+                                --}}
+                                <input type="text"
+                                       inputmode="numeric"
+                                       id="retained_balance_display"
+                                       autocomplete="off"
+                                       class="w-full pl-12 pr-4 py-3 bg-gray-900 text-white text-lg font-bold rounded-xl border border-gray-700 focus:border-indigo-500 focus:outline-none">
+                                <input type="hidden" name="retained_balance" id="retained_balance"
+                                       value="{{ old('retained_balance', (int) $activeSession->opening_balance) }}">
+                            </div>
+                            <p class="mt-2 text-xs text-gray-400">Uang yang ditinggal di laci. Menjadi modal awal shift berikutnya. Default mengikuti modal awal hari ini — ubah kalau perlu.</p>
+                            <p class="mt-1 text-xs text-red-400 hidden" id="retainedWarn"></p>
+                        </div>
+
+                        <div class="mb-8 p-5 bg-emerald-900/20 rounded-xl border border-emerald-500/30 text-center">
+                            <p class="text-sm text-emerald-300 mb-1 font-medium">SETORAN</p>
+                            <p class="text-3xl font-bold text-white tracking-tight" id="depositAmount">Rp 0</p>
+                            <p class="text-[11px] text-emerald-400/70 mt-1">Hitung fisik &minus; modal disisakan</p>
+                        </div>
+                        @endif
 
                         <!-- Notes -->
                         <div class="mb-8">
@@ -219,6 +292,18 @@
                 </span>
                 @endif
             </div>
+
+            @if(($packaging['dimsum_pieces_sold'] ?? 0) > 0)
+            {{--
+                Total pcs dimsum yang laku pada shift ini (dari Estimasi Sales, bukan
+                hitung fisik box) — dijumlah dari baris "Box N" di tabel di bawah, N
+                diambil dari nama box itu sendiri (Box 4 = 4 pcs, Box 32 = 32 pcs, dst).
+            --}}
+            <div class="mb-4 p-4 rounded-xl bg-orange-900/20 border border-orange-500/30 flex items-center justify-between">
+                <span class="text-sm font-medium text-orange-200">Total Pcs Dimsum Laku (dari penjualan shift ini)</span>
+                <span class="text-2xl font-bold text-white">{{ number_format($packaging['dimsum_pieces_sold'], 0, ',', '.') }} pcs</span>
+            </div>
+            @endif
 
             <div class="overflow-x-auto rounded-xl border border-gray-700/50">
                 <table class="w-full text-sm whitespace-nowrap">
@@ -313,39 +398,139 @@ document.querySelectorAll('[data-pkg-row]').forEach(function (row) {
     }
 });
 
-// Calculate difference real-time
-document.getElementById('actual_balance').addEventListener('input', function() {
-    const expected = {{ $activeSession->expected_balance }};
-    const actual = parseFloat(this.value) || 0;
-    const difference = actual - expected;
-    
+// Rekonsiliasi kas real-time.
+(function () {
+    const expected = {{ (float) $activeSession->expected_balance }};
+    const tolerance = {{ (float) ($differenceTolerance ?? 0) }};
+    const drawerEnabled = @json($drawerEnabled ?? false);
+
+    // actualInput/retainedInput tetap merujuk ke hidden input — itu yang
+    // benar-benar dikirim ke server. *_display adalah yang dilihat & diketik
+    // kasir, diberi pemisah ribuan, dan tidak pernah dikirim sebagai form field.
+    const actualInput = document.getElementById('actual_balance');
+    const actualDisplay = document.getElementById('actual_balance_display');
+    const retainedInput = document.getElementById('retained_balance');
+    const retainedDisplay = document.getElementById('retained_balance_display');
+    const depositLabel = document.getElementById('depositAmount');
+    const retainedWarn = document.getElementById('retainedWarn');
+
     const preview = document.getElementById('differencePreview');
     const text = document.getElementById('differenceText');
     const desc = document.getElementById('diffDesc');
-    
-    if (difference !== 0) {
-        preview.classList.remove('hidden');
-        
-        if (difference > 0) {
-            preview.className = 'mb-6 p-4 rounded-xl border bg-green-900/20 border-green-500/30 text-green-400';
-            text.textContent = '+ Rp ' + Math.abs(difference).toLocaleString('id-ID');
-            desc.textContent = 'Uang Fisik LEBIH BANYAK dari sistem.';
-        } else {
-            preview.className = 'mb-6 p-4 rounded-xl border bg-red-900/20 border-red-500/30 text-red-400';
-            text.textContent = '- Rp ' + Math.abs(difference).toLocaleString('id-ID');
-            desc.textContent = 'Uang Fisik KURANG dari sistem (Minus).';
-        }
-    } else {
-        preview.classList.add('hidden');
-    }
-});
 
-// Confirmation before closing
-document.getElementById('closeForm').addEventListener('submit', function(e) {
-    if (!confirm('PERINGATAN FINAL:\n\nApakah Anda yakin perhitungan kas sudah benar?\nSetelah ditutup, shift ini tidak dapat diubah lagi.')) {
-        e.preventDefault();
+    function fmt(n) {
+        return 'Rp ' + Number(n).toLocaleString('id-ID');
     }
-});
+
+    // Format tampilan dengan titik ribuan (id-ID), hanya menyisakan digit.
+    function formatThousands(digitsOnly) {
+        if (digitsOnly === '') return '';
+        return Number(digitsOnly).toLocaleString('id-ID');
+    }
+
+    // Hubungkan satu pasang display(text, bermasking) <-> hidden(angka mentah).
+    function bindMaskedNumber(displayEl, hiddenEl, onChange) {
+        if (!displayEl || !hiddenEl) return;
+
+        displayEl.value = formatThousands(hiddenEl.value.replace(/\D/g, ''));
+
+        displayEl.addEventListener('input', function () {
+            const digits = displayEl.value.replace(/\D/g, '');
+            hiddenEl.value = digits;
+            displayEl.value = formatThousands(digits);
+            onChange();
+        });
+    }
+
+    function recalc() {
+        const actualRaw = actualInput.value;
+        const actual = parseFloat(actualRaw) || 0;
+        const difference = actual - expected;
+
+        // Selama kasir belum mengisi apa pun, jangan tampilkan selisih —
+        // menampilkan "-Rp sekian" pada field kosong hanya memancing kasir
+        // mengetik angka yang membuatnya nol.
+        if (actualRaw === '') {
+            preview.classList.add('hidden');
+        } else if (difference !== 0) {
+            preview.classList.remove('hidden');
+            if (difference > 0) {
+                preview.className = 'mb-6 p-4 rounded-xl border bg-green-900/20 border-green-500/30 text-green-400';
+                text.textContent = '+ ' + fmt(Math.abs(difference));
+                desc.textContent = 'Uang fisik LEBIH dari saldo seharusnya.';
+            } else {
+                preview.className = 'mb-6 p-4 rounded-xl border bg-red-900/20 border-red-500/30 text-red-400';
+                text.textContent = '- ' + fmt(Math.abs(difference));
+                desc.textContent = 'Uang fisik KURANG dari saldo seharusnya.';
+            }
+        } else {
+            preview.classList.remove('hidden');
+            preview.className = 'mb-6 p-4 rounded-xl border bg-gray-700/30 border-gray-600/40 text-gray-300';
+            text.textContent = fmt(0);
+            desc.textContent = 'Kas cocok dengan saldo seharusnya.';
+        }
+
+        if (!drawerEnabled || !retainedInput) return;
+
+        const retained = parseFloat(retainedInput.value) || 0;
+
+        // Selama Hitung Fisik belum diisi, jangan tampilkan peringatan "melebihi
+        // uang fisik" — Modal Disisakan sudah punya nilai default (mengikuti
+        // modal awal) sebelum Hitung Fisik sempat diketik, jadi tanpa penjagaan
+        // ini peringatannya salah muncul di setiap kali halaman baru dibuka.
+        if (actualRaw === '') {
+            retainedWarn.classList.add('hidden');
+            depositLabel.textContent = fmt(0);
+            return;
+        }
+
+        // Tidak bisa menyisakan uang yang tidak ada di laci.
+        if (retained > actual) {
+            retainedWarn.textContent = 'Modal disisakan melebihi uang fisik (' + fmt(actual) + ').';
+            retainedWarn.classList.remove('hidden');
+            depositLabel.textContent = fmt(0);
+            return;
+        }
+
+        retainedWarn.classList.add('hidden');
+        depositLabel.textContent = fmt(actual - retained);
+    }
+
+    bindMaskedNumber(actualDisplay, actualInput, recalc);
+    bindMaskedNumber(retainedDisplay, retainedInput, recalc);
+    recalc();
+
+    // Confirmation before closing
+    document.getElementById('closeForm').addEventListener('submit', function (e) {
+        // actual_balance sekarang hidden input tanpa atribut `required` bawaan
+        // browser (hidden field tidak bisa divalidasi native secara andal),
+        // jadi wajib-isi ditegakkan manual di sini.
+        if (actualInput.value.trim() === '') {
+            e.preventDefault();
+            alert('Hitung Fisik wajib diisi.');
+            if (actualDisplay) actualDisplay.focus();
+            return;
+        }
+
+        const actual = parseFloat(actualInput.value) || 0;
+        const difference = actual - expected;
+        const notes = document.getElementById('notes');
+
+        // Selisih di atas toleransi wajib dijelaskan. Closing tetap boleh
+        // dilanjutkan — memblokirnya hanya akan membuat kasir mengarang
+        // angka fisik supaya bisa pulang.
+        if (tolerance > 0 && Math.abs(difference) > tolerance && notes && notes.value.trim() === '') {
+            e.preventDefault();
+            alert('Selisih ' + fmt(Math.abs(difference)) + ' melebihi batas toleransi ' + fmt(tolerance) + '.\n\nIsi catatan penjelasan terlebih dahulu.');
+            notes.focus();
+            return;
+        }
+
+        if (!confirm('PERINGATAN FINAL:\n\nApakah Anda yakin perhitungan kas sudah benar?\nSetelah ditutup, shift ini tidak dapat diubah lagi.')) {
+            e.preventDefault();
+        }
+    });
+})();
 </script>
 @endsection
 

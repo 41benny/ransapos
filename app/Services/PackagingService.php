@@ -225,7 +225,40 @@ class PackagingService
             'rows' => $rows,
             'unmapped' => $this->unmappedSoldProducts($session),
             'has_pending' => $hasPending,
+            'dimsum_pieces_sold' => $this->totalDimsumPiecesSold($estimates, $items),
         ];
+    }
+
+    /**
+     * Total pcs dimsum yang laku pada shift ini, dihitung dari Estimasi Sales
+     * (bukan hitung fisik box) karena yang ingin diketahui owner adalah berapa
+     * banyak yang terjual, bukan berapa box yang secara fisik berkurang.
+     *
+     * Item packaging dimsum bernama persis "Box N" (mis. "Box 4", "Box 32"),
+     * hasil auto-mapping dari nama produk "... Isi N". Dicocokkan dengan regex
+     * ketat berbentuk penuh (bukan sekadar "mengandung box") supaya item lain
+     * yang juga diawali "Box" — seperti "Box Takoyaki 5/8" — tidak ikut
+     * kehitung sebagai pcs dimsum.
+     *
+     * @param  array<int, float>  $estimates  packaging_item_id => estimasi box terpakai (dari estimateSalesUsage)
+     * @param  \Illuminate\Support\Collection<int, PackagingItem>  $items
+     */
+    private function totalDimsumPiecesSold(array $estimates, Collection $items): int
+    {
+        $total = 0;
+
+        foreach ($items as $item) {
+            if (! preg_match('/^box\s+(\d+)$/i', trim($item->name), $m)) {
+                continue;
+            }
+
+            $piecesPerBox = (int) $m[1];
+            $boxesSold = (float) ($estimates[$item->id] ?? 0);
+
+            $total += (int) round($boxesSold * $piecesPerBox);
+        }
+
+        return $total;
     }
 
     /**

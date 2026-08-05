@@ -13,12 +13,23 @@ class CoaAccount extends Model
         'type',
         'group',
         'is_active',
+        'is_pos_selectable',
         'notes',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_pos_selectable' => 'boolean',
     ];
+
+    /**
+     * COA yang boleh dipilih kasir di layar Pengeluaran Kios (KLR-06).
+     * Kasir tidak pernah melihat seluruh COA.
+     */
+    public function scopePosSelectable($query)
+    {
+        return $query->where('is_pos_selectable', true)->where('is_active', true);
+    }
 
     /**
      * Relasi ke CashTransaction

@@ -152,13 +152,16 @@
                         <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Dibuka</th>
                         <th class="px-6 py-3 text-left text-xs font-normal text-gray-600 uppercase">Ditutup</th>
                         <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Total Penjualan</th>
+                        <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Pengeluaran Kios</th>
                         <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Selisih</th>
+                        <th class="px-6 py-3 text-right text-xs font-normal text-gray-600 uppercase">Setoran</th>
                         <th class="px-6 py-3 text-center text-xs font-normal text-gray-600 uppercase">Status</th>
                         <th class="px-6 py-3 text-center text-xs font-normal text-gray-600 uppercase no-print">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($sessions as $session)
+                    @php($usesDrawer = ! is_null($session->drawer_cash_account_id))
                     <tr>
                         <td class="px-6 py-3 whitespace-nowrap">
                             <a href="{{ route('admin.reports.shifts.show', ['cashSession' => $session, 'tab' => request('tab', 'penjualan'), 'view_mode' => ($viewMode ?? 'ringkas')]) }}"
@@ -172,6 +175,13 @@
                         <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-600">{{ $session->closed_at ? $session->closed_at->format('d M Y, H:i') : '-' }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal text-gray-900">Rp {{ number_format($session->total_sales, 0, ',', '.') }}</td>
                         <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal">
+                            @if($usesDrawer)
+                                <span class="text-red-600">&minus; Rp {{ number_format($session->total_cash_expense, 0, ',', '.') }}</span>
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal">
                             @if($session->status === 'closed')
                                 @if($session->difference > 0)
                                     <span class="text-green-600">+ Rp {{ number_format($session->difference, 0, ',', '.') }}</span>
@@ -180,6 +190,13 @@
                                 @else
                                     <span class="text-gray-600">Rp 0</span>
                                 @endif
+                            @else
+                                <span class="text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-normal">
+                            @if($usesDrawer && $session->status === 'closed')
+                                <span class="text-emerald-700">Rp {{ number_format($session->deposit_amount, 0, ',', '.') }}</span>
                             @else
                                 <span class="text-gray-400">-</span>
                             @endif
@@ -200,7 +217,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-12 text-center">
+                        <td colspan="11" class="px-6 py-12 text-center">
                             <p class="text-gray-500">Tidak ada shift pada periode ini</p>
                         </td>
                     </tr>

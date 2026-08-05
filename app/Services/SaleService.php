@@ -583,7 +583,7 @@ class SaleService
         // uang fisik saat closing. Menaikkan `expected_balance` retroaktif akan memunculkan
         // selisih kas palsu, jadi saldo dibekukan dan hanya rekap penjualan yang dikoreksi.
         if ($session->status === 'open') {
-            $session->expected_balance = $session->opening_balance + $session->total_cash;
+            $session->expected_balance = $session->calculateExpectedBalance();
         }
 
         $session->save();
@@ -674,7 +674,7 @@ class SaleService
                 // Sama seperti pada input backdate: saldo kas shift yang sudah ditutup dibekukan
                 // karena `actual_balance` adalah hasil hitung uang fisik saat closing.
                 if ($session->status === 'open') {
-                    $session->expected_balance = $session->opening_balance + $session->total_cash;
+                    $session->expected_balance = $session->calculateExpectedBalance();
                 }
 
                 $session->save();
@@ -807,11 +807,10 @@ class SaleService
 
     private function isCashPaymentMethod(?PaymentMethod $paymentMethod): bool
     {
-        $paymentCode = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
-        $paymentName = strtolower(trim((string) ($paymentMethod?->name ?? '')));
-
-        return $paymentCode === 'CASH'
-            || str_contains($paymentName, 'cash')
-            || str_contains($paymentName, 'tunai');
+        // Satu sumber kebenaran: kolom `payment_methods.is_cash` (JUAL-04).
+        // Pencocokan string dipindahkan ke dalam model sebagai jaring pengaman
+        // untuk data lama, supaya aturannya tidak lagi tersebar dan berbeda-beda
+        // di beberapa service.
+        return $paymentMethod?->isCash() ?? false;
     }
 }

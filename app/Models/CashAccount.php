@@ -112,11 +112,32 @@ class CashAccount extends Model
     }
 
     /**
+     * Helper: Cek apakah akun ini laci kasir POS
+     */
+    public function isPosDrawer(): bool
+    {
+        return $this->usage_type === 'pos_drawer';
+    }
+
+    /**
      * Helper: Cek apakah akun boleh memiliki saldo negatif.
+     *
+     * Laci ikut diizinkan bukan karena laci boleh minus secara fisik — tidak
+     * boleh, dan itu dijaga di titik input pengeluaran (KLR-04) — tapi karena
+     * penolakan saldo di sini akan menggagalkan closing. Shift yang tidak bisa
+     * ditutup jauh lebih merusak daripada saldo buku yang minus dan terlihat.
      */
     public function allowsNegativeBalance(): bool
     {
-        return $this->isPettyCash();
+        return $this->isPettyCash() || $this->isPosDrawer();
+    }
+
+    /**
+     * Scope: Hanya akun laci kasir
+     */
+    public function scopePosDrawer($query)
+    {
+        return $query->where('usage_type', 'pos_drawer');
     }
 
     /**

@@ -520,12 +520,11 @@ class BackdateSaleService
     {
         $paymentMethod = PaymentMethod::query()->find($paymentMethodId);
 
-        // Kenali metode tunai dari kode/namanya saja. Sebelumnya ada fallback `id === 1` yang
-        // mengasumsikan baris pertama selalu Cash — asumsi itu diam-diam salah begitu urutan
-        // id berubah, dan bikin QRIS terhitung sebagai kas.
-        $code = strtoupper(trim((string) ($paymentMethod?->code ?? '')));
-        $name = strtolower(trim((string) ($paymentMethod?->name ?? '')));
-        $isCash = $code === 'CASH' || str_contains($name, 'cash') || str_contains($name, 'tunai');
+        // Kenali metode tunai lewat satu sumber kebenaran di model (JUAL-04).
+        // Sebelumnya aturannya disalin di sini dengan versi sendiri; sebelum itu
+        // bahkan ada fallback `id === 1` yang mengasumsikan baris pertama selalu
+        // Cash — asumsi yang diam-diam salah begitu urutan id berubah.
+        $isCash = $paymentMethod?->isCash() ?? false;
 
         $session->total_sales = (float) $session->total_sales + $amount;
         $session->total_cash = (float) $session->total_cash + ($isCash ? $amount : 0);
@@ -536,7 +535,7 @@ class BackdateSaleService
         // memunculkan selisih kas palsu pada shift yang sebenarnya sudah pas. Rekap penjualan
         // tetap ikut terkoreksi lewat total_sales/total_cash/total_non_cash di atas.
         if ($session->status !== 'closed') {
-            $session->expected_balance = (float) $session->opening_balance + (float) $session->total_cash;
+            $session->expected_balance = $session->calculateExpectedBalance();
         }
 
         $session->save();
