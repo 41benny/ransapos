@@ -20,20 +20,100 @@ class AttendanceController extends Controller
     public function index()
     {
         $loggedInUser = auth()->user();
+        $currentOutletId = $loggedInUser->outlet_id;
 
-        // Ambil semua karyawan di outlet yang sama
-        $employees = User::where('outlet_id', $loggedInUser->outlet_id)
-            ->where('is_active', true)
-            ->with(['role', 'attendances' => function ($query) {
-                $query->whereDate('clock_in', today())->with('shift')->latest();
-            }])
+        // Grid utama: karyawan di outlet perangkat POS ini
+        $employees = $this->employeeQuery()
+            ->where('outlet_id', $currentOutletId)
             ->orderBy('name')
             ->get();
+
+        // Karyawan titipan dari outlet lain yang hari ini sudah absen di outlet ini.
+        // Wajib ikut tampil supaya mereka bisa clock-out tanpa harus dicari ulang.
+        $crossOutletEmployees = collect();
+        if ($currentOutletId) {
+            $crossOutletIds = Attendance::query()
+                ->whereDate('clock_in', today())
+                ->where('outlet_id', $currentOutletId)
+                ->where('is_cross_outlet', true)
+                ->pluck('user_id')
+                ->unique();
+
+            if ($crossOutletIds->isNotEmpty()) {
+                $crossOutletEmployees = $this->employeeQuery()
+                    ->whereIn('id', $crossOutletIds)
+                    ->orderBy('name')
+                    ->get();
+            }
+        }
 
         // Daftar shift aktif untuk dipilih saat clock-in
         $shifts = Shift::active()->get();
 
-        return view('pos.attendance.index', compact('employees', 'loggedInUser', 'shifts'));
+        return view('pos.attendance.index', compact(
+            'employees',
+            'crossOutletEmployees',
+            'loggedInUser',
+            'shifts',
+            'currentOutletId'
+        ));
+    }
+
+    /**
+     * Cari karyawan dari outlet lain (kasir rolling / titipan).
+     *
+     * Sengaja tidak ditampilkan default di grid: membuka semua nama semua outlet
+     * memperbesar peluang titip absen dan membuat layar tidak terbaca.
+     */
+    public function search(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:3|max:50',
+        ]);
+
+        $loggedInUser = auth()->user();
+        $currentOutletId = $loggedInUser->outlet_id;
+        $keyword = trim($request->input('q'));
+
+        $employees = $this->employeeQuery()
+            ->when($currentOutletId, fn ($query) => $query->where(function ($q) use ($currentOutletId) {
+                $q->whereNull('outlet_id')->orWhere('outlet_id', '!=', $currentOutletId);
+            }))
+            ->where('name', 'like', '%' . $keyword . '%')
+            ->orderBy('name')
+            ->limit(12)
+            ->get();
+
+        return view('pos.attendance._search-results', [
+            'employees' => $employees,
+            'shifts' => Shift::active()->get(),
+            'currentOutletId' => $currentOutletId,
+            'keyword' => $keyword,
+        ]);
+    }
+
+    /**
+     * Query dasar karyawan yang boleh absen, lengkap dengan absensi hari ini.
+     */
+    private function employeeQuery()
+    {
+        return User::query()
+            ->where('is_active', true)
+            ->whereNotNull('attendance_pin')
+            ->with(['role', 'outlet', 'attendances' => function ($query) {
+                $query->whereDate('clock_in', today())->with(['shift', 'outlet'])->latest();
+            }]);
+    }
+
+    /**
+     * Outlet tempat absensi benar-benar terjadi = outlet perangkat POS yang dipakai.
+     *
+     * Fallback ke outlet induk karyawan hanya untuk operator tanpa outlet
+     * (mis. admin pusat), karena `attendances.outlet_id` tidak boleh null.
+     */
+    private function resolveWorkOutletId(User $loggedInUser, User $employee): ?int
+    {
+        return $loggedInUser->outlet_id ?? $employee->outlet_id;
     }
 
     /**
@@ -47,13 +127,20 @@ class AttendanceController extends Controller
             'shift_id' => 'required|exists:shifts,id',
         ]);
 
-        $employee = User::findOrFail($request->employee_id);
+        $employee = User::with('outlet')->findOrFail($request->employee_id);
         $loggedInUser = auth()->user();
 
-        // Validasi outlet
-        if ($employee->outlet_id !== $loggedInUser->outlet_id) {
-            return back()->with('error', 'Karyawan tidak terdaftar di outlet ini');
+        if (!$employee->is_active || !$employee->attendance_pin) {
+            return back()->with('error', 'Karyawan tidak aktif atau belum punya PIN absensi');
         }
+
+        // Outlet fisik tempat absensi terjadi (bukan outlet induk karyawan)
+        $workOutletId = $this->resolveWorkOutletId($loggedInUser, $employee);
+        if (!$workOutletId) {
+            return back()->with('error', 'Outlet perangkat tidak dikenali. Hubungi admin.');
+        }
+
+        $isCrossOutlet = (int) $employee->outlet_id !== (int) $workOutletId;
 
         // Validasi shift aktif
         $shift = Shift::find($request->shift_id);
@@ -102,7 +189,9 @@ class AttendanceController extends Controller
         $attendance = Attendance::create([
             'user_id' => $employee->id,
             'logged_in_user_id' => $loggedInUser->id,
-            'outlet_id' => $employee->outlet_id,
+            'outlet_id' => $workOutletId,
+            'home_outlet_id' => $employee->outlet_id,
+            'is_cross_outlet' => $isCrossOutlet,
             'shift_id' => $shift->id,
             'clock_in' => $clockInTime,
             'status' => $status,
@@ -112,11 +201,24 @@ class AttendanceController extends Controller
         ]);
 
         // Deteksi anomali: banyak absensi dalam waktu singkat
-        $this->detectAnomalies($loggedInUser->id, $employee->outlet_id);
+        $this->detectAnomalies($loggedInUser->id, $workOutletId);
+
+        if ($isCrossOutlet) {
+            Log::info('Absensi lintas outlet', [
+                'attendance_id' => $attendance->id,
+                'employee_id' => $employee->id,
+                'home_outlet_id' => $employee->outlet_id,
+                'work_outlet_id' => $workOutletId,
+                'logged_in_user_id' => $loggedInUser->id,
+            ]);
+        }
 
         $statusText = $status === 'late' ? "terlambat {$lateMinutes} menit" : 'tepat waktu';
+        $crossText = $isCrossOutlet
+            ? ' [titipan dari ' . ($employee->outlet?->name ?? 'outlet lain') . ']'
+            : '';
 
-        return back()->with('success', "Clock-in berhasil untuk {$employee->name} - Shift {$shift->name} ({$statusText})");
+        return back()->with('success', "Clock-in berhasil untuk {$employee->name} - Shift {$shift->name} ({$statusText}){$crossText}");
     }
 
     /**
@@ -129,12 +231,11 @@ class AttendanceController extends Controller
             'pin' => 'required|numeric|digits:6'
         ]);
 
-        $employee = User::findOrFail($request->employee_id);
+        $employee = User::with('outlet')->findOrFail($request->employee_id);
         $loggedInUser = auth()->user();
 
-        // Validasi outlet
-        if ($employee->outlet_id !== $loggedInUser->outlet_id) {
-            return back()->with('error', 'Karyawan tidak terdaftar di outlet ini');
+        if (!$employee->is_active || !$employee->attendance_pin) {
+            return back()->with('error', 'Karyawan tidak aktif atau belum punya PIN absensi');
         }
 
         // Rate limiting
@@ -170,7 +271,7 @@ class AttendanceController extends Controller
         $earlyLeaveMinutes = 0;
         $overtimeMinutes = 0;
 
-        $attendance->loadMissing('shift');
+        $attendance->loadMissing(['shift', 'outlet']);
         if ($attendance->shift) {
             $shiftEnd = $attendance->shift->endFor($attendance->clock_in);
 
@@ -195,6 +296,12 @@ class AttendanceController extends Controller
             $extra = " (pulang cepat {$earlyLeaveMinutes} menit)";
         } elseif ($overtimeMinutes > 0) {
             $extra = " (lembur {$overtimeMinutes} menit)";
+        }
+
+        // Clock-out di outlet lain dari tempat clock-in tetap diizinkan (kasir rolling),
+        // tapi harus terlihat jelas supaya tidak dikira salah input.
+        if ($loggedInUser->outlet_id && (int) $attendance->outlet_id !== (int) $loggedInUser->outlet_id) {
+            $extra .= ' - absen masuk tercatat di ' . ($attendance->outlet?->name ?? 'outlet lain');
         }
 
         return back()->with('success', "Clock-out berhasil untuk {$employee->name}. Durasi kerja: {$duration}{$extra}");

@@ -30,132 +30,51 @@
         </div>
     @endif
 
+    {{-- Pencarian karyawan outlet lain (kasir rolling) --}}
+    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+        <label class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500" for="cross-outlet-search">
+            <span class="material-icons-round text-base text-indigo-600">person_search</span>
+            Cari Karyawan dari Outlet Lain
+        </label>
+        <div class="relative">
+            <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+            <input id="cross-outlet-search" type="search" autocomplete="off"
+                placeholder="Ketik minimal 3 huruf nama karyawan..."
+                class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
+        </div>
+        <p class="mt-2 text-[11px] leading-relaxed text-slate-500">
+            Gunakan hanya untuk kasir/karyawan yang benar-benar bertugas di outlet ini hari ini.
+            Absensi akan tercatat di outlet ini, namun rekapnya tetap menempel pada satu nama karyawan.
+        </p>
+    </div>
+
+    <div id="cross-outlet-results" class="mb-6 hidden">
+        <h2 class="mb-3 text-sm font-bold uppercase tracking-wide text-slate-600">Hasil Pencarian</h2>
+        <div id="cross-outlet-results-grid" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+    </div>
+
+    @if($crossOutletEmployees->isNotEmpty())
+        <div class="mb-6">
+            <h2 class="mb-3 text-sm font-bold uppercase tracking-wide text-indigo-700">Karyawan Titipan Hari Ini</h2>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                @foreach($crossOutletEmployees as $employee)
+                    @include('pos.attendance._employee-card', [
+                        'employee' => $employee,
+                        'shifts' => $shifts,
+                        'currentOutletId' => $currentOutletId,
+                    ])
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         @forelse($employees as $employee)
-            @php
-                $todayAttendance = $employee->attendances->first();
-                $hasClockIn = $todayAttendance && !$todayAttendance->isClockOut();
-                $hasClockOut = $todayAttendance && $todayAttendance->isClockOut();
-            @endphp
-
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-lg">
-                <div class="h-1.5 w-full bg-gradient-to-r from-gray-800 via-primary to-gray-800"></div>
-                <div class="p-5">
-                    <div class="mb-5 flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-yellow-500 bg-slate-50 text-lg font-bold text-slate-700">
-                                {{ strtoupper(substr($employee->name, 0, 1)) }}
-                            </div>
-                            <div>
-                                <h3 class="text-base font-bold text-slate-800">{{ $employee->name }}</h3>
-                                <p class="text-xs font-medium text-slate-500">{{ $employee->role?->display_name ?? 'Karyawan' }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        @if($hasClockOut)
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                                    Selesai
-                                </span>
-                                @if($todayAttendance->shift)
-                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                                        {{ $todayAttendance->shift->name }}
-                                    </span>
-                                @endif
-                                @if($todayAttendance->isEarlyLeave())
-                                    <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                                        Pulang Cepat {{ $todayAttendance->early_leave_minutes }}m
-                                    </span>
-                                @elseif($todayAttendance->isOvertime())
-                                    <span class="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
-                                        Lembur {{ $todayAttendance->overtime_minutes }}m
-                                    </span>
-                                @endif
-                            </div>
-                            <p class="mt-2 text-xs text-slate-600">
-                                {{ $todayAttendance->clock_in->format('H:i') }} - {{ $todayAttendance->clock_out->format('H:i') }}
-                                ({{ $todayAttendance->getDurationFormatted() }})
-                            </p>
-                        @elseif($hasClockIn)
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="inline-flex items-center rounded-full border {{ $todayAttendance->status === 'late' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700' }} px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                                    {{ $todayAttendance->status === 'late' ? 'Terlambat' : 'Hadir' }}
-                                </span>
-                                @if($todayAttendance->shift)
-                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                                        {{ $todayAttendance->shift->name }}
-                                    </span>
-                                @endif
-                                @if($todayAttendance->status === 'late' && $todayAttendance->late_minutes > 0)
-                                    <span class="text-[10px] font-bold text-amber-600">+{{ $todayAttendance->late_minutes }}m</span>
-                                @endif
-                            </div>
-                            <p class="mt-2 text-xs text-slate-600">
-                                Masuk: {{ $todayAttendance->clock_in->format('H:i') }}
-                                <span class="font-semibold text-slate-700 duration-live"
-                                    data-clock-in="{{ $todayAttendance->clock_in->timestamp }}">
-                                    ({{ $todayAttendance->getCurrentDurationFormatted() }})
-                                </span>
-                            </p>
-                        @else
-                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                                Belum Absen
-                            </span>
-                        @endif
-                    </div>
-
-                    @if(!$hasClockOut)
-                        @if(!$hasClockIn && $shifts->isEmpty())
-                            <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
-                                Belum ada shift aktif. Minta admin menambahkan shift terlebih dahulu sebelum bisa clock-in.
-                            </div>
-                        @else
-                        <form action="{{ $hasClockIn ? route('pos.attendance.clock-out') : route('pos.attendance.clock-in') }}"
-                            method="POST" class="space-y-3">
-                            @csrf
-                            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
-
-                            @if(!$hasClockIn)
-                                <div>
-                                    <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="shift-{{ $employee->id }}">
-                                        Pilih Shift
-                                    </label>
-                                    <div class="relative">
-                                        <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">schedule</span>
-                                        <select id="shift-{{ $employee->id }}" name="shift_id" required
-                                            class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                            @foreach($shifts as $shift)
-                                                <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->timeRangeLabel() }})</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            @endif
-
-                            <div>
-                                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="pin-{{ $employee->id }}">
-                                    Enter Security PIN
-                                </label>
-                                <div class="relative">
-                                    <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
-                                    <input id="pin-{{ $employee->id }}" type="password" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
-                                        placeholder="PIN 6 Digit" required
-                                        class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-center text-sm tracking-[0.25em] text-slate-800 placeholder:text-slate-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                </div>
-                            </div>
-
-                            <button type="submit"
-                                class="flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow transition {{ $hasClockIn ? 'bg-gray-800 hover:bg-gray-700' : 'bg-primary hover:bg-red-800' }}">
-                                <span class="material-icons-round text-lg">{{ $hasClockIn ? 'logout' : 'schedule' }}</span>
-                                {{ $hasClockIn ? 'Clock Out' : 'Clock In' }}
-                            </button>
-                        </form>
-                        @endif
-                    @endif
-                </div>
-            </div>
+            @include('pos.attendance._employee-card', [
+                'employee' => $employee,
+                'shifts' => $shifts,
+                'currentOutletId' => $currentOutletId,
+            ])
         @empty
             <div class="col-span-full rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
                 Tidak ada karyawan di outlet ini.
@@ -183,6 +102,58 @@
                 el.textContent = formatDuration(diffMinutes);
             });
         }, 60000); // Update every minute
+
+        // Pencarian karyawan outlet lain (kasir rolling)
+        const searchInput = document.getElementById('cross-outlet-search');
+        const resultsWrapper = document.getElementById('cross-outlet-results');
+        const resultsGrid = document.getElementById('cross-outlet-results-grid');
+
+        if (searchInput && resultsWrapper && resultsGrid) {
+            let debounceTimer = null;
+            let activeController = null;
+
+            searchInput.addEventListener('input', function () {
+                const keyword = searchInput.value.trim();
+                clearTimeout(debounceTimer);
+
+                if (keyword.length < 3) {
+                    resultsWrapper.classList.add('hidden');
+                    resultsGrid.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(function () {
+                    if (activeController) {
+                        activeController.abort();
+                    }
+                    activeController = new AbortController();
+
+                    const url = '{{ route('pos.attendance.search') }}?q=' + encodeURIComponent(keyword);
+
+                    fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        signal: activeController.signal,
+                    })
+                        .then(function (response) {
+                            if (!response.ok) {
+                                throw new Error('Gagal memuat hasil pencarian');
+                            }
+                            return response.text();
+                        })
+                        .then(function (html) {
+                            resultsGrid.innerHTML = html;
+                            resultsWrapper.classList.remove('hidden');
+                        })
+                        .catch(function (error) {
+                            if (error.name === 'AbortError') {
+                                return;
+                            }
+                            resultsGrid.innerHTML = '<div class="col-span-full rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-600">Gagal memuat hasil pencarian. Coba lagi.</div>';
+                            resultsWrapper.classList.remove('hidden');
+                        });
+                }, 350);
+            });
+        }
     });
 </script>
 @endsection

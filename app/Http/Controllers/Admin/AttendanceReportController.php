@@ -91,6 +91,8 @@ class AttendanceReportController extends Controller
                 'tanggal' => optional($attendance->clock_in)->format('Y-m-d'),
                 'karyawan' => $attendance->user?->name ?? '-',
                 'outlet' => $attendance->outlet?->name ?? '-',
+                'outlet_induk' => $attendance->homeOutlet?->name ?? ($attendance->outlet?->name ?? '-'),
+                'lintas_outlet' => $attendance->isCrossOutlet() ? 'Ya' : 'Tidak',
                 'shift' => $attendance->shift?->name ?? '-',
                 'jam_masuk' => optional($attendance->clock_in)->format('H:i:s'),
                 'jam_keluar' => optional($attendance->clock_out)->format('H:i:s') ?? '-',
@@ -107,7 +109,9 @@ class AttendanceReportController extends Controller
         $columns = [
             ['key' => 'tanggal', 'label' => 'Tanggal', 'type' => 'text'],
             ['key' => 'karyawan', 'label' => 'Karyawan', 'type' => 'text'],
-            ['key' => 'outlet', 'label' => 'Outlet', 'type' => 'text'],
+            ['key' => 'outlet', 'label' => 'Outlet Kerja', 'type' => 'text'],
+            ['key' => 'outlet_induk', 'label' => 'Outlet Induk', 'type' => 'text'],
+            ['key' => 'lintas_outlet', 'label' => 'Lintas Outlet', 'type' => 'text'],
             ['key' => 'shift', 'label' => 'Shift', 'type' => 'text'],
             ['key' => 'jam_masuk', 'label' => 'Jam Masuk', 'type' => 'text'],
             ['key' => 'jam_keluar', 'label' => 'Jam Keluar', 'type' => 'text'],
@@ -332,7 +336,7 @@ class AttendanceReportController extends Controller
         // Kolom dikualifikasi dengan nama tabel agar tidak ambigu saat query
         // di-join ke tabel `users` (yang juga punya kolom outlet_id) untuk rekap.
         $query = Attendance::query()
-            ->when($withRelations, fn ($q) => $q->with(['user', 'loggedInUser', 'outlet', 'shift']))
+            ->when($withRelations, fn ($q) => $q->with(['user', 'loggedInUser', 'outlet', 'homeOutlet', 'shift']))
             ->whereBetween('attendances.clock_in', [$dateFrom->copy()->startOfDay(), $dateTo->copy()->endOfDay()])
             ->when($request->filled('outlet_id'), fn ($q) => $q->where('attendances.outlet_id', (int) $request->integer('outlet_id')))
             ->when($request->filled('user_id'), fn ($q) => $q->where('attendances.user_id', (int) $request->integer('user_id')))

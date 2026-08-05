@@ -15,6 +15,8 @@ class Attendance extends Model
         'user_id',
         'logged_in_user_id',
         'outlet_id',
+        'home_outlet_id',
+        'is_cross_outlet',
         'shift_id',
         'clock_in',
         'clock_out',
@@ -31,6 +33,7 @@ class Attendance extends Model
     protected $casts = [
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
+        'is_cross_outlet' => 'boolean',
         'late_minutes' => 'integer',
         'early_leave_minutes' => 'integer',
         'overtime_minutes' => 'integer',
@@ -59,6 +62,22 @@ class Attendance extends Model
     public function outlet(): BelongsTo
     {
         return $this->belongsTo(Outlet::class);
+    }
+
+    /**
+     * Relasi ke outlet induk karyawan saat absensi dibuat
+     */
+    public function homeOutlet(): BelongsTo
+    {
+        return $this->belongsTo(Outlet::class, 'home_outlet_id');
+    }
+
+    /**
+     * Absensi dilakukan di outlet yang bukan outlet induk karyawan
+     */
+    public function isCrossOutlet(): bool
+    {
+        return (bool) $this->is_cross_outlet;
     }
 
     /**

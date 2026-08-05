@@ -15,9 +15,12 @@
 /node_modules
 
 /public/hot
+/public/hot.disabled
 /public/storage
 /storage/*.key
 /storage/pail
+# Sertifikat HTTPS lokal: berisi private key (.pfx), jangan pernah masuk repo
+/storage/local-https
 /vendor
 Homestead.json
 Homestead.yaml

@@ -708,6 +708,7 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device', \App\Http\
     // Attendance (Kasir/Admin)
     Route::prefix('attendance')->name('attendance.')->middleware('role:kasir,admin')->group(function () {
         Route::get('/', [\App\Http\Controllers\POS\AttendanceController::class, 'index'])->name('index');
+        Route::get('/search', [\App\Http\Controllers\POS\AttendanceController::class, 'search'])->name('search');
         Route::post('/clock-in', [\App\Http\Controllers\POS\AttendanceController::class, 'clockIn'])->name('clock-in');
         Route::post('/clock-out', [\App\Http\Controllers\POS\AttendanceController::class, 'clockOut'])->name('clock-out');
     });
