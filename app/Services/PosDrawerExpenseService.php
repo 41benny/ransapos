@@ -6,6 +6,7 @@ use App\Models\CashAccount;
 use App\Models\CashSession;
 use App\Models\CashSessionExpense;
 use App\Models\CoaAccount;
+use App\Models\Outlet;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
@@ -65,6 +66,110 @@ class PosDrawerExpenseService
             ->where('is_active', true)
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * Akun laci outlet, dibuat otomatis kalau belum ada.
+     *
+     * Migrasi hanya membuat akun laci untuk outlet yang sudah ada saat migrasi
+     * dijalankan. Outlet yang dibuat setelah itu tidak punya akun laci, dan
+     * tanpa penyediaan otomatis ini kasir di outlet tersebut TIDAK BISA membuka
+     * shift sama sekali — kegagalan total, tepat di saat toko mau buka.
+     *
+     * Saldo awal 0 dan aman: shift pertama akan menyamakan saldo buku laci
+     * dengan modal awal lewat ShiftClosingPostingService::syncOpeningBalance().
+     *
+     * @throws Exception
+     */
+    public function ensureDrawerAccount(int $outletId): CashAccount
+    {
+        $existing = $this->resolveDrawerAccount($outletId);
+        if ($existing) {
+            return $existing;
+        }
+
+        $outlet = Outlet::query()->find($outletId);
+        if (! $outlet) {
+            throw new Exception('Outlet tidak ditemukan saat menyiapkan akun laci kasir.');
+        }
+
+        // Kalau akunnya pernah dibuat lalu dinonaktifkan, aktifkan kembali
+        // daripada membuat akun kedua — laci fisiknya tetap satu (SHIFT-08),
+        // dan akun lama sudah memuat riwayat saldonya.
+        $inactive = CashAccount::query()
+            ->where('outlet_id', $outletId)
+            ->where('usage_type', 'pos_drawer')
+            ->orderBy('id')
+            ->first();
+
+        if ($inactive) {
+            $inactive->is_active = true;
+            $inactive->save();
+
+            return $inactive;
+        }
+
+        return CashAccount::create([
+            'outlet_id' => $outletId,
+            'name' => 'Laci Kasir - ' . ($outlet->name ?: $outlet->code),
+            'code' => 'KAS-LACI',
+            'type' => 'cash',
+            'usage_type' => 'pos_drawer',
+            'is_active' => true,
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'notes' => 'Laci kasir fisik. Dibuat otomatis saat shift pertama outlet ini. '
+                . 'Saldo dikelola otomatis oleh shift POS.',
+            'created_by' => auth()->id() ?? User::query()->orderBy('id')->value('id'),
+        ]);
+    }
+
+    /**
+     * Kas besar outlet — penerima setoran kasir saat closing.
+     *
+     * Tanpa akun ini, setoran keluar dari laci tapi tidak pernah masuk ke mana
+     * pun: sisi lawannya menggantung selamanya di ayat silang 1-190 dan saldo
+     * akun silang itu jadi tidak nol tanpa ada yang bisa menjelaskannya. Itu
+     * bukan sekadar laporan kurang rapi — buku kasnya benar-benar tidak
+     * seimbang, dan uang terlihat seolah muncul/hilang begitu saja.
+     *
+     * Dibuat per outlet (bukan satu brankas terpusat) supaya kalau ada setoran
+     * yang belum sampai ke pusat, langsung ketahuan berasal dari outlet mana.
+     *
+     * @throws Exception
+     */
+    public function ensureMainCashAccount(int $outletId): CashAccount
+    {
+        $existing = CashAccount::query()
+            ->where('outlet_id', $outletId)
+            ->where('usage_type', 'operational')
+            ->where('is_active', true)
+            ->orderByRaw("CASE WHEN type = 'cash' THEN 0 ELSE 1 END")
+            ->orderBy('id')
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $outlet = Outlet::query()->find($outletId);
+        if (! $outlet) {
+            throw new Exception('Outlet tidak ditemukan saat menyiapkan akun kas besar.');
+        }
+
+        return CashAccount::create([
+            'outlet_id' => $outletId,
+            'name' => 'Kas Besar - ' . ($outlet->name ?: $outlet->code),
+            'code' => 'KAS-BESAR',
+            'type' => 'cash',
+            'usage_type' => 'operational',
+            'is_active' => true,
+            'opening_balance' => 0,
+            'current_balance' => 0,
+            'notes' => 'Penerima setoran kasir dari laci saat closing shift. '
+                . 'Dibuat otomatis; nama boleh diubah lewat menu Kas & Bank.',
+            'created_by' => auth()->id() ?? User::query()->orderBy('id')->value('id'),
+        ]);
     }
 
     /**

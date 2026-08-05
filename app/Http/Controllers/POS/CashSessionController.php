@@ -54,7 +54,24 @@ class CashSessionController extends Controller
             ? $this->packagingService->openingDefaults($userOutlet->id)
             : [];
 
-        return view('pos.sessions.open', compact('userOutlet', 'packagingItems', 'packagingDefaults'));
+        // Rantai modal: modal awal mengikuti modal disisakan shift sebelumnya
+        // (SHIFT-01). Hanya berlaku saat modul laci aktif — kalau flag mati,
+        // perilaku lama dipertahankan supaya tidak ada yang berubah diam-diam.
+        $suggestedOpening = null;
+        if ($userOutlet && $this->drawerExpenseService->isEnabled()) {
+            $suggestedOpening = $this->cashSessionService->suggestedOpeningBalance($userOutlet->id);
+        }
+
+        $canOverrideOpening = auth()->user()->hasPermission('pos.session.override_opening')
+            || auth()->user()->hasRole(['admin', 'manager', 'superadmin']);
+
+        return view('pos.sessions.open', compact(
+            'userOutlet',
+            'packagingItems',
+            'packagingDefaults',
+            'suggestedOpening',
+            'canOverrideOpening'
+        ));
     }
 
     /**
@@ -65,8 +82,21 @@ class CashSessionController extends Controller
         try {
             $posDevice = $request->attributes->get('pos_device');
 
+            $data = $request->validated();
+
+            // Modal awal yang menyimpang dari rantai wajib meninggalkan jejak.
+            // Tanpa ini, override-nya lolos tanpa bekas dan angka selisih shift
+            // berikutnya jadi tidak bisa dipertanggungjawabkan ke siapa pun.
+            $overrideReason = trim((string) ($data['opening_override_reason'] ?? ''));
+            unset($data['opening_override_reason']);
+
+            if ($overrideReason !== '') {
+                $data['notes'] = trim(($data['notes'] ?? '') . "\n[Modal awal diubah oleh "
+                    . auth()->user()->name . "] " . $overrideReason);
+            }
+
             $session = $this->cashSessionService->openSession(
-                $request->validated(),
+                $data,
                 auth()->user(),
                 $posDevice?->id,
                 $request->ip()

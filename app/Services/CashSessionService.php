@@ -105,13 +105,11 @@ class CashSessionService
             // saldo buku laci dengan modal awal. Dilewati kalau flag masih mati
             // supaya perilaku lama benar-benar tidak tersentuh.
             if ($this->expenseService->isEnabled()) {
-                $drawer = $this->expenseService->resolveDrawerAccount((int) $data['outlet_id']);
-
-                if (! $drawer) {
-                    throw new Exception(
-                        'Akun laci kasir untuk outlet ini belum ada. Minta admin membuat akun kas dengan tipe penggunaan "Laci Kasir".'
-                    );
-                }
+                // Dibuat otomatis kalau belum ada — outlet yang dibuat setelah
+                // migrasi berjalan tidak punya akun laci, dan memblokir kasir
+                // membuka shift karena itu adalah kegagalan yang tidak sepadan
+                // dengan penyebabnya (data master yang belum disiapkan admin).
+                $drawer = $this->expenseService->ensureDrawerAccount((int) $data['outlet_id']);
 
                 $session->drawer_cash_account_id = $drawer->id;
                 $session->save();

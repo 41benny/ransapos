@@ -54,14 +54,36 @@ class ShiftClosingPostingService
             return;
         }
 
-        $this->post($session, $drawer, [
+        $clearingCoaId = $this->cashAccountService->resolveTransferClearingCoaAccountId();
+        $description = $delta > 0
+            ? 'Modal awal shift ' . $session->session_number
+            : 'Penyesuaian modal awal shift ' . $session->session_number;
+
+        $drawerRow = $this->post($session, $drawer, [
             'type' => $delta > 0 ? 'in' : 'out',
             'amount' => abs($delta),
-            'coa_account_id' => $this->cashAccountService->resolveTransferClearingCoaAccountId(),
-            'description' => $delta > 0
-                ? 'Modal awal shift ' . $session->session_number
-                : 'Penyesuaian modal awal shift ' . $session->session_number,
+            'coa_account_id' => $clearingCoaId,
+            'description' => $description,
             'reference_type' => 'shift_opening',
+        ]);
+
+        // Sisi lawan di kas besar. Uang modal pagi tidak muncul dari udara —
+        // ia diambil dari kas besar outlet. Tanpa baris ini, saldo ayat silang
+        // 1-190 akan terus menumpuk ke arah negatif dan buku kas menunjukkan
+        // uang yang seolah tercipta sendiri setiap pagi.
+        $mainAccount = $this->expenseService->ensureMainCashAccount((int) $session->outlet_id);
+
+        if ((int) $mainAccount->id === (int) $drawer->id) {
+            return;
+        }
+
+        $this->post($session, $mainAccount, [
+            'type' => $delta > 0 ? 'out' : 'in',
+            'amount' => abs($delta),
+            'coa_account_id' => $clearingCoaId,
+            'description' => $description . ' (keluar ke laci)',
+            'reference_type' => 'shift_opening',
+            'voucher_number' => $drawerRow->voucher_number,
         ]);
     }
 
@@ -149,20 +171,20 @@ class ShiftClosingPostingService
             ]);
             $posted[] = $out;
 
-            // 5) Sisi lawan. Kalau kas besar outlet belum ada, setoran tetap
-            //    keluar dari laci tapi menggantung di ayat silang — kondisi itu
-            //    harus terlihat, bukan diam-diam dilewati.
-            $mainAccount = $this->resolveMainCashAccount($session->outlet_id, $drawer->id);
-            if ($mainAccount) {
-                $posted[] = $this->post($session, $mainAccount, [
-                    'type' => 'in',
-                    'amount' => $deposit,
-                    'coa_account_id' => $clearingCoaId,
-                    'description' => $description . ' (terima dari laci)',
-                    'reference_type' => 'shift_deposit',
-                    'voucher_number' => $out->voucher_number,
-                ]);
-            }
+            // 5) Sisi lawan WAJIB ada. Akun kas besar dibuat otomatis kalau
+            //    belum ada, karena tanpa sisi lawan setoran hanya keluar dari
+            //    laci tanpa pernah masuk ke mana pun — saldo ayat silang jadi
+            //    menggantung dan buku kas benar-benar tidak seimbang.
+            $mainAccount = $this->expenseService->ensureMainCashAccount((int) $session->outlet_id);
+
+            $posted[] = $this->post($session, $mainAccount, [
+                'type' => 'in',
+                'amount' => $deposit,
+                'coa_account_id' => $clearingCoaId,
+                'description' => $description . ' (terima dari laci)',
+                'reference_type' => 'shift_deposit',
+                'voucher_number' => $out->voucher_number,
+            ]);
         }
 
         // Saldo berjalan dihitung ulang karena baris-baris di atas bisa
@@ -230,18 +252,6 @@ class ShiftClosingPostingService
         return $session->opened_at
             ? $session->opened_at->toDateString()
             : now()->toDateString();
-    }
-
-    protected function resolveMainCashAccount(int $outletId, int $excludeAccountId): ?CashAccount
-    {
-        return CashAccount::query()
-            ->where('outlet_id', $outletId)
-            ->where('is_active', true)
-            ->where('usage_type', 'operational')
-            ->whereKeyNot($excludeAccountId)
-            ->orderByRaw("CASE WHEN type = 'cash' THEN 0 ELSE 1 END")
-            ->orderBy('id')
-            ->first();
     }
 
     /**

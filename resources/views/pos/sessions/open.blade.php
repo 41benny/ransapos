@@ -48,6 +48,10 @@
                 </div>
 
                 <!-- Opening Balance -->
+                @php
+                    $chainLocked = ($suggestedOpening ?? null) !== null && ! ($canOverrideOpening ?? false);
+                    $openingValue = old('opening_balance', $suggestedOpening ?? 0);
+                @endphp
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                         Saldo Awal Kas <span class="text-red-400">*</span>
@@ -56,18 +60,58 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <span class="text-gray-400 group-focus-within:text-indigo-400 transition font-bold">Rp</span>
                         </div>
-                        <input type="number" 
-                               name="opening_balance" 
-                               value="{{ old('opening_balance', 500000) }}"
+                        {{--
+                            Nilainya dirantai dari modal disisakan shift sebelumnya, BUKAN
+                            angka default tetap. Default hardcoded (dulu 500.000) membuat
+                            modal awal tidak ada hubungannya dengan uang yang benar-benar
+                            ditinggal kemarin — selisih hari ini bisa hilang begitu saja
+                            begitu shift besok dibuka dengan angka karangan.
+                        --}}
+                        <input type="number"
+                               name="opening_balance"
+                               id="opening_balance"
+                               value="{{ $openingValue }}"
                                step="1000"
                                min="0"
                                required
-                               class="block w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition text-lg font-mono">
+                               @readonly($chainLocked)
+                               class="block w-full pl-12 pr-4 py-3 {{ $chainLocked ? 'bg-gray-800/60 cursor-not-allowed text-gray-300' : 'bg-gray-900/50 text-white' }} border border-gray-600 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition text-lg font-mono">
                     </div>
+
+                    @if(($suggestedOpening ?? null) !== null)
+                        <p class="mt-2 text-xs text-emerald-400">
+                            Mengikuti modal disisakan shift sebelumnya: Rp {{ number_format($suggestedOpening, 0, ',', '.') }}
+                        </p>
+                        @if($chainLocked)
+                            <p class="mt-1 text-xs text-gray-500">Butuh izin supervisor untuk mengubah nilai ini.</p>
+                        @endif
+                    @else
+                        <p class="mt-2 text-xs text-amber-400">
+                            Belum ada shift sebelumnya yang ditutup di outlet ini — isi manual sesuai uang fisik di laci.
+                        </p>
+                    @endif
+
                     @error('opening_balance')
                         <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
+
+                @if(($canOverrideOpening ?? false) && ($suggestedOpening ?? null) !== null)
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        Alasan Ubah Modal Awal
+                    </label>
+                    <input type="text"
+                           name="opening_override_reason"
+                           value="{{ old('opening_override_reason') }}"
+                           maxlength="200"
+                           placeholder="Wajib diisi kalau modal awal diubah dari Rp {{ number_format($suggestedOpening, 0, ',', '.') }}"
+                           class="block w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition text-sm">
+                    @error('opening_override_reason')
+                        <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+                @endif
 
                 <!-- Notes -->
                 <div>
