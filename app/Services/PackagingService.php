@@ -230,15 +230,32 @@ class PackagingService
     }
 
     /**
-     * Total pcs dimsum yang laku pada shift ini, dihitung dari Estimasi Sales
-     * (bukan hitung fisik box) karena yang ingin diketahui owner adalah berapa
-     * banyak yang terjual, bukan berapa box yang secara fisik berkurang.
+     * Isi (pcs) per box berdasarkan NAMA item packaging.
      *
      * Item packaging dimsum bernama persis "Box N" (mis. "Box 4", "Box 32"),
      * hasil auto-mapping dari nama produk "... Isi N". Dicocokkan dengan regex
-     * ketat berbentuk penuh (bukan sekadar "mengandung box") supaya item lain
-     * yang juga diawali "Box" — seperti "Box Takoyaki 5/8" — tidak ikut
-     * kehitung sebagai pcs dimsum.
+     * bentuk-penuh (bukan sekadar "mengandung box") supaya item lain yang juga
+     * diawali "Box" — seperti "Box Takoyaki 5/8" — tidak ikut terhitung sebagai
+     * dimsum. Item non-dimsum (Cup, Botol, Cup Chili Oil) mengembalikan null.
+     *
+     * Sengaja dibuat satu pintu dan dipakai bersama oleh layar closing kasir
+     * maupun laporan admin: kalau aturan penamaannya disalin ke dua tempat,
+     * cepat atau lambat keduanya akan berbeda dan menghasilkan angka yang
+     * tidak cocok satu sama lain.
+     */
+    public static function piecesPerBoxFromName(?string $itemName): ?int
+    {
+        if (! preg_match('/^box\s+(\d+)$/i', trim((string) $itemName), $m)) {
+            return null;
+        }
+
+        return (int) $m[1];
+    }
+
+    /**
+     * Total pcs dimsum yang laku pada shift ini, dihitung dari Estimasi Sales
+     * (bukan hitung fisik box) karena yang ingin diketahui owner adalah berapa
+     * banyak yang terjual, bukan berapa box yang secara fisik berkurang.
      *
      * @param  array<int, float>  $estimates  packaging_item_id => estimasi box terpakai (dari estimateSalesUsage)
      * @param  \Illuminate\Support\Collection<int, PackagingItem>  $items
@@ -248,14 +265,12 @@ class PackagingService
         $total = 0;
 
         foreach ($items as $item) {
-            if (! preg_match('/^box\s+(\d+)$/i', trim($item->name), $m)) {
+            $piecesPerBox = static::piecesPerBoxFromName($item->name);
+            if ($piecesPerBox === null) {
                 continue;
             }
 
-            $piecesPerBox = (int) $m[1];
-            $boxesSold = (float) ($estimates[$item->id] ?? 0);
-
-            $total += (int) round($boxesSold * $piecesPerBox);
+            $total += (int) round(((float) ($estimates[$item->id] ?? 0)) * $piecesPerBox);
         }
 
         return $total;

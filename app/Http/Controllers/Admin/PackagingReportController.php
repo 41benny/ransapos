@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Outlet;
+use App\Services\PackagingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,23 @@ class PackagingReportController extends Controller
      */
     public function closing(Request $request)
     {
+        $applyFilters = function ($query) use ($request) {
+            if ($outletId = $request->get('outlet_id')) {
+                $query->where('s.outlet_id', $outletId);
+            }
+            if ($from = $request->get('date_from')) {
+                $query->whereDate('s.closed_at', '>=', $from);
+            }
+            if ($to = $request->get('date_to')) {
+                $query->whereDate('s.closed_at', '<=', $to);
+            }
+            if ($request->boolean('only_diff')) {
+                $query->where('c.difference_qty', '!=', 0);
+            }
+
+            return $query;
+        };
+
         $query = DB::table('cash_session_packaging_closings as c')
             ->join('cash_sessions as s', 'c.cash_session_id', '=', 's.id')
             ->join('packaging_items as p', 'c.packaging_item_id', '=', 'p.id')
@@ -37,18 +55,7 @@ class PackagingReportController extends Controller
                 'c.difference_qty'
             );
 
-        if ($outletId = $request->get('outlet_id')) {
-            $query->where('s.outlet_id', $outletId);
-        }
-        if ($from = $request->get('date_from')) {
-            $query->whereDate('s.closed_at', '>=', $from);
-        }
-        if ($to = $request->get('date_to')) {
-            $query->whereDate('s.closed_at', '<=', $to);
-        }
-        if ($request->boolean('only_diff')) {
-            $query->where('c.difference_qty', '!=', 0);
-        }
+        $applyFilters($query);
 
         $rows = $query->orderByDesc('s.closed_at')
             ->orderBy('p.sort_order')
@@ -56,8 +63,68 @@ class PackagingReportController extends Controller
             ->withQueryString();
 
         $outlets = Outlet::orderBy('name')->get();
+        $dimsumSummary = $this->buildDimsumPiecesSummary($applyFilters);
 
-        return view('admin.packaging-reports.closing', compact('rows', 'outlets'));
+        return view('admin.packaging-reports.closing', compact('rows', 'outlets', 'dimsumSummary'));
+    }
+
+    /**
+     * Ringkasan total pcs dimsum yang laku pada rentang & outlet terfilter.
+     *
+     * Diambil lewat query agregat TERPISAH, bukan dari $rows, karena $rows
+     * dipaginasi 50 baris — menjumlah dari sana hanya akan menghitung halaman
+     * yang sedang dibuka dan menghasilkan total yang salah tanpa terlihat salah.
+     *
+     * Basisnya `estimated_sales_used_qty` (box yang laku menurut penjualan),
+     * bukan `actual_used_qty` (box yang berkurang secara fisik), karena yang
+     * ditanyakan adalah berapa dimsum yang TERJUAL.
+     *
+     * @param  callable  $applyFilters
+     * @return array{total_pieces: int, breakdown: array<int, array{item_name: string, pieces_per_box: int, boxes: float, pieces: int}>}
+     */
+    private function buildDimsumPiecesSummary(callable $applyFilters): array
+    {
+        $query = DB::table('cash_session_packaging_closings as c')
+            ->join('cash_sessions as s', 'c.cash_session_id', '=', 's.id')
+            ->join('packaging_items as p', 'c.packaging_item_id', '=', 'p.id')
+            ->select('p.name as item_name', DB::raw('SUM(c.estimated_sales_used_qty) as boxes'))
+            ->groupBy('p.name');
+
+        $applyFilters($query);
+
+        $breakdown = [];
+        $totalPieces = 0;
+
+        foreach ($query->get() as $row) {
+            // Aturan penamaan box dipakai bersama dengan layar closing kasir
+            // supaya kedua tempat tidak pernah menghasilkan angka berbeda.
+            $piecesPerBox = PackagingService::piecesPerBoxFromName($row->item_name);
+            if ($piecesPerBox === null) {
+                continue;
+            }
+
+            $boxes = (float) $row->boxes;
+            if ($boxes <= 0) {
+                continue;
+            }
+
+            $pieces = (int) round($boxes * $piecesPerBox);
+            $totalPieces += $pieces;
+
+            $breakdown[] = [
+                'item_name' => (string) $row->item_name,
+                'pieces_per_box' => $piecesPerBox,
+                'boxes' => $boxes,
+                'pieces' => $pieces,
+            ];
+        }
+
+        usort($breakdown, fn ($a, $b) => $a['pieces_per_box'] <=> $b['pieces_per_box']);
+
+        return [
+            'total_pieces' => $totalPieces,
+            'breakdown' => $breakdown,
+        ];
     }
 
     /**

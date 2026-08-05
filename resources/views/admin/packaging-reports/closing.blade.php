@@ -40,6 +40,48 @@
         <a href="{{ route('admin.packaging-reports.closing') }}" class="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm">Reset</a>
     </form>
 
+    @if(($dimsumSummary['total_pieces'] ?? 0) > 0)
+    {{--
+        Total pcs dimsum yang laku pada seluruh rentang & outlet terfilter
+        (bukan hanya halaman yang sedang dibuka — dihitung lewat query agregat
+        terpisah di controller). Isi per box diambil dari nama box itu sendiri:
+        "Box 4" = 4 pcs, "Box 32" = 32 pcs.
+    --}}
+    <div class="bg-white rounded-xl shadow-md p-5 mb-5 border-l-4 border-orange-500">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div>
+                <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">Total Pcs Dimsum Laku</p>
+                <p class="text-xs text-gray-400 mt-0.5">Berdasarkan estimasi penjualan (bukan hitung fisik box), sesuai filter di atas</p>
+                @if(request('only_diff'))
+                {{--
+                    Filter "hanya yang selisih" ikut membatasi angka ini, jadi yang
+                    tampil BUKAN total dimsum laku melainkan hanya pcs dari box yang
+                    bermasalah. Tanpa keterangan ini angkanya sangat mudah salah baca.
+                --}}
+                <p class="text-xs text-orange-600 font-semibold mt-1">
+                    <i class="fas fa-filter mr-1"></i>Difilter "hanya yang selisih" — ini bukan total laku keseluruhan
+                </p>
+                @endif
+            </div>
+            <p class="text-3xl font-bold text-orange-600">
+                {{ number_format($dimsumSummary['total_pieces'], 0, ',', '.') }} <span class="text-base font-semibold text-gray-500">pcs</span>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            @foreach($dimsumSummary['breakdown'] as $b)
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-xs">
+                <span class="font-semibold text-gray-700">{{ $b['item_name'] }}</span>
+                <span class="text-gray-400">·</span>
+                <span class="text-gray-600 font-mono">{{ rtrim(rtrim(number_format($b['boxes'], 2, ',', '.'), '0'), ',') }} box × {{ $b['pieces_per_box'] }}</span>
+                <span class="text-gray-400">=</span>
+                <span class="font-bold text-orange-700 font-mono">{{ number_format($b['pieces'], 0, ',', '.') }} pcs</span>
+            </span>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="overflow-x-auto">
         <table class="w-full text-sm whitespace-nowrap">
