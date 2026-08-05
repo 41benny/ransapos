@@ -114,26 +114,49 @@ class ShiftClosingPostingService
 
         // 2) Pengeluaran kios — satu baris jurnal per baris pengeluaran supaya
         //    telusurnya 1:1 dan COA-nya tidak tercampur.
+        //
+        //    Baris tunai memotong laci; baris non-tunai memotong rekening yang
+        //    dipilih kasir. Keduanya WAJIB diposting: kalau non-tunai dilewati,
+        //    uangnya sudah keluar tapi biayanya tidak pernah diakui sehingga
+        //    laba terlihat lebih besar dari kenyataan.
         $expenses = CashSessionExpense::query()
             ->where('cash_session_id', $session->id)
             ->where('status', CashSessionExpense::STATUS_POSTED)
-            ->where('payment_source', CashSessionExpense::SOURCE_DRAWER)
+            ->whereIn('payment_source', [
+                CashSessionExpense::SOURCE_DRAWER,
+                CashSessionExpense::SOURCE_NONCASH,
+            ])
             ->whereNull('cash_transaction_id')
             ->orderBy('id')
             ->get();
 
         foreach ($expenses as $expense) {
-            $transaction = $this->post($session, $drawer, [
+            $isDrawer = $expense->payment_source === CashSessionExpense::SOURCE_DRAWER;
+
+            $account = $isDrawer
+                ? $drawer
+                : CashAccount::find($expense->source_cash_account_id);
+
+            // Baris non-tunai lama (sebelum kolom rekening sumber ada) tidak
+            // punya akun asal. Dilewati dengan sengaja daripada ditebak ke akun
+            // acak — menebak akan memotong saldo rekening yang salah.
+            if (! $account) {
+                continue;
+            }
+
+            $transaction = $this->post($session, $account, [
                 'type' => 'out',
                 'amount' => (float) $expense->amount,
                 'coa_account_id' => $expense->coa_account_id,
                 'description' => sprintf(
-                    'Pengeluaran kios | Penerima: %s | %s',
+                    'Pengeluaran kios%s | Penerima: %s | %s',
+                    $isDrawer ? '' : ' (non-tunai)',
                     $expense->recipient_name,
                     $expense->description
                 ),
                 'reference_type' => 'pos_drawer_expense',
                 'reference_id' => $expense->id,
+                'payment_source' => $expense->payment_source,
             ]);
 
             $expense->update(['cash_transaction_id' => $transaction->id]);
@@ -189,7 +212,22 @@ class ShiftClosingPostingService
 
         // Saldo berjalan dihitung ulang karena baris-baris di atas bisa
         // bertanggal mundur relatif terhadap transaksi admin (TEK-04).
-        $this->cashAccountService->recalculateBalances($drawer, $this->businessDate($session));
+        //
+        // Dihitung untuk SEMUA akun yang tersentuh, bukan hanya laci: closing
+        // juga memotong rekening non-tunai dan menambah kas besar, dan akun
+        // yang tidak dihitung ulang akan menyimpan balance_after yang basi.
+        $touchedAccountIds = collect($posted)
+            ->pluck('cash_account_id')
+            ->push($drawer->id)
+            ->unique()
+            ->values();
+
+        foreach ($touchedAccountIds as $accountId) {
+            $account = CashAccount::find($accountId);
+            if ($account) {
+                $this->cashAccountService->recalculateBalances($account, $this->businessDate($session));
+            }
+        }
 
         return $posted;
     }

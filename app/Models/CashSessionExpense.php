@@ -29,6 +29,7 @@ class CashSessionExpense extends Model
         'description',
         'amount',
         'payment_source',
+        'source_cash_account_id',
         'attachment_path',
         'status',
         'cash_transaction_id',
@@ -103,7 +104,18 @@ class CashSessionExpense extends Model
             && $this->status === self::STATUS_POSTED;
     }
 
+    public function sourceCashAccount(): BelongsTo
+    {
+        return $this->belongsTo(CashAccount::class, 'source_cash_account_id');
+    }
+
     /**
+     * Semua label sumber, termasuk yang sudah tidak boleh dipilih lagi.
+     *
+     * Dipakai untuk MENAMPILKAN data — termasuk baris lama ber-sumber
+     * `personal_advance` — supaya riwayat tidak berubah jadi kode mentah
+     * hanya karena opsinya dicabut dari form.
+     *
      * @return array<string, string>
      */
     public static function paymentSourceLabels(): array
@@ -112,6 +124,26 @@ class CashSessionExpense extends Model
             self::SOURCE_DRAWER => 'Tunai dari laci',
             self::SOURCE_NONCASH => 'Non-tunai (transfer/QRIS outlet)',
             self::SOURCE_PERSONAL_ADVANCE => 'Talangan uang pribadi',
+        ];
+    }
+
+    /**
+     * Sumber yang boleh DIPILIH kasir di POS.
+     *
+     * `personal_advance` sengaja dikeluarkan: talangan uang pribadi tidak
+     * menyentuh akun kas mana pun, sedangkan `cash_transactions` adalah buku
+     * kas yang setiap barisnya wajib menempel ke sebuah akun kas. Tanpa jurnal
+     * non-kas, baris talangan tidak akan pernah sampai ke Laba Rugi dan
+     * biayanya diam-diam hilang. Alurnya diganti: kasir minta ganti uang dari
+     * laci, lalu dicatat sebagai pengeluaran laci biasa.
+     *
+     * @return array<string, string>
+     */
+    public static function selectablePaymentSources(): array
+    {
+        return [
+            self::SOURCE_DRAWER => self::paymentSourceLabels()[self::SOURCE_DRAWER],
+            self::SOURCE_NONCASH => self::paymentSourceLabels()[self::SOURCE_NONCASH],
         ];
     }
 }

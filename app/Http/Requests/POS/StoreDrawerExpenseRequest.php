@@ -25,7 +25,15 @@ class StoreDrawerExpenseRequest extends FormRequest
             'amount' => 'required|numeric|min:1',
             'payment_source' => [
                 'required',
-                Rule::in(array_keys(CashSessionExpense::paymentSourceLabels())),
+                Rule::in(array_keys(CashSessionExpense::selectablePaymentSources())),
+            ],
+            // Wajib hanya saat non-tunai; kepemilikan outlet-nya diverifikasi
+            // ulang di service supaya tidak bisa menunjuk rekening outlet lain.
+            'source_cash_account_id' => [
+                'nullable',
+                'required_if:payment_source,' . CashSessionExpense::SOURCE_NONCASH,
+                'integer',
+                'exists:cash_accounts,id',
             ],
             'idempotency_key' => 'nullable|string|max:64',
         ];
@@ -45,6 +53,7 @@ class StoreDrawerExpenseRequest extends FormRequest
             'description' => 'keperluan',
             'amount' => 'jumlah',
             'payment_source' => 'sumber pembayaran',
+            'source_cash_account_id' => 'rekening sumber dana',
         ];
     }
 
@@ -56,6 +65,7 @@ class StoreDrawerExpenseRequest extends FormRequest
         return [
             'amount.min' => 'Jumlah pengeluaran minimal Rp 1.',
             'coa_account_id.required' => 'Pilih dulu kategori biayanya.',
+            'source_cash_account_id.required_if' => 'Pilih rekening sumber dananya untuk pengeluaran non-tunai.',
         ];
     }
 }

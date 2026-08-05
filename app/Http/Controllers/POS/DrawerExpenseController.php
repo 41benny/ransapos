@@ -71,7 +71,8 @@ class DrawerExpenseController extends Controller
             'session' => $session,
             'coaAccounts' => $this->expenseService->selectableCoaAccounts(),
             'onHand' => $this->expenseService->currentDrawerOnHand($session),
-            'paymentSources' => CashSessionExpense::paymentSourceLabels(),
+            'paymentSources' => CashSessionExpense::selectablePaymentSources(),
+            'sourceAccounts' => $this->expenseService->selectableSourceAccounts((int) $session->outlet_id),
             'maxPerTransaction' => $this->expenseService->maxPerTransaction(),
             // Digenerate saat form dibuka, bukan saat submit, supaya klik ganda
             // pada form yang sama membawa kunci yang sama (TEK-01).

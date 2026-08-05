@@ -177,7 +177,12 @@
                         <td class="px-4 py-2 text-sm text-gray-900 {{ $expense->isVoided() ? 'line-through' : '' }}">{{ $expense->description }}</td>
                         <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->recipient_name }}</td>
                         <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->coaAccount->name ?? '-' }}</td>
-                        <td class="px-4 py-2 text-xs text-gray-500">{{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}</td>
+                        <td class="px-4 py-2 text-xs text-gray-500">
+                            {{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}
+                            @if($expense->sourceCashAccount)
+                                <span class="block text-gray-400">{{ $expense->sourceCashAccount->name }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2 text-right text-sm font-normal {{ $expense->isVoided() ? 'text-gray-400 line-through' : 'text-gray-900' }}">Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}</td>
                         <td class="px-4 py-2 text-sm text-gray-600">{{ $expense->creator->name ?? '-' }}</td>
                         <td class="px-4 py-2 text-center">

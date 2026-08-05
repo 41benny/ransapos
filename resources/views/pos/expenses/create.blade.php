@@ -67,6 +67,36 @@
                 </p>
             </div>
 
+            {{--
+                Rekening sumber wajib dipilih untuk pengeluaran non-tunai. Tanpa
+                ini sistem tidak tahu uangnya keluar dari mana, sehingga biayanya
+                tidak bisa dibukukan dan laba jadi terlihat lebih besar dari
+                kenyataan. Ditampilkan hanya saat non-tunai dipilih.
+            --}}
+            <div id="sourceAccountWrap" class="hidden">
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    Rekening Sumber Dana <span class="text-red-400">*</span>
+                </label>
+                @if($sourceAccounts->isEmpty())
+                    <div class="p-4 rounded-xl bg-amber-900/20 border border-amber-500/40 text-amber-300 text-sm">
+                        Belum ada rekening bank/e-wallet untuk outlet ini. Minta admin membuatnya
+                        di menu <span class="font-semibold">Kas &amp; Bank</span> dulu, atau pakai
+                        pembayaran tunai dari laci.
+                    </div>
+                @else
+                    <select name="source_cash_account_id" id="sourceAccountSelect"
+                            class="w-full px-4 py-3 bg-gray-900 text-white rounded-xl border border-gray-700 focus:border-indigo-500 focus:outline-none">
+                        <option value="">-- Pilih rekening --</option>
+                        @foreach($sourceAccounts as $acc)
+                            <option value="{{ $acc->id }}" @selected(old('source_cash_account_id') == $acc->id)>
+                                {{ $acc->name }} ({{ strtoupper($acc->type) }}) &mdash; saldo Rp {{ number_format((float) $acc->current_balance, 0, ',', '.') }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-gray-500">Saldo rekening ini akan berkurang saat shift ditutup.</p>
+                @endif
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2">Nama Penerima <span class="text-red-400">*</span></label>
                 <input type="text" name="recipient_name" maxlength="60" required
@@ -160,7 +190,27 @@
         amountDisplay.value = formatThousands(digits);
         check();
     });
-    sourceSelect.addEventListener('change', check);
+
+    // Rekening sumber hanya relevan untuk non-tunai. Selectnya dinonaktifkan
+    // (bukan sekadar disembunyikan) saat tidak dipakai supaya nilainya tidak
+    // ikut terkirim dan memicu validasi rekening pada pengeluaran tunai.
+    const sourceAccountWrap = document.getElementById('sourceAccountWrap');
+    const sourceAccountSelect = document.getElementById('sourceAccountSelect');
+
+    function toggleSourceAccount() {
+        const isNoncash = sourceSelect.value === 'noncash';
+        sourceAccountWrap.classList.toggle('hidden', !isNoncash);
+        if (sourceAccountSelect) {
+            sourceAccountSelect.disabled = !isNoncash;
+            sourceAccountSelect.required = isNoncash;
+        }
+    }
+
+    sourceSelect.addEventListener('change', function () {
+        toggleSourceAccount();
+        check();
+    });
+    toggleSourceAccount();
 
     // Cegah klik ganda. Kunci idempotensi di form tetap jadi pengaman utama
     // kalau tombolnya sempat tertekan dua kali sebelum handler ini jalan.

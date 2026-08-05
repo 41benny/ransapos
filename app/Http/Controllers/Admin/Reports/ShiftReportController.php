@@ -131,7 +131,7 @@ class ShiftReportController extends Controller
         $drawerExpenses = $drawerModuleUsed
             ? CashSessionExpense::query()
                 ->where('cash_session_id', $cashSession->id)
-                ->with(['coaAccount', 'creator'])
+                ->with(['coaAccount', 'creator', 'sourceCashAccount'])
                 ->orderBy('created_at')
                 ->get()
             : collect();

@@ -87,6 +87,9 @@
                                     </td>
                                     <td class="px-4 py-3 text-gray-400 text-xs">
                                         {{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}
+                                        @if($expense->sourceCashAccount)
+                                            <span class="block text-gray-500">{{ $expense->sourceCashAccount->name }}</span>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-3 text-right font-mono font-semibold {{ $expense->isVoided() ? 'text-gray-500 line-through' : 'text-white' }}">
                                         Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}

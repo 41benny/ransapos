@@ -173,6 +173,30 @@ class PosDrawerExpenseService
     }
 
     /**
+     * Rekening yang boleh dipilih sebagai sumber dana pengeluaran NON-TUNAI.
+     *
+     * Akun laci dikecualikan: kalau uangnya dari laci, itu pengeluaran tunai,
+     * bukan non-tunai — membiarkannya terpilih akan membuat laci terpotong dua
+     * kali atau tidak sama sekali, tergantung jalur postingnya.
+     *
+     * @return Collection<int, CashAccount>
+     */
+    public function selectableSourceAccounts(int $outletId): Collection
+    {
+        if ($outletId <= 0) {
+            return collect();
+        }
+
+        return CashAccount::query()
+            ->where('outlet_id', $outletId)
+            ->where('is_active', true)
+            ->where('usage_type', '!=', 'pos_drawer')
+            ->orderByRaw("CASE WHEN type = 'bank' THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * COA yang boleh dipilih kasir (KLR-06).
      *
      * @return Collection<int, CoaAccount>
@@ -193,7 +217,7 @@ class PosDrawerExpenseService
     public function expensesFor(CashSession $session, bool $includeVoided = false): Collection
     {
         $query = $session->expenses()
-            ->with(['coaAccount', 'creator', 'voider'])
+            ->with(['coaAccount', 'creator', 'voider', 'sourceCashAccount'])
             ->orderByDesc('id');
 
         if (! $includeVoided) {
@@ -275,8 +299,21 @@ class PosDrawerExpenseService
             }
 
             $paymentSource = $data['payment_source'] ?? CashSessionExpense::SOURCE_DRAWER;
-            if (! array_key_exists($paymentSource, CashSessionExpense::paymentSourceLabels())) {
-                throw new Exception('Sumber pembayaran tidak dikenal.');
+
+            // Whitelist yang boleh DIPILIH, bukan seluruh label yang dikenal —
+            // sumber yang sudah dicabut (talangan pribadi) tidak boleh masuk
+            // lagi lewat request yang dikarang tangan meski labelnya masih ada
+            // untuk keperluan menampilkan data lama.
+            if (! array_key_exists($paymentSource, CashSessionExpense::selectablePaymentSources())) {
+                throw new Exception('Sumber pembayaran tidak dikenal atau sudah tidak dipakai lagi.');
+            }
+
+            $sourceAccountId = null;
+            if ($paymentSource === CashSessionExpense::SOURCE_NONCASH) {
+                $sourceAccountId = $this->assertUsableSourceAccount(
+                    $session,
+                    $data['source_cash_account_id'] ?? null
+                );
             }
 
             $this->assertCoaSelectable((int) $data['coa_account_id']);
@@ -290,7 +327,7 @@ class PosDrawerExpenseService
             }
 
             // Hanya pengeluaran tunai yang dibatasi isi laci (KLR-04).
-            // Non-tunai dan talangan pribadi tidak mengambil uang dari laci.
+            // Non-tunai tidak mengambil uang dari laci.
             if ($paymentSource === CashSessionExpense::SOURCE_DRAWER) {
                 $onHand = $this->currentDrawerOnHand($session);
 
@@ -309,6 +346,7 @@ class PosDrawerExpenseService
                 'description' => trim((string) $data['description']),
                 'amount' => $amount,
                 'payment_source' => $paymentSource,
+                'source_cash_account_id' => $sourceAccountId,
                 'attachment_path' => $data['attachment_path'] ?? null,
                 'status' => CashSessionExpense::STATUS_POSTED,
                 'idempotency_key' => $idempotencyKey,
@@ -393,6 +431,39 @@ class PosDrawerExpenseService
         if ($session->isBackdateCorrection()) {
             throw new Exception('Shift koreksi backdate tidak bisa dipakai untuk input pengeluaran.');
         }
+    }
+
+    /**
+     * Pastikan rekening sumber non-tunai valid dan memang milik outlet shift.
+     *
+     * Ditegakkan di server karena isi dropdown di layar bisa dilewati: tanpa
+     * cek ini, request yang dikarang tangan bisa memotong rekening outlet lain.
+     *
+     * @throws Exception
+     */
+    protected function assertUsableSourceAccount(CashSession $session, $accountId): int
+    {
+        $accountId = (int) $accountId;
+
+        if ($accountId <= 0) {
+            throw new Exception(
+                'Pilih rekening sumber dananya untuk pengeluaran non-tunai. '
+                . 'Kalau belum ada, minta admin membuat akun bank/e-wallet outlet di menu Kas & Bank.'
+            );
+        }
+
+        $account = CashAccount::query()
+            ->whereKey($accountId)
+            ->where('outlet_id', $session->outlet_id)
+            ->where('is_active', true)
+            ->where('usage_type', '!=', 'pos_drawer')
+            ->first();
+
+        if (! $account) {
+            throw new Exception('Rekening sumber tidak valid untuk outlet ini.');
+        }
+
+        return (int) $account->id;
     }
 
     /**
