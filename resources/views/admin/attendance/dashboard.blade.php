@@ -14,6 +14,24 @@
         };
     @endphp
     <div class="w-full space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        @if(session('success'))
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-700/40 dark:text-emerald-300">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700/40 dark:text-red-300">
+                {{ session('error') }}
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700/40 dark:text-red-300">
+                <ul class="list-disc list-inside space-y-1 text-sm">
+                    @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-white dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 rounded-xl shadow-sm border border-orange-100 dark:border-slate-700 p-6">
             <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -241,6 +259,9 @@
                             <th class="px-4 py-3 text-left">Status</th>
                             <th class="px-4 py-3 text-left">Kasir Login</th>
                             <th class="px-4 py-3 text-left">IP</th>
+                            @if($canCorrectShift)
+                                <th class="px-4 py-3 text-left">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
@@ -249,7 +270,20 @@
                                 <td class="px-4 py-3">{{ $attendance->clock_in->format('d-m-Y') }}</td>
                                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $attendance->user->name ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $attendance->outlet->name ?? '-' }}</td>
-                                <td class="px-4 py-3">{{ $attendance->shift->name ?? '-' }}</td>
+                                <td class="px-4 py-3">
+                                    {{ $attendance->shift->name ?? '-' }}
+                                    @if($attendance->shift)
+                                        <span class="block text-[10px] text-gray-400">{{ $attendance->shift->timeRangeLabel() }}</span>
+                                    @endif
+                                    @if($attendance->isShiftCorrected())
+                                        {{-- Wajib terlihat. Siapa pun yang membaca "Tepat Waktu" berhak
+                                             tahu apakah itu absen asli atau hasil koreksi admin. --}}
+                                        <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400"
+                                              title="Dikoreksi dari &quot;{{ $attendance->originalShift->name ?? '-' }}&quot; oleh {{ $attendance->shiftCorrector->name ?? '-' }} pada {{ $attendance->shift_corrected_at?->format('d/m/Y H:i') }}&#10;Alasan: {{ $attendance->shift_correction_reason }}">
+                                            dikoreksi
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3">{{ $attendance->clock_in->format('H:i:s') }}</td>
                                 <td class="px-4 py-3">{{ $attendance->clock_out?->format('H:i:s') ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $attendance->isClockOut() ? $attendance->getDurationFormatted() : 'Masih aktif' }}</td>
@@ -264,10 +298,23 @@
                                 </td>
                                 <td class="px-4 py-3">{{ $attendance->loggedInUser->name ?? '-' }}</td>
                                 <td class="px-4 py-3 font-mono text-xs">{{ $attendance->ip_address ?? '-' }}</td>
+                                @if($canCorrectShift)
+                                    <td class="px-4 py-3">
+                                        @if($metricsService->canCorrect($attendance))
+                                            <button type="button"
+                                                    onclick="bukaKoreksiShift({{ $attendance->id }}, @js($attendance->user->name ?? '-'), {{ (int) $attendance->shift_id }}, @js($attendance->clock_in->format('H:i:s')))"
+                                                    class="px-3 py-1.5 text-xs rounded-lg border border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-500/40 dark:text-orange-400 dark:hover:bg-orange-900/20 transition whitespace-nowrap">
+                                                Koreksi Shift
+                                            </button>
+                                        @else
+                                            <span class="text-xs text-gray-400" title="Koreksi shift hanya bisa pada hari yang sama">terkunci</span>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="px-4 py-8 text-center text-gray-500 dark:text-slate-400">Tidak ada data absensi untuk filter ini.</td>
+                                <td colspan="{{ $canCorrectShift ? 14 : 13 }}" class="px-4 py-8 text-center text-gray-500 dark:text-slate-400">Tidak ada data absensi untuk filter ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -380,6 +427,87 @@
             </div>
         </div>
     </div>
+
+    @if($canCorrectShift)
+        {{-- Modal koreksi shift. Jam masuk & jam keluar sengaja tidak ada di sini:
+             keduanya waktu yang dicatat mesin, dan begitu bisa diedit, seluruh
+             catatan absensi berhenti jadi bukti. --}}
+        <div id="modalKoreksiShift" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700">
+                <form id="formKoreksiShift" method="POST" class="p-6 space-y-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Koreksi Shift Absensi</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                            <span id="koreksiNama" class="font-medium"></span> &middot; masuk jam <span id="koreksiJam" class="font-mono"></span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Shift yang Benar</label>
+                        <select name="shift_id" id="koreksiShiftId" required
+                                class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm">
+                            @foreach($correctableShifts as $shift)
+                                <option value="{{ $shift->id }}">{{ $shift->name }} &mdash; {{ $shift->timeRangeLabel() }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-slate-400">
+                            Telat dan status dihitung ulang otomatis dari jam shift yang baru.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Alasan Koreksi</label>
+                        <input type="text" name="reason" maxlength="200" required
+                               placeholder="Contoh: karyawan salah pilih shift saat clock-in"
+                               class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-sm">
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-slate-400">
+                            Tercatat permanen beserta nama Anda dan shift aslinya.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="tutupKoreksiShift()"
+                                class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                class="flex-[2] py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold">
+                            Simpan Koreksi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            const urlKoreksiShift = @js(route('admin.reports.attendance.correct-shift', ['attendance' => '__ID__']));
+
+            function bukaKoreksiShift(id, nama, shiftId, jam) {
+                const form = document.getElementById('formKoreksiShift');
+                form.action = urlKoreksiShift.replace('__ID__', id);
+                document.getElementById('koreksiNama').textContent = nama;
+                document.getElementById('koreksiJam').textContent = jam;
+                document.getElementById('koreksiShiftId').value = shiftId;
+
+                const modal = document.getElementById('modalKoreksiShift');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function tutupKoreksiShift() {
+                const modal = document.getElementById('modalKoreksiShift');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            document.getElementById('modalKoreksiShift').addEventListener('click', function (e) {
+                if (e.target === this) tutupKoreksiShift();
+            });
+        </script>
+    @endif
 
     @if($trend->count() > 1)
         <script>

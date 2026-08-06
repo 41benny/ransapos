@@ -554,6 +554,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
         Route::get('/attendance/export', [\App\Http\Controllers\Admin\AttendanceReportController::class, 'exportReport'])
             ->name('attendance.export')
             ->middleware('permission:reports.attendance.export');
+        // Koreksi salah pilih shift. Batas hari berjalan ditegakkan di service,
+        // bukan hanya dengan menyembunyikan tombolnya di layar.
+        Route::patch('/attendance/{attendance}/shift', [\App\Http\Controllers\Admin\AttendanceCorrectionController::class, 'updateShift'])
+            ->name('attendance.correct-shift')
+            ->middleware('permission:attendance.correct_shift');
 
         // Buku Hutang Supplier
         Route::get('/debts', [\App\Http\Controllers\Admin\DebtReportController::class, 'index'])->name('debts.index')
@@ -690,6 +695,16 @@ Route::prefix('pos')->name('pos.')->middleware(['auth', 'pos.device', \App\Http\
         ->middleware('role:kasir,admin,manager,superadmin');
     Route::post('/expenses/{expense}/void', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'void'])
         ->name('expenses.void')
+        ->middleware('role:kasir,admin,manager,superadmin');
+
+    // Kas Masuk Laci — uang tambahan yang masuk ke laci di luar penjualan.
+    // Izin sebenarnya (pos.session.cash_in) dicek di controller supaya bisa
+    // dicabut per-role tanpa mengubah daftar route.
+    Route::get('/expenses/cash-in/create', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'createCashIn'])
+        ->name('expenses.cash-in.create')
+        ->middleware('role:kasir,admin,manager,superadmin');
+    Route::post('/expenses/cash-in', [\App\Http\Controllers\POS\DrawerExpenseController::class, 'storeCashIn'])
+        ->name('expenses.cash-in.store')
         ->middleware('role:kasir,admin,manager,superadmin');
 
     // Petty Cash POS (Kas Kecil Outlet, terpisah dari kas sales)

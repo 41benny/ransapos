@@ -112,6 +112,13 @@ class ShiftClosingPostingService
             ]);
         }
 
+        // 1b) Kas masuk laci (modal tambahan) — harus mendahului pengeluaran
+        //     dengan alasan yang sama seperti penerimaan tunai: uang yang
+        //     ditambahkan pemilik pagi hari sering langsung dipakai belanja,
+        //     dan kalau pengeluarannya diposting lebih dulu saldo buku laci
+        //     sempat minus padahal uangnya jelas ada.
+        $posted = array_merge($posted, $this->postCashIns($session, $drawer));
+
         // 2) Pengeluaran kios — satu baris jurnal per baris pengeluaran supaya
         //    telusurnya 1:1 dan COA-nya tidak tercampur.
         //
@@ -122,6 +129,7 @@ class ShiftClosingPostingService
         $expenses = CashSessionExpense::query()
             ->where('cash_session_id', $session->id)
             ->where('status', CashSessionExpense::STATUS_POSTED)
+            ->where('direction', CashSessionExpense::DIRECTION_OUT)
             ->whereIn('payment_source', [
                 CashSessionExpense::SOURCE_DRAWER,
                 CashSessionExpense::SOURCE_NONCASH,
@@ -227,6 +235,82 @@ class ShiftClosingPostingService
             if ($account) {
                 $this->cashAccountService->recalculateBalances($account, $this->businessDate($session));
             }
+        }
+
+        return $posted;
+    }
+
+    /**
+     * Posting seluruh baris kas masuk laci.
+     *
+     * Dua bentuk jurnal, tergantung asal uangnya:
+     *
+     *  - Dari akun kas outlet: dua baris berpasangan lewat ayat silang, persis
+     *    seperti setoran tapi arah sebaliknya. Sisi lawan WAJIB ada — tanpa itu
+     *    uang bertambah di laci tanpa berkurang di mana pun, dan saldo ayat
+     *    silang 1-190 menumpuk seperti bug yang dulu membuat buku kas tidak
+     *    seimbang.
+     *
+     *  - Dari uang pribadi pemilik: cukup satu baris ke laci dengan lawan akun
+     *    Modal Disetor Pemilik. Uangnya memang tidak keluar dari akun kas mana
+     *    pun, jadi memaksakan sisi lawan di kas besar justru membuat kas besar
+     *    minus tanpa sebab.
+     *
+     * @return array<int, CashTransaction>
+     */
+    protected function postCashIns(CashSession $session, CashAccount $drawer): array
+    {
+        $posted = [];
+
+        $cashIns = CashSessionExpense::query()
+            ->where('cash_session_id', $session->id)
+            ->where('status', CashSessionExpense::STATUS_POSTED)
+            ->where('direction', CashSessionExpense::DIRECTION_IN)
+            ->whereNull('cash_transaction_id')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($cashIns as $cashIn) {
+            $amount = round((float) $cashIn->amount, 2);
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $sourceAccount = $cashIn->source_cash_account_id
+                ? CashAccount::find($cashIn->source_cash_account_id)
+                : null;
+
+            $description = sprintf(
+                'Kas masuk laci%s | %s | %s',
+                $sourceAccount ? '' : ' (modal pemilik)',
+                $cashIn->recipient_name,
+                $cashIn->description
+            );
+
+            $in = $this->post($session, $drawer, [
+                'type' => 'in',
+                'amount' => $amount,
+                'coa_account_id' => $cashIn->coa_account_id,
+                'description' => $description,
+                'reference_type' => 'pos_drawer_cash_in',
+                'reference_id' => $cashIn->id,
+            ]);
+
+            $posted[] = $in;
+
+            if ($sourceAccount && (int) $sourceAccount->id !== (int) $drawer->id) {
+                $posted[] = $this->post($session, $sourceAccount, [
+                    'type' => 'out',
+                    'amount' => $amount,
+                    'coa_account_id' => $cashIn->coa_account_id,
+                    'description' => $description . ' (keluar ke laci)',
+                    'reference_type' => 'pos_drawer_cash_in',
+                    'reference_id' => $cashIn->id,
+                    'voucher_number' => $in->voucher_number,
+                ]);
+            }
+
+            $cashIn->update(['cash_transaction_id' => $in->id]);
         }
 
         return $posted;

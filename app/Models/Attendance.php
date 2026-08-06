@@ -18,6 +18,10 @@ class Attendance extends Model
         'home_outlet_id',
         'is_cross_outlet',
         'shift_id',
+        'original_shift_id',
+        'shift_corrected_by',
+        'shift_corrected_at',
+        'shift_correction_reason',
         'clock_in',
         'clock_out',
         'notes',
@@ -33,6 +37,7 @@ class Attendance extends Model
     protected $casts = [
         'clock_in' => 'datetime',
         'clock_out' => 'datetime',
+        'shift_corrected_at' => 'datetime',
         'is_cross_outlet' => 'boolean',
         'late_minutes' => 'integer',
         'early_leave_minutes' => 'integer',
@@ -86,6 +91,30 @@ class Attendance extends Model
     public function shift(): BelongsTo
     {
         return $this->belongsTo(Shift::class);
+    }
+
+    /**
+     * Shift yang dipilih karyawan sebelum dikoreksi admin
+     */
+    public function originalShift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class, 'original_shift_id');
+    }
+
+    /**
+     * Admin yang mengoreksi shift
+     */
+    public function shiftCorrector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'shift_corrected_by');
+    }
+
+    /**
+     * Shift-nya pernah dikoreksi admin, bukan murni pilihan karyawan
+     */
+    public function isShiftCorrected(): bool
+    {
+        return $this->shift_corrected_at !== null;
     }
 
     /**

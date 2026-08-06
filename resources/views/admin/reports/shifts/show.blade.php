@@ -92,6 +92,12 @@
                     <span class="text-sm font-normal text-blue-600">Rp {{ number_format($cashSession->total_non_cash, 0, ',', '.') }}</span>
                 </div>
                 @if($drawerModuleUsed)
+                @if($cashSession->total_cash_in > 0)
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Modal Tambahan (Kas Masuk):</span>
+                    <span class="text-sm font-normal text-emerald-600">+ Rp {{ number_format($cashSession->total_cash_in, 0, ',', '.') }}</span>
+                </div>
+                @endif
                 <div class="flex justify-between">
                     <span class="text-sm text-gray-600">Pengeluaran Tunai (Laci):</span>
                     <span class="text-sm font-normal text-red-600">&minus; Rp {{ number_format($cashSession->total_cash_expense, 0, ',', '.') }}</span>
@@ -148,6 +154,53 @@
         </div>
     </div>
 </div>
+
+@if($drawerModuleUsed && $drawerCashIns->isNotEmpty())
+<!-- Rincian Kas Masuk Laci -->
+<div class="ui-card bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="text-lg font-normal text-gray-900 mb-1">Rincian Kas Masuk Laci</h3>
+    <p class="text-xs text-gray-500 mb-4">
+        Uang yang masuk ke laci di luar penjualan. Menaikkan saldo laci seharusnya,
+        jadi wajib dicocokkan dengan bukti serah terima.
+    </p>
+    <div class="overflow-x-auto">
+        <table class="ui-table imperial-table w-full">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Waktu</th>
+                    <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Keterangan</th>
+                    <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Diserahkan Oleh</th>
+                    <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Asal Dana</th>
+                    <th class="px-4 py-2 text-right text-xs font-normal text-gray-600 uppercase">Jumlah</th>
+                    <th class="px-4 py-2 text-left text-xs font-normal text-gray-600 uppercase">Dicatat Oleh</th>
+                    <th class="px-4 py-2 text-center text-xs font-normal text-gray-600 uppercase">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($drawerCashIns as $cashIn)
+                <tr class="{{ $cashIn->isVoided() ? 'opacity-50' : '' }}">
+                    <td class="px-4 py-2 text-sm text-gray-600 whitespace-nowrap">{{ $cashIn->created_at->format('d M, H:i') }}</td>
+                    <td class="px-4 py-2 text-sm text-gray-900 {{ $cashIn->isVoided() ? 'line-through' : '' }}">{{ $cashIn->description }}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">{{ $cashIn->recipient_name }}</td>
+                    <td class="px-4 py-2 text-xs text-gray-500">
+                        {{ $cashIn->isOwnerCapital() ? 'Uang pribadi pemilik' : ($cashIn->sourceCashAccount->name ?? 'Akun kas outlet') }}
+                    </td>
+                    <td class="px-4 py-2 text-right text-sm font-normal {{ $cashIn->isVoided() ? 'text-gray-400 line-through' : 'text-emerald-700' }}">+ Rp {{ number_format((float) $cashIn->amount, 0, ',', '.') }}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">{{ $cashIn->creator->name ?? '-' }}</td>
+                    <td class="px-4 py-2 text-center">
+                        @if($cashIn->isVoided())
+                            <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800" title="{{ $cashIn->void_reason }}">Dibatalkan</span>
+                        @else
+                            <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">Posted</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 
 @if($drawerModuleUsed)
 <!-- Rincian Pengeluaran Kios -->

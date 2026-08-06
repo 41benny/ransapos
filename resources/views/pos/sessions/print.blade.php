@@ -209,6 +209,18 @@
             <span class="left">Cash Masuk</span>
             <span class="right">{{ number_format($session->total_cash, 0, ',', '.') }}</span>
         </div>
+        @if((float) $session->total_cash_in > 0)
+        <div class="row">
+            <span class="left">Modal Tambahan</span>
+            <span class="right">{{ number_format($session->total_cash_in, 0, ',', '.') }}</span>
+        </div>
+        @endif
+        @if((float) $session->total_cash_expense > 0)
+        <div class="row">
+            <span class="left">Pengeluaran Tunai</span>
+            <span class="right">-{{ number_format($session->total_cash_expense, 0, ',', '.') }}</span>
+        </div>
+        @endif
         <div class="row">
             <span class="left">Kas Seharusnya</span>
             <span class="right">{{ number_format($session->expected_balance, 0, ',', '.') }}</span>

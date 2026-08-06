@@ -14,10 +14,18 @@
                     Uang tunai yang keluar dari laci pada shift {{ $session->session_number }}.
                 </p>
             </div>
-            <a href="{{ route('pos.expenses.create') }}"
-               class="px-5 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl font-semibold shadow-lg shadow-amber-600/30 transition">
-                + Input Pengeluaran
-            </a>
+            <div class="flex flex-wrap gap-3">
+                @if($canCashIn)
+                    <a href="{{ route('pos.expenses.cash-in.create') }}"
+                       class="px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/30 transition">
+                        + Kas Masuk
+                    </a>
+                @endif
+                <a href="{{ route('pos.expenses.create') }}"
+                   class="px-5 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl font-semibold shadow-lg shadow-amber-600/30 transition">
+                    + Input Pengeluaran
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -28,11 +36,16 @@
         @endif
 
         {{-- Ringkasan laci --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-5 bg-gray-800/80 rounded-2xl border border-gray-700/50">
                 <p class="text-xs text-gray-400 mb-1">Sisa Uang di Laci</p>
                 <p class="text-2xl font-bold text-white">Rp {{ number_format($onHand, 0, ',', '.') }}</p>
-                <p class="text-[11px] text-gray-500 mt-1">Modal + penerimaan tunai &minus; pengeluaran</p>
+                <p class="text-[11px] text-gray-500 mt-1">Modal + penerimaan + kas masuk &minus; pengeluaran</p>
+            </div>
+            <div class="p-5 bg-gray-800/80 rounded-2xl border border-gray-700/50">
+                <p class="text-xs text-gray-400 mb-1">Kas Masuk</p>
+                <p class="text-2xl font-bold text-emerald-400">Rp {{ number_format($totalCashIn, 0, ',', '.') }}</p>
+                <p class="text-[11px] text-gray-500 mt-1">Modal tambahan, di luar penjualan</p>
             </div>
             <div class="p-5 bg-gray-800/80 rounded-2xl border border-gray-700/50">
                 <p class="text-xs text-gray-400 mb-1">Pengeluaran Tunai</p>
@@ -73,9 +86,14 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <p class="text-white font-medium {{ $expense->isVoided() ? 'line-through' : '' }}">
+                                            @if($expense->isCashIn())
+                                                <span class="inline-block px-1.5 py-0.5 mr-1 text-[10px] align-middle rounded bg-emerald-900/50 text-emerald-300 border border-emerald-700/50">MASUK</span>
+                                            @endif
                                             {{ $expense->description }}
                                         </p>
-                                        <p class="text-xs text-gray-400">Penerima: {{ $expense->recipient_name }}</p>
+                                        <p class="text-xs text-gray-400">
+                                            {{ $expense->isCashIn() ? 'Diserahkan oleh' : 'Penerima' }}: {{ $expense->recipient_name }}
+                                        </p>
                                         @if($expense->isVoided())
                                             <p class="text-xs text-red-400 mt-1">
                                                 Dibatalkan: {{ $expense->void_reason }}
@@ -86,13 +104,17 @@
                                         {{ $expense->coaAccount->name ?? '-' }}
                                     </td>
                                     <td class="px-4 py-3 text-gray-400 text-xs">
-                                        {{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}
+                                        @if($expense->isCashIn())
+                                            {{ $expense->isOwnerCapital() ? 'Uang pribadi pemilik' : 'Pindah buku dari akun kas' }}
+                                        @else
+                                            {{ \App\Models\CashSessionExpense::paymentSourceLabels()[$expense->payment_source] ?? $expense->payment_source }}
+                                        @endif
                                         @if($expense->sourceCashAccount)
                                             <span class="block text-gray-500">{{ $expense->sourceCashAccount->name }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-right font-mono font-semibold {{ $expense->isVoided() ? 'text-gray-500 line-through' : 'text-white' }}">
-                                        Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}
+                                    <td class="px-4 py-3 text-right font-mono font-semibold {{ $expense->isVoided() ? 'text-gray-500 line-through' : ($expense->isCashIn() ? 'text-emerald-400' : 'text-white') }}">
+                                        {{ $expense->isCashIn() ? '+' : '' }} Rp {{ number_format((float) $expense->amount, 0, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-3 text-center">
                                         @if(! $expense->isVoided())

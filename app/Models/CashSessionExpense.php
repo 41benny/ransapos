@@ -21,6 +21,9 @@ class CashSessionExpense extends Model
     public const STATUS_POSTED = 'posted';
     public const STATUS_VOID = 'void';
 
+    public const DIRECTION_OUT = 'out';
+    public const DIRECTION_IN = 'in';
+
     protected $fillable = [
         'cash_session_id',
         'outlet_id',
@@ -29,6 +32,7 @@ class CashSessionExpense extends Model
         'description',
         'amount',
         'payment_source',
+        'direction',
         'source_cash_account_id',
         'attachment_path',
         'status',
@@ -93,14 +97,51 @@ class CashSessionExpense extends Model
         return $query->where('payment_source', self::SOURCE_DRAWER);
     }
 
+    /**
+     * Baris pengeluaran saja. Wajib dipakai di setiap penjumlahan biaya:
+     * sejak kas masuk ikut menumpang tabel ini, penjumlahan tanpa filter arah
+     * akan menganggap modal tambahan owner sebagai pengeluaran.
+     */
+    public function scopeOutgoing($query)
+    {
+        return $query->where('direction', self::DIRECTION_OUT);
+    }
+
+    public function scopeIncoming($query)
+    {
+        return $query->where('direction', self::DIRECTION_IN);
+    }
+
     public function isVoided(): bool
     {
         return $this->status === self::STATUS_VOID;
     }
 
+    public function isCashIn(): bool
+    {
+        return $this->direction === self::DIRECTION_IN;
+    }
+
+    /**
+     * Kas masuk dari uang pribadi pemilik, bukan pindah buku dari akun kas
+     * outlet. Dibedakan dari ketiadaan rekening sumber: uang yang datang dari
+     * kantong owner memang tidak keluar dari akun mana pun.
+     */
+    public function isOwnerCapital(): bool
+    {
+        return $this->isCashIn() && $this->source_cash_account_id === null;
+    }
+
     public function reducesDrawer(): bool
     {
         return $this->payment_source === self::SOURCE_DRAWER
+            && $this->direction === self::DIRECTION_OUT
+            && $this->status === self::STATUS_POSTED;
+    }
+
+    public function increasesDrawer(): bool
+    {
+        return $this->direction === self::DIRECTION_IN
             && $this->status === self::STATUS_POSTED;
     }
 

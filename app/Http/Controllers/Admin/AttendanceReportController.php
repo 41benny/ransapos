@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Outlet;
+use App\Models\Shift;
 use App\Models\User;
+use App\Services\AttendanceMetricsService;
 use App\Support\ReportExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -313,6 +315,10 @@ class AttendanceReportController extends Controller
             'employeeStats' => $employeeStats,
             'outlets' => Outlet::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'employees' => User::where('is_active', true)->whereNotNull('outlet_id')->orderBy('name')->get(['id', 'name']),
+            // Daftar shift untuk form koreksi salah pilih shift.
+            'correctableShifts' => Shift::active()->get(),
+            'canCorrectShift' => (bool) auth()->user()?->hasPermission('attendance.correct_shift'),
+            'metricsService' => app(AttendanceMetricsService::class),
         ];
     }
 

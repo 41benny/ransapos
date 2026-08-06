@@ -195,10 +195,12 @@ class CashSessionController extends Controller
             && ! $activeSession->isBackdateCorrection();
 
         $drawerExpenses = collect();
+        $drawerCashIns = collect();
         if ($drawerEnabled) {
             $this->drawerExpenseService->recalculateSessionTotals($activeSession);
             $activeSession->refresh();
             $drawerExpenses = $this->drawerExpenseService->expensesFor($activeSession);
+            $drawerCashIns = $this->drawerExpenseService->cashInsFor($activeSession);
         }
 
         return view('pos.sessions.close', compact(
@@ -206,7 +208,8 @@ class CashSessionController extends Controller
             'paymentStats',
             'packaging',
             'drawerEnabled',
-            'drawerExpenses'
+            'drawerExpenses',
+            'drawerCashIns'
         ) + [
             'differenceTolerance' => $this->drawerExpenseService->differenceTolerance(),
         ]);

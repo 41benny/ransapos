@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Shift;
 use App\Models\User;
+use App\Services\AttendanceMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,6 +15,11 @@ use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        protected AttendanceMetricsService $metricsService,
+    ) {
+    }
+
     /**
      * Tampilkan halaman absensi dengan grid karyawan
      */
@@ -176,14 +182,14 @@ class AttendanceController extends Controller
             return back()->with('error', 'Karyawan sudah melakukan clock-in hari ini');
         }
 
-        // Tentukan status berdasarkan jam masuk shift + toleransi keterlambatan
+        // Status & menit telat dihitung lewat service supaya rumusnya sama
+        // persis dengan yang dipakai saat admin mengoreksi shift. Rumus yang
+        // disalin ke dua tempat akan perlahan berbeda, dan absensi terkoreksi
+        // jadi menghasilkan angka lain untuk jam masuk yang sama.
         $clockInTime = now();
-        $shiftStart = $shift->startFor(today());
-        $lateThreshold = $shift->lateThresholdFor(today());
-        $isLate = $clockInTime->greaterThan($lateThreshold);
-        $status = $isLate ? 'late' : 'present';
-        // Menit telat dihitung dari jam masuk shift (hanya saat melewati toleransi)
-        $lateMinutes = $isLate ? (int) $shiftStart->diffInMinutes($clockInTime) : 0;
+        $arrival = $this->metricsService->arrivalMetrics($shift, $clockInTime);
+        $status = $arrival['status'];
+        $lateMinutes = $arrival['late_minutes'];
 
         // Buat record attendance
         $attendance = Attendance::create([
@@ -265,30 +271,21 @@ class AttendanceController extends Controller
             return back()->with('error', 'Karyawan belum melakukan clock-in hari ini');
         }
 
-        // Hitung durasi kerja, pulang cepat, dan lembur berdasarkan shift
+        // Durasi kerja, pulang cepat, dan lembur — rumusnya dipegang service
+        // yang sama dengan clock-in dan koreksi shift.
         $clockOutTime = now();
-        $workedMinutes = (int) $attendance->clock_in->diffInMinutes($clockOutTime);
-        $earlyLeaveMinutes = 0;
-        $overtimeMinutes = 0;
-
         $attendance->loadMissing(['shift', 'outlet']);
-        if ($attendance->shift) {
-            $shiftEnd = $attendance->shift->endFor($attendance->clock_in);
 
-            if ($clockOutTime->lessThan($shiftEnd)) {
-                $earlyLeaveMinutes = (int) $clockOutTime->diffInMinutes($shiftEnd);
-            } elseif ($clockOutTime->greaterThan($shiftEnd)) {
-                $overtimeMinutes = (int) $shiftEnd->diffInMinutes($clockOutTime);
-            }
-        }
+        $departure = $this->metricsService->departureMetrics(
+            $attendance->shift,
+            $attendance->clock_in,
+            $clockOutTime
+        );
 
         // Update clock_out + metrik
-        $attendance->update([
+        $attendance->update(array_merge($departure, [
             'clock_out' => $clockOutTime,
-            'worked_minutes' => $workedMinutes,
-            'early_leave_minutes' => $earlyLeaveMinutes,
-            'overtime_minutes' => $overtimeMinutes,
-        ]);
+        ]));
 
         $duration = $attendance->getDurationFormatted();
         $extra = '';

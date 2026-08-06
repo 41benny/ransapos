@@ -128,13 +128,20 @@ class ShiftReportController extends Controller
         // `pos_drawer_expense_enabled` menyala. Shift lama/flag-mati tetap
         // memakai panel "Kas yang Seharusnya" lama tanpa rincian pengeluaran.
         $drawerModuleUsed = ! is_null($cashSession->drawer_cash_account_id);
-        $drawerExpenses = $drawerModuleUsed
+
+        // Arah wajib disaring. Kas masuk menumpang tabel yang sama, dan tanpa
+        // filter ini modal tambahan pemilik akan tampil di tabel pengeluaran
+        // seolah-olah uangnya dibelanjakan.
+        $drawerRows = $drawerModuleUsed
             ? CashSessionExpense::query()
                 ->where('cash_session_id', $cashSession->id)
                 ->with(['coaAccount', 'creator', 'sourceCashAccount'])
                 ->orderBy('created_at')
                 ->get()
             : collect();
+
+        $drawerExpenses = $drawerRows->where('direction', CashSessionExpense::DIRECTION_OUT)->values();
+        $drawerCashIns = $drawerRows->where('direction', CashSessionExpense::DIRECTION_IN)->values();
 
         return view('admin.reports.shifts.show', compact(
             'cashSession',
@@ -144,7 +151,8 @@ class ShiftReportController extends Controller
             'topProducts',
             'sessionDiagnostics',
             'drawerModuleUsed',
-            'drawerExpenses'
+            'drawerExpenses',
+            'drawerCashIns'
         ));
     }
 

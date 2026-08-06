@@ -135,6 +135,38 @@
                             </div>
 
                             @if($drawerEnabled)
+                            {{-- Kas masuk ditampilkan sebagai baris tersendiri, bukan dilebur ke
+                                 modal awal: modal awal terkunci mengikuti shift sebelumnya, dan
+                                 melebur keduanya membuat angka di layar tidak cocok dengan yang
+                                 tersimpan. --}}
+                            @if((float) $activeSession->total_cash_in > 0)
+                            <div class="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-xl border border-gray-600/30">
+                                <span class="text-sm text-gray-400">
+                                    Kas masuk / modal tambahan
+                                    @if($drawerCashIns->isNotEmpty())
+                                        <button type="button" onclick="document.getElementById('cashInDetail').classList.toggle('hidden')"
+                                                class="ml-1 text-xs text-indigo-400 hover:text-indigo-300 underline">rincian</button>
+                                    @endif
+                                </span>
+                                <span class="text-lg font-bold text-emerald-400 font-mono">+ Rp {{ number_format($activeSession->total_cash_in, 0, ',', '.') }}</span>
+                            </div>
+
+                            <div id="cashInDetail" class="hidden px-4 py-3 bg-gray-900/50 rounded-xl border border-gray-700/50 space-y-2">
+                                @foreach($drawerCashIns as $cashIn)
+                                    <div class="flex items-start justify-between gap-3 text-xs">
+                                        <div class="min-w-0">
+                                            <p class="text-gray-300 truncate">{{ $cashIn->description }}</p>
+                                            <p class="text-gray-500">
+                                                {{ $cashIn->recipient_name }} &middot;
+                                                {{ $cashIn->isOwnerCapital() ? 'uang pribadi pemilik' : ($cashIn->sourceCashAccount->name ?? 'akun kas outlet') }}
+                                            </p>
+                                        </div>
+                                        <span class="font-mono text-emerald-300 whitespace-nowrap">Rp {{ number_format((float) $cashIn->amount, 0, ',', '.') }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @endif
+
                             <div class="flex items-center justify-between px-4 py-3 bg-gray-700/30 rounded-xl border border-gray-600/30">
                                 <span class="text-sm text-gray-400">
                                     Pengeluaran tunai

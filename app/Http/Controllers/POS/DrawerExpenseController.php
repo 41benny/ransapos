@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\POS\StoreDrawerCashInRequest;
 use App\Http\Requests\POS\StoreDrawerExpenseRequest;
 use App\Models\CashSessionExpense;
 use App\Services\CashSessionService;
@@ -41,15 +42,19 @@ class DrawerExpenseController extends Controller
                 ->with('warning', 'Buka shift terlebih dahulu sebelum mencatat pengeluaran.');
         }
 
-        $expenses = $this->expenseService->expensesFor($session, includeVoided: true);
+        // Kas masuk dan pengeluaran ditampilkan berdampingan supaya kasir bisa
+        // menelusuri urutan uang di laci dalam satu layar.
+        $rows = $this->expenseService->ledgerFor($session);
         $onHand = $this->expenseService->currentDrawerOnHand($session);
 
         return view('pos.expenses.index', [
             'session' => $session,
-            'expenses' => $expenses,
+            'expenses' => $rows,
             'onHand' => $onHand,
             'totalCashExpense' => (float) $session->total_cash_expense,
             'totalNoncashExpense' => (float) $session->total_noncash_expense,
+            'totalCashIn' => (float) $session->total_cash_in,
+            'canCashIn' => $this->userCanCashIn(),
         ]);
     }
 
@@ -114,6 +119,87 @@ class DrawerExpenseController extends Controller
         }
     }
 
+    /**
+     * Form kas masuk laci — modal tambahan dari pemilik atau ambilan kas besar.
+     */
+    public function createCashIn()
+    {
+        if (! $this->expenseService->isEnabled()) {
+            return redirect()->route('pos.dashboard');
+        }
+
+        if (! $this->userCanCashIn()) {
+            return redirect()
+                ->route('pos.expenses.index')
+                ->with('error', 'Anda tidak punya izin mencatat kas masuk laci.');
+        }
+
+        $session = $this->cashSessionService->getActiveSessionFor();
+
+        if (! $session) {
+            return redirect()
+                ->route('pos.dashboard')
+                ->with('warning', 'Buka shift terlebih dahulu sebelum mencatat kas masuk.');
+        }
+
+        return view('pos.expenses.cash-in', [
+            'session' => $session,
+            'onHand' => $this->expenseService->currentDrawerOnHand($session),
+            'sourceAccounts' => $this->expenseService->selectableCashInSources((int) $session->outlet_id),
+            'idempotencyKey' => (string) Str::uuid(),
+        ]);
+    }
+
+    public function storeCashIn(StoreDrawerCashInRequest $request)
+    {
+        if (! $this->expenseService->isEnabled()) {
+            return redirect()->route('pos.dashboard');
+        }
+
+        if (! $this->userCanCashIn()) {
+            return redirect()
+                ->route('pos.expenses.index')
+                ->with('error', 'Anda tidak punya izin mencatat kas masuk laci.');
+        }
+
+        $session = $this->cashSessionService->getActiveSessionFor();
+
+        if (! $session) {
+            return redirect()
+                ->route('pos.dashboard')
+                ->with('warning', 'Shift tidak aktif. Kas masuk tidak disimpan.');
+        }
+
+        try {
+            $cashIn = $this->expenseService->recordCashIn(
+                $session,
+                $request->validated(),
+                auth()->user()
+            );
+
+            return redirect()
+                ->route('pos.expenses.index')
+                ->with('success', 'Kas masuk Rp ' . number_format((float) $cashIn->amount, 0, ',', '.') . ' tercatat.');
+        } catch (Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Kas masuk dipisahkan dari izin input pengeluaran karena ini satu-satunya
+     * jalur uang MASUK ke laci di luar penjualan — kalau perlu dikunci ke
+     * supervisor saja, permissionnya bisa dicabut dari role kasir tanpa ikut
+     * mematikan input pengeluaran sehari-hari.
+     */
+    protected function userCanCashIn(): bool
+    {
+        $user = auth()->user();
+
+        return $user
+            && ($user->hasPermission('pos.session.cash_in')
+                || $user->hasRole(['admin', 'manager', 'superadmin']));
+    }
+
     public function void(Request $request, CashSessionExpense $expense)
     {
         $validated = $request->validate([
@@ -129,7 +215,15 @@ class DrawerExpenseController extends Controller
         if (! $session || (int) $expense->cash_session_id !== (int) $session->id) {
             return redirect()
                 ->route('pos.expenses.index')
-                ->with('error', 'Pengeluaran ini bukan milik shift Anda yang sedang berjalan.');
+                ->with('error', 'Baris ini bukan milik shift Anda yang sedang berjalan.');
+        }
+
+        // Pembatalan kas masuk mengurangi uang yang diakui ada di laci, jadi
+        // dikunci ke pemegang izin yang sama dengan yang boleh mencatatnya.
+        if ($expense->isCashIn() && ! $this->userCanCashIn()) {
+            return redirect()
+                ->route('pos.expenses.index')
+                ->with('error', 'Anda tidak punya izin membatalkan kas masuk laci.');
         }
 
         try {
@@ -137,7 +231,8 @@ class DrawerExpenseController extends Controller
 
             return redirect()
                 ->route('pos.expenses.index')
-                ->with('success', 'Pengeluaran dibatalkan. Baris aslinya tetap tersimpan sebagai jejak audit.');
+                ->with('success', ($expense->isCashIn() ? 'Kas masuk' : 'Pengeluaran')
+                    . ' dibatalkan. Baris aslinya tetap tersimpan sebagai jejak audit.');
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }

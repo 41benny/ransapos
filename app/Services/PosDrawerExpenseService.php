@@ -9,6 +9,7 @@ use App\Models\CoaAccount;
 use App\Models\Outlet;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\CashAccountService;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -210,15 +211,53 @@ class PosDrawerExpenseService
     }
 
     /**
-     * Baris pengeluaran sebuah shift.
+     * Baris PENGELUARAN sebuah shift.
+     *
+     * Sengaja menyaring arah, bukan mengembalikan seluruh isi tabel: sejak kas
+     * masuk menumpang tabel yang sama, pemanggil lama yang mengira isinya
+     * pengeluaran semua akan menampilkan modal tambahan owner sebagai biaya —
+     * di layar closing maupun di laporan shift.
      *
      * @return Collection<int, CashSessionExpense>
      */
     public function expensesFor(CashSession $session, bool $includeVoided = false): Collection
     {
+        return $this->rowsFor($session, CashSessionExpense::DIRECTION_OUT, $includeVoided);
+    }
+
+    /**
+     * Baris KAS MASUK sebuah shift.
+     *
+     * @return Collection<int, CashSessionExpense>
+     */
+    public function cashInsFor(CashSession $session, bool $includeVoided = false): Collection
+    {
+        return $this->rowsFor($session, CashSessionExpense::DIRECTION_IN, $includeVoided);
+    }
+
+    /**
+     * Seluruh baris buku pembantu shift, dua arah sekaligus — untuk layar
+     * riwayat yang memang perlu menampilkan uang masuk dan keluar berdampingan.
+     *
+     * @return Collection<int, CashSessionExpense>
+     */
+    public function ledgerFor(CashSession $session, bool $includeVoided = true): Collection
+    {
+        return $this->rowsFor($session, null, $includeVoided);
+    }
+
+    /**
+     * @return Collection<int, CashSessionExpense>
+     */
+    protected function rowsFor(CashSession $session, ?string $direction, bool $includeVoided): Collection
+    {
         $query = $session->expenses()
             ->with(['coaAccount', 'creator', 'voider', 'sourceCashAccount'])
             ->orderByDesc('id');
+
+        if ($direction !== null) {
+            $query->where('direction', $direction);
+        }
 
         if (! $includeVoided) {
             $query->where('status', CashSessionExpense::STATUS_POSTED);
@@ -238,21 +277,31 @@ class PosDrawerExpenseService
      */
     public function recalculateSessionTotals(CashSession $session): array
     {
+        // Filter arah wajib ada di setiap suku. Tanpa itu, kas masuk yang
+        // menumpang tabel yang sama akan ikut terjumlah sebagai pengeluaran
+        // dan saldo seharusnya melenceng dua kali lipat nominalnya.
         $totals = CashSessionExpense::query()
             ->where('cash_session_id', $session->id)
             ->where('status', CashSessionExpense::STATUS_POSTED)
             ->selectRaw(
-                "COALESCE(SUM(CASE WHEN payment_source = ? THEN amount ELSE 0 END), 0) as cash_total,
-                 COALESCE(SUM(CASE WHEN payment_source <> ? THEN amount ELSE 0 END), 0) as noncash_total",
-                [CashSessionExpense::SOURCE_DRAWER, CashSessionExpense::SOURCE_DRAWER]
+                "COALESCE(SUM(CASE WHEN direction = ? AND payment_source = ? THEN amount ELSE 0 END), 0) as cash_total,
+                 COALESCE(SUM(CASE WHEN direction = ? AND payment_source <> ? THEN amount ELSE 0 END), 0) as noncash_total,
+                 COALESCE(SUM(CASE WHEN direction = ? THEN amount ELSE 0 END), 0) as cash_in_total",
+                [
+                    CashSessionExpense::DIRECTION_OUT, CashSessionExpense::SOURCE_DRAWER,
+                    CashSessionExpense::DIRECTION_OUT, CashSessionExpense::SOURCE_DRAWER,
+                    CashSessionExpense::DIRECTION_IN,
+                ]
             )
             ->first();
 
         $cash = (float) ($totals->cash_total ?? 0);
         $noncash = (float) ($totals->noncash_total ?? 0);
+        $cashIn = (float) ($totals->cash_in_total ?? 0);
 
         $session->total_cash_expense = $cash;
         $session->total_noncash_expense = $noncash;
+        $session->total_cash_in = $cashIn;
 
         // Shift yang sudah ditutup tidak boleh berubah saldonya (KLR-09).
         if ($session->status === 'open') {
@@ -261,7 +310,7 @@ class PosDrawerExpenseService
 
         $session->save();
 
-        return ['cash' => $cash, 'noncash' => $noncash];
+        return ['cash' => $cash, 'noncash' => $noncash, 'cash_in' => $cashIn];
     }
 
     /**
@@ -346,6 +395,7 @@ class PosDrawerExpenseService
                 'description' => trim((string) $data['description']),
                 'amount' => $amount,
                 'payment_source' => $paymentSource,
+                'direction' => CashSessionExpense::DIRECTION_OUT,
                 'source_cash_account_id' => $sourceAccountId,
                 'attachment_path' => $data['attachment_path'] ?? null,
                 'status' => CashSessionExpense::STATUS_POSTED,
@@ -357,6 +407,116 @@ class PosDrawerExpenseService
 
             return $expense->fresh(['coaAccount', 'creator']);
         });
+    }
+
+    /**
+     * Catat kas masuk ke laci di luar penjualan — modal tambahan yang ditaruh
+     * pemilik, atau uang yang diambilkan dari kas besar di tengah shift.
+     *
+     * Sengaja TIDAK lewat modal awal shift: modal awal dirantai dari modal
+     * disisakan shift sebelumnya dan dikunci (SHIFT-01). Kalau uang tambahan
+     * dimasukkan lewat sana, rantainya putus dan selisih kas kemarin bisa
+     * dihapus hanya dengan mengarang modal hari ini.
+     *
+     * Dua sumber yang diakui, dan keduanya punya lawan yang sah:
+     *  - Akun kas outlet (kas besar / rekening) -> pindah buku lewat ayat
+     *    silang, saldo akun asal berkurang sebesar yang masuk ke laci.
+     *  - Uang pribadi pemilik -> lawannya akun Modal Disetor Pemilik, karena
+     *    uangnya memang tidak keluar dari akun kas mana pun.
+     *
+     * @param  array{amount:float, description:string, recipient_name?:string, source_cash_account_id?:int|null, from_owner?:bool, idempotency_key?:string|null}  $data
+     *
+     * @throws Exception
+     */
+    public function recordCashIn(CashSession $session, array $data, User $user): CashSessionExpense
+    {
+        return DB::transaction(function () use ($session, $data, $user) {
+            $session = CashSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+
+            $this->assertSessionAcceptsExpense($session);
+
+            $idempotencyKey = $data['idempotency_key'] ?? null;
+            if ($idempotencyKey) {
+                $existing = CashSessionExpense::query()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existing) {
+                    return $existing;
+                }
+            }
+
+            $amount = round((float) $data['amount'], 2);
+            if ($amount <= 0) {
+                throw new Exception('Jumlah kas masuk harus lebih besar dari nol.');
+            }
+
+            $fromOwner = (bool) ($data['from_owner'] ?? false);
+            $sourceAccountId = null;
+
+            if ($fromOwner) {
+                $coaAccountId = $this->resolveOwnerCapitalCoaId();
+            } else {
+                $sourceAccountId = $this->assertUsableSourceAccount(
+                    $session,
+                    $data['source_cash_account_id'] ?? null
+                );
+                $coaAccountId = app(CashAccountService::class)->resolveTransferClearingCoaAccountId();
+            }
+
+            $expense = CashSessionExpense::create([
+                'cash_session_id' => $session->id,
+                'outlet_id' => $session->outlet_id,
+                'coa_account_id' => $coaAccountId,
+                'recipient_name' => trim((string) ($data['recipient_name'] ?? '')) ?: 'Tidak dicatat',
+                'description' => trim((string) $data['description']),
+                'amount' => $amount,
+                'payment_source' => CashSessionExpense::SOURCE_DRAWER,
+                'direction' => CashSessionExpense::DIRECTION_IN,
+                'source_cash_account_id' => $sourceAccountId,
+                'status' => CashSessionExpense::STATUS_POSTED,
+                'idempotency_key' => $idempotencyKey,
+                'created_by' => $user->id,
+            ]);
+
+            $this->recalculateSessionTotals($session);
+
+            return $expense->fresh(['coaAccount', 'creator', 'sourceCashAccount']);
+        });
+    }
+
+    /**
+     * Rekening yang boleh jadi ASAL kas masuk.
+     *
+     * Sama daftarnya dengan sumber pengeluaran non-tunai: akun kas outlet
+     * selain laci itu sendiri. Laci dikecualikan karena memindahkan uang dari
+     * laci ke laci tidak berarti apa-apa dan hanya akan menggandakan saldo.
+     *
+     * @return Collection<int, CashAccount>
+     */
+    public function selectableCashInSources(int $outletId): Collection
+    {
+        return $this->selectableSourceAccounts($outletId);
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function resolveOwnerCapitalCoaId(): int
+    {
+        $coaId = CoaAccount::query()
+            ->where('code', '3-100')
+            ->where('is_active', true)
+            ->value('id');
+
+        if (! $coaId) {
+            throw new Exception(
+                'Akun "Modal Disetor Pemilik" (3-100) belum ada. Jalankan migrasi terbaru, '
+                . 'atau pilih kas besar sebagai sumber dananya.'
+            );
+        }
+
+        return (int) $coaId;
     }
 
     /**
@@ -372,8 +532,10 @@ class PosDrawerExpenseService
         return DB::transaction(function () use ($expense, $user, $reason) {
             $session = CashSession::whereKey($expense->cash_session_id)->lockForUpdate()->firstOrFail();
 
+            $label = $expense->isCashIn() ? 'Kas masuk' : 'Pengeluaran';
+
             if ($expense->isVoided()) {
-                throw new Exception('Pengeluaran ini sudah dibatalkan sebelumnya.');
+                throw new Exception($label . ' ini sudah dibatalkan sebelumnya.');
             }
 
             // Setelah shift ditutup, koreksi adalah wewenang admin lewat jurnal
@@ -411,10 +573,20 @@ class PosDrawerExpenseService
         $spent = (float) CashSessionExpense::query()
             ->where('cash_session_id', $session->id)
             ->where('status', CashSessionExpense::STATUS_POSTED)
+            ->where('direction', CashSessionExpense::DIRECTION_OUT)
             ->where('payment_source', CashSessionExpense::SOURCE_DRAWER)
             ->sum('amount');
 
-        return (float) $session->opening_balance + (float) $session->total_cash - $spent;
+        $received = (float) CashSessionExpense::query()
+            ->where('cash_session_id', $session->id)
+            ->where('status', CashSessionExpense::STATUS_POSTED)
+            ->where('direction', CashSessionExpense::DIRECTION_IN)
+            ->sum('amount');
+
+        return (float) $session->opening_balance
+            + (float) $session->total_cash
+            + $received
+            - $spent;
     }
 
     /**
@@ -447,8 +619,8 @@ class PosDrawerExpenseService
 
         if ($accountId <= 0) {
             throw new Exception(
-                'Pilih rekening sumber dananya untuk pengeluaran non-tunai. '
-                . 'Kalau belum ada, minta admin membuat akun bank/e-wallet outlet di menu Kas & Bank.'
+                'Pilih rekening sumber dananya. Kalau belum ada, minta admin membuat '
+                . 'akun kas besar / bank / e-wallet outlet di menu Kas & Bank.'
             );
         }
 

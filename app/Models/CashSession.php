@@ -27,6 +27,7 @@ class CashSession extends Model
         'total_non_cash',
         'total_cash_expense',
         'total_noncash_expense',
+        'total_cash_in',
         'retained_balance',
         'deposit_amount',
         'deposit_status',
@@ -47,6 +48,7 @@ class CashSession extends Model
         'total_non_cash' => 'decimal:2',
         'total_cash_expense' => 'decimal:2',
         'total_noncash_expense' => 'decimal:2',
+        'total_cash_in' => 'decimal:2',
         'retained_balance' => 'decimal:2',
         'deposit_amount' => 'decimal:2',
         'business_date' => 'date',
@@ -126,6 +128,7 @@ class CashSession extends Model
     {
         return (float) $this->opening_balance
             + (float) $this->total_cash
+            + (float) $this->total_cash_in
             - (float) $this->total_cash_expense;
     }
 
