@@ -1267,9 +1267,11 @@
                             const cogs = Number(r.cogs || 0);
                             const cogsPct = rev > 0 ? (cogs / rev * 100).toFixed(1) : 0;
                             const netProfit = Number(r.net_profit || 0);
-                            const prevNetProfit = Number(r.previous_net_profit || 0);
+                            const deltaRevenue = Number(r.delta_amount || 0);
+                            const deltaRevenuePct = r.delta_amount_pct;
                             const deltaNetProfit = Number(r.delta_net_profit || 0);
                             const deltaNetProfitPct = r.delta_net_profit_pct;
+                            const revenueDeltaClass = deltaRevenue >= 0 ? 'text-emerald-600' : 'text-rose-600';
                             const deltaClass = deltaNetProfit >= 0 ? 'text-emerald-600' : 'text-rose-600';
                             const isReportableOutlet = Number(r.outlet_id || 0) > 0 && canOpenSalesVsHppReport;
                             const reportUrl = isReportableOutlet ? buildSalesVsHppUrl(r.outlet_id) : '';
@@ -1283,6 +1285,11 @@
                             return `
                                 <${cardTag} ${cardAttrs} class="${cardClass}">
                                     <div class="text-[11px] font-black tracking-widest uppercase text-slate-600 transition-colors duration-300 group-hover:text-blue-700 mb-2 truncate" title="${escapeHtml(r.outlet_name)}">${escapeHtml(r.outlet_name)}</div>
+                                    <div class="mb-3 rounded-xl bg-blue-50/70 px-2.5 py-2">
+                                        <div class="text-[9px] font-black uppercase tracking-widest text-blue-500">Total Revenue</div>
+                                        <div class="mt-0.5 text-sm font-black text-slate-800">${idr.format(rev)}</div>
+                                        <div class="mt-1 text-[9px] font-bold uppercase tracking-wide text-slate-400">vs Prev: <span class="${revenueDeltaClass}">${formatSignedIdr(deltaRevenue)} (${formatSignedPct(deltaRevenuePct)})</span></div>
+                                    </div>
                                     <div class="flex flex-col gap-1 text-[10px] mb-1.5 font-bold">
                                         <div class="flex justify-between items-center text-blue-600 transition-colors duration-300 group-hover:text-blue-700"><span class="uppercase tracking-wide opacity-80">Penjualan</span><span>100%</span></div>
                                         <div class="flex justify-between items-center text-rose-600 transition-colors duration-300 group-hover:text-rose-700"><span class="uppercase tracking-wide opacity-80">HPP</span><span>${cogsPct}%</span></div>

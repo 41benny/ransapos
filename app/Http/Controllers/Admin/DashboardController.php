@@ -319,10 +319,16 @@ class DashboardController extends Controller
                     ->map(function (int $outletId) use ($currentOutletMetrics, $previousOutletMetrics) {
                         $current = $currentOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
                         $previous = $previousOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
+                        $deltaRevenue = (float) $current['amount'] - (float) $previous['amount'];
                         $deltaNetProfit = (float) $current['net_profit'] - (float) $previous['net_profit'];
 
                         return [
                             ...$current,
+                            'previous_amount' => (float) $previous['amount'],
+                            'delta_amount' => $deltaRevenue,
+                            'delta_amount_pct' => (float) $previous['amount'] > 0
+                                ? ($deltaRevenue / (float) $previous['amount']) * 100
+                                : null,
                             'previous_net_profit' => (float) $previous['net_profit'],
                             'delta_net_profit' => $deltaNetProfit,
                             'delta_net_profit_pct' => (float) $previous['net_profit'] > 0
