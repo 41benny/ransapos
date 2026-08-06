@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Outlet;
+use App\Models\Setting;
 use App\Models\Shift;
 use App\Models\User;
 use App\Services\AttendanceMetricsService;
@@ -177,6 +178,8 @@ class AttendanceReportController extends Controller
         );
         $anomalyCount = count($anomalies);
 
+        $payroll = $this->buildPayrollRows($statsQuery, $dateTo);
+
         $outletStats = (clone $statsQuery)
             ->leftJoin('outlets', 'attendances.outlet_id', '=', 'outlets.id')
             ->selectRaw('attendances.outlet_id')
@@ -319,6 +322,59 @@ class AttendanceReportController extends Controller
             'correctableShifts' => Shift::active()->get(),
             'canCorrectShift' => (bool) auth()->user()?->hasPermission('attendance.correct_shift'),
             'metricsService' => app(AttendanceMetricsService::class),
+        ] + $payroll;
+    }
+
+    /**
+     * Gaji harian karyawan outlet, dihitung dari jumlah HARI (bukan baris)
+     * yang punya absensi pada rentang filter yang sedang aktif di halaman
+     * ini -- ikut menghormati filter outlet/karyawan/status yang sudah
+     * dipilih admin, tanpa perlu selektor terpisah.
+     *
+     * Aturan (dikonfirmasi dengan owner 06/08/2026):
+     *  - Telat tetap dihitung 1 hari kerja penuh, tidak ada potongan.
+     *  - Tunjangan flat ditambahkan kalau tanggal akhir filter berada di
+     *    paruh kedua bulan (> tanggal 15) -- cocok dengan skema gaji 15
+     *    harian (cutoff 1-15 dan 16-akhir bulan). Kalau filter dipakai untuk
+     *    rentang lain (mis. "Minggu Ini"), aturan ini tetap jalan apa
+     *    adanya; sengaja tidak dibuatkan selektor "periode gaji" terpisah
+     *    supaya halaman ini tidak tambah rumit.
+     *
+     * @return array{payrollRows: array<int, array<string, mixed>>, payrollDailyWage: float, payrollAllowance: float, payrollAllowanceApplies: bool, payrollGrandTotal: float}
+     */
+    private function buildPayrollRows($statsQuery, Carbon $dateTo): array
+    {
+        $dailyWage = (float) Setting::getValue('payroll_daily_wage', 50000);
+        $allowance = (float) Setting::getValue('payroll_period2_allowance', 250000);
+        $allowanceApplies = $dateTo->day > 15;
+
+        $counts = (clone $statsQuery)
+            ->join('users', 'attendances.user_id', '=', 'users.id')
+            ->groupBy('attendances.user_id', 'users.name')
+            ->orderBy('users.name')
+            ->selectRaw('attendances.user_id, users.name, COUNT(DISTINCT DATE(attendances.clock_in)) as days_worked')
+            ->get();
+
+        $rows = $counts->map(function ($row) use ($dailyWage, $allowance, $allowanceApplies) {
+            $subtotal = (float) $row->days_worked * $dailyWage;
+            $rowAllowance = $allowanceApplies ? $allowance : 0.0;
+
+            return [
+                'name' => $row->name,
+                'days_worked' => (int) $row->days_worked,
+                'daily_wage' => $dailyWage,
+                'subtotal' => $subtotal,
+                'allowance' => $rowAllowance,
+                'total' => $subtotal + $rowAllowance,
+            ];
+        })->all();
+
+        return [
+            'payrollRows' => $rows,
+            'payrollDailyWage' => $dailyWage,
+            'payrollAllowance' => $allowance,
+            'payrollAllowanceApplies' => $allowanceApplies,
+            'payrollGrandTotal' => array_sum(array_column($rows, 'total')),
         ];
     }
 

@@ -428,6 +428,64 @@
         </div>
     </div>
 
+    {{-- Gaji Karyawan Outlet: hari kerja x tarif harian, dihitung dari rentang
+         filter yang sama seperti tabel di atas. Kalau mau menghitung gaji
+         periode 1-15 atau 16-akhir bulan, pakai filter "Custom" di atas dan
+         isi tanggalnya sesuai cutoff. --}}
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-orange-100 dark:border-slate-700 mb-6">
+        <div class="p-5 border-b border-orange-100 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">💰 Gaji Karyawan Outlet</h3>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                Hari kerja &times; Rp {{ number_format($payrollDailyWage, 0, ',', '.') }}/hari, untuk rentang filter di atas ({{ $dateFrom }} s/d {{ $dateTo }}).
+                @if($payrollAllowanceApplies)
+                    Tanggal akhir filter di atas tanggal 15, jadi tunjangan periode kedua
+                    <span class="font-semibold">Rp {{ number_format($payrollAllowance, 0, ',', '.') }}</span> ikut ditambahkan.
+                @else
+                    Tunjangan periode kedua baru ditambahkan kalau tanggal akhir filter di atas tanggal 15
+                    (pakai filter Custom untuk periode 16&ndash;akhir bulan).
+                @endif
+            </p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-orange-50 text-orange-800 dark:bg-slate-700/50 dark:text-orange-400 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Karyawan</th>
+                        <th class="px-4 py-3 text-right">Hari Kerja</th>
+                        <th class="px-4 py-3 text-right">Tarif Harian</th>
+                        <th class="px-4 py-3 text-right">Subtotal</th>
+                        <th class="px-4 py-3 text-right">Tunjangan</th>
+                        <th class="px-4 py-3 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-700/50">
+                    @forelse($payrollRows as $row)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 text-gray-700 dark:text-slate-300">
+                            <td class="px-4 py-3 font-medium dark:text-slate-200">{{ $row['name'] }}</td>
+                            <td class="px-4 py-3 text-right">{{ $row['days_worked'] }}</td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($row['daily_wage'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right">Rp {{ number_format($row['subtotal'], 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-right">{{ $row['allowance'] > 0 ? 'Rp ' . number_format($row['allowance'], 0, ',', '.') : '-' }}</td>
+                            <td class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">Rp {{ number_format($row['total'], 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-slate-400">Tidak ada absensi pada rentang filter ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if(count($payrollRows) > 0)
+                    <tfoot>
+                        <tr class="border-t-2 border-orange-200 dark:border-slate-600">
+                            <td colspan="5" class="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">Total Dibayar</td>
+                            <td class="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($payrollGrandTotal, 0, ',', '.') }}</td>
+                        </tr>
+                    </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
+
     @if($canCorrectShift)
         {{-- Modal koreksi shift. Jam masuk & jam keluar sengaja tidak ada di sini:
              keduanya waktu yang dicatat mesin, dan begitu bisa diedit, seluruh
