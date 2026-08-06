@@ -82,6 +82,7 @@ class ShiftController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'late_tolerance_minutes' => ['nullable', 'integer', 'min:0', 'max:240'],
+            'day_scope' => ['nullable', 'in:all,weekday,weekend'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ], [
@@ -105,6 +106,7 @@ class ShiftController extends Controller
             'late_tolerance_minutes' => (int) ($validated['late_tolerance_minutes'] ?? 0),
             // Shift dianggap melewati tengah malam bila jam pulang <= jam masuk.
             'is_overnight' => strtotime($validated['end_time']) <= strtotime($validated['start_time']),
+            'day_scope' => $validated['day_scope'] ?? 'all',
             'is_active' => $request->boolean('is_active'),
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
         ];

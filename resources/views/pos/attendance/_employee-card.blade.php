@@ -108,18 +108,32 @@
                 <input type="hidden" name="employee_id" value="{{ $employee->id }}">
 
                 @if(!$hasClockIn)
+                    @php
+                        // Shift dengan jam mulai paling dekat ke waktu sekarang disorot
+                        // sebagai saran, supaya karyawan tinggal konfirmasi ketimbang
+                        // membaca dan membandingkan semua pilihan sendiri. Bukan
+                        // dipilihkan paksa -- radio tetap bisa diganti sebelum submit.
+                        $recommendedShiftId = $shifts->sortBy(function ($s) {
+                            return abs($s->startFor(today())->diffInMinutes(now()));
+                        })->first()?->id;
+                    @endphp
                     <div>
-                        <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500" for="shift-{{ $employee->id }}">
+                        <span class="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                             Pilih Shift
-                        </label>
-                        <div class="relative">
-                            <span class="material-icons-round pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">schedule</span>
-                            <select id="shift-{{ $employee->id }}" name="shift_id" required
-                                class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-800 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                @foreach($shifts as $shift)
-                                    <option value="{{ $shift->id }}">{{ $shift->name }} ({{ $shift->timeRangeLabel() }})</option>
-                                @endforeach
-                            </select>
+                        </span>
+                        <div class="grid grid-cols-1 gap-2">
+                            @foreach($shifts as $shift)
+                                <label class="shift-option flex cursor-pointer items-center justify-between gap-2 rounded-lg border-2 border-slate-200 bg-slate-50 px-3 py-2 transition has-[:checked]:border-primary has-[:checked]:bg-red-50 has-[:checked]:ring-2 has-[:checked]:ring-primary/20 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary">
+                                    <input type="radio" name="shift_id" value="{{ $shift->id }}" class="sr-only" required @checked($shift->id === $recommendedShiftId)>
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ $shift->name }}</span>
+                                        <span class="block font-mono text-xs text-slate-500">{{ $shift->timeRangeLabel() }}</span>
+                                    </span>
+                                    @if($shift->id === $recommendedShiftId)
+                                        <span class="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">disarankan</span>
+                                    @endif
+                                </label>
+                            @endforeach
                         </div>
                     </div>
                 @endif

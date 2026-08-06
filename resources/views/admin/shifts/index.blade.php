@@ -60,6 +60,7 @@
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nama Shift</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jam Kerja</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Toleransi</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Berlaku Untuk</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
                         </tr>
@@ -83,6 +84,15 @@
                                     <span class="text-sm text-gray-700">{{ $shift->late_tolerance_minutes }} menit</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($shift->day_scope === 'weekday')
+                                        <span class="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">Hari Kerja</span>
+                                    @elseif($shift->day_scope === 'weekend')
+                                        <span class="px-2.5 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full">Akhir Pekan</span>
+                                    @else
+                                        <span class="px-2.5 py-1 text-xs font-medium bg-gray-50 text-gray-600 rounded-full">Setiap Hari</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     @if($shift->is_active)
                                         <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Aktif</span>
                                     @else
@@ -97,6 +107,7 @@
                                             'start_time' => \Carbon\Carbon::parse($shift->start_time)->format('H:i'),
                                             'end_time' => \Carbon\Carbon::parse($shift->end_time)->format('H:i'),
                                             'late_tolerance_minutes' => (int) $shift->late_tolerance_minutes,
+                                            'day_scope' => $shift->day_scope,
                                             'sort_order' => (int) $shift->sort_order,
                                             'is_active' => (bool) $shift->is_active,
                                         ])
@@ -120,7 +131,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center">
                                         <i class="fas fa-business-time text-4xl text-gray-300 mb-3"></i>
                                         <p class="text-gray-500">Belum ada shift. Klik "Tambah Shift" untuk membuat.</p>
@@ -188,6 +199,19 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="shiftDayScope">Berlaku Untuk</label>
+                    <select name="day_scope" id="shiftDayScope"
+                        class="ui-input w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="all">Setiap Hari</option>
+                        <option value="weekday">Hari Kerja (Senin–Jumat)</option>
+                        <option value="weekend">Akhir Pekan (Sabtu–Minggu)</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">
+                        Shift yang dibatasi tidak akan muncul sebagai pilihan clock-in di hari yang tidak sesuai.
+                    </p>
+                </div>
+
                 <label class="flex items-center gap-2 text-sm text-gray-700">
                     <input type="checkbox" name="is_active" id="shiftActive" value="1" checked
                         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
@@ -225,6 +249,7 @@
                 document.getElementById('shiftEnd').value = data.end_time ?? '';
                 document.getElementById('shiftTolerance').value = data.late_tolerance_minutes ?? 0;
                 document.getElementById('shiftOrder').value = data.sort_order ?? 0;
+                document.getElementById('shiftDayScope').value = data.day_scope ?? 'all';
                 document.getElementById('shiftActive').checked = !!data.is_active;
             } else {
                 shiftForm.action = shiftStoreUrl;
@@ -232,6 +257,7 @@
                 shiftForm.reset();
                 document.getElementById('shiftTolerance').value = 0;
                 document.getElementById('shiftOrder').value = 0;
+                document.getElementById('shiftDayScope').value = 'all';
                 document.getElementById('shiftActive').checked = true;
             }
 
@@ -258,6 +284,7 @@
                     document.getElementById('shiftEnd').value = @json(old('end_time'));
                     document.getElementById('shiftTolerance').value = @json(old('late_tolerance_minutes', 0));
                     document.getElementById('shiftOrder').value = @json(old('sort_order', 0));
+                    document.getElementById('shiftDayScope').value = @json(old('day_scope', 'all'));
                 @endif
             });
         @endif

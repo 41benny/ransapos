@@ -53,8 +53,10 @@ class AttendanceController extends Controller
             }
         }
 
-        // Daftar shift aktif untuk dipilih saat clock-in
-        $shifts = Shift::active()->get();
+        // Daftar shift untuk dipilih saat clock-in — hanya yang berlaku HARI
+        // INI. Shift "Weekend" tidak ditampilkan di hari Selasa, dst, supaya
+        // pilihan yang jelas salah tidak pernah muncul sama sekali.
+        $shifts = Shift::availableOn(today())->get();
 
         return view('pos.attendance.index', compact(
             'employees',
@@ -92,7 +94,7 @@ class AttendanceController extends Controller
 
         return view('pos.attendance._search-results', [
             'employees' => $employees,
-            'shifts' => Shift::active()->get(),
+            'shifts' => Shift::availableOn(today())->get(),
             'currentOutletId' => $currentOutletId,
             'keyword' => $keyword,
         ]);
@@ -148,10 +150,15 @@ class AttendanceController extends Controller
 
         $isCrossOutlet = (int) $employee->outlet_id !== (int) $workOutletId;
 
-        // Validasi shift aktif
+        // Validasi shift aktif DAN berlaku hari ini. Ditegakkan di server, bukan
+        // hanya dengan menyaring isi dropdown — dropdown bisa dilewati dengan
+        // mengirim request langsung memakai id shift "Weekend" di hari Selasa.
         $shift = Shift::find($request->shift_id);
         if (!$shift || !$shift->is_active) {
             return back()->with('error', 'Shift tidak valid atau tidak aktif. Hubungi admin.');
+        }
+        if (!$shift->appliesOn(today())) {
+            return back()->with('error', 'Shift "' . $shift->name . '" tidak berlaku untuk hari ini (' . $shift->dayScopeLabel() . ').');
         }
 
         // Rate limiting per employee
