@@ -102,10 +102,15 @@ class DashboardController extends Controller
             ? (int) $selectedOutletIds[0]
             : null;
         $outletScopeKey = $isAllOutlets ? 'all' : ('ids-' . implode('-', $selectedOutletIds));
+        $breakdownOutletNames = Outlet::query()
+            ->active()
+            ->when($selectedOutletIds !== null, fn($query) => $query->whereIn('id', $selectedOutletIds))
+            ->orderBy('name')
+            ->pluck('name', 'id');
 
-        $cacheKey = 'admin.dashboard.summary.v8:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v9:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
-        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $prevDateFrom, $prevDateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey) {
+        $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $prevDateFrom, $prevDateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $breakdownOutletNames) {
             $salesBase = Sale::query()
                 ->whereBetween('sale_date', [$dateFrom, $dateTo])
                 ->where('status', 'completed')
@@ -313,17 +318,26 @@ class DashboardController extends Controller
                 $previousOutletMetrics = static::calculateOutletProfitMetrics($prevDateFrom, $prevDateTo, $selectedOutletIds);
 
                 $outletSales = collect(array_unique([
+                    ...$breakdownOutletNames->keys()->all(),
                     ...array_keys($currentOutletMetrics),
                     ...array_keys($previousOutletMetrics),
                 ]))
-                    ->map(function (int $outletId) use ($currentOutletMetrics, $previousOutletMetrics) {
-                        $current = $currentOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
-                        $previous = $previousOutletMetrics[$outletId] ?? static::emptyOutletProfitMetrics($outletId);
+                    ->map(function (int $outletId) use ($breakdownOutletNames, $currentOutletMetrics, $previousOutletMetrics) {
+                        $currentMetrics = $currentOutletMetrics[$outletId] ?? null;
+                        $previousMetrics = $previousOutletMetrics[$outletId] ?? null;
+                        $current = $currentMetrics ?? static::emptyOutletProfitMetrics($outletId);
+                        $previous = $previousMetrics ?? static::emptyOutletProfitMetrics($outletId);
                         $deltaRevenue = (float) $current['amount'] - (float) $previous['amount'];
                         $deltaNetProfit = (float) $current['net_profit'] - (float) $previous['net_profit'];
 
                         return [
                             ...$current,
+                            'outlet_name' => (string) (
+                                $breakdownOutletNames[$outletId]
+                                ?? $currentMetrics['outlet_name']
+                                ?? $previousMetrics['outlet_name']
+                                ?? $current['outlet_name']
+                            ),
                             'previous_amount' => (float) $previous['amount'],
                             'delta_amount' => $deltaRevenue,
                             'delta_amount_pct' => (float) $previous['amount'] > 0

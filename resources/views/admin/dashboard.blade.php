@@ -1260,7 +1260,7 @@
                 const marginContainer = document.getElementById('outletMarginContainer');
                 const marginList = document.getElementById('outletMarginList');
                 if (marginContainer && marginList) {
-                    if (hasData || rows.some(r => Number(r.net_profit || 0) !== 0 || Number(r.previous_net_profit || 0) !== 0)) {
+                    if (rows.length > 0) {
                         marginContainer.classList.remove('hidden');
                         marginList.innerHTML = rows.map(r => {
                             const rev = Number(r.amount || 0);
