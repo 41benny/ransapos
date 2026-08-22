@@ -4,6 +4,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {{-- Foldable / small-tablet layout fix (admin only).
+         Layar 700-767px (mis. Galaxy Z Fold terbuka = 752px) tidak mencapai
+         breakpoint md Tailwind (768px), sehingga seluruh aturan md: tidak aktif
+         dan halaman tampil seperti mode HP di layar selebar tablet.
+         Di rentang itu viewport dilaporkan 768px agar layout md menyala.
+         Memakai screen.width (lebar fisik perangkat) - bukan innerWidth -
+         supaya nilainya tidak ikut berubah setelah viewport diubah. --}}
+    <script>
+        (function () {
+            var MIN_WIDTH = 700;
+            var TARGET_WIDTH = 768;
+            var meta = document.querySelector('meta[name="viewport"]');
+            if (!meta) return;
+
+            var DEFAULT_CONTENT = 'width=device-width, initial-scale=1.0';
+
+            function applyViewport() {
+                var screenWidth = (window.screen && window.screen.width) || window.innerWidth;
+                var content = (screenWidth >= MIN_WIDTH && screenWidth < TARGET_WIDTH)
+                    ? 'width=' + TARGET_WIDTH
+                    : DEFAULT_CONTENT;
+
+                if (meta.getAttribute('content') !== content) {
+                    meta.setAttribute('content', content);
+                }
+            }
+
+            applyViewport();
+            window.addEventListener('resize', applyViewport);
+            window.addEventListener('orientationchange', applyViewport);
+        })();
+    </script>
     @include('partials.pwa-head', ['pwaArea' => 'admin'])
     <title>@yield('title', 'Admin') - Ransa</title>
     <script>
