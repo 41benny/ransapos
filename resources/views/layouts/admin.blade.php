@@ -10,31 +10,47 @@
          breakpoint md Tailwind (768px), sehingga seluruh aturan md: tidak aktif
          dan halaman tampil seperti mode HP di layar selebar tablet.
          Di rentang itu viewport dilaporkan 768px agar layout md menyala.
-         Memakai screen.width (lebar fisik perangkat) - bukan innerWidth -
-         supaya nilainya tidak ikut berubah setelah viewport diubah. --}}
+
+         Pengukuran memakai window.innerWidth (lebar jendela browser), BUKAN
+         screen.width - pada perangkat lipat keduanya berbeda: screen.width
+         membaca lebar panel layar, sedangkan yang menentukan layout adalah
+         lebar jendela. Karena innerWidth ikut berubah setelah viewport
+         dipaksa, viewport selalu dikembalikan ke device-width lebih dulu,
+         baru diukur, baru diputuskan. --}}
     <script>
         (function () {
             var MIN_WIDTH = 700;
             var TARGET_WIDTH = 768;
+            var DEFAULT_CONTENT = 'width=device-width, initial-scale=1.0';
+            var FORCED_CONTENT = 'width=' + TARGET_WIDTH;
+
             var meta = document.querySelector('meta[name="viewport"]');
             if (!meta) return;
 
-            var DEFAULT_CONTENT = 'width=device-width, initial-scale=1.0';
+            var busy = false;
 
-            function applyViewport() {
-                var screenWidth = (window.screen && window.screen.width) || window.innerWidth;
-                var content = (screenWidth >= MIN_WIDTH && screenWidth < TARGET_WIDTH)
-                    ? 'width=' + TARGET_WIDTH
-                    : DEFAULT_CONTENT;
+            function measureThenApply() {
+                if (busy) return;
+                busy = true;
 
-                if (meta.getAttribute('content') !== content) {
-                    meta.setAttribute('content', content);
+                if (meta.getAttribute('content') !== DEFAULT_CONTENT) {
+                    meta.setAttribute('content', DEFAULT_CONTENT);
                 }
+
+                setTimeout(function () {
+                    var width = window.innerWidth || document.documentElement.clientWidth;
+
+                    if (width >= MIN_WIDTH && width < TARGET_WIDTH) {
+                        meta.setAttribute('content', FORCED_CONTENT);
+                    }
+
+                    setTimeout(function () { busy = false; }, 100);
+                }, 60);
             }
 
-            applyViewport();
-            window.addEventListener('resize', applyViewport);
-            window.addEventListener('orientationchange', applyViewport);
+            measureThenApply();
+            window.addEventListener('resize', measureThenApply);
+            window.addEventListener('orientationchange', measureThenApply);
         })();
     </script>
     @include('partials.pwa-head', ['pwaArea' => 'admin'])
