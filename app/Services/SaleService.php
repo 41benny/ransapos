@@ -12,12 +12,11 @@ use App\Models\PaymentMethod;
 use App\Models\Promotion;
 use App\Models\Voucher;
 use App\Models\SaleManualDiscount;
+use App\Models\ManualDiscountToken;
 use App\Models\SalesType;
-use App\Models\User;
 use App\Support\SpecialPromotion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Exception;
 
 class SaleService
@@ -212,10 +211,13 @@ class SaleService
                 $discountValue = (float) $voucher->discount_value;
                 $discountSource = 'voucher';
             } elseif ($this->hasManualDiscount($data)) {
+                if (trim((string) ($data['manual_discount_reason'] ?? '')) === '') {
+                    throw new Exception('Nama promo atau keterangan wajib diisi untuk diskon manual dPOS.');
+                }
+
                 $manualDiscountAuthorization = $this->authorizeManualDiscount(
-                    pin: (string) ($data['manual_discount_authorization_pin'] ?? ''),
+                    token: (string) ($data['manual_discount_authorization_token'] ?? ''),
                     outletId: (int) $data['outlet_id'],
-                    cashierUserId: (int) ($data['user_id'] ?? 0),
                 );
 
                 $discountType = (string) $data['manual_discount_type'];
@@ -276,7 +278,7 @@ class SaleService
                 'discount_value' => $discountValue,
                 'discount_amount' => $discountAmount,
                 'discount_source' => $discountSource,
-                'manual_discount_authorized_by' => $manualDiscountAuthorization?->id,
+                'manual_discount_authorized_by' => $manualDiscountAuthorization?->generator?->id,
                 'manual_discount_authorized_at' => $manualDiscountAuthorization ? now() : null,
                 'manual_discount_reason' => $manualDiscountAuthorization ? ($data['manual_discount_reason'] ?? null) : null,
                 'service_charge_amount' => $serviceChargeAmount,
@@ -297,7 +299,8 @@ class SaleService
                 SaleManualDiscount::create([
                     'sale_id' => $sale->id,
                     'cashier_user_id' => $sale->user_id,
-                    'authorized_by_user_id' => $manualDiscountAuthorization->id,
+                    'authorized_by_user_id' => $manualDiscountAuthorization->generator?->id,
+                    'manual_discount_token_id' => $manualDiscountAuthorization->id,
                     'outlet_id' => $sale->outlet_id,
                     'discount_type' => $discountType,
                     'discount_value' => $discountValue,
@@ -305,6 +308,15 @@ class SaleService
                     'source' => 'dpos_authorized',
                     'reason' => $data['manual_discount_reason'] ?? null,
                     'authorized_at' => $sale->manual_discount_authorized_at ?? now(),
+                ]);
+            }
+
+            if ($manualDiscountAuthorization) {
+                $manualDiscountAuthorization->update([
+                    'is_used' => true,
+                    'used_by' => $sale->user_id,
+                    'used_for_sale_id' => $sale->id,
+                    'used_at' => now(),
                 ]);
             }
 
@@ -491,41 +503,33 @@ class SaleService
         return "INV-{$outlet}{$datePart}-{$sequence}";
     }
 
-    public function authorizeManualDiscount(string $pin, int $outletId, int $cashierUserId = 0): User
+    public function authorizeManualDiscount(string $token, int $outletId): ManualDiscountToken
     {
-        $pin = trim($pin);
-        if (!preg_match('/^[0-9]{6}$/', $pin)) {
-            throw new Exception('PIN otorisasi diskon harus 6 digit angka.');
+        $token = trim($token);
+        if (!preg_match('/^[0-9]{6}$/', $token)) {
+            throw new Exception('Token promo harus 6 digit angka.');
         }
 
-        $authorizers = User::query()
-            ->with('role.permissions')
-            ->where('is_active', true)
-            ->whereNotNull('attendance_pin')
-            ->where(function ($query) use ($outletId) {
-                $query->where('outlet_id', $outletId)
-                    ->orWhereNull('outlet_id');
-            })
-            ->get();
+        $discountToken = ManualDiscountToken::query()
+            ->with('generator.role.permissions')
+            ->where('token', $token)
+            ->where('is_used', false)
+            ->where('outlet_id', $outletId)
+            ->lockForUpdate()
+            ->first();
 
-        foreach ($authorizers as $authorizer) {
-            if (!Hash::check($pin, (string) $authorizer->attendance_pin)) {
-                continue;
-            }
-
-            if ((int) $authorizer->id === $cashierUserId && !$authorizer->hasRole(['admin', 'manager', 'superadmin'])) {
-                break;
-            }
-
-            if ($authorizer->hasRole(['admin', 'manager', 'superadmin'])
-                || $authorizer->hasPermission('pos.manual-discount.authorize')) {
-                return $authorizer;
-            }
-
-            break;
+        $generator = $discountToken?->generator;
+        if (!$discountToken || !$generator || !$generator->is_active) {
+            throw new Exception('Token promo tidak valid, sudah dipakai, atau tidak berlaku untuk outlet ini.');
         }
 
-        throw new Exception('PIN otorisasi diskon tidak valid atau tidak memiliki akses supervisor.');
+        if (!$generator->hasRole(['admin', 'manager', 'superadmin'])
+            && !$generator->hasPermission('pos.manual-discount.authorize')
+            && !$generator->hasPermission('manual-discount-tokens.create')) {
+            throw new Exception('Token promo dibuat oleh akun yang tidak memiliki akses otorisasi diskon.');
+        }
+
+        return $discountToken;
     }
 
     private function hasManualDiscount(array $data): bool

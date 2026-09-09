@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CashSession;
+use App\Models\ManualDiscountToken;
 use App\Models\Outlet;
 use App\Models\PaymentMethod;
 use App\Models\Product;
@@ -12,7 +13,6 @@ use App\Models\SaleManualDiscount;
 use App\Models\User;
 use App\Services\SaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ManualDiscountAuthorizationSaleFlowTest extends TestCase
@@ -53,7 +53,12 @@ class ManualDiscountAuthorizationSaleFlowTest extends TestCase
             'role_id' => $managerRole->id,
             'outlet_id' => $outlet->id,
             'is_active' => true,
-            'attendance_pin' => Hash::make('123456'),
+        ]);
+
+        $token = ManualDiscountToken::create([
+            'token' => '123456',
+            'outlet_id' => $outlet->id,
+            'generated_by' => $manager->id,
         ]);
 
         $category = ProductCategory::create([
@@ -102,7 +107,7 @@ class ManualDiscountAuthorizationSaleFlowTest extends TestCase
             'discount_value' => 0,
             'manual_discount_type' => 'percentage',
             'manual_discount_value' => 10,
-            'manual_discount_authorization_pin' => '123456',
+            'manual_discount_authorization_token' => '123456',
             'manual_discount_reason' => 'Kompensasi customer',
             'items' => [[
                 'product_id' => $product->id,
@@ -124,6 +129,13 @@ class ManualDiscountAuthorizationSaleFlowTest extends TestCase
         $audit = SaleManualDiscount::query()->where('sale_id', $sale->id)->firstOrFail();
         $this->assertSame($cashier->id, $audit->cashier_user_id);
         $this->assertSame($manager->id, $audit->authorized_by_user_id);
+        $this->assertSame($token->id, $audit->manual_discount_token_id);
         $this->assertSame(10000.0, (float) $audit->discount_amount_applied);
+        $this->assertTrue($token->fresh()->is_used);
+        $this->assertSame($cashier->id, $token->fresh()->used_by);
+        $this->assertSame($sale->id, $token->fresh()->used_for_sale_id);
+
+        $this->expectException(\Exception::class);
+        app(SaleService::class)->authorizeManualDiscount('123456', $outlet->id);
     }
 }

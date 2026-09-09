@@ -386,9 +386,9 @@
                         <div class="min-w-0">
                             <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Diskon dPOS</p>
                             <p v-if="manualDiscountAmount > 0" class="text-xs text-emerald-600 mt-0.5 truncate">
-                                @{{ manualDiscountLabel }} oleh @{{ manualDiscountAuthorizedByName || 'Supervisor' }}
+                                @{{ manualDiscountLabel }} oleh @{{ manualDiscountAuthorizedByName || 'Pemberi Token' }}
                             </p>
-                            <p v-else class="text-xs text-gray-400 mt-0.5">Manual dengan otorisasi supervisor</p>
+                            <p v-else class="text-xs text-gray-400 mt-0.5">Manual dengan token promo sekali pakai</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <button v-if="manualDiscountAmount > 0" type="button" @click="clearManualDiscount"
@@ -765,7 +765,7 @@
                 <div class="flex justify-between items-start gap-3 mb-5">
                     <div>
                         <h3 class="text-xl font-bold text-gray-800">Diskon dPOS</h3>
-                        <p class="text-sm text-gray-500 mt-1">Masukkan diskon dan PIN supervisor.</p>
+                        <p class="text-sm text-gray-500 mt-1">Masukkan diskon, nama promo, dan token sekali pakai.</p>
                     </div>
                     <button @click="closeManualDiscountModal" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -792,16 +792,16 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Alasan</label>
-                        <input type="text" maxlength="255" v-model.trim="manualDiscountDraft.reason"
-                            placeholder="Contoh: Kompensasi customer"
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Nama Promo / Keterangan <span class="text-red-500">*</span></label>
+                        <input type="text" maxlength="255" required v-model.trim="manualDiscountDraft.reason"
+                            placeholder="Contoh: Grab Diskon / Dia Tas Aja"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">PIN Supervisor</label>
-                        <input type="password" inputmode="numeric" maxlength="6" v-model.trim="manualDiscountDraft.pin"
-                            placeholder="6 digit"
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Token Promo (Sekali Pakai)</label>
+                        <input type="password" inputmode="numeric" maxlength="6" v-model.trim="manualDiscountDraft.token"
+                            placeholder="Minta token ke Anca/Admin"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none tracking-widest text-lg font-mono text-center">
                     </div>
 
@@ -1271,7 +1271,7 @@
                         isAuthorizingManualDiscount: false,
                         manualDiscountType: 'none',
                         manualDiscountValue: 0,
-                        manualDiscountAuthorizationPin: '',
+                        manualDiscountAuthorizationToken: '',
                         manualDiscountReason: '',
                         manualDiscountAuthorizedByName: '',
                         manualDiscountErrorMessage: '',
@@ -1279,7 +1279,7 @@
                             type: 'fixed',
                             value: 0,
                             reason: '',
-                            pin: '',
+                            token: '',
                             error: ''
                         },
 
@@ -2351,7 +2351,7 @@
                             type: this.manualDiscountType === 'percentage' ? 'percentage' : 'fixed',
                             value: this.manualDiscountValue || 0,
                             reason: this.manualDiscountReason || '',
-                            pin: '',
+                            token: '',
                             error: ''
                         };
                         this.manualDiscountErrorMessage = '';
@@ -2364,7 +2364,7 @@
                     clearManualDiscount() {
                         this.manualDiscountType = 'none';
                         this.manualDiscountValue = 0;
-                        this.manualDiscountAuthorizationPin = '';
+                        this.manualDiscountAuthorizationToken = '';
                         this.manualDiscountReason = '';
                         this.manualDiscountAuthorizedByName = '';
                         this.manualDiscountErrorMessage = '';
@@ -2372,7 +2372,8 @@
                     async applyManualDiscount() {
                         const type = String(this.manualDiscountDraft.type || 'fixed');
                         const value = Number(this.manualDiscountDraft.value || 0);
-                        const pin = String(this.manualDiscountDraft.pin || '').trim();
+                        const reason = String(this.manualDiscountDraft.reason || '').trim();
+                        const token = String(this.manualDiscountDraft.token || '').trim();
 
                         this.manualDiscountDraft.error = '';
                         if (!['fixed', 'percentage'].includes(type) || value <= 0) {
@@ -2390,8 +2391,13 @@
                             return;
                         }
 
-                        if (!/^[0-9]{6}$/.test(pin)) {
-                            this.manualDiscountDraft.error = 'PIN supervisor harus 6 digit angka.';
+                        if (!reason) {
+                            this.manualDiscountDraft.error = 'Nama promo atau keterangan wajib diisi.';
+                            return;
+                        }
+
+                        if (!/^[0-9]{6}$/.test(token)) {
+                            this.manualDiscountDraft.error = 'Token promo harus 6 digit angka.';
                             return;
                         }
 
@@ -2405,21 +2411,21 @@
                                     'X-Requested-With': 'XMLHttpRequest',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                 },
-                                body: JSON.stringify({ pin })
+                                body: JSON.stringify({ token })
                             });
                             const result = await this.parseApiResponse(response);
 
                             if (!response.ok || !result.success) {
-                                this.manualDiscountDraft.error = result.message || 'Otorisasi diskon ditolak.';
+                                this.manualDiscountDraft.error = result.message || 'Token promo ditolak.';
                                 return;
                             }
 
                             this.clearVoucher();
                             this.manualDiscountType = type;
                             this.manualDiscountValue = value;
-                            this.manualDiscountAuthorizationPin = pin;
+                            this.manualDiscountAuthorizationToken = token;
                             this.manualDiscountReason = this.manualDiscountDraft.reason || '';
-                            this.manualDiscountAuthorizedByName = result.data?.authorized_by_name || 'Supervisor';
+                            this.manualDiscountAuthorizedByName = result.data?.authorized_by_name || 'Pemberi Token';
                             this.manualDiscountErrorMessage = '';
                             this.showManualDiscountModal = false;
                         } catch (e) {
@@ -2791,8 +2797,8 @@
                             this.isProcessing = false;
                             return;
                         }
-                        if (this.manualDiscountAmount > 0 && !this.manualDiscountAuthorizationPin) {
-                            alert('Diskon dPOS belum memiliki otorisasi supervisor.');
+                        if (this.manualDiscountAmount > 0 && !this.manualDiscountAuthorizationToken) {
+                            alert('Diskon dPOS belum memiliki token promo.');
                             this.isProcessing = false;
                             return;
                         }
@@ -2871,7 +2877,7 @@
                             discount_value: this.appliedVoucher ? Number(this.appliedVoucher.discount_value || 0) : 0,
                             manual_discount_type: this.manualDiscountAmount > 0 ? this.manualDiscountType : 'none',
                             manual_discount_value: this.manualDiscountAmount > 0 ? Number(this.manualDiscountValue || 0) : 0,
-                            manual_discount_authorization_pin: this.manualDiscountAmount > 0 ? this.manualDiscountAuthorizationPin : null,
+                            manual_discount_authorization_token: this.manualDiscountAmount > 0 ? this.manualDiscountAuthorizationToken : null,
                             manual_discount_reason: this.manualDiscountAmount > 0 ? (this.manualDiscountReason || null) : null,
                             items: this.cart.map(i => ({
                                 product_id: i.product_id,

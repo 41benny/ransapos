@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\SalesTypeController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PosDeviceController as AdminPosDeviceController;
 use App\Http\Controllers\Admin\PromoVoucherController;
+use App\Http\Controllers\Admin\ManualDiscountTokenController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\BackdateSaleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -219,6 +220,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,manager,
     Route::delete('promo-vouchers/vouchers/{voucher}', [PromoVoucherController::class, 'destroyVoucher'])
         ->name('promo-vouchers.vouchers.destroy')
         ->middleware('permission:promo-vouchers.manage');
+
+    // Token Promo dPOS (One-Time Token)
+    Route::get('/manual-discount-tokens', [ManualDiscountTokenController::class, 'index'])
+        ->name('manual-discount-tokens.index')
+        ->middleware('permission:manual-discount-tokens.view');
+    Route::post('/manual-discount-tokens', [ManualDiscountTokenController::class, 'store'])
+        ->name('manual-discount-tokens.store')
+        ->middleware('permission:manual-discount-tokens.create');
 
     // Cash Accounts & Transactions
     Route::resource('cash-accounts', \App\Http\Controllers\Admin\CashAccountController::class)

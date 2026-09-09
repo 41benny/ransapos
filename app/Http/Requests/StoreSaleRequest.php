@@ -76,7 +76,7 @@ class StoreSaleRequest extends FormRequest
             'discount_value' => 'nullable|numeric|min:0',
             'manual_discount_type' => 'nullable|in:none,percentage,fixed',
             'manual_discount_value' => 'nullable|numeric|min:0',
-            'manual_discount_authorization_pin' => 'nullable|string|size:6|regex:/^[0-9]{6}$/',
+            'manual_discount_authorization_token' => 'nullable|string|size:6|regex:/^[0-9]{6}$/',
             'manual_discount_reason' => 'nullable|string|max:255',
             
             // Items
@@ -136,8 +136,8 @@ class StoreSaleRequest extends FormRequest
             'payments.*.payment_method_id.exists' => 'Metode pembayaran tidak valid',
             'payments.*.amount.required_with' => 'Nominal pembayaran wajib diisi',
             'payments.*.amount.min' => 'Nominal pembayaran harus lebih dari 0',
-            'manual_discount_authorization_pin.size' => 'PIN otorisasi diskon harus 6 digit',
-            'manual_discount_authorization_pin.regex' => 'PIN otorisasi diskon harus angka 6 digit',
+            'manual_discount_authorization_token.size' => 'Token promo harus 6 digit',
+            'manual_discount_authorization_token.regex' => 'Token promo harus angka 6 digit',
         ];
     }
 
@@ -153,8 +153,12 @@ class StoreSaleRequest extends FormRequest
 
             $manualDiscountType = (string) $this->input('manual_discount_type', 'none');
             $manualDiscountValue = (float) $this->input('manual_discount_value', 0);
-            if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && !$this->filled('manual_discount_authorization_pin')) {
-                $validator->errors()->add('manual_discount_authorization_pin', 'PIN otorisasi wajib diisi untuk diskon manual dPOS.');
+            if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && !$this->filled('manual_discount_authorization_token')) {
+                $validator->errors()->add('manual_discount_authorization_token', 'Token promo wajib diisi untuk diskon manual dPOS.');
+            }
+
+            if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && !$this->filled('manual_discount_reason')) {
+                $validator->errors()->add('manual_discount_reason', 'Nama promo atau keterangan wajib diisi untuk diskon manual dPOS.');
             }
 
             if ($manualDiscountType !== 'none' && $manualDiscountValue > 0 && $this->filled('voucher_code')) {

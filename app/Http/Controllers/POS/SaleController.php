@@ -319,11 +319,11 @@ class SaleController extends Controller
     public function authorizeManualDiscount(Request $request)
     {
         $validated = $request->validate([
-            'pin' => ['required', 'digits:6', 'regex:/^[0-9]{6}$/'],
+            'token' => ['required', 'digits:6', 'regex:/^[0-9]{6}$/'],
         ], [
-            'pin.required' => 'PIN otorisasi wajib diisi.',
-            'pin.digits' => 'PIN otorisasi harus 6 digit.',
-            'pin.regex' => 'PIN otorisasi harus angka 6 digit.',
+            'token.required' => 'Token promo wajib diisi.',
+            'token.digits' => 'Token promo harus 6 digit.',
+            'token.regex' => 'Token promo harus angka 6 digit.',
         ]);
 
         $user = $request->user();
@@ -336,17 +336,16 @@ class SaleController extends Controller
 
         try {
             $authorizer = $this->saleService->authorizeManualDiscount(
-                pin: (string) $validated['pin'],
+                token: (string) $validated['token'],
                 outletId: (int) $user->outlet_id,
-                cashierUserId: (int) $user->id,
             );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Otorisasi diskon valid.',
+                'message' => 'Token promo valid dan siap dipakai.',
                 'data' => [
-                    'authorized_by_user_id' => $authorizer->id,
-                    'authorized_by_name' => $authorizer->name,
+                    'authorized_by_user_id' => $authorizer->generator?->id,
+                    'authorized_by_name' => $authorizer->generator?->name,
                 ],
             ]);
         } catch (Exception $e) {

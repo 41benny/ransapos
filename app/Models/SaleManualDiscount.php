@@ -11,6 +11,7 @@ class SaleManualDiscount extends Model
         'sale_id',
         'cashier_user_id',
         'authorized_by_user_id',
+        'manual_discount_token_id',
         'outlet_id',
         'discount_type',
         'discount_value',
@@ -39,6 +40,11 @@ class SaleManualDiscount extends Model
     public function authorizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'authorized_by_user_id');
+    }
+
+    public function token(): BelongsTo
+    {
+        return $this->belongsTo(ManualDiscountToken::class, 'manual_discount_token_id');
     }
 
     public function outlet(): BelongsTo
