@@ -346,6 +346,19 @@ class AttendanceReportController extends Controller
     {
         $dailyWage = (float) Setting::getValue('payroll_daily_wage', 50000);
         $allowance = (float) Setting::getValue('payroll_period2_allowance', 250000);
+        $allowanceSchedule = json_decode((string) Setting::getValue('payroll_period2_allowance_schedule', '{}'), true);
+
+        // Pilih nominal berdasarkan bulan rekap agar kenaikan tidak mengubah
+        // tunjangan pada periode sebelum tanggal berlakunya.
+        if (is_array($allowanceSchedule)) {
+            ksort($allowanceSchedule);
+            foreach ($allowanceSchedule as $effectiveFrom => $scheduledAllowance) {
+                if ($effectiveFrom <= $dateTo->toDateString()) {
+                    $allowance = (float) $scheduledAllowance;
+                }
+            }
+        }
+
         $allowanceApplies = $dateTo->day > 15;
 
         $counts = (clone $statsQuery)

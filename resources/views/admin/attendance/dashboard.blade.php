@@ -438,10 +438,11 @@
             <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 Hari kerja &times; Rp {{ number_format($payrollDailyWage, 0, ',', '.') }}/hari, untuk rentang filter di atas ({{ $dateFrom }} s/d {{ $dateTo }}).
                 @if($payrollAllowanceApplies)
-                    Tanggal akhir filter di atas tanggal 15, jadi tunjangan periode kedua
-                    <span class="font-semibold">Rp {{ number_format($payrollAllowance, 0, ',', '.') }}</span> ikut ditambahkan.
+                    Tunjangan bulanan
+                    <span class="font-semibold">Rp {{ number_format($payrollAllowance, 0, ',', '.') }}</span>
+                    per karyawan ditambahkan pada periode kedua (tanggal akhir filter di atas tanggal 15).
                 @else
-                    Tunjangan periode kedua baru ditambahkan kalau tanggal akhir filter di atas tanggal 15
+                    Tunjangan bulanan baru ditambahkan kalau tanggal akhir filter di atas tanggal 15
                     (pakai filter Custom untuk periode 16&ndash;akhir bulan).
                 @endif
             </p>

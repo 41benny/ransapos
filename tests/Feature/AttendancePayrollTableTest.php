@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -160,6 +161,79 @@ class AttendancePayrollTableTest extends TestCase
                 && (float) $row['subtotal'] === 75000.0
                 && (float) $row['allowance'] === 300000.0;
         });
+    }
+
+    public static function monthlyAllowancePeriods(): array
+    {
+        return [
+            'September tetap nominal lama' => ['2026-09-16', '2026-09-30', 250000.0],
+            'Oktober periode pertama tanpa tunjangan' => ['2026-10-01', '2026-10-15', 0.0],
+            'Oktober mulai nominal baru' => ['2026-10-16', '2026-10-31', 310000.0],
+            'November periode pertama tanpa tunjangan' => ['2026-11-01', '2026-11-15', 0.0],
+            'November tetap nominal baru' => ['2026-11-16', '2026-11-30', 310000.0],
+            'Desember tetap nominal baru' => ['2026-12-16', '2026-12-31', 310000.0],
+        ];
+    }
+
+    #[DataProvider('monthlyAllowancePeriods')]
+    public function test_tunjangan_semua_karyawan_mengikuti_bulan_berlaku(string $dateFrom, string $dateTo, float $allowance): void
+    {
+        $employees = User::factory()->count(2)->create(['outlet_id' => $this->outlet->id, 'is_active' => true]);
+        foreach ($employees as $employee) {
+            $this->attend($employee, $dateFrom);
+        }
+
+        $response = $this->get(route('admin.reports.attendance.index', [
+            'period' => 'custom',
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('payrollRows', function ($rows) use ($allowance) {
+            return count($rows) === 2 && collect($rows)->every(fn ($row) =>
+                (float) $row['allowance'] === $allowance
+                && (float) $row['total'] === 50000.0 + $allowance
+            );
+        });
+        $response->assertViewHas('payrollGrandTotal', 2 * (50000.0 + $allowance));
+    }
+
+    public function test_rekap_sebulan_menambahkan_tunjangan_sekali(): void
+    {
+        $employee = User::factory()->create(['outlet_id' => $this->outlet->id, 'is_active' => true]);
+        $this->attend($employee, '2026-10-03');
+        $this->attend($employee, '2026-10-20');
+
+        $response = $this->get(route('admin.reports.attendance.index', [
+            'period' => 'custom',
+            'date_from' => '2026-10-01',
+            'date_to' => '2026-10-31',
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('payrollRows', fn ($rows) =>
+            count($rows) === 1
+            && $rows[0]['days_worked'] === 2
+            && (float) $rows[0]['allowance'] === 310000.0
+            && (float) $rows[0]['total'] === 410000.0
+        );
+    }
+
+    public function test_migrasi_jadwal_tidak_menimpa_nominal_lama_dan_membersihkan_cache(): void
+    {
+        Setting::query()->where('key', 'payroll_period2_allowance_schedule')->delete();
+        Setting::setValue('payroll_period2_allowance', 275000);
+        $this->assertSame('{}', Setting::getValue('payroll_period2_allowance_schedule', '{}'));
+
+        $migration = require database_path('migrations/2026_10_31_000001_schedule_monthly_payroll_allowance.php');
+        $migration->up();
+
+        $this->assertSame('275000', Setting::getValue('payroll_period2_allowance'));
+        $this->assertSame(
+            ['2026-10-01' => 310000],
+            json_decode(Setting::getValue('payroll_period2_allowance_schedule'), true)
+        );
     }
 
     public function test_gaji_menghormati_filter_outlet_yang_sedang_aktif(): void
