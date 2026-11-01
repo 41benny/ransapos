@@ -188,7 +188,7 @@
                 </div>
             </div>
 
-            <div class="flex-1 w-full min-h-[400px]" id="hourlyBars"></div>
+            <div class="hourly-chart-container w-full" id="hourlyBars"></div>
             <div id="hourlyEmpty" class="hidden mt-2 text-xs font-semibold text-orange-700 text-center">Data per jam belum
                 tersedia untuk filter ini.</div>
         </div>
@@ -426,7 +426,9 @@
         }
 
         .hourly-chart-container {
-            min-height: 250px;
+            height: 400px;
+            min-width: 0;
+            flex: none;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -954,7 +956,8 @@
                         series: series,
                         chart: {
                             type: 'area',
-                            height: '100%',
+                            height: 400,
+                            parentHeightOffset: 0,
                             stacked: isStacked,
                             toolbar: { show: false },
                             zoom: { enabled: false },
