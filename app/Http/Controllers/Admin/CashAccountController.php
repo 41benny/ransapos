@@ -163,6 +163,8 @@ class CashAccountController extends Controller
             'coa_type',
             'coa_group',
             'exclude_coa_group',
+            'cost_scope',
+            'outlet_ids',
         ]);
 
         $transactions = $this->cashAccountService->getTransactions($filters);

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Outlet;
 use App\Models\Sale;
 use App\Models\StockMutation;
-use App\Models\CashTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Support\MerchantCommission;
 
@@ -26,7 +25,7 @@ class ProfitLossReportService
         // 1. PENDAPATAN (Revenue from Sales)
         $revenueQuery = Sale::query()
             ->where('status', 'completed')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+            ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59']);
         
         if (!empty($outletIds)) {
             $revenueQuery->whereIn('outlet_id', $outletIds);
@@ -42,7 +41,7 @@ class ProfitLossReportService
         // out = HPP penjualan, in (sale_cancellation) = reversal HPP
         $cogsQuery = StockMutation::query()
             ->whereIn('reference_type', ['sale', 'sale_cancellation'])
-            ->whereBetween('mutation_date', [$dateFrom, $dateTo]);
+            ->whereBetween('mutation_date', [$dateFrom, $dateTo . ' 23:59:59']);
         
         if (!empty($outletIds)) {
             $cogsQuery->whereIn('outlet_id', $outletIds);
@@ -52,24 +51,23 @@ class ProfitLossReportService
             ->selectRaw("SUM(CASE WHEN mutation_type = 'out' THEN total_cost ELSE -total_cost END) as total_cogs")
             ->value('total_cogs');
 
+        $stockCogs = $totalCogs;
+        $posCosts = app(PosExpenseReportingService::class);
+        $posAdditionalCogs = $posCosts->additionalCogsTotal($dateFrom, $dateTo, $outletIds);
+        $totalCogs += $posAdditionalCogs;
+        $posCogsByAccount = $posCosts->additionalCogsQuery($dateFrom, $dateTo, $outletIds)
+            ->select('coa_accounts.id', 'coa_accounts.code', 'coa_accounts.name')
+            ->selectRaw('SUM(cash_transactions.amount) as amount')
+            ->groupBy('coa_accounts.id', 'coa_accounts.code', 'coa_accounts.name')
+            ->orderBy('coa_accounts.code')->get();
+
         // 3. LABA KOTOR (Gross Profit)
         $grossProfitBeforeMerchant = $totalRevenue - $totalCogs;
         $grossProfit = $grossProfitBeforeMerchant - $merchantCommission;
 
         // 4. BIAYA OPERASIONAL (Operating Expenses by COA)
         // Exclude HPP agar tidak double-count dengan totalCogs.
-        $expenseQuery = CashTransaction::query()
-            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
-            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
-            ->where('cash_transactions.type', 'out')
-            ->whereNotNull('cash_transactions.coa_account_id')
-            ->where('coa_accounts.type', 'expense')
-            ->where('coa_accounts.group', '!=', 'HPP')
-            ->whereBetween('transaction_date', [$dateFrom, $dateTo]);
-
-        if (!empty($outletIds)) {
-            $expenseQuery->whereIn('cash_accounts.outlet_id', $outletIds);
-        }
+        $expenseQuery = $posCosts->operatingExpensesQuery($dateFrom, $dateTo, $outletIds);
         
         $expensesByAccount = $expenseQuery
             ->select(
@@ -174,6 +172,9 @@ class ProfitLossReportService
             
             // COGS
             'total_cogs' => $totalCogs,
+            'stock_cogs' => $stockCogs,
+            'pos_additional_cogs' => $posAdditionalCogs,
+            'pos_cogs_by_account' => $posCogsByAccount->toArray(),
             
             // Gross Profit
             'gross_profit' => $grossProfit,
@@ -269,7 +270,7 @@ class ProfitLossReportService
 
         $revenueByOutlet = Sale::query()
             ->where('status', 'completed')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->whereIn('outlet_id', $outletIds)
             ->select('outlet_id', DB::raw('SUM(total_amount) as total_revenue'))
             ->groupBy('outlet_id')
@@ -277,7 +278,7 @@ class ProfitLossReportService
 
         $merchantSalesByOutletQuery = Sale::query()
             ->where('status', 'completed')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->whereIn('outlet_id', $outletIds);
         MerchantCommission::constrainSalesQuery($merchantSalesByOutletQuery);
         $merchantSalesByOutlet = $merchantSalesByOutletQuery
@@ -287,7 +288,7 @@ class ProfitLossReportService
 
         $cogsByOutlet = StockMutation::query()
             ->whereIn('reference_type', ['sale', 'sale_cancellation'])
-            ->whereBetween('mutation_date', [$dateFrom, $dateTo])
+            ->whereBetween('mutation_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->whereIn('outlet_id', $outletIds)
             ->select(
                 'outlet_id',
@@ -296,10 +297,13 @@ class ProfitLossReportService
             ->groupBy('outlet_id')
             ->pluck('total_cogs', 'outlet_id');
 
+        $posCogsByOutlet = app(PosExpenseReportingService::class)
+            ->additionalCogsByOutlet($dateFrom, $dateTo, $outletIds);
+
         $comparisonRows = collect($outletIds)
-            ->map(function (int $outletId) use ($outlets, $revenueByOutlet, $merchantSalesByOutlet, $cogsByOutlet) {
+            ->map(function (int $outletId) use ($outlets, $revenueByOutlet, $merchantSalesByOutlet, $cogsByOutlet, $posCogsByOutlet) {
                 $revenue = (float) ($revenueByOutlet[$outletId] ?? 0);
-                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0);
+                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0) + (float) ($posCogsByOutlet[$outletId] ?? 0);
                 $merchantSales = (float) ($merchantSalesByOutlet[$outletId] ?? 0);
                 $merchantCommission = $merchantSales * MerchantCommission::RATE;
                 $grossProfit = $revenue - $cogs - $merchantCommission;

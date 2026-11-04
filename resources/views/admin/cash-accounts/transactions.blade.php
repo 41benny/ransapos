@@ -744,9 +744,15 @@
                     'coa_type',
                     'coa_group',
                     'exclude_coa_group',
+                    'cost_scope',
+                    'outlet_ids',
+                    'outlet_ids[]',
                 ];
 
                 params.forEach(param => url.searchParams.delete(param));
+                Array.from(url.searchParams.keys())
+                    .filter(key => key.startsWith('outlet_ids['))
+                    .forEach(key => url.searchParams.delete(key));
                 url.searchParams.delete('page');
 
                 window.location.href = url.toString();

@@ -49,6 +49,8 @@ class ProfitLossReportController extends Controller
         $rows = [
             ['metric' => 'Total Pendapatan', 'amount' => (float) ($report['total_revenue'] ?? 0)],
             ['metric' => 'HPP', 'amount' => (float) ($report['total_cogs'] ?? 0)],
+            ['metric' => '  Rincian HPP stok/penjualan', 'amount' => (float) ($report['stock_cogs'] ?? $report['total_cogs'] ?? 0)],
+            ['metric' => '  Rincian HPP tambahan POS', 'amount' => (float) ($report['pos_additional_cogs'] ?? 0)],
             ['metric' => 'Laba Kotor', 'amount' => (float) ($report['gross_profit'] ?? 0)],
             ['metric' => 'Total Biaya Operasional', 'amount' => (float) ($report['total_expenses'] ?? 0)],
             ['metric' => 'Laba Bersih', 'amount' => (float) ($report['net_profit'] ?? 0)],

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\CashTransaction;
 use App\Models\Outlet;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Support\MerchantCommission;
 use App\Models\Setting;
+use App\Services\PosExpenseReportingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -108,11 +108,11 @@ class DashboardController extends Controller
             ->orderBy('name')
             ->pluck('name', 'id');
 
-        $cacheKey = 'admin.dashboard.summary.v9:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
+        $cacheKey = 'admin.dashboard.summary.v10:' . $dateFrom . ':' . $dateTo . ':' . $outletScopeKey;
 
         $payload = Cache::remember($cacheKey, now()->addSeconds(10), function () use ($dateFrom, $dateTo, $prevDateFrom, $prevDateTo, $periodDays, $selectedOutletIds, $isAllOutlets, $singleOutletId, $outletScopeKey, $breakdownOutletNames) {
             $salesBase = Sale::query()
-                ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -128,16 +128,21 @@ class DashboardController extends Controller
 
             $totalCogs = (float) SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->sum('sale_items.cogs');
+
+            $stockCogs = $totalCogs;
+            $posAdditionalCogs = app(PosExpenseReportingService::class)
+                ->additionalCogsTotal($dateFrom, $dateTo, $selectedOutletIds);
+            $totalCogs += $posAdditionalCogs;
 
             // Jumlah produk berbeda (SKU unik) yang terjual, sama seperti definisi "Jumlah Item"
             // di laporan Penjualan Vs HPP.
             $totalItems = (int) SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->selectRaw('COUNT(DISTINCT sale_items.product_name) as total_items')
@@ -151,17 +156,14 @@ class DashboardController extends Controller
             $grossProfit = $grossProfitBeforeMerchandise - $merchandiseShare;
             $grossMarginPct = $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : null;
 
-            // Sama persis dengan query di ProfitLossReportService: mencakup semua
-            // biaya operasional termasuk Pengeluaran Kios (COA type=expense) yang
-            // sudah diposting ke cash_transactions setelah shift ditutup. Dibuat
-            // konsisten dengan Laporan Laba Rugi supaya "Laba Owner" di dashboard
-            // dan laporan resmi tidak pernah menunjukkan angka yang berbeda.
+            // Klasifikasi POS dibagi dengan laporan laba rugi: HPP tambahan
+            // tidak boleh sekaligus masuk biaya operasional.
             $totalExpenses = static::calculateTotalOperatingExpenses($dateFrom, $dateTo, $selectedOutletIds);
             $netProfit = $grossProfit - $totalExpenses;
             $netMarginPct = $totalSales > 0 ? ($netProfit / $totalSales) * 100 : null;
 
             $cancelledBase = Sale::query()
-                ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('status', 'cancelled')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -188,7 +190,7 @@ class DashboardController extends Controller
             $topProducts = SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('products', 'sale_items.product_id', '=', 'products.id')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('sale_items.product_id', 'sale_items.product_name', 'products.thumbnail_path', 'products.image_path')
@@ -279,7 +281,7 @@ class DashboardController extends Controller
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->join('products', 'sale_items.product_id', '=', 'products.id')
                 ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('product_categories.id', 'product_categories.name')
@@ -296,7 +298,7 @@ class DashboardController extends Controller
             $paymentMix = \App\Models\Payment::query()
                 ->join('sales', 'payments.sale_id', '=', 'sales.id')
                 ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+                ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->groupBy('payment_methods.id', 'payment_methods.name')
@@ -370,7 +372,7 @@ class DashboardController extends Controller
                     ->all();
 
                 $hourOutletRows = Sale::query()
-                    ->whereBetween('sale_date', [$dateFrom, $dateTo])
+                    ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
                     ->where('status', 'completed')
                     ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds))
                     ->selectRaw('outlet_id as outlet_id, HOUR(created_at) as hour, COALESCE(SUM(total_amount), 0) as amount')
@@ -459,6 +461,8 @@ class DashboardController extends Controller
                     'avg_transaction' => $avgTransaction,
                     'discount_total' => $discountTotal,
                     'total_cogs' => $totalCogs,
+                    'stock_cogs' => $stockCogs,
+                    'pos_additional_cogs' => $posAdditionalCogs,
                     'online_sales' => $onlineSales,
                     'merchandise_rate' => MerchantCommission::RATE,
                     'merchandise_share' => $merchandiseShare,
@@ -488,10 +492,10 @@ class DashboardController extends Controller
             ];
         });
 
-        $prevCacheKey = 'admin.dashboard.summary.prev.v7:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
+        $prevCacheKey = 'admin.dashboard.summary.prev.v8:' . $prevDateFrom . ':' . $prevDateTo . ':' . $outletScopeKey;
         $prevPayload = Cache::remember($prevCacheKey, now()->addSeconds(30), function () use ($prevDateFrom, $prevDateTo, $selectedOutletIds) {
             $base = Sale::query()
-                ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo])
+                ->whereBetween('sale_date', [$prevDateFrom, $prevDateTo . ' 23:59:59'])
                 ->where('status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('outlet_id', $selectedOutletIds));
 
@@ -501,10 +505,13 @@ class DashboardController extends Controller
 
             $totalCogs = (float) SaleItem::query()
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->whereBetween('sales.sale_date', [$prevDateFrom, $prevDateTo])
+                ->whereBetween('sales.sale_date', [$prevDateFrom, $prevDateTo . ' 23:59:59'])
                 ->where('sales.status', 'completed')
                 ->when($selectedOutletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $selectedOutletIds))
                 ->sum('sale_items.cogs');
+
+            $totalCogs += app(PosExpenseReportingService::class)
+                ->additionalCogsTotal($prevDateFrom, $prevDateTo, $selectedOutletIds);
 
             $totalSales = (float) ($kpis->total_sales ?? 0);
             $merchantSalesQuery = clone $base;
@@ -576,7 +583,7 @@ class DashboardController extends Controller
     protected static function calculateOutletProfitMetrics(string $dateFrom, string $dateTo, ?array $outletIds): array
     {
         $salesRows = Sale::query()
-            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->where('status', 'completed')
             ->when($outletIds !== null, fn($q) => $q->whereIn('outlet_id', $outletIds))
             ->groupBy('outlet_id')
@@ -586,15 +593,18 @@ class DashboardController extends Controller
 
         $cogsByOutlet = SaleItem::query()
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo])
+            ->whereBetween('sales.sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->where('sales.status', 'completed')
             ->when($outletIds !== null, fn($q) => $q->whereIn('sales.outlet_id', $outletIds))
             ->groupBy('sales.outlet_id')
             ->selectRaw('sales.outlet_id, COALESCE(SUM(sale_items.cogs), 0) as total_cogs')
             ->pluck('total_cogs', 'outlet_id');
 
+        $posCogsByOutlet = app(PosExpenseReportingService::class)
+            ->additionalCogsByOutlet($dateFrom, $dateTo, $outletIds);
+
         $merchantSalesQuery = Sale::query()
-            ->whereBetween('sale_date', [$dateFrom, $dateTo])
+            ->whereBetween('sale_date', [$dateFrom, $dateTo . ' 23:59:59'])
             ->where('status', 'completed')
             ->when($outletIds !== null, fn($q) => $q->whereIn('outlet_id', $outletIds));
         MerchantCommission::constrainSalesQuery($merchantSalesQuery);
@@ -603,15 +613,8 @@ class DashboardController extends Controller
             ->selectRaw('outlet_id, COALESCE(SUM(total_amount), 0) as merchant_sales')
             ->pluck('merchant_sales', 'outlet_id');
 
-        $expenseRows = CashTransaction::query()
-            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
-            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
-            ->where('cash_transactions.type', 'out')
-            ->whereNotNull('cash_transactions.coa_account_id')
-            ->where('coa_accounts.type', 'expense')
-            ->where('coa_accounts.group', '!=', 'HPP')
-            ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo])
-            ->when(!empty($outletIds), fn($q) => $q->whereIn('cash_accounts.outlet_id', $outletIds))
+        $expenseRows = app(PosExpenseReportingService::class)
+            ->operatingExpensesQuery($dateFrom, $dateTo, $outletIds)
             ->groupBy('cash_accounts.outlet_id')
             ->selectRaw('cash_accounts.outlet_id, COALESCE(SUM(cash_transactions.amount), 0) as total_expenses')
             ->get();
@@ -625,6 +628,7 @@ class DashboardController extends Controller
         $outletIdsInMetrics = collect([
             ...$salesRows->keys()->all(),
             ...$cogsByOutlet->keys()->all(),
+            ...$posCogsByOutlet->keys()->all(),
             ...$merchantSalesByOutlet->keys()->all(),
             ...array_keys($expensesByOutlet),
         ])
@@ -636,10 +640,10 @@ class DashboardController extends Controller
             ->pluck('name', 'id');
 
         return $outletIdsInMetrics
-            ->mapWithKeys(function (int $outletId) use ($salesRows, $cogsByOutlet, $merchantSalesByOutlet, $expensesByOutlet, $outletNames) {
+            ->mapWithKeys(function (int $outletId) use ($salesRows, $cogsByOutlet, $posCogsByOutlet, $merchantSalesByOutlet, $expensesByOutlet, $outletNames) {
                 $sales = $salesRows->get($outletId);
                 $amount = (float) ($sales->amount ?? 0);
-                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0);
+                $cogs = (float) ($cogsByOutlet[$outletId] ?? 0) + (float) ($posCogsByOutlet[$outletId] ?? 0);
                 $merchantCommission = (float) ($merchantSalesByOutlet[$outletId] ?? 0) * MerchantCommission::RATE;
                 $operatingExpenses = (float) ($expensesByOutlet[$outletId] ?? 0);
 
@@ -683,7 +687,7 @@ class DashboardController extends Controller
     /**
      * Total biaya operasional periode tertentu, meniru persis query di
      * ProfitLossReportService::generate() (cash_transactions type=out, COA
-     * type=expense, group != HPP) supaya "Laba Owner" di dashboard selalu
+     * type=expense, group != HPP, selain HPP tambahan POS) supaya "Laba Owner" di dashboard selalu
      * sinkron dengan Laporan Laba Rugi resmi. Termasuk Pengeluaran Kios
      * (petty cash laci) begitu shift ditutup dan baris jurnalnya diposting.
      *
@@ -691,19 +695,8 @@ class DashboardController extends Controller
      */
     protected static function calculateTotalOperatingExpenses(string $dateFrom, string $dateTo, ?array $outletIds): float
     {
-        $query = CashTransaction::query()
-            ->join('coa_accounts', 'cash_transactions.coa_account_id', '=', 'coa_accounts.id')
-            ->leftJoin('cash_accounts', 'cash_transactions.cash_account_id', '=', 'cash_accounts.id')
-            ->where('cash_transactions.type', 'out')
-            ->whereNotNull('cash_transactions.coa_account_id')
-            ->where('coa_accounts.type', 'expense')
-            ->where('coa_accounts.group', '!=', 'HPP')
-            ->whereBetween('cash_transactions.transaction_date', [$dateFrom, $dateTo]);
-
-        if (!empty($outletIds)) {
-            $query->whereIn('cash_accounts.outlet_id', $outletIds);
-        }
-
-        return (float) $query->sum('cash_transactions.amount');
+        return (float) app(PosExpenseReportingService::class)
+            ->operatingExpensesQuery($dateFrom, $dateTo, $outletIds)
+            ->sum('cash_transactions.amount');
     }
 }

@@ -678,6 +678,20 @@ class CashAccountService
 
     protected function applyTransactionFilters(Builder $query, array $filters): void
     {
+        if (in_array($filters['cost_scope'] ?? null, ['pos_cogs', 'operating'], true)) {
+            $costs = app(PosExpenseReportingService::class);
+            $from = $filters['date_from'] ?? '1000-01-01';
+            $to = $filters['date_to'] ?? '9999-12-31';
+            $costQuery = $filters['cost_scope'] === 'pos_cogs'
+                ? $costs->additionalCogsQuery($from, $to)
+                : $costs->operatingExpensesQuery($from, $to);
+            $query->whereIn('cash_transactions.id', $costQuery->select('cash_transactions.id'));
+        }
+
+        if (!empty($filters['outlet_ids']) && is_array($filters['outlet_ids'])) {
+            $query->whereHas('cashAccount', fn ($q) => $q->whereIn('outlet_id', $filters['outlet_ids']));
+        }
+
         // Filter by transaction number
         if (! empty($filters['transaction_number'])) {
             $keyword = '%' . $filters['transaction_number'] . '%';
@@ -735,7 +749,7 @@ class CashAccountService
             $query->where('transaction_date', '>=', $filters['date_from']);
         }
         if (! empty($filters['date_to'])) {
-            $query->where('transaction_date', '<=', $filters['date_to']);
+            $query->where('transaction_date', '<=', $filters['date_to'] . ' 23:59:59');
         }
 
         // Filter by reference type

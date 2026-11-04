@@ -287,12 +287,39 @@
                                         <span class="text-[10px] font-bold text-slate-400 tracking-widest">5-0000</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('admin.stocks.mutations', $stockMutationParams) }}" target="_blank"
-                                            class="text-sm font-bold text-rose-500 hover:text-indigo-600 transition-colors">
+                                        <span class="text-sm font-bold text-rose-500">
                                             Rp {{ number_format($report['total_cogs'], 0, ',', '.') }}
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td class="px-10 py-3 text-sm text-slate-600" colspan="2">HPP stok / penjualan</td>
+                                    <td class="px-6 py-3 text-right">
+                                        <a href="{{ route('admin.stocks.mutations', $stockMutationParams) }}" target="_blank" class="text-sm text-rose-500 hover:text-indigo-600">
+                                            Rp {{ number_format($report['stock_cogs'] ?? $report['total_cogs'], 0, ',', '.') }}
                                         </a>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td class="px-10 py-3 text-sm text-slate-600" colspan="2">HPP tambahan POS</td>
+                                    <td class="px-6 py-3 text-right">
+                                        <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $selectedOutletIds, 'cost_scope' => 'pos_cogs']) }}" target="_blank" class="text-sm text-rose-500 hover:text-indigo-600">
+                                            Rp {{ number_format($report['pos_additional_cogs'] ?? 0, 0, ',', '.') }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                @foreach(($report['pos_cogs_by_account'] ?? []) as $costAccount)
+                                    <tr>
+                                        <td class="px-10 py-3 text-sm text-slate-500">{{ $costAccount['name'] }}</td>
+                                        <td class="px-6 py-3 text-center text-xs text-slate-400">{{ $costAccount['code'] }}</td>
+                                        <td class="px-6 py-3 text-right">
+                                            <a href="{{ route('admin.cash-transactions.index', ['date_from' => $dateFrom, 'date_to' => $dateTo, 'outlet_ids' => $selectedOutletIds, 'cost_scope' => 'pos_cogs', 'coa_account_id' => $costAccount['id']]) }}" target="_blank" class="text-sm text-rose-500 hover:text-indigo-600">
+                                                Rp {{ number_format($costAccount['amount'], 0, ',', '.') }}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
 
                                 <tr class="group hover:bg-slate-50 transition-colors">
                                     <td class="px-6 py-4">
@@ -363,6 +390,8 @@
                                                 'type' => 'out',
                                                 'coa_type' => 'expense',
                                                 'coa_group' => $group['group_name'],
+                                                'cost_scope' => 'operating',
+                                                'outlet_ids' => $selectedOutletIds,
                                             ], !is_null($singleOutletId) ? ['outlet_id' => $singleOutletId] : [])) }}" target="_blank"
                                                 class="text-sm font-black text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-100 dark:hover:text-indigo-300">
                                                 Rp {{ number_format($group['total'], 0, ',', '.') }}
@@ -396,6 +425,8 @@
                                                     'date_to' => $dateTo,
                                                     'type' => 'out',
                                                     'coa_account_id' => $account['id'],
+                                                    'cost_scope' => 'operating',
+                                                    'outlet_ids' => $selectedOutletIds,
                                                 ], !is_null($singleOutletId) ? ['outlet_id' => $singleOutletId] : [])) }}" target="_blank"
                                                     class="text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors dark:text-slate-200 dark:hover:text-indigo-300">
                                                     Rp {{ number_format($account['amount'], 0, ',', '.') }}
