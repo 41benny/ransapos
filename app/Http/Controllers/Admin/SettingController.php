@@ -19,6 +19,7 @@ class SettingController extends Controller
             'company_logo' => Setting::getValue('company_logo', ''),
             'receipt_header' => Setting::getValue('receipt_header', ''),
             'receipt_footer' => Setting::getValue('receipt_footer', 'Thank you for your visit!'),
+            'require_attendance_checkout_before_close' => Setting::getBool('require_attendance_checkout_before_close', true),
         ];
 
         return view('admin.settings.index', compact('settings'));
@@ -35,6 +36,7 @@ class SettingController extends Controller
             'receipt_footer' => 'nullable|string',
             'company_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'remove_logo' => 'nullable|boolean',
+            'require_attendance_checkout_before_close' => 'sometimes|boolean',
         ]);
 
         // Hapus logo jika diminta (dan tidak sedang mengunggah logo baru)

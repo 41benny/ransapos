@@ -157,6 +157,8 @@ class CashSessionService
                 throw new Exception('Sesi kasir sudah ditutup sebelumnya');
             }
 
+            app(ShiftAttendanceService::class)->assertCanClose($session);
+
             $moduleEnabled = $this->expenseService->isEnabled() && ! $session->isBackdateCorrection();
 
             if ($moduleEnabled) {

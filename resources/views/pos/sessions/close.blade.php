@@ -29,6 +29,15 @@
             </button>
         </div>
 
+        @if($pendingClockOuts->isNotEmpty())
+            <div class="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-5 text-amber-100">
+                <p class="font-semibold">Shift belum bisa ditutup: masih ada karyawan belum check-out absensi.</p>
+                <p class="mt-2 text-sm">{{ $pendingClockOuts->map(fn ($attendance) => $attendance->user?->name ?? 'Karyawan #' . $attendance->user_id)->unique()->implode(', ') }}</p>
+                <a href="{{ route('pos.attendance.index') }}" class="mt-3 inline-block font-semibold underline">Buka Absensi</a>
+                <p class="mt-2 text-xs">Setelah semua check-out, kembali dan muat ulang halaman ini.</p>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             
             <!-- Left Column: Summary & Payment breakdown -->
@@ -296,6 +305,8 @@
                                 Batal
                             </a>
                             <button type="submit" 
+                                    @disabled($pendingClockOuts->isNotEmpty())
+                                    style="{{ $pendingClockOuts->isNotEmpty() ? 'opacity: .5; cursor: not-allowed;' : '' }}"
                                     class="flex-[2] py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl font-semibold transition shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 group">
                                 <svg class="w-5 h-5 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>

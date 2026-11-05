@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Shift;
 use App\Models\User;
 use App\Services\AttendanceMetricsService;
+use App\Services\ShiftAttendanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
@@ -17,6 +18,7 @@ class AttendanceController extends Controller
 {
     public function __construct(
         protected AttendanceMetricsService $metricsService,
+        protected ShiftAttendanceService $shiftAttendanceService,
     ) {
     }
 
@@ -38,8 +40,7 @@ class AttendanceController extends Controller
         // Wajib ikut tampil supaya mereka bisa clock-out tanpa harus dicari ulang.
         $crossOutletEmployees = collect();
         if ($currentOutletId) {
-            $crossOutletIds = Attendance::query()
-                ->whereDate('clock_in', today())
+            $crossOutletIds = $this->shiftAttendanceService->forCashierDay(Attendance::query(), $loggedInUser)
                 ->where('outlet_id', $currentOutletId)
                 ->where('is_cross_outlet', true)
                 ->pluck('user_id')
@@ -109,7 +110,8 @@ class AttendanceController extends Controller
             ->where('is_active', true)
             ->whereNotNull('attendance_pin')
             ->with(['role', 'outlet', 'attendances' => function ($query) {
-                $query->whereDate('clock_in', today())->with(['shift', 'outlet'])->latest();
+                $this->shiftAttendanceService->forCashierDay($query, auth()->user())
+                    ->with(['shift', 'outlet'])->latest();
             }]);
     }
 
@@ -180,8 +182,8 @@ class AttendanceController extends Controller
         RateLimiter::clear($key);
 
         // Cek apakah sudah ada absensi aktif hari ini
-        $existingAttendance = Attendance::where('user_id', $employee->id)
-            ->whereDate('clock_in', today())
+        $existingAttendance = $this->shiftAttendanceService->forCashierDay(Attendance::query(), $loggedInUser)
+            ->where('user_id', $employee->id)
             ->whereNull('clock_out')
             ->first();
 
@@ -269,8 +271,8 @@ class AttendanceController extends Controller
         RateLimiter::clear($key);
 
         // Cari attendance aktif hari ini
-        $attendance = Attendance::where('user_id', $employee->id)
-            ->whereDate('clock_in', today())
+        $attendance = $this->shiftAttendanceService->forCashierDay(Attendance::query(), auth()->user())
+            ->where('user_id', $employee->id)
             ->whereNull('clock_out')
             ->first();
 
@@ -295,6 +297,8 @@ class AttendanceController extends Controller
         ]));
 
         $duration = $attendance->getDurationFormatted();
+        $earlyLeaveMinutes = $departure['early_leave_minutes'];
+        $overtimeMinutes = $departure['overtime_minutes'];
         $extra = '';
         if ($earlyLeaveMinutes > 0) {
             $extra = " (pulang cepat {$earlyLeaveMinutes} menit)";

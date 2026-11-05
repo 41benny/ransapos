@@ -24,6 +24,18 @@
             @csrf
             @method('PUT')
 
+            <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5">
+                <input type="hidden" name="require_attendance_checkout_before_close" value="0">
+                <label class="flex items-start gap-3 text-sm text-slate-800">
+                    <input type="checkbox" name="require_attendance_checkout_before_close" value="1"
+                        @checked(old('require_attendance_checkout_before_close', $settings['require_attendance_checkout_before_close']))
+                        class="mt-1 rounded border-slate-300 text-indigo-600">
+                    <span><strong>Wajib check-out semua karyawan sebelum tutup shift</strong>
+                        <span class="mt-1 block text-xs text-slate-500">Kasir hanya bisa menutup shift setelah semua karyawan yang absen masuk di outlet pada hari operasional shift sudah check-out. Termasuk karyawan titipan dari outlet lain.</span>
+                    </span>
+                </label>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Data Perusahaan -->
                 <div class="lg:col-span-2 space-y-6">

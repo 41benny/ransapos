@@ -212,6 +212,7 @@ class CashSessionController extends Controller
             'drawerCashIns'
         ) + [
             'differenceTolerance' => $this->drawerExpenseService->differenceTolerance(),
+            'pendingClockOuts' => app(\App\Services\ShiftAttendanceService::class)->pendingClockOuts($activeSession),
         ]);
     }
 
@@ -242,20 +243,22 @@ class CashSessionController extends Controller
         try {
             $posDevice = $request->attributes->get('pos_device');
 
-            // Simpan stok akhir fisik packaging sebelum menutup shift.
-            $packagingPhysical = $request->input('packaging_physical', []);
-            if (is_array($packagingPhysical) && ! empty($packagingPhysical)) {
-                $this->packagingService->saveClosings($cashSession, $packagingPhysical);
-            }
+            $session = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $cashSession, $posDevice) {
+                app(\App\Services\ShiftAttendanceService::class)->assertCanClose($cashSession);
+                $packagingPhysical = $request->input('packaging_physical', []);
+                if (is_array($packagingPhysical) && ! empty($packagingPhysical)) {
+                    $this->packagingService->saveClosings($cashSession, $packagingPhysical);
+                }
 
-            $session = $this->cashSessionService->closeSession(
-                $cashSession,
-                (float) $request->actual_balance,
-                $request->notes,
-                $posDevice?->id,
-                $request->ip(),
-                $request->filled('retained_balance') ? (float) $request->retained_balance : 0.0
-            );
+                return $this->cashSessionService->closeSession(
+                    $cashSession,
+                    (float) $request->actual_balance,
+                    $request->notes,
+                    $posDevice?->id,
+                    $request->ip(),
+                    $request->filled('retained_balance') ? (float) $request->retained_balance : 0.0
+                );
+            });
 
             $diffMessage = '';
             if ($session->difference > 0) {
