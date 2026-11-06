@@ -86,6 +86,16 @@
                                 Harga Jual
                                 <div class="resize-handle"></div>
                             </th>
+                            <th class="px-5 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
+                                style="min-width: 120px; position: relative;">
+                                Harga Beli
+                                <div class="resize-handle"></div>
+                            </th>
+                            <th class="px-5 py-3 text-right text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
+                                style="min-width: 130px; position: relative;">
+                                Margin / Selisih
+                                <div class="resize-handle"></div>
+                            </th>
                             <th class="px-5 py-3 text-center text-xs font-normal uppercase tracking-widest text-slate-700 resizable"
                                 style="min-width: 80px; position: relative;">
                                 Satuan
@@ -114,8 +124,15 @@
                                     class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
                             </td>
                             <td class="px-3 py-2">
-                                <input type="text" data-name="price" placeholder="Harga..."
+                                <input type="text" data-name="price" placeholder="Harga jual..."
                                     class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
+                            </td>
+                            <td class="px-3 py-2">
+                                <input type="text" data-name="purchase_price" placeholder="Harga beli..."
+                                    class="ui-input filter-input w-full px-3 py-1.5 text-xs font-normal bg-slate-50 border-none rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-300 text-right">
+                            </td>
+                            <td class="px-3 py-2 text-right">
+                                <span class="text-[10px] font-normal text-slate-400">Jual - Beli</span>
                             </td>
                             <td class="px-3 py-2">
                                 <input type="text" data-name="unit" placeholder="Satuan..."
@@ -139,6 +156,13 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse($products as $product)
+                            @php
+                                $sellingPrice = (float) $product->selling_price;
+                                $purchasePrice = ($product->bomHeader && $product->bomHeader->details->isNotEmpty())
+                                    ? (float) $product->bomHeader->details->sum(fn ($detail) => (float) $detail->quantity * (float) ($detail->component?->purchase_price ?? 0))
+                                    : (float) $product->purchase_price;
+                                $marginPrice = $sellingPrice - $purchasePrice;
+                            @endphp
                             <tr class="group hover:bg-slate-50/50 transition-colors">
                                 <td class="px-5 py-3.5">
                                     <span
@@ -162,7 +186,23 @@
                                 </td>
                                 <td class="px-5 py-3.5 text-right tabular-nums">
                                     <span class="text-sm font-normal text-slate-900">Rp
-                                        {{ number_format((float) $product->selling_price, 0, ',', '.') }}</span>
+                                        {{ number_format($sellingPrice, 0, ',', '.') }}</span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right tabular-nums">
+                                    <span class="text-sm font-normal text-slate-700">Rp
+                                        {{ number_format($purchasePrice, 0, ',', '.') }}</span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right tabular-nums">
+                                    @if($marginPrice < 0)
+                                        <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-sm font-medium text-rose-600 ring-1 ring-inset ring-rose-200">
+                                            -Rp {{ number_format(abs($marginPrice), 0, ',', '.') }}
+                                        </span>
+                                    @elseif($marginPrice == 0)
+                                        <span class="text-sm font-normal text-amber-600">Rp 0</span>
+                                    @else
+                                        <span class="text-sm font-normal text-emerald-600">Rp
+                                            {{ number_format($marginPrice, 0, ',', '.') }}</span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3.5 text-center">
                                     <span class="text-sm font-normal text-slate-700">{{ $product->unit }}</span>
@@ -227,7 +267,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-20 text-center">
+                                <td colspan="9" class="px-6 py-20 text-center">
                                     <div class="flex flex-col items-center justify-center opacity-30">
                                         <i class="fas fa-box-open text-5xl text-slate-300 mb-4"></i>
                                         <p class="text-[11px] font-normal text-slate-500 italic uppercase tracking-widest">Belum

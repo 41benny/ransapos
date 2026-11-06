@@ -54,7 +54,7 @@ class ProductController extends Controller
         // Save current URL for redirection after actions
         session(['product_index_url' => $request->fullUrl()]);
 
-        $query = Product::with(['category', 'bomHeader']);
+        $query = Product::with(['category', 'bomHeader.details.component']);
 
         // Filter SKU
         if ($request->filled('sku')) {
@@ -76,6 +76,11 @@ class ProductController extends Controller
         // Filter Price (flexible search)
         if ($request->filled('price')) {
             $query->whereRaw("CAST(selling_price AS CHAR) LIKE ?", ['%' . $request->price . '%']);
+        }
+
+        // Filter Purchase Price (flexible search)
+        if ($request->filled('purchase_price')) {
+            $query->whereRaw("CAST(purchase_price AS CHAR) LIKE ?", ['%' . $request->purchase_price . '%']);
         }
 
         // Filter Unit
